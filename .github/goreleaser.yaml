@@ -59,6 +59,12 @@ notarize:
         key:       "{{.Env.NOTARIZE_KEY}}"
         wait:      true
         timeout:   20m
+#  windows:
+#    - enabled: '{{ isEnvSet "WINDOWS_SIGN_CERTIFICATE" }}'
+#      ids: [ ingitdb-windows ]
+#      sign:
+#        certificate: "{{.Env.WINDOWS_SIGN_CERTIFICATE}}"
+#        password:    "{{.Env.WINDOWS_SIGN_PASSWORD}}"
 
 release:
   github:
