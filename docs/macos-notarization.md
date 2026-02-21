@@ -13,7 +13,7 @@ Gatekeeper accepts it both online and offline.
 
 ```
 Apple Developer Portal
-  ├─ Developer ID Application cert (.p12)   ──┐
+  ├─ Developer ID Application cert (.p12)    ──┐
   └─ App Store Connect API key (.p8)         ──┤
                                                ▼
                                     GitHub Secrets (5 secrets)
