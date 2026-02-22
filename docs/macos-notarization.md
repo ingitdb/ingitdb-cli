@@ -151,9 +151,9 @@ base64 -i AuthKey_XXXXXXXXXX.p8 | tr -d '\n' | \
 
 ## Phase 3: Update GoReleaser Config
 
-### [CODE] 3.1 Add notarize block to `.github/goreleaser.yaml` ⏱ ~5 min
+### [CODE] 3.1 Add notarize block to `.github/goreleaser-macos.yaml` ⏱ ~5 min
 
-Add the following block between `checksum` and `release` in `.github/goreleaser.yaml`:
+Add the following block between `checksum` and `release` in `.github/goreleaser-macos.yaml`:
 
 ```yaml
 notarize:
@@ -198,7 +198,7 @@ Also add the 5 new environment variables to the goreleaser step:
 - uses: goreleaser/goreleaser-action@v6
   with:
     version: v2
-    args: release --clean --config .github/goreleaser.yaml
+    args: release --clean --config .github/goreleaser-macos.yaml
   env:
     GITHUB_TOKEN:          ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
     MACOS_SIGN_P12:        ${{ secrets.MACOS_SIGN_P12 }}
@@ -352,7 +352,7 @@ on macOS runners.
 
 ### Local builds fail because secrets are not set
 
-The `enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'` guard in goreleaser.yaml means signing is
+The `enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'` guard in goreleaser-macos.yaml means signing is
 skipped when `MACOS_SIGN_P12` is not in the environment. Local builds will produce unsigned
 binaries, which is expected.
 

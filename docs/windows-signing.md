@@ -118,15 +118,18 @@ gh secret set WINDOWS_SIGN_PASSWORD --repo ingitdb/ingitdb-cli
 
 ## Phase 3: Update GoReleaser Config
 
-### [CODE] 3.1 Add `notarize.windows` block to `.github/goreleaser.yaml` ⏱ ~5 min
+### [CODE] 3.1 Add `notarize.windows` block to `.github/goreleaser-linux.yaml` ⏱ ~5 min
 
-Add the following `windows` section inside the existing `notarize:` block (after the `macos:`
-section):
+> **Note:** ingitdb separates goreleaser configs by platform:
+> - `.github/goreleaser-macos.yaml` — macOS builds only
+> - `.github/goreleaser-linux.yaml` — Linux, Windows, and Snap builds
+>
+> Windows binaries are built on `ubuntu-latest` in the `linux-releaser` job.
+
+Add the following `windows` section inside a `notarize:` block in `.github/goreleaser-linux.yaml`:
 
 ```yaml
 notarize:
-  macos:
-    - ... (existing, unchanged)
   windows:
     - enabled: '{{ isEnvSet "WINDOWS_SIGN_CERTIFICATE" }}'
       ids: [ ingitdb-windows ]
@@ -144,28 +147,28 @@ GoReleaser calls `osslsigncode` to sign the `.exe` using the PFX certificate.
 
 ### [CODE] 4.1 Install osslsigncode and add secrets to release.yml ⏱ ~5 min
 
-In `.github/workflows/release.yml`, add a step **before** the goreleaser step:
+> **Note:** Windows binaries are built on `ubuntu-latest` by the `linux-releaser` job. `osslsigncode`
+> must be installed there (via `apt-get`), not via Homebrew.
+
+In `.github/workflows/release.yml`, update the `linux-releaser` job to install `osslsigncode`:
 
 ```yaml
 - name: Install osslsigncode (Windows signing)
-  run: brew install osslsigncode
+  run: sudo apt-get update && sudo apt-get install -y osslsigncode
 ```
 
-Add the two new env vars to the `goreleaser-action` step:
+Add the two new env vars to the goreleaser-action step in the `linux-releaser` job:
 
 ```yaml
 - uses: goreleaser/goreleaser-action@v6
   with:
     version: v2
-    args: release --clean --config .github/goreleaser.yaml
+    args: release --clean --config .github/goreleaser-linux.yaml
   env:
     ...existing vars...
     WINDOWS_SIGN_CERTIFICATE: ${{ secrets.WINDOWS_SIGN_CERTIFICATE }}
     WINDOWS_SIGN_PASSWORD:    ${{ secrets.WINDOWS_SIGN_PASSWORD }}
 ```
-
-`osslsigncode` is available via Homebrew on the `macos-latest` runner, so no separate Windows
-runner is needed.
 
 ---
 
@@ -223,8 +226,8 @@ git push origin v<next-version>
 
 Then:
 
-1. Go to **Actions** → **Release** → confirm the `goreleaser` job runs on `macos-latest`.
-2. In CI logs, look for the `Install osslsigncode` step completing successfully.
+1. Go to **Actions** → **Release** → confirm the `linux-releaser` job runs on `ubuntu-latest`.
+2. In CI logs for the `linux-releaser` job, look for the `Install osslsigncode` step completing successfully.
 3. Look for `osslsigncode` output in the GoReleaser signing step.
 
 ### [CLI] 6.2 Verify on a fresh Windows machine ⏱ ~10 min

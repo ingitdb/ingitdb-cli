@@ -7,41 +7,25 @@ before:
     - go mod tidy
 
 builds:
-  - id: ingitdb-unix
+  - id: ingitdb-darwin
     main: ./cmd/ingitdb
     binary: ingitdb
     env: [ CGO_ENABLED=0 ]
-    goos: [ linux, darwin ]
+    goos: [ darwin ]
     goarch: [ amd64, arm64 ]
     ldflags:
       - -s -w
       - -X main.version={{.Version}}
 
-  - id: ingitdb-windows
-    main: ./cmd/ingitdb
-    binary: ingitdb
-    env: [ CGO_ENABLED=0 ]
-    goos: [ windows ]
-    goarch: [ amd64 ]
-    ldflags:
-      - -s -w
-      - -X main.version={{.Version}}
-
 archives:
-  - id: tarball
+  - id: tarball-macos
     formats: [ tar.gz ]
     name_template: >-
       {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
-    ids: [ ingitdb-unix ]
+    ids: [ ingitdb-darwin ]
     files:
       - README.md
       - LICENSE*
-
-  - id: zip
-    formats: [ zip ]
-    name_template: >-
-      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
-    ids: [ ingitdb-windows ]
 
 checksum:
   name_template: checksums.txt
@@ -49,7 +33,7 @@ checksum:
 notarize:
   macos:
     - enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'
-      ids: [ ingitdb-unix ]
+      ids: [ ingitdb-darwin ]
       sign:
         certificate: "{{.Env.MACOS_SIGN_P12}}"
         password: "{{.Env.MACOS_SIGN_PASSWORD}}"
@@ -59,12 +43,6 @@ notarize:
         key:       "{{.Env.NOTARIZE_KEY}}"
         wait:      true
         timeout:   20m
-#  windows:
-#    - enabled: '{{ isEnvSet "WINDOWS_SIGN_CERTIFICATE" }}'
-#      ids: [ ingitdb-windows ]
-#      sign:
-#        certificate: "{{.Env.WINDOWS_SIGN_CERTIFICATE}}"
-#        password:    "{{.Env.WINDOWS_SIGN_PASSWORD}}"
 
 release:
   github:
@@ -74,7 +52,7 @@ release:
 homebrew_casks:
   - name: ingitdb
     ids:
-      - tarball
+      - tarball-macos
     description: "ingitdb – a CLI for a developer-grade, schema-validated, AI-native database whose storage engine is a Git repository."
     homepage: https://ingitdb.com
     license: MIT

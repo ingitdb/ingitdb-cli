@@ -26,7 +26,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           default_bump: false
 
-  goreleaser:
+  macos-releaser:
     needs:
       - bump_version
     if: always() && !failure() && !cancelled()
@@ -45,13 +45,10 @@ jobs:
         with:
           go-version: stable
 
-#      - name: Install osslsigncode (Windows signing)
-#        run: brew install osslsigncode
-
       - uses: goreleaser/goreleaser-action@v6
         with:
           version: v2
-          args: release --clean --config .github/goreleaser.yaml
+          args: release --clean --config .github/goreleaser-macos.yaml
         env:
           GITHUB_TOKEN:               ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
           MACOS_SIGN_P12:             ${{ secrets.MACOS_SIGN_P12 }}
@@ -59,13 +56,43 @@ jobs:
           NOTARIZE_ISSUER_ID:         ${{ secrets.NOTARIZE_ISSUER_ID }}
           NOTARIZE_KEY_ID:            ${{ secrets.NOTARIZE_KEY_ID }}
           NOTARIZE_KEY:               ${{ secrets.NOTARIZE_KEY }}
-#          WINDOWS_SIGN_CERTIFICATE:   ${{ secrets.WINDOWS_SIGN_CERTIFICATE }}
-#          WINDOWS_SIGN_PASSWORD:      ${{ secrets.WINDOWS_SIGN_PASSWORD }}
+
+  linux-releaser:
+    needs:
+      - bump_version
+    if: always() && !failure() && !cancelled()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all tags
+        run: git fetch --tags --force
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+
+      - name: Install snapcraft
+        run: sudo snap install snapcraft --classic
+
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: v2
+          args: release --clean --config .github/goreleaser-linux.yaml
+        env:
+          GITHUB_TOKEN:                ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
+          AUR_SSH_PRIVATE_KEY:         ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
 
   deploy-server:
     name: Deploy to Cloud Run
     needs:
-      - goreleaser
+      - macos-releaser
+      - linux-releaser
     runs-on: ubuntu-latest
 
     permissions:
@@ -94,7 +121,8 @@ jobs:
   deploy-website:
     name: Deploy Website
     needs:
-      - goreleaser
+      - macos-releaser
+      - linux-releaser
     runs-on: ubuntu-latest
 
     permissions:
