@@ -1,0 +1,26 @@
+version: 2
+
+project_name: ingitdb
+
+builds: []
+
+archives: []
+
+release:
+  skip_upload: true
+
+brews:
+  - name: ingitdb
+    ids:
+      - tarball
+    description: "ingitdb – a CLI for a developer-grade, schema-validated, AI-native database whose storage engine is a Git repository."
+    homepage: https://ingitdb.com
+    license: MIT
+    repository:
+      owner: ingitdb
+      name: homebrew-cli
+      token: "{{ .Env.GITHUB_TOKEN }}"
+    install: |
+      bin.install "ingitdb"
+    test: |
+      system "#{bin}/ingitdb", "--version"

@@ -1,0 +1,25 @@
+version: 2
+
+project_name: ingitdb
+
+builds: []
+
+archives: []
+
+release:
+  skip_upload: true
+
+aurs:
+  - name: ingitdb-bin
+    ids:
+      - tarball
+    homepage: https://ingitdb.com
+    description: "ingitdb – a CLI for a developer-grade, schema-validated, AI-native database whose storage engine is a Git repository."
+    license: MIT
+    maintainers:
+      - "ingitdb <hello@ingitdb.com>"
+    git_url: "ssh://aur@aur.archlinux.org/ingitdb-bin.git"
+    private_key: "{{ .Env.AUR_SSH_PRIVATE_KEY }}"
+    package: |
+      install -Dm755 "./ingitdb" "${pkgdir}/usr/bin/ingitdb"
+    skip_upload: auto

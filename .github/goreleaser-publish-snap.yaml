@@ -1,0 +1,39 @@
+version: 2
+
+project_name: ingitdb
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: ingitdb-snap-linux
+    main: ./cmd/ingitdb
+    binary: ingitdb
+    env: [ CGO_ENABLED=0 ]
+    goos: [ linux ]
+    goarch: [ amd64, arm64 ]
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+
+snapcrafts:
+  - name: ingitdb
+    title: ingitdb
+    summary: "A CLI for a schema-validated, AI-native database backed by a Git repository."
+    description: |
+      ingitdb is a developer-grade, schema-validated, AI-native database
+      whose storage engine is a Git repository. Records are YAML/JSON files,
+      collections and schemas are defined declaratively.
+    grade: stable
+    confinement: classic
+    license: MIT
+    publish: true
+    ids:
+      - ingitdb-snap-linux
+    apps:
+      ingitdb:
+        command: ingitdb
+
+release:
+  skip_upload: true

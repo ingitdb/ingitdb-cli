@@ -4,31 +4,36 @@ on:
   workflow_dispatch: # Allows manual trigger from Actions tab
 #  push:
 #    tags: [ 'v*' ]
-#  workflow_run:
-#    workflows: [ "CI (build, lint, test)" ]
-#    types: [ completed ]
-#    branches: [ main ]
 
 jobs:
-  #  bump_version:
-  #    runs-on: ubuntu-latest
-  #    if: github.ref_type != 'tag'
-  #    permissions:
-  #      contents: write
-  #    steps:
-  #      - uses: actions/checkout@v6
-  #        with:
-  #          fetch-depth: 0
-  #
-  #      - name: Bump version and push tag
-  #        uses: mathieudutour/github-tag-action@v6.2
-  #        with:
-  #          github_token: ${{ secrets.GITHUB_TOKEN }}
-  #          default_bump: false
+  build-linux:
+    name: Build Linux & Windows, Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all tags
+        run: git fetch --tags --force
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          version: v2
+          args: release --clean --config .github/goreleaser-linux.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
 
   macos-releaser:
-    #    needs:
-    #      - bump_version
+    name: Build, Sign & Notarize macOS
+    needs:
+      - build-linux
     if: always() && !failure() && !cancelled()
     runs-on: macos-latest
     permissions:
@@ -57,13 +62,69 @@ jobs:
           NOTARIZE_KEY_ID: ${{ secrets.NOTARIZE_KEY_ID }}
           NOTARIZE_KEY: ${{ secrets.NOTARIZE_KEY }}
 
-  linux-releaser:
+  publish-aur:
+    name: Publish to AUR
     needs:
-      - macos-releaser
+      - build-linux
     if: always() && !failure() && !cancelled()
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all tags
+        run: git fetch --tags --force
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          version: v2
+          args: release --clean --config .github/goreleaser-publish-aur.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+
+  publish-homebrew:
+    name: Publish Homebrew Formula
+    needs:
+      - build-linux
+    if: always() && !failure() && !cancelled()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all tags
+        run: git fetch --tags --force
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          version: v2
+          args: release --clean --config .github/goreleaser-publish-homebrew.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
+
+  publish-snap:
+    name: Publish to Snapcraft
+    needs:
+      - build-linux
+    if: always() && !failure() && !cancelled()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
         with:
@@ -82,18 +143,20 @@ jobs:
       - uses: goreleaser/goreleaser-action@v7
         with:
           version: v2
-          args: release --clean --config .github/goreleaser-linux.yaml
+          args: release --clean --config .github/goreleaser-publish-snap.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
-          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
 
   deploy-server:
     name: Deploy to Cloud Run
     needs:
-      - linux-releaser
+      - macos-releaser
+      - publish-aur
+      - publish-homebrew
+      - publish-snap
+    if: always() && !failure() && !cancelled()
     runs-on: ubuntu-latest
-
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -120,9 +183,12 @@ jobs:
   deploy-website:
     name: Deploy Website
     needs:
-      - linux-releaser
+      - macos-releaser
+      - publish-aur
+      - publish-homebrew
+      - publish-snap
+    if: always() && !failure() && !cancelled()
     runs-on: ubuntu-latest
-
     permissions:
       contents: 'read'
       id-token: 'write'
