@@ -58,7 +58,6 @@ brews:
     description: "ingitdb – a CLI for a developer-grade, schema-validated, AI-native database whose storage engine is a Git repository."
     homepage: https://ingitdb.com
     license: MIT
-    folder: Formula
     repository:
       owner: ingitdb
       name: homebrew-cli
