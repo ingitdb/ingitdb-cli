@@ -33,25 +33,29 @@ ssh-keygen -t ed25519 -C "goreleaser@ingitdb" -N "" -f /tmp/aur_key
 ### 1.3 Add SSH Public Key to AUR Account
 
 1. Go to [https://aur.archlinux.org/account](https://aur.archlinux.org/account) (log in if needed)
-2. Click **Manage SSH Keys** or scroll to SSH Public Keys section
-3. Paste the contents of `/tmp/aur_key.pub`:
+2. Scroll to **SSH Public Keys** section
+3. Paste the contents of `~/.ssh/aur_key.pub`:
    ```bash
-   cat /tmp/aur_key.pub
+   cat ~/.ssh/aur_key.pub
    ```
-4. Click **Add** or **Save**
+4. Click **Add**
 
 Your SSH key is now registered with AUR.
 
+**Note:** AUR may ask for "pacman verification" (running a `pacman` command to prove you're on Arch Linux). This is optional for automated releases via goreleaser — you only need it if you plan to manually maintain the AUR package. For CI/CD automation, SSH key authentication is sufficient.
+
 ### 1.4 Register the Package Name on AUR
 
-The first time you publish to AUR, you must register the package name.
+The first time you publish to AUR, you must register the package name by cloning and pushing to the AUR repo.
 
 ```bash
 # Clone the empty AUR repo (this registers the package name)
+# Use SSH with explicit key if needed:
+export GIT_SSH_COMMAND="ssh -i ~/.ssh/aur_key"
 git clone ssh://aur@aur.archlinux.org/ingitdb-bin.git
 cd ingitdb-bin
 
-# Create a minimal PKGBUILD (optional - goreleaser will overwrite it on release)
+# Create a minimal PKGBUILD
 echo 'pkgname=ingitdb-bin
 pkgver=0.0.0
 pkgrel=1
@@ -60,16 +64,34 @@ url="https://ingitdb.com"
 license=("MIT")
 ' > PKGBUILD
 
-# Commit and push (this completes registration)
-git add PKGBUILD
+# Create .SRCINFO file (required by AUR)
+# Note: makepkg may not be available on non-Arch systems
+# If makepkg isn't available, manually create .SRCINFO:
+cat > .SRCINFO << 'SRCINFO'
+pkgbase = ingitdb-bin
+	pkgdesc = Placeholder
+	pkgver = 0.0.0
+	pkgrel = 1
+	url = https://ingitdb.com
+	arch = x86_64
+	arch = aarch64
+	license = MIT
+
+pkgname = ingitdb-bin
+	pkgdesc = Placeholder
+	url = https://ingitdb.com
+SRCINFO
+
+# Commit and push to master branch (AUR requires 'master', not 'main')
+git add PKGBUILD .SRCINFO
 git commit -m "initial commit"
-git push
+git push origin HEAD:master
 
 cd ..
 rm -rf ingitdb-bin
 ```
 
-After this, goreleaser will automatically update the PKGBUILD on each release.
+After this, goreleaser will automatically update the PKGBUILD and .SRCINFO on each release.
 
 ### 1.5 Store SSH Private Key as GitHub Secret
 
@@ -307,10 +329,14 @@ ingitdb --version
 
 ### AUR
 - [ ] Created AUR account at [aur.archlinux.org](https://aur.archlinux.org)
-- [ ] Generated ED25519 SSH key: `ssh-keygen -t ed25519 -C "goreleaser@ingitdb" -N "" -f /tmp/aur_key`
-- [ ] Added public key to AUR account (Manage SSH Keys)
-- [ ] Registered package name by cloning and pushing to `ssh://aur@aur.archlinux.org/ingitdb-bin.git`
-- [ ] Stored private key as `AUR_SSH_PRIVATE_KEY` GitHub secret (base64-encoded, no newlines)
+- [ ] Generated ED25519 SSH key: `ssh-keygen -t ed25519 -C "goreleaser@ingitdb" -N "" -f ~/.ssh/aur_key`
+- [ ] Added public key to AUR account (SSH Public Keys section)
+- [ ] Registered package by cloning, creating PKGBUILD + .SRCINFO, and pushing to master branch:
+  - `git clone ssh://aur@aur.archlinux.org/ingitdb-bin.git`
+  - Create PKGBUILD and .SRCINFO files
+  - `git commit -m "initial commit"`
+  - `git push origin HEAD:master` (note: must be master, not main)
+- [ ] Stored private key as `AUR_SSH_PRIVATE_KEY` GitHub secret (base64-encoded: `cat ~/.ssh/aur_key | base64 | tr -d '\n'`)
 
 ### Snapcraft
 - [ ] Created Snapcraft account at [snapcraft.io/account/register](https://snapcraft.io/account/register)
