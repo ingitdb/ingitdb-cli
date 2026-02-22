@@ -45,9 +45,7 @@ notarize:
         timeout:   20m
 
 release:
-  github:
-    owner: ingitdb
-    name: ingitdb-cli
+  skip_upload: true
 
 homebrew_casks:
   - name: ingitdb
