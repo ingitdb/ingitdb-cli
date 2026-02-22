@@ -24,7 +24,6 @@ on:
       - '.github/goreleaser.yaml'
 
 jobs:
-
   strongo_workflow:
     permissions:
       contents: write
