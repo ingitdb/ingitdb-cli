@@ -1,0 +1,394 @@
+# Release Distribution Setup
+
+This guide walks through setting up the three Linux package managers for automated releases: **AUR** (Arch Linux), **Snapcraft** (universal Linux), and **Homebrew Formula** (Linuxbrew).
+
+---
+
+## 1. AUR (Arch Linux User Repository) Setup
+
+AUR allows Arch Linux users to install ingitdb via `yay -S ingitdb-bin` or `paru -S ingitdb-bin`.
+
+### 1.1 Create an AUR Account
+
+1. Go to [https://aur.archlinux.org](https://aur.archlinux.org)
+2. Click **Register** in the top-right corner
+3. Choose a username (e.g., `ingitdb`) and set a strong password
+4. Enter your email address
+5. Accept the terms and click **Register**
+6. Verify your email
+
+### 1.2 Generate SSH Key for AUR
+
+SSH is used to push updates to AUR without entering credentials each time.
+
+```bash
+# Generate ED25519 key (no passphrase, for CI use)
+ssh-keygen -t ed25519 -C "goreleaser@ingitdb" -N "" -f /tmp/aur_key
+
+# Output:
+# Your identification has been saved in /tmp/aur_key
+# Your public key has been saved in /tmp/aur_key.pub
+```
+
+### 1.3 Add SSH Public Key to AUR Account
+
+1. Go to [https://aur.archlinux.org/account](https://aur.archlinux.org/account) (log in if needed)
+2. Click **Manage SSH Keys** or scroll to SSH Public Keys section
+3. Paste the contents of `/tmp/aur_key.pub`:
+   ```bash
+   cat /tmp/aur_key.pub
+   ```
+4. Click **Add** or **Save**
+
+Your SSH key is now registered with AUR.
+
+### 1.4 Register the Package Name on AUR
+
+The first time you publish to AUR, you must register the package name.
+
+```bash
+# Clone the empty AUR repo (this registers the package name)
+git clone ssh://aur@aur.archlinux.org/ingitdb-bin.git
+cd ingitdb-bin
+
+# Create a minimal PKGBUILD (optional - goreleaser will overwrite it on release)
+echo 'pkgname=ingitdb-bin
+pkgver=0.0.0
+pkgrel=1
+pkgdesc="Placeholder"
+url="https://ingitdb.com"
+license=("MIT")
+' > PKGBUILD
+
+# Commit and push (this completes registration)
+git add PKGBUILD
+git commit -m "initial commit"
+git push
+
+cd ..
+rm -rf ingitdb-bin
+```
+
+After this, goreleaser will automatically update the PKGBUILD on each release.
+
+### 1.5 Store SSH Private Key as GitHub Secret
+
+1. Encode the private key as base64 (single line, no newlines):
+   ```bash
+   base64 -i /tmp/aur_key | tr -d '\n' | pbcopy  # macOS
+   # OR
+   base64 -i /tmp/aur_key | tr -d '\n' | xclip -selection clipboard  # Linux
+   ```
+
+2. Go to your GitHub repo → **Settings** → **Secrets and variables** → **Actions**
+
+3. Click **New repository secret**
+   - **Name:** `AUR_SSH_PRIVATE_KEY`
+   - **Secret:** Paste the base64-encoded private key
+
+4. Click **Add secret**
+
+5. Securely delete the local key files:
+   ```bash
+   rm /tmp/aur_key /tmp/aur_key.pub
+   ```
+
+### 1.6 Verify AUR Setup
+
+Check that goreleaser can access the repo:
+
+```bash
+# Test SSH connection (may fail with "access denied" message, which is normal)
+ssh -i /path/to/aur_key aur@aur.archlinux.org
+# Expected: "git-upload-pack 'ingitdb-bin.git'" (then connection closes)
+
+# Or test with git (if you saved the key)
+GIT_SSH_COMMAND="ssh -i /path/to/aur_key" git ls-remote ssh://aur@aur.archlinux.org/ingitdb-bin.git
+# Expected: shows refs
+```
+
+---
+
+## 2. Snapcraft Setup
+
+Snapcraft allows universal Linux users to install ingitdb via `snap install ingitdb`.
+
+### 2.1 Create a Snapcraft Account
+
+1. Go to [https://snapcraft.io/account/register](https://snapcraft.io/account/register)
+2. Sign up with:
+   - Email address
+   - Password
+   - Username
+3. Verify your email
+4. Log in to [https://snapcraft.io](https://snapcraft.io)
+
+### 2.2 Reserve the Snap Name
+
+1. Go to [https://snapcraft.io/snaps](https://snapcraft.io/snaps)
+2. Click **Create a new snap** or **Submit a snap**
+3. Register the name: `ingitdb`
+4. Fill in basic info:
+   - **Summary:** "A CLI for a schema-validated, AI-native database backed by a Git repository"
+   - **Description:** Same as in goreleaser config
+   - **License:** MIT
+5. Click **Save** (you can publish the snap itself later)
+
+### 2.3 Generate Snapcraft Login Credentials
+
+This creates a login token for CI to use.
+
+```bash
+# Install snapcraft (if not already installed)
+sudo snap install snapcraft --classic
+
+# Log in and export credentials
+snapcraft export-login /tmp/snap.login
+# (When prompted, enter your Snapcraft username/password)
+
+# This creates /tmp/snap.login with encrypted credentials
+```
+
+### 2.4 Store Credentials as GitHub Secret
+
+1. Read the credentials file:
+   ```bash
+   cat /tmp/snap.login
+   # Output: base64-encoded credentials
+   ```
+
+2. Go to your GitHub repo → **Settings** → **Secrets and variables** → **Actions**
+
+3. Click **New repository secret**
+   - **Name:** `SNAPCRAFT_STORE_CREDENTIALS`
+   - **Secret:** Paste the entire contents of `/tmp/snap.login`
+
+4. Click **Add secret**
+
+5. Clean up:
+   ```bash
+   rm /tmp/snap.login
+   ```
+
+### 2.5 Request Classic Confinement (One-Time)
+
+By default, snaps run in confined mode (restricted permissions). Ingitdb needs classic confinement to access the user's filesystem.
+
+> **Note:** This is a one-time manual approval. Until approved, use `confinement: devmode` and `grade: devel` in goreleaser-linux.yaml for testing.
+
+Once you've published a snap with `confinement: classic`, the Snap Store team reviews it:
+
+1. Go to [https://forum.snapcraft.io/c/snap-requests/49](https://forum.snapcraft.io/c/snap-requests/49)
+
+2. Click **New Topic** and include:
+   ```
+   Title: Classic confinement request for ingitdb
+
+   Snap name: ingitdb
+
+   Reason: ingitdb is a CLI database tool that needs full filesystem access to:
+   - Read/write Git repositories
+   - Access user home directory
+   - Run git commands (requires /bin/sh, /usr/bin/git)
+
+   Publishing link: https://snapcraft.io/ingitdb
+   ```
+
+3. The Snap Store team will review and approve within 1-2 days
+
+### 2.6 Verify Snapcraft Setup
+
+After publishing your first release:
+
+```bash
+# Search for the snap
+snap search ingitdb
+
+# Install the snap (from devmode release while waiting for approval)
+sudo snap install ingitdb --devmode  # until confinement is approved
+
+# Test it works
+ingitdb --version
+```
+
+---
+
+## 3. Homebrew Formula Setup
+
+Homebrew Formula allows Linux users via Linuxbrew to install ingitdb via `brew install ingitdb`.
+
+### 3.1 Prepare the homebrew-cli Tap Repository
+
+The `ingitdb/homebrew-cli` tap repository must exist and be writable by the GitHub token.
+
+#### If you don't have a homebrew tap yet:
+
+1. Create a public GitHub repo named `homebrew-cli` in the `ingitdb` organization
+   - Go to [https://github.com/new](https://github.com/new)
+   - **Repository name:** `homebrew-cli`
+   - **Owner:** ingitdb (organization)
+   - **Visibility:** Public
+   - **Initialize with:** (leave empty, goreleaser will create the formula)
+   - Click **Create repository**
+
+2. Clone it locally:
+   ```bash
+   git clone https://github.com/ingitdb/homebrew-cli.git
+   cd homebrew-cli
+   ```
+
+3. Add a README:
+   ```bash
+   cat > README.md << 'EOF'
+   # ingitdb Homebrew Tap
+
+   Homebrew tap for ingitdb (macOS Cask and Linuxbrew Formula).
+
+   ## Installation
+
+   ### macOS (Cask)
+   ```bash
+   brew tap ingitdb/cli
+   brew install ingitdb
+   ```
+
+   ### Linux (Linuxbrew / Formula)
+   ```bash
+   brew tap ingitdb/cli
+   brew install ingitdb
+   ```
+
+   See [ingitdb.com](https://ingitdb.com) for documentation.
+   EOF
+
+   git add README.md
+   git commit -m "chore: add tap documentation"
+   git push origin main
+   ```
+
+#### If you already have a homebrew tap:
+
+Ensure it has write permissions for the GitHub token being used (usually `GITHUB_TOKEN` from the release workflow).
+
+### 3.2 Verify Homebrew Formula Setup
+
+After the first release, goreleaser will create `Formula/ingitdb.rb` in the homebrew-cli repo:
+
+```bash
+# Check the formula was created
+git clone https://github.com/ingitdb/homebrew-cli.git
+ls Formula/
+
+# You should see: ingitdb.rb
+```
+
+### 3.3 Test Homebrew Installation (Optional)
+
+After a release, test the formula on Linux (Linuxbrew):
+
+```bash
+# Install Linuxbrew (if not already installed)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Add Homebrew to PATH
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+
+# Install ingitdb
+brew tap ingitdb/cli
+brew install ingitdb
+
+# Verify
+ingitdb --version
+```
+
+---
+
+## Summary Checklist
+
+### AUR
+- [ ] Created AUR account at [aur.archlinux.org](https://aur.archlinux.org)
+- [ ] Generated ED25519 SSH key: `ssh-keygen -t ed25519 -C "goreleaser@ingitdb" -N "" -f /tmp/aur_key`
+- [ ] Added public key to AUR account (Manage SSH Keys)
+- [ ] Registered package name by cloning and pushing to `ssh://aur@aur.archlinux.org/ingitdb-bin.git`
+- [ ] Stored private key as `AUR_SSH_PRIVATE_KEY` GitHub secret (base64-encoded, no newlines)
+
+### Snapcraft
+- [ ] Created Snapcraft account at [snapcraft.io/account/register](https://snapcraft.io/account/register)
+- [ ] Reserved snap name `ingitdb` at [snapcraft.io/snaps](https://snapcraft.io/snaps)
+- [ ] Generated login credentials: `snapcraft export-login /tmp/snap.login`
+- [ ] Stored credentials as `SNAPCRAFT_STORE_CREDENTIALS` GitHub secret (entire file contents)
+- [ ] (After first release) Requested classic confinement at [forum.snapcraft.io](https://forum.snapcraft.io/c/snap-requests/49)
+
+### Homebrew Formula
+- [ ] Created `homebrew-cli` repository in ingitdb organization
+- [ ] Added README to homebrew-cli repo
+- [ ] Verified goreleaser can push to the repo (uses `GITHUB_TOKEN` from workflow)
+
+---
+
+## Testing Releases
+
+### Dry Run (No Upload)
+
+Before making a real release, test the configs without uploading:
+
+```bash
+# Test linux-releaser config
+goreleaser release --clean --config .github/goreleaser-linux.yaml --skip=upload
+
+# Test macos-releaser config
+goreleaser release --clean --config .github/goreleaser-macos.yaml --skip=upload
+```
+
+### Real Release
+
+Once everything is verified:
+
+1. Push a version tag:
+   ```bash
+   git tag v0.1.0
+   git push origin v0.1.0
+   ```
+
+2. Watch the release workflow:
+   - Go to **Actions** → **Release**
+   - Both `macos-releaser` and `linux-releaser` should run
+   - Check logs for successful AUR, Snapcraft, and Homebrew publishes
+
+3. Verify packages appear:
+   - **AUR:** [https://aur.archlinux.org/packages/ingitdb-bin](https://aur.archlinux.org/packages/ingitdb-bin)
+   - **Snapcraft:** [https://snapcraft.io/ingitdb](https://snapcraft.io/ingitdb)
+   - **Homebrew:** Clone `ingitdb/homebrew-cli` and check `Formula/ingitdb.rb`
+
+---
+
+## Troubleshooting
+
+### AUR: "Permission denied (publickey)"
+
+- Verify SSH key is added to AUR account: [aur.archlinux.org/account](https://aur.archlinux.org/account)
+- Check base64 encoding has no newlines: `base64 -i key | tr -d '\n'`
+- Re-encode and update the GitHub secret
+
+### Snapcraft: "Invalid credentials"
+
+- Regenerate credentials: `snapcraft export-login /tmp/snap.login`
+- Update the GitHub secret with new contents
+- Ensure you're logged in to [snapcraft.io](https://snapcraft.io) before export
+
+### Homebrew: "Repository not found"
+
+- Verify `homebrew-cli` repository exists in `ingitdb` organization
+- Check `GITHUB_TOKEN` in the workflow has `contents: write` permission
+- Ensure the repo is public
+
+---
+
+## References
+
+- [AUR Submission Guidelines](https://wiki.archlinux.org/title/AUR_submission_guidelines)
+- [Snapcraft: Publishing to the Snap Store](https://snapcraft.io/docs/release-to-the-snap-store)
+- [Homebrew Tap Documentation](https://docs.brew.sh/Taps)
+- [GoReleaser: AUR Publishing](https://goreleaser.com/customization/aur/)
+- [GoReleaser: Snapcraft Publishing](https://goreleaser.com/customization/snapcraft/)
+- [GoReleaser: Homebrew Publishing](https://goreleaser.com/customization/homebrew/)

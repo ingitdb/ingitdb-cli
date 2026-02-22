@@ -55,3 +55,11 @@ ingitdb uses separate GoReleaser configs for clarity:
 |--------|---------|
 | [`goreleaser-macos.yaml`](../.github/goreleaser-macos.yaml) | macOS builds, signing, notarization, and Cask |
 | [`goreleaser-linux.yaml`](../.github/goreleaser-linux.yaml) | Linux/Windows builds, Homebrew Formula, AUR, Snap |
+
+## 📋 Initial Setup
+
+To enable all package manager distributions, follow [RELEASE_SETUP.md](./RELEASE_SETUP.md) for step-by-step instructions on:
+
+- **AUR** — Register package on Arch Linux User Repository
+- **Snapcraft** — Reserve snap name and generate credentials
+- **Homebrew Formula** — Set up Linuxbrew tap repository
