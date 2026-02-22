@@ -45,10 +45,43 @@ Test data lives in `test-ingitdb/` and `.ingitdb.yaml` at the repo root points t
 
 ## Commit Messages
 
-All commits must follow Conventional Commits:
+All commits must follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
 
 ```
 <type>(<scope>): <short summary>
+
+<optional body>
+
+<optional footer>
 ```
 
-Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci`, `perf`. Summary must be lowercase, imperative, and not end with a period. Use `!` after type/scope for breaking changes.
+**Type:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci`, `perf`
+
+**Guidelines:**
+- Summary must be lowercase, imperative, and not end with a period
+- Use `!` after type/scope for breaking changes: `feat!:` or `feat(scope)!:`
+- Body is optional but recommended for non-trivial changes
+- Include `Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>` footer when appropriate
+
+**Examples:**
+```
+feat(cli): add --output flag for JSON export
+
+Allows users to export database records as JSON format.
+Implements RFC-42.
+
+Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+```
+
+```
+fix: handle empty collections gracefully
+
+Previously panicked when encountering empty collection directories.
+Now gracefully handles and logs the situation.
+```
+
+```
+docs: update installation instructions
+```
+
+See [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/) for full details.
