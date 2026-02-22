@@ -95,24 +95,31 @@ After this, goreleaser will automatically update the PKGBUILD and .SRCINFO on ea
 
 ### 1.5 Store SSH Private Key as GitHub Secret
 
-1. Encode the private key as base64 (single line, no newlines):
+1. Encode the private key as base64 (single line, **no newlines** — this is critical):
    ```bash
-   base64 -i /tmp/aur_key | tr -d '\n' | pbcopy  # macOS
-   # OR
-   base64 -i /tmp/aur_key | tr -d '\n' | xclip -selection clipboard  # Linux
+   cat ~/.ssh/aur_key | base64 | tr -d '\n'
    ```
+
+   **Important:** The `tr -d '\n'` removes all newlines. Copy the entire single-line output.
 
 2. Go to your GitHub repo → **Settings** → **Secrets and variables** → **Actions**
 
 3. Click **New repository secret**
    - **Name:** `AUR_SSH_PRIVATE_KEY`
-   - **Secret:** Paste the base64-encoded private key
+   - **Secret:** Paste the **entire** base64 output (single line, no newlines)
 
 4. Click **Add secret**
 
-5. Securely delete the local key files:
+5. Verify on macOS that the encoding worked:
    ```bash
-   rm /tmp/aur_key /tmp/aur_key.pub
+   # The output should be a single long line with no spaces
+   cat ~/.ssh/aur_key | base64 | tr -d '\n' | wc -c
+   # Output: a number like 1234 (the length of the key)
+   ```
+
+6. Securely delete the local key files:
+   ```bash
+   rm ~/.ssh/aur_key ~/.ssh/aur_key.pub
    ```
 
 ### 1.6 Verify AUR Setup
@@ -336,7 +343,9 @@ ingitdb --version
   - Create PKGBUILD and .SRCINFO files
   - `git commit -m "initial commit"`
   - `git push origin HEAD:master` (note: must be master, not main)
-- [ ] Stored private key as `AUR_SSH_PRIVATE_KEY` GitHub secret (base64-encoded: `cat ~/.ssh/aur_key | base64 | tr -d '\n'`)
+- [ ] Stored private key as `AUR_SSH_PRIVATE_KEY` GitHub secret (no newlines):
+  - `cat ~/.ssh/aur_key | base64 | tr -d '\n'` (copy the single-line output)
+  - Paste in GitHub → Settings → Secrets → AUR_SSH_PRIVATE_KEY
 
 ### Snapcraft
 - [ ] Created Snapcraft account at [snapcraft.io/account/register](https://snapcraft.io/account/register)
