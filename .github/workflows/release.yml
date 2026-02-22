@@ -151,10 +151,7 @@ jobs:
   deploy-server:
     name: Deploy to Cloud Run
     needs:
-      - macos-releaser
-      - publish-aur
-      - publish-homebrew
-      - publish-snap
+      - build-linux
     if: always() && !failure() && !cancelled()
     runs-on: ubuntu-latest
     permissions:
@@ -183,10 +180,7 @@ jobs:
   deploy-website:
     name: Deploy Website
     needs:
-      - macos-releaser
-      - publish-aur
-      - publish-homebrew
-      - publish-snap
+      - build-linux
     if: always() && !failure() && !cancelled()
     runs-on: ubuntu-latest
     permissions:
