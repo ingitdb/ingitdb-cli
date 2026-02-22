@@ -47,9 +47,7 @@ checksum:
   name_template: checksums.txt
 
 release:
-  github:
-    owner: ingitdb
-    name: ingitdb-cli
+  skip_upload: true
 
 brews:
   - name: ingitdb
