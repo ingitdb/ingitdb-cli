@@ -35,5 +35,5 @@ jobs:
     with:
       code_coverage: true
       min_test_coverage_percent: 80
-      disable-version-bumping: true
+#      disable-version-bumping: true
       run-goreleaser: false

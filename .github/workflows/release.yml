@@ -2,33 +2,33 @@ name: Release
 
 on:
   workflow_dispatch: # Allows manual trigger from Actions tab
-  push:
-    tags: [ 'v*' ]
+#  push:
+#    tags: [ 'v*' ]
 #  workflow_run:
 #    workflows: [ "CI (build, lint, test)" ]
 #    types: [ completed ]
 #    branches: [ main ]
 
 jobs:
-  bump_version:
-    runs-on: ubuntu-latest
-    if: github.ref_type != 'tag'
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Bump version and push tag
-        uses: mathieudutour/github-tag-action@v6.2
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          default_bump: false
+  #  bump_version:
+  #    runs-on: ubuntu-latest
+  #    if: github.ref_type != 'tag'
+  #    permissions:
+  #      contents: write
+  #    steps:
+  #      - uses: actions/checkout@v6
+  #        with:
+  #          fetch-depth: 0
+  #
+  #      - name: Bump version and push tag
+  #        uses: mathieudutour/github-tag-action@v6.2
+  #        with:
+  #          github_token: ${{ secrets.GITHUB_TOKEN }}
+  #          default_bump: false
 
   macos-releaser:
-    needs:
-      - bump_version
+    #    needs:
+    #      - bump_version
     if: always() && !failure() && !cancelled()
     runs-on: macos-latest
     permissions:
@@ -45,21 +45,21 @@ jobs:
         with:
           go-version: stable
 
-      - uses: goreleaser/goreleaser-action@v6
+      - uses: goreleaser/goreleaser-action@v7
         with:
           version: v2
           args: release --clean --config .github/goreleaser-macos.yaml
         env:
-          GITHUB_TOKEN:               ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
-          MACOS_SIGN_P12:             ${{ secrets.MACOS_SIGN_P12 }}
-          MACOS_SIGN_PASSWORD:        ${{ secrets.MACOS_SIGN_PASSWORD }}
-          NOTARIZE_ISSUER_ID:         ${{ secrets.NOTARIZE_ISSUER_ID }}
-          NOTARIZE_KEY_ID:            ${{ secrets.NOTARIZE_KEY_ID }}
-          NOTARIZE_KEY:               ${{ secrets.NOTARIZE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
+          MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
+          MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
+          NOTARIZE_ISSUER_ID: ${{ secrets.NOTARIZE_ISSUER_ID }}
+          NOTARIZE_KEY_ID: ${{ secrets.NOTARIZE_KEY_ID }}
+          NOTARIZE_KEY: ${{ secrets.NOTARIZE_KEY }}
 
   linux-releaser:
-    needs:
-      - bump_version
+    #    needs:
+    #      - bump_version
     if: always() && !failure() && !cancelled()
     runs-on: ubuntu-latest
     permissions:
@@ -79,13 +79,13 @@ jobs:
       - name: Install snapcraft
         run: sudo snap install snapcraft --classic
 
-      - uses: goreleaser/goreleaser-action@v6
+      - uses: goreleaser/goreleaser-action@v7
         with:
           version: v2
           args: release --clean --config .github/goreleaser-linux.yaml
         env:
-          GITHUB_TOKEN:                ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
-          AUR_SSH_PRIVATE_KEY:         ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
 
   deploy-server:
