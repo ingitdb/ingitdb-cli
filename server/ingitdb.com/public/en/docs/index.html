@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="inGitDB Documentation - Learn how to use Git as a database">
     <title>Documentation - inGitDB</title>
+    <link rel="canonical" href="https://ingitdb.com/en/docs/">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/docs.css">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -13,7 +14,7 @@
     <header class="header">
         <div class="container">
             <div class="header-content">
-                <a href="/" class="logo">
+                <a href="/en/" class="logo">
                     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect width="32" height="32" rx="6" fill="currentColor" opacity="0.1"/>
                         <path d="M8 12L16 8L24 12V20L16 24L8 20V12Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
@@ -22,8 +23,8 @@
                     <span class="logo-text">inGitDB</span>
                 </a>
                 <nav class="nav">
-                    <a href="/">Home</a>
-                    <a href="/docs">Documentation</a>
+                    <a href="/en/">Home</a>
+                    <a href="/en/docs/">Documentation</a>
                     <a href="https://github.com/ingitdb/ingitdb-cli" target="_blank" rel="noopener">GitHub</a>
                     <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
                         <svg class="sun" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
@@ -34,6 +35,17 @@
                             <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
                         </svg>
                     </button>
+                    <div class="lang-selector-wrapper">
+                        <button class="lang-selector-button" aria-label="Select language" aria-expanded="false">EN</button>
+                        <div class="lang-selector-dropdown">
+                            <a href="/en/docs/" class="active" title="English">English</a>
+                            <a href="/ru/docs/" title="Русский">Русский</a>
+                            <a href="/uk/docs/" title="Українська">Українська</a>
+                            <a href="/de/docs/" title="Deutsch">Deutsch</a>
+                            <a href="/fr/docs/" title="Français">Français</a>
+                            <a href="/es/docs/" title="Español">Español</a>
+                        </div>
+                    </div>
                 </nav>
             </div>
         </div>
@@ -520,7 +532,7 @@ db := dalgo2ingitdb.NewDatabase(path)
                 <div class="footer-section">
                     <h4>Resources</h4>
                     <ul>
-                        <li><a href="/docs">Documentation</a></li>
+                        <li><a href="/en/docs/">Documentation</a></li>
                         <li><a href="https://github.com/ingitdb/ingitdb-cli" target="_blank" rel="noopener">GitHub</a></li>
                         <li><a href="https://github.com/ingitdb/ingitdb-cli/issues" target="_blank" rel="noopener">Issues</a></li>
                     </ul>
