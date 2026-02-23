@@ -59,3 +59,60 @@ func TestValidateForHTTPMode(t *testing.T) {
 		t.Fatalf("unexpected validation error: %v", err)
 	}
 }
+
+func TestValidateForHTTPMode_Errors(t *testing.T) {
+	t.Parallel()
+	validCfg := Config{
+		GitHubClientID:     "id",
+		GitHubClientSecret: "secret",
+		CallbackURL:        "https://api.ingitdb.com/auth/github/callback",
+		CookieDomain:       ".ingitdb.com",
+		AuthAPIBaseURL:     "https://api.ingitdb.com",
+	}
+
+	tests := []struct {
+		name       string
+		setup      func(*Config)
+		errContain string
+	}{
+		{
+			name:       "missing client id",
+			setup:      func(c *Config) { c.GitHubClientID = "" },
+			errContain: "INGITDB_GITHUB_OAUTH_CLIENT_ID is required",
+		},
+		{
+			name:       "missing client secret",
+			setup:      func(c *Config) { c.GitHubClientSecret = "" },
+			errContain: "INGITDB_GITHUB_OAUTH_CLIENT_SECRET is required",
+		},
+		{
+			name:       "missing callback url",
+			setup:      func(c *Config) { c.CallbackURL = "" },
+			errContain: "INGITDB_GITHUB_OAUTH_CALLBACK_URL is required",
+		},
+		{
+			name:       "missing cookie domain",
+			setup:      func(c *Config) { c.CookieDomain = "" },
+			errContain: "INGITDB_AUTH_COOKIE_DOMAIN is required",
+		},
+		{
+			name:       "missing auth api base url",
+			setup:      func(c *Config) { c.AuthAPIBaseURL = "" },
+			errContain: "INGITDB_AUTH_API_BASE_URL is required",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := validCfg
+			tc.setup(&cfg)
+			err := cfg.ValidateForHTTPMode()
+			if err == nil {
+				t.Fatalf("expected error containing %q, got nil", tc.errContain)
+			}
+			if err.Error() != tc.errContain {
+				t.Errorf("expected error %q, got %q", tc.errContain, err.Error())
+			}
+		})
+	}
+}

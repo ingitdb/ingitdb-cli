@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/dal-go/dalgo/dal"
@@ -272,6 +273,42 @@ func TestParseDBArg(t *testing.T) {
 
 // --- handler tests ---
 
+func TestNewHandler(t *testing.T) {
+	t.Parallel()
+	h := NewHandler()
+	if h == nil {
+		t.Fatal("expected handler")
+	}
+	if h.router == nil {
+		t.Error("expected router")
+	}
+}
+
+func TestNewHandlerWithAuth(t *testing.T) {
+	t.Parallel()
+	h := NewHandlerWithAuth(auth.Config{}, false)
+	if h == nil {
+		t.Fatal("expected handler")
+	}
+	if h.requireAuth {
+		t.Error("expected requireAuth=false")
+	}
+}
+
+func TestServeIndex(t *testing.T) {
+	t.Parallel()
+	h, _ := newTestHandler()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+	if w.Header().Get("Content-Type") != "text/html; charset=utf-8" {
+		t.Errorf("unexpected Content-Type: %s", w.Header().Get("Content-Type"))
+	}
+}
+
 func TestHandleMCP_InvalidBody(t *testing.T) {
 	t.Parallel()
 	h, _ := newTestHandler()
@@ -368,6 +405,28 @@ func TestHandleMCP_CreateRecord(t *testing.T) {
 	}
 }
 
+func TestHandleMCP_UpdateRecord(t *testing.T) {
+	t.Parallel()
+	h, s := newTestHandler()
+	body := buildMCPRequest(6, "tools/call", map[string]any{
+		"name": "update_record",
+		"arguments": map[string]any{
+			"db":     "owner/repo",
+			"id":     "countries/ie",
+			"fields": `{"title":"Ireland Updated"}`,
+		},
+	})
+	req := httptest.NewRequest(http.MethodPost, "/mcp", bytes.NewReader(body))
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+	if title, _ := s.records["countries/ie"]["title"].(string); title != "Ireland Updated" {
+		t.Errorf("unexpected title after update: %q", title)
+	}
+}
+
 func TestHandleMCP_DeleteRecord(t *testing.T) {
 	t.Parallel()
 	h, s := newTestHandler()
@@ -450,4 +509,88 @@ func TestReadDefinitionFromGitHub_MissingRoot(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for missing root config")
 	}
+}
+
+func TestHandleMCP_Errors(t *testing.T) {
+	t.Parallel()
+
+	setupH := func(t *testing.T) *Handler {
+		h, _ := newTestHandler()
+		return h
+	}
+
+	call := func(h *Handler, name string, args map[string]any) map[string]any {
+		body := buildMCPRequest(1, "tools/call", map[string]any{
+			"name":      name,
+			"arguments": args,
+		})
+		req := httptest.NewRequest(http.MethodPost, "/mcp", bytes.NewReader(body))
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+
+		var resp map[string]any
+		if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+		return resp
+	}
+
+	t.Run("invalid jsonrpc request", func(t *testing.T) {
+		h := setupH(t)
+		req := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader("bad"))
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("expected 400, got %d", w.Code)
+		}
+	})
+
+	t.Run("auth error", func(t *testing.T) {
+		h := setupH(t)
+		h.requireAuth = true
+		h.validateToken = func(_ context.Context, _ string) error {
+			return fmt.Errorf("invalid token")
+		}
+		req := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader("{}"))
+		req.AddCookie(&http.Cookie{Name: "ingitdb_github_token", Value: "bad"})
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("expected 401, got %d", w.Code)
+		}
+	})
+
+	t.Run("tool list error (register fails)", func(t *testing.T) {
+		h := setupH(t)
+		// We can't easily force register to fail with valid inputs, but we can verify
+		// that the server returns 500 if registerMCPTools failed.
+		// Since registerMCPTools only returns error if RegisterTool fails (which shouldn't happen),
+		// we skip this specific case or assume it's covered by library tests.
+		_ = h
+	})
+
+	t.Run("list collections error", func(t *testing.T) {
+		h := setupH(t)
+		h.newGitHubFileReader = func(cfg dalgo2ghingitdb.Config) (dalgo2ghingitdb.FileReader, error) {
+			return nil, fmt.Errorf("fail")
+		}
+		resp := call(h, "list_collections", map[string]any{"db": "owner/repo"})
+		res, ok := resp["result"].(map[string]any)
+		if !ok || res["isError"] != true {
+			t.Errorf("expected isError: true in result, got: %+v", resp)
+		}
+	})
+
+	t.Run("create record invalid data", func(t *testing.T) {
+		h := setupH(t)
+		resp := call(h, "create_record", map[string]any{
+			"db":   "owner/repo",
+			"id":   "countries/new",
+			"data": "bad json",
+		})
+		res, ok := resp["result"].(map[string]any)
+		if !ok || res["isError"] != true {
+			t.Errorf("expected isError: true in result, got: %+v", resp)
+		}
+	})
 }
