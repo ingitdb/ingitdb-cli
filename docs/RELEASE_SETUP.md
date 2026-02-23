@@ -122,6 +122,16 @@ After this, goreleaser will automatically update the PKGBUILD and .SRCINFO on ea
    rm ~/.ssh/aur_key ~/.ssh/aur_key.pub
    ```
 
+**Note on CI/CD Implementation:**
+
+The GitHub Actions workflow automatically:
+1. Decodes the base64-encoded SSH key from the secret
+2. Writes it to `~/.ssh/aur_key` with proper permissions (600)
+3. Updates the `AUR_SSH_PRIVATE_KEY` environment variable to point to the file
+4. Passes this file path to goreleaser for SSH authentication
+
+This is necessary because goreleaser expects `private_key` to be a file path, not the raw key content. The CI workflow handles this conversion automatically.
+
 ### 1.6 Verify AUR Setup
 
 Check that goreleaser can access the repo:
@@ -404,6 +414,17 @@ Once everything is verified:
 - Verify SSH key is added to AUR account: [aur.archlinux.org/account](https://aur.archlinux.org/account)
 - Check base64 encoding has no newlines: `base64 -i key | tr -d '\n'`
 - Re-encode and update the GitHub secret
+
+### AUR: "git: could not stat private_key: stat ***: file name too long"
+
+This error occurs when goreleaser receives the SSH key content instead of a file path.
+
+**Solution:** The GitHub Actions release workflow automatically converts the base64-encoded secret to a file. Ensure you're using the standard `release.yml` workflow which includes the "Setup SSH key for AUR" step. This step:
+- Decodes the `AUR_SSH_PRIVATE_KEY` secret
+- Writes it to `~/.ssh/aur_key`
+- Updates the environment variable to point to the file path
+
+If you've customized the workflow, ensure this setup step is present before the goreleaser action.
 
 ### Snapcraft: "Invalid credentials"
 
