@@ -30,8 +30,13 @@ jobs:
           args: release --clean --config .github/goreleaser-linux.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
-          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
-          WINGET_GITHUB_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
+
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: goreleaser-dist
+          path: dist/
+          retention-days: 1
 
   # See docs/release/homebrew.md for setup instructions
   publish-homebrew:
@@ -133,6 +138,71 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+
+  # See docs/release/winget.md for setup instructions
+  publish-winget:
+    name: Publish to WinGet
+    needs:
+      - build-linux
+    if: '!failure() && !cancelled()'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all tags
+        run: git fetch --tags --force
+
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: goreleaser-dist
+          path: dist
+
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          version: v2
+          args: release --skip=build,archive,checksum,validate --config .github/goreleaser-publish-winget.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
+
+  # See docs/release/chocolatey.md for setup instructions
+  publish-chocolatey:
+    name: Publish to Chocolatey
+    needs:
+      - build-linux
+    if: '!failure() && !cancelled()'
+    runs-on: windows-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - name: Enable Git long paths
+        run: git config --system core.longpaths true
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all tags
+        run: git fetch --tags --force
+
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: goreleaser-dist
+          path: dist
+
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          version: v2
+          args: release --skip=build,archive,checksum,validate --config .github/goreleaser-publish-chocolatey.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
+          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
 
   # See docs/release/scoop.md for setup instructions
   publish-scoop:

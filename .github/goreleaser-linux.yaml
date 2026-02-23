@@ -51,38 +51,3 @@ release:
     owner: ingitdb
     name: ingitdb-cli
 
-chocolateys:
-  - name: ingitdb
-    ids:
-      - zip
-    title: ingitdb - Git-based Database
-    authors: ingitdb Contributors
-    summary: "A CLI for a schema-validated, AI-native database backed by a Git repository."
-    description: |
-      ingitdb is a developer-grade, schema-validated, AI-native database
-      whose storage engine is a Git repository. Records are YAML/JSON files,
-      collections and schemas are defined declaratively.
-    api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
-
-winget:
-  - name: ingitdb
-    publisher: ingitdb
-    publisher_url: https://ingitdb.com
-    package_identifier: ingitdb.ingitdb
-    license: MIT
-    homepage: https://ingitdb.com
-    short_description: "A CLI for a schema-validated, AI-native database backed by a Git repository."
-    description: |
-      ingitdb is a developer-grade, schema-validated, AI-native database
-      whose storage engine is a Git repository. Records are YAML/JSON files,
-      collections and schemas are defined declaratively.
-    repository:
-      owner: ingitdb
-      name: winget-pkgs
-      token: "{{ .Env.WINGET_GITHUB_TOKEN }}"
-      pull_request:
-        enabled: true
-        base:
-          owner: microsoft
-          name: winget-pkgs
-          branch: master
