@@ -34,20 +34,7 @@ chocolateys:
       ingitdb is a developer-grade, schema-validated, AI-native database
       whose storage engine is a Git repository. Records are YAML/JSON files,
       collections and schemas are defined declaratively.
-    homepage: https://ingitdb.com
-    license: MIT
-    maintainers:
-      - "ingitdb <hello@ingitdb.com>"
     api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
-    install: |
-      $InstallDir = "$env:ProgramFiles\ingitdb"
-      New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
-      Copy-Item "ingitdb.exe" -Destination "$InstallDir\ingitdb.exe"
-      $env:Path += ";$InstallDir"
-      [Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::User)
-    uninstall: |
-      $InstallDir = "$env:ProgramFiles\ingitdb"
-      Remove-Item -Path "$InstallDir\ingitdb.exe" -Force -ErrorAction SilentlyContinue
 
 release:
   skip_upload: true
