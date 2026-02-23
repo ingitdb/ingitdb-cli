@@ -63,6 +63,7 @@ jobs:
           NOTARIZE_KEY_ID: ${{ secrets.NOTARIZE_KEY_ID }}
           NOTARIZE_KEY: ${{ secrets.NOTARIZE_KEY }}
 
+  # See docs/release/aur.md for setup instructions
   publish-aur:
     name: Publish to AUR
     needs:
@@ -97,6 +98,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
 
+  # See docs/release/homebrew.md for setup instructions
   publish-homebrew:
     name: Publish Homebrew Formula
     needs:
@@ -124,6 +126,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
 
+  # See docs/release/snapcraft.md for setup instructions
   publish-snap:
     name: Publish to Snapcraft
     needs:
@@ -154,6 +157,91 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+
+  # See docs/release/chocolatey.md for setup instructions
+  publish-chocolatey:
+    name: Publish to Chocolatey
+    needs:
+      - build-linux
+    if: always() && !failure() && !cancelled()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all tags
+        run: git fetch --tags --force
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          version: v2
+          args: release --clean --config .github/goreleaser-publish-chocolatey.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
+          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+
+  # See docs/release/winget.md for setup instructions
+  publish-winget:
+    name: Publish to WinGet
+    needs:
+      - build-linux
+    if: always() && !failure() && !cancelled()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all tags
+        run: git fetch --tags --force
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          version: v2
+          args: release --clean --config .github/goreleaser-publish-winget.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
+
+  # See docs/release/scoop.md for setup instructions
+  publish-scoop:
+    name: Publish to Scoop
+    needs:
+      - build-linux
+    if: always() && !failure() && !cancelled()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all tags
+        run: git fetch --tags --force
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          version: v2
+          args: release --clean --config .github/goreleaser-publish-scoop.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
 
   deploy-server:
     name: Deploy to Cloud Run

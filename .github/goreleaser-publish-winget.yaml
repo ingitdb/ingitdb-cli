@@ -1,0 +1,50 @@
+version: 2
+
+project_name: ingitdb
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: ingitdb-windows
+    main: ./cmd/ingitdb
+    binary: ingitdb
+    env: [ CGO_ENABLED=0 ]
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+
+archives:
+  - id: zip
+    formats: [ zip ]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    ids: [ ingitdb-windows ]
+
+checksum:
+  name_template: checksums.txt
+
+winfects:
+  - name: ingitdb
+    ids:
+      - zip
+    publisher: ingitdb
+    license: MIT
+    homepage: https://ingitdb.com
+    short_description: "A CLI for a schema-validated, AI-native database backed by a Git repository."
+    description: |
+      ingitdb is a developer-grade, schema-validated, AI-native database
+      whose storage engine is a Git repository. Records are YAML/JSON files,
+      collections and schemas are defined declaratively.
+    repository:
+      owner: microsoft
+      name: winget-pkgs
+      branch: master
+      token: "{{ .Env.GITHUB_TOKEN }}"
+      pull_request: true
+
+release:
+  skip_upload: true

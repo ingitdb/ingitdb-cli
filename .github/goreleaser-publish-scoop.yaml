@@ -1,0 +1,45 @@
+version: 2
+
+project_name: ingitdb
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: ingitdb-windows
+    main: ./cmd/ingitdb
+    binary: ingitdb
+    env: [ CGO_ENABLED=0 ]
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+
+archives:
+  - id: zip
+    formats: [ zip ]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    ids: [ ingitdb-windows ]
+
+checksum:
+  name_template: checksums.txt
+
+scoops:
+  - name: ingitdb
+    ids:
+      - zip
+    description: "A CLI for a schema-validated, AI-native database backed by a Git repository."
+    homepage: https://ingitdb.com
+    license: MIT
+    repository:
+      owner: ingitdb
+      name: scoop-bucket
+      branch: main
+      token: "{{ .Env.GITHUB_TOKEN }}"
+      pull_request: false
+
+release:
+  skip_upload: true
