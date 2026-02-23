@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>ingitdb</id>
+    <version>0.1.0</version>
+    <title>inGitDB - Git-based Database</title>
+    <authors>inGitDB Contributors</authors>
+    <owners>inGitDB</owners>
+    <projectUrl>https://ingitdb.com/</projectUrl>
+    <projectSourceUrl>https://github.com/ingitdb/ingitdb-cli</projectSourceUrl>
+    <packageSourceUrl>https://github.com/ingitdb/ingitdb-cli</packageSourceUrl>
+    <licenseUrl>https://github.com/ingitdb/ingitdb-cli/blob/main/LICENSE</licenseUrl>
+    <iconUrl>http://ingitdb.com/ingitdb-logo.png</iconUrl>
+    <docsUrl>https://ingitdb.com/en/docs/</docsUrl>
+    <bugTrackerUrl>https://github.com/ingitdb/ingitdb-cli/issues</bugTrackerUrl>
+    <description>inGitDB is a developer-grade, schema-validated, AI-native database whose storage engine is a Git repository. Every record is a plain YAML or JSON file, every change is a commit, and every team workflow — branching, code review, pull requests — extends naturally to data.
+
+Key features:
+- Plain YAML/JSON files stored in Git repositories
+- Full Git history for free (branching, merging, bisect, revert)
+- Schema validation built-in with typed column schemas
+- Zero server infrastructure for reads
+- AI-native via Model Context Protocol (MCP)
+- Go library support via DALgo interface</description>
+    <summary>A schema-validated, Git-based database CLI tool</summary>
+    <releaseNotes>https://github.com/ingitdb/ingitdb-cli/releases</releaseNotes>
+    <tags>database git schema-validation cli developer-tools yaml json ai-native</tags>
+    <copyright>inGitDB Contributors</copyright>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <dependencies>
+      <dependency id="git" version="[2.0,)" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="ingitdb" target="tools" />
+  </files>
+</package>
