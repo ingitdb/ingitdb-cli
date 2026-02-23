@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="inGitDB - Базаданных уровня разработчика, валидированная по схеме, готовая к работе с ИИ, хранилище которой - репозиторий Git">
+    <title>inGitDB - Git как база данных</title>
+    <link rel="canonical" href="https://ingitdb.com/ru/">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="32" height="32" rx="6" fill="currentColor" opacity="0.1"/>
+                        <path d="M8 12L16 8L24 12V20L16 24L8 20V12Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        <circle cx="16" cy="16" r="3" fill="currentColor"/>
+                    </svg>
+                    <span class="logo-text">inGitDB</span>
+                </div>
+                <nav class="nav">
+                    <a href="#features">Возможности</a>
+                    <a href="/ru/docs">Документация</a>
+                    <a href="https://github.com/ingitdb/ingitdb-cli" target="_blank" rel="noopener">GitHub</a>
+                    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                        <svg class="sun" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="10" cy="10" r="4"/>
+                            <path d="M10 1v2M10 17v2M19 10h-2M3 10H1M16.5 16.5l-1.5-1.5M5 5L3.5 3.5M16.5 3.5L15 5M5 15l-1.5 1.5"/>
+                        </svg>
+                        <svg class="moon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+                        </svg>
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1 class="hero-title">Git как база данных</h1>
+                    <p class="hero-subtitle">Базаданных уровня разработчика, валидированная по схеме, готовая к работе с ИИ, хранилище которой - репозиторий Git</p>
+                    <div class="hero-cta">
+                        <a href="#quick-start" class="btn btn-primary">Начать</a>
+                        <a href="https://github.com/ingitdb/ingitdb-cli" class="btn btn-secondary" target="_blank" rel="noopener">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"/>
+                            </svg>
+                            Просмотр на GitHub
+                        </a>
+                    </div>
+                    <div class="hero-badges">
+                        <img src="https://img.shields.io/github/v/tag/ingitdb/ingitdb-cli?filter=v*.*.*&logo=Go&label=version" alt="Version">
+                        <img src="https://goreportcard.com/badge/github.com/ingitdb/ingitdb-cli" alt="Go Report Card">
+                        <img src="https://coveralls.io/repos/github/ingitdb/ingitdb-cli/badge.svg?branch=main" alt="Coverage Status">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="features" id="features">
+            <div class="container">
+                <h2 class="section-title">Почему inGitDB?</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">📄</div>
+                        <h3>Обычные файлы, реальный Git</h3>
+                        <p>Записи - это файлы YAML или JSON, которые можно читать в любом редакторе, сравнивать в любом pull request и клонировать с помощью одной команды <code>git clone</code>. Никаких двоичных blob-объектов, никакого проприетарного формата.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔄</div>
+                        <h3>Полная история Git</h3>
+                        <p>Ветвление, слияние, поиск в истории и откат работают с вашими данными точно так же, как и с вашим кодом, потому что данные находятся в вашем репозитории кода.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">✅</div>
+                        <h3>Валидация схемы</h3>
+                        <p>Коллекции определяются типизированными схемами столбцов в YAML. Команда <code>ingitdb validate</code> проверяет каждую запись и сообщает об нарушениях с указанием коллекции, пути файла и имени поля.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Нулевая инфраструктура сервера</h3>
+                        <p>Нет никакого демона для запуска. Чтение данных - это операция файловой системы на клоне git. Идеально для граничных вычислений и бессерверной архитектуры.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🤖</div>
+                        <h3>Готовность к ИИ через MCP</h3>
+                        <p>Планируемый сервер MCP будет предоставлять операции CRUD агентам ИИ через Model Context Protocol без необходимости пользовательской интеграции.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔧</div>
+                        <h3>Библиотека Go через DALgo</h3>
+                        <p><code>pkg/dalgo2ingitdb</code> реализует интерфейс DALgo <code>dal.DB</code>, поэтому любая программа на Go может использовать inGitDB как абстракцию стандартной базы данных.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="how-it-works">
+            <div class="container">
+                <h2 class="section-title">Как это работает</h2>
+                <div class="workflow">
+                    <div class="workflow-step">
+                        <div class="workflow-icon">📝</div>
+                        <h3>Файлы YAML/JSON</h3>
+                        <p>Сохраняйте ваши данные в виде обычных текстовых файлов</p>
+                    </div>
+                    <div class="workflow-arrow">→</div>
+                    <div class="workflow-step">
+                        <div class="workflow-icon">📦</div>
+                        <h3>Репозиторий Git</h3>
+                        <p>Контроль версий для ваших данных</p>
+                    </div>
+                    <div class="workflow-arrow">→</div>
+                    <div class="workflow-step">
+                        <div class="workflow-icon">✓</div>
+                        <h3>Валидация</h3>
+                        <p>Проверки целостности схемы и данных</p>
+                    </div>
+                    <div class="workflow-arrow">→</div>
+                    <div class="workflow-step">
+                        <div class="workflow-icon">🎯</div>
+                        <h3>Запрос и использование</h3>
+                        <p>CLI, Go API или агенты ИИ</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="quick-start" id="quick-start">
+            <div class="container">
+                <h2 class="section-title">Быстрый старт</h2>
+                <h3 class="section-subtitle">Установка</h3>
+                <div class="code-block">
+                    <pre><code># macOS
+brew tap ingitdb/cli &amp;&amp; brew install ingitdb
+
+# Windows
+winget install ingitdb
+
+# Linux (Snap)
+snap install ingitdb
+
+# Go (любая платформа)
+go install github.com/ingitdb/ingitdb-cli/cmd/ingitdb@latest</code></pre>
+                </div>
+                <h3 class="section-subtitle">Использование</h3>
+                <div class="code-block">
+                    <pre><code># Валидируйте директорию базы данных
+ingitdb validate
+
+# Список всех коллекций
+ingitdb list collections
+
+# Создайте новую запись
+ingitdb create record --id=geo.nations/ie --data='{title: "Ireland"}'
+
+# Прочитайте запись
+ingitdb read record --id=geo.nations/ie</code></pre>
+                </div>
+                <div class="cta-section">
+                    <a href="/ru/docs" class="btn btn-primary">Читать полную документацию</a>
+                    <a href="https://github.com/ingitdb/ingitdb-cli#quick-start" class="btn btn-secondary" target="_blank" rel="noopener">Просмотр примеров</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="use-cases">
+            <div class="container">
+                <h2 class="section-title">Варианты использования</h2>
+                <div class="use-cases-grid">
+                    <div class="use-case">
+                        <h3>Управление конфигурацией</h3>
+                        <p>Сохраняйте конфигурации приложений с полной аудит-трассировкой и простым откатом</p>
+                    </div>
+                    <div class="use-case">
+                        <h3>Управление контентом</h3>
+                        <p>Управляйте контентом веб-сайта с помощью рабочих процессов Git и проверок pull request</p>
+                    </div>
+                    <div class="use-case">
+                        <h3>Справочные данные</h3>
+                        <p>Версионируемые справочные таблицы, таксономии и основные данные</p>
+                    </div>
+                    <div class="use-case">
+                        <h3>Данные для обучения ИИ</h3>
+                        <p>Отслеживайте версии наборов данных и изменения для конвейеров машинного обучения</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>inGitDB</h4>
+                    <p>Git как база данных</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Ресурсы</h4>
+                    <ul>
+                        <li><a href="/ru/docs">Документация</a></li>
+                        <li><a href="https://github.com/ingitdb/ingitdb-cli" target="_blank" rel="noopener">GitHub</a></li>
+                        <li><a href="https://github.com/ingitdb/ingitdb-cli/issues" target="_blank" rel="noopener">Проблемы</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Сообщество</h4>
+                    <ul>
+                        <li><a href="https://github.com/ingitdb/ingitdb-cli/blob/main/docs/CONTRIBUTING.md" target="_blank" rel="noopener">Способствование</a></li>
+                        <li><a href="https://github.com/ingitdb/ingitdb-cli/blob/main/LICENSE" target="_blank" rel="noopener">Лицензия (MIT)</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Ссылки</h4>
+                    <ul>
+                        <li><a href="https://github.com/ingitdb/ingitdb-cli" target="_blank" rel="noopener">
+                            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="vertical-align: middle; margin-right: 4px;">
+                                <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"/>
+                            </svg>
+                            Репозиторий GitHub
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 inGitDB. Лицензировано под лицензией MIT.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/theme.js"></script>
+</body>
+</html>

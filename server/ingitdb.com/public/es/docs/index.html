@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Documentación inGitDB - Aprenda a usar Git como base de datos">
+    <title>Documentación - inGitDB</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/docs.css">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="/es/" class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="32" height="32" rx="6" fill="currentColor" opacity="0.1"/>
+                        <path d="M8 12L16 8L24 12V20L16 24L8 20V12Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        <circle cx="16" cy="16" r="3" fill="currentColor"/>
+                    </svg>
+                    <span class="logo-text">inGitDB</span>
+                </a>
+                <nav class="nav">
+                    <a href="/es/">Inicio</a>
+                    <a href="/es/docs">Documentación</a>
+                    <a href="https://github.com/ingitdb/ingitdb-cli" target="_blank" rel="noopener">GitHub</a>
+                    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                        <svg class="sun" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="10" cy="10" r="4"/>
+                            <path d="M10 1v2M10 17v2M19 10h-2M3 10H1M16.5 16.5l-1.5-1.5M5 5L3.5 3.5M16.5 3.5L15 5M5 15l-1.5 1.5"/>
+                        </svg>
+                        <svg class="moon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+                        </svg>
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="docs-layout">
+        <aside class="docs-sidebar">
+            <nav class="docs-nav">
+                <div class="docs-nav-section">
+                    <h3>Primeros pasos</h3>
+                    <ul>
+                        <li><a href="#overview" class="active">Descripción general</a></li>
+                        <li><a href="#quick-start">Inicio rápido</a></li>
+                        <li><a href="#installation">Instalación</a></li>
+                    </ul>
+                </div>
+                <div class="docs-nav-section">
+                    <h3>Documentación del usuario</h3>
+                    <ul>
+                        <li><a href="#cli-commands">Comandos CLI</a></li>
+                        <li><a href="#configuration">Configuración</a></li>
+                        <li><a href="#github-access">Acceso a GitHub</a></li>
+                        <li><a href="#features">Características</a></li>
+                    </ul>
+                </div>
+                <div class="docs-nav-section">
+                    <h3>Documentación para desarrolladores</h3>
+                    <ul>
+                        <li><a href="#architecture">Arquitectura</a></li>
+                        <li><a href="#go-library">Biblioteca Go (DALgo)</a></li>
+                        <li><a href="#contributing">Contribuir</a></li>
+                    </ul>
+                </div>
+                <div class="docs-nav-section">
+                    <h3>Información del proyecto</h3>
+                    <ul>
+                        <li><a href="#roadmap">Hoja de ruta</a></li>
+                        <li><a href="#competitors">Comparación</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="docs-content">
+            <section id="overview">
+                <h1>Documentación de inGitDB</h1>
+                <p class="lead">inGitDB convierte un repositorio Git en una base de datos validada por esquema y consultable, donde cada registro es un archivo YAML o JSON simple. No hay servidor que ejecutar ni formato binario que decodificar: los datos residen en archivos que puede leer, editar y comparar con cualquier editor de texto o cliente git.</p>
+
+                <div class="info-box">
+                    <strong>¿Por qué inGitDB?</strong>
+                    <p>Git en sí proporciona historial, ramificación e historial de fusión gratis. Si eso suena como el equilibrio correcto para su proyecto, siga leyendo y considere contribuir.</p>
+                </div>
+            </section>
+
+            <section id="quick-start">
+                <h2>Inicio rápido</h2>
+                <p>Comience con inGitDB con solo unos pocos comandos:</p>
+
+                <div class="code-example">
+                    <h4>Construir CLI</h4>
+                    <pre><code>go build -o ingitdb ./cmd/ingitdb</code></pre>
+                </div>
+
+                <div class="code-example">
+                    <h4>Validar un directorio de base de datos</h4>
+                    <pre><code># Validar el directorio actual
+ingitdb validate
+
+# Validar una ruta específica
+ingitdb validate --path=/path/to/your/db
+
+# Modo rápido CI - solo registros modificados
+ingitdb validate --from-commit=abc1234 --to-commit=def5678</code></pre>
+                </div>
+
+                <div class="code-example">
+                    <h4>Listar colecciones</h4>
+                    <pre><code># Listar todas las colecciones
+ingitdb list collections
+
+# Listar colecciones anidadas en una ruta
+ingitdb list collections --in='countries/(ie|gb)'
+
+# Filtrar por nombre
+ingitdb list collections --filter-name='*city*'</code></pre>
+                </div>
+
+                <div class="code-example">
+                    <h4>Operaciones CRUD</h4>
+                    <pre><code># Crear un registro
+ingitdb create record --id=geo/nations/ie --data='{title: "Ireland"}'
+
+# Leer un registro
+ingitdb read record --id=geo/nations/ie
+
+# Actualizar un registro
+ingitdb update record --id=geo/nations/ie --set='{capital: "Dublin"}'
+
+# Eliminar un registro
+ingitdb delete record --id=geo/nations/ie</code></pre>
+                </div>
+            </section>
+
+            <section id="installation">
+                <h2>Instalación</h2>
+
+                <h3>macOS — Homebrew</h3>
+                <div class="code-example">
+                    <pre><code>brew tap ingitdb/cli
+brew install ingitdb</code></pre>
+                </div>
+
+                <h3>Linux</h3>
+                <div class="code-example">
+                    <h4>AUR (Arch Linux)</h4>
+                    <pre><code>yay -S ingitdb-bin</code></pre>
+                </div>
+                <div class="code-example">
+                    <h4>Snap</h4>
+                    <pre><code>snap install ingitdb</code></pre>
+                </div>
+                <div class="code-example">
+                    <h4>Linuxbrew</h4>
+                    <pre><code>brew tap ingitdb/cli
+brew install ingitdb</code></pre>
+                </div>
+
+                <h3>Windows</h3>
+                <div class="code-example">
+                    <h4>WinGet</h4>
+                    <pre><code>winget install ingitdb</code></pre>
+                </div>
+                <div class="code-example">
+                    <h4>Chocolatey</h4>
+                    <pre><code>choco install ingitdb</code></pre>
+                </div>
+                <div class="code-example">
+                    <h4>Scoop</h4>
+                    <pre><code>scoop bucket add ingitdb https://github.com/ingitdb/scoop-bucket
+scoop install ingitdb</code></pre>
+                </div>
+
+                <h3>Go (cualquier plataforma)</h3>
+                <div class="code-example">
+                    <pre><code>go install github.com/ingitdb/ingitdb-cli/cmd/ingitdb@latest</code></pre>
+                </div>
+
+                <h3>Compilar desde el código fuente</h3>
+                <div class="code-example">
+                    <pre><code>git clone https://github.com/ingitdb/ingitdb-cli.git
+cd ingitdb-cli
+go build -o ingitdb ./cmd/ingitdb</code></pre>
+                </div>
+
+                <p>Los binarios precompilados para todas las plataformas también están disponibles en la página <a href="https://github.com/ingitdb/ingitdb-cli/releases" target="_blank" rel="noopener">GitHub Releases</a>.</p>
+            </section>
+
+            <section id="cli-commands">
+                <h2>Comandos CLI</h2>
+                <p>Referencia completa de todos los comandos disponibles:</p>
+
+                <div class="commands-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Comando</th>
+                                <th>Estado</th>
+                                <th>Descripción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>version</code></td>
+                                <td><span class="badge badge-success">Implementado</span></td>
+                                <td>Imprimir versión de compilación, hash de commit y fecha</td>
+                            </tr>
+                            <tr>
+                                <td><code>validate</code></td>
+                                <td><span class="badge badge-success">Implementado</span></td>
+                                <td>Verificar cada registro contra su esquema de colección</td>
+                            </tr>
+                            <tr>
+                                <td><code>read record</code></td>
+                                <td><span class="badge badge-success">Implementado</span></td>
+                                <td>Leer un único registro por ID (local o GitHub)</td>
+                            </tr>
+                            <tr>
+                                <td><code>create record</code></td>
+                                <td><span class="badge badge-success">Implementado</span></td>
+                                <td>Crear un nuevo registro (local o GitHub)</td>
+                            </tr>
+                            <tr>
+                                <td><code>update record</code></td>
+                                <td><span class="badge badge-success">Implementado</span></td>
+                                <td>Actualizar campos de un registro existente</td>
+                            </tr>
+                            <tr>
+                                <td><code>delete record</code></td>
+                                <td><span class="badge badge-success">Implementado</span></td>
+                                <td>Eliminar un único registro por ID</td>
+                            </tr>
+                            <tr>
+                                <td><code>list collections</code></td>
+                                <td><span class="badge badge-success">Implementado</span></td>
+                                <td>Listar ID de colecciones (local o GitHub)</td>
+                            </tr>
+                            <tr>
+                                <td><code>find</code></td>
+                                <td><span class="badge badge-warning">Planeado</span></td>
+                                <td>Buscar registros por subcadena, regex o valor exacto</td>
+                            </tr>
+                            <tr>
+                                <td><code>query</code></td>
+                                <td><span class="badge badge-warning">Planeado</span></td>
+                                <td>Consultar y formatear registros de una colección</td>
+                            </tr>
+                            <tr>
+                                <td><code>materialize</code></td>
+                                <td><span class="badge badge-warning">Planeado</span></td>
+                                <td>Construir vistas materializadas en $views/</td>
+                            </tr>
+                            <tr>
+                                <td><code>watch</code></td>
+                                <td><span class="badge badge-warning">Planeado</span></td>
+                                <td>Transmitir eventos de cambio de registro a stdout</td>
+                            </tr>
+                            <tr>
+                                <td><code>serve</code></td>
+                                <td><span class="badge badge-warning">Planeado</span></td>
+                                <td>Iniciar servidor MCP, HTTP API o file-watcher</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="info-box">
+                    <strong>Formato --id</strong>
+                    <p>La bandera <code>--id</code> usa <code>/</code> como separador: <code>&lt;collection-path&gt;/&lt;record-key&gt;</code></p>
+                    <p>Ejemplo: <code>--id=geo/nations/ie</code></p>
+                </div>
+            </section>
+
+            <section id="configuration">
+                <h2>Configuración</h2>
+                <p>Un archivo <code>.ingitdb.yaml</code> mínimo en la raíz de su repositorio de base de datos:</p>
+
+                <div class="code-example">
+                    <pre><code>rootCollections:
+  tasks: data/tasks/*   # cada subdirectorio se convierte en una colección
+languages:
+  - required: en</code></pre>
+                </div>
+
+                <p>Obtenga más información sobre las opciones de configuración en la <a href="https://github.com/ingitdb/ingitdb-cli/blob/main/docs/configuration/README.md" target="_blank" rel="noopener">documentación de configuración</a>.</p>
+            </section>
+
+            <section id="github-access">
+                <h2>Acceso directo a GitHub</h2>
+                <p>inGitDB puede leer y escribir registros en un repositorio remoto de GitHub sin clonarlo. La bandera <code>--github</code> reemplaza <code>--path</code> y apunta la CLI a un repositorio de GitHub a través de la API REST.</p>
+
+                <div class="code-example">
+                    <h4>Repositorios públicos (no se requiere token)</h4>
+                    <pre><code># Leer un registro
+ingitdb read record --github=owner/repo --id=countries/ie
+
+# Fijar en una rama, etiqueta o SHA de commit específicos
+ingitdb read record --github=owner/repo@main --id=todo.tags/active
+ingitdb read record --github=owner/repo@v1.2.0 --id=todo.tags/active
+
+# Listar todas las colecciones
+ingitdb list collections --github=owner/repo</code></pre>
+                </div>
+
+                <div class="code-example">
+                    <h4>Repositorios privados</h4>
+                    <pre><code># Establecer el token una vez en su shell
+export GITHUB_TOKEN=ghp_...
+
+# Ahora puede leer y escribir
+ingitdb read record --github=owner/repo --id=countries/ie
+ingitdb create record --github=owner/repo --id=countries/ie --data='{name: Ireland}'
+ingitdb update record --github=owner/repo --id=countries/ie --set='{capital: Dublin}'
+ingitdb delete record --github=owner/repo --id=countries/ie</code></pre>
+                </div>
+
+                <p>Cada operación de escritura crea un solo commit en el repositorio remoto. No se requiere clon local.</p>
+            </section>
+
+            <section id="features">
+                <h2>Características</h2>
+
+                <h3>Lo que inGitDB puede hacer hoy</h3>
+                <ul class="feature-list">
+                    <li>✅ Validación de esquema con definiciones de columnas tipadas</li>
+                    <li>✅ Operaciones CRUD en registros (colecciones map[string]any)</li>
+                    <li>✅ Acceso directo al repositorio de GitHub (lectura y escritura)</li>
+                    <li>✅ Listado de colecciones con filtros regex</li>
+                    <li>✅ Validación incremental rápida (rango de commit)</li>
+                    <li>✅ Seguimiento de versiones con historial git</li>
+                </ul>
+
+                <h3>Lo que viene</h3>
+                <ul class="feature-list">
+                    <li>⏳ Búsqueda de texto completo con soporte regex</li>
+                    <li>⏳ Vistas materializadas</li>
+                    <li>⏳ Servidor MCP para integración de agentes de IA</li>
+                    <li>⏳ Vigilante de archivos para eventos de cambio en tiempo real</li>
+                    <li>⏳ Servidor API HTTP</li>
+                    <li>⏳ Resolución interactiva de conflictos de fusión</li>
+                </ul>
+
+                <p>Consulte la <a href="#roadmap">hoja de ruta</a> completa para obtener más detalles.</p>
+            </section>
+
+            <section id="architecture">
+                <h2>Arquitectura</h2>
+                <p>El diagrama a continuación muestra la ruta de escritura: un comando CLI carga la definición de la base de datos, valida registros, reconstruye vistas materializadas y deja cada cambio como un commit git normal.</p>
+
+                <div class="diagram-box">
+                    <pre>Archivos YAML/JSON → Repositorio Git → Validación → Generador de vistas → Salida (CLI/Go/IA)</pre>
+                </div>
+
+                <h3>Decisiones clave de diseño</h3>
+                <ul>
+                    <li><strong>Archivos ordinarios:</strong> Cada registro es un archivo YAML o JSON que puede editar en cualquier editor de texto</li>
+                    <li><strong>Git como almacenamiento:</strong> Todo el control de versiones, ramificación e historial proviene de Git</li>
+                    <li><strong>Validación de esquema:</strong> Las definiciones de columnas tipadas garantizan la integridad de los datos</li>
+                    <li><strong>Sin servidor para lectura:</strong> Leer datos es solo operaciones del sistema de archivos</li>
+                    <li><strong>Interfaces estándar:</strong> Integración de DALgo para Go, MCP para agentes de IA</li>
+                </ul>
+
+                <p>Obtenga más información en la <a href="https://github.com/ingitdb/ingitdb-cli/blob/main/docs/ARCHITECTURE.md" target="_blank" rel="noopener">documentación de arquitectura</a>.</p>
+            </section>
+
+            <section id="go-library">
+                <h2>Biblioteca Go (DALgo)</h2>
+                <p><code>pkg/dalgo2ingitdb</code> implementa la interfaz <a href="https://github.com/dal-go/dalgo" target="_blank" rel="noopener">DALgo</a> <code>dal.DB</code>, por lo que cualquier programa Go puede usar inGitDB como una abstracción de base de datos estándar.</p>
+
+                <div class="code-example">
+                    <pre><code>import "github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
+
+// Usar inGitDB como una instancia dal.DB
+db := dalgo2ingitdb.NewDatabase(path)
+
+// Operaciones DALgo estándar
+// ... su código aquí ...</code></pre>
+                </div>
+
+                <p>Esto le permite cambiar entre diferentes backends de bases de datos (Firestore, SQL, inGitDB) sin cambiar el código de su aplicación.</p>
+            </section>
+
+            <section id="contributing">
+                <h2>Contribuir</h2>
+                <p>inGitDB es lo suficientemente pequeño para que cada contribución marque una diferencia visible. La mejor manera de comenzar es apuntar la CLI a un directorio de archivos YAML y ejecutar <code>ingitdb validate</code>.</p>
+
+                <h3>Cómo contribuir</h3>
+                <ol>
+                    <li>Lea <a href="https://github.com/ingitdb/ingitdb-cli/blob/main/docs/CONTRIBUTING.md" target="_blank" rel="noopener">CONTRIBUTING.md</a> para el flujo de trabajo de solicitud de extracción</li>
+                    <li>Examine los <a href="https://github.com/ingitdb/ingitdb-cli/issues" target="_blank" rel="noopener">problemas abiertos</a> para encontrar algo en lo que trabajar</li>
+                    <li>Abra o comente un problema antes de invertir tiempo en un cambio importante</li>
+                </ol>
+
+                <p>Los informes de errores, las mejoras de documentación y las preguntas son bienvenidas.</p>
+            </section>
+
+            <section id="roadmap">
+                <h2>Hoja de ruta</h2>
+                <p>inGitDB se desarrolla en nueve fases de entrega:</p>
+
+                <div class="roadmap-phases">
+                    <div class="phase">
+                        <h4>Fase 1: Validador de esquema ✅</h4>
+                        <p>Validación de esquema, CRUD básico, listado de colecciones</p>
+                    </div>
+                    <div class="phase">
+                        <h4>Fase 2: Motor de consulta ⏳</h4>
+                        <p>Búsqueda, filtrado y operaciones de consulta</p>
+                    </div>
+                    <div class="phase">
+                        <h4>Fase 3: Constructor de vistas ⏳</h4>
+                        <p>Vistas materializadas y agregaciones</p>
+                    </div>
+                    <div class="phase">
+                        <h4>Fase 4: Transmisión de eventos ⏳</h4>
+                        <p>Vigilante de archivos y flujos de eventos de cambio</p>
+                    </div>
+                    <div class="phase">
+                        <h4>Fase 5: API HTTP ⏳</h4>
+                        <p>Servidor API REST para acceso remoto</p>
+                    </div>
+                    <div class="phase">
+                        <h4>Fase 6: Servidor MCP ⏳</h4>
+                        <p>Protocolo de contexto de modelo para agentes de IA</p>
+                    </div>
+                    <div class="phase future">
+                        <h4>Fases 7-9: Futuro</h4>
+                        <p>Herramientas de migración, activadores y API de GraphQL</p>
+                    </div>
+                </div>
+
+                <p>Consulte la <a href="https://github.com/ingitdb/ingitdb-cli/blob/main/docs/ROADMAP.md" target="_blank" rel="noopener">hoja de ruta completa</a> para obtener más detalles.</p>
+            </section>
+
+            <section id="competitors">
+                <h2>Comparación con herramientas relacionadas</h2>
+                <p>¿Cómo se compara inGitDB con otras soluciones?</p>
+
+                <div class="comparison-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Característica</th>
+                                <th>inGitDB</th>
+                                <th>BD tradicional</th>
+                                <th>Archivos JSON</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Control de versiones</td>
+                                <td>✅ Nativo (Git)</td>
+                                <td>❌ Requiere herramientas adicionales</td>
+                                <td>✅ Vía Git</td>
+                            </tr>
+                            <tr>
+                                <td>Validación de esquema</td>
+                                <td>✅ Incorporado</td>
+                                <td>✅ Nativo</td>
+                                <td>❌ Manual</td>
+                            </tr>
+                            <tr>
+                                <td>Legible por humanos</td>
+                                <td>✅ YAML/JSON</td>
+                                <td>❌ Binario</td>
+                                <td>✅ JSON</td>
+                            </tr>
+                            <tr>
+                                <td>Servidor requerido</td>
+                                <td>❌ No (para lectura)</td>
+                                <td>✅ Sí</td>
+                                <td>❌ No</td>
+                            </tr>
+                            <tr>
+                                <td>Ramificación</td>
+                                <td>✅ Ramas Git</td>
+                                <td>❌ Complejo</td>
+                                <td>✅ Ramas Git</td>
+                            </tr>
+                            <tr>
+                                <td>Integración de IA</td>
+                                <td>✅ MCP (planeado)</td>
+                                <td>⚠️ Personalizado</td>
+                                <td>⚠️ Manual</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>Consulte la <a href="https://github.com/ingitdb/ingitdb-cli/blob/main/docs/COMPETITORS.md" target="_blank" rel="noopener">comparación detallada</a> para más información.</p>
+            </section>
+
+            <section class="cta-section-docs">
+                <h2>¿Listo para empezar?</h2>
+                <div class="cta-buttons">
+                    <a href="https://github.com/ingitdb/ingitdb-cli" class="btn btn-primary" target="_blank" rel="noopener">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"/>
+                        </svg>
+                        Clonar e intentar
+                    </a>
+                    <a href="https://github.com/ingitdb/ingitdb-cli/issues" class="btn btn-secondary" target="_blank" rel="noopener">Reportar un problema</a>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>inGitDB</h4>
+                    <p>Git como base de datos</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Recursos</h4>
+                    <ul>
+                        <li><a href="/es/docs">Documentación</a></li>
+                        <li><a href="https://github.com/ingitdb/ingitdb-cli" target="_blank" rel="noopener">GitHub</a></li>
+                        <li><a href="https://github.com/ingitdb/ingitdb-cli/issues" target="_blank" rel="noopener">Problemas</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Comunidad</h4>
+                    <ul>
+                        <li><a href="https://github.com/ingitdb/ingitdb-cli/blob/main/docs/CONTRIBUTING.md" target="_blank" rel="noopener">Contribuir</a></li>
+                        <li><a href="https://github.com/ingitdb/ingitdb-cli/blob/main/LICENSE" target="_blank" rel="noopener">Licencia (MIT)</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Enlaces</h4>
+                    <ul>
+                        <li><a href="https://github.com/ingitdb/ingitdb-cli" target="_blank" rel="noopener">
+                            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style="vertical-align: middle; margin-right: 4px;">
+                                <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"/>
+                            </svg>
+                            Repositorio de GitHub
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 inGitDB. Licenciado bajo la Licencia MIT.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/theme.js"></script>
+    <script src="/js/docs.js"></script>
+</body>
+</html>
