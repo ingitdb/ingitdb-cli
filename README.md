@@ -50,14 +50,48 @@ range (`--from-commit` / `--to-commit`) so CI stays fast on large databases.
 
 ## ⬇️ Installation
 
-```shell
-# From source
-go install github.com/ingitdb/ingitdb-cli/cmd/ingitdb
+### macOS
 
-# Mac OS
+```shell
 brew tap ingitdb/cli
 brew install ingitdb
 ```
+
+### Linux
+
+```shell
+# Arch Linux (AUR)
+yay -S ingitdb-bin
+# or: paru -S ingitdb-bin
+
+# Snap (universal Linux)
+snap install ingitdb
+
+# Linuxbrew
+brew tap ingitdb/cli
+brew install ingitdb
+```
+
+### Windows
+
+```powershell
+# Chocolatey
+choco install ingitdb
+
+# Scoop
+scoop bucket add ingitdb https://github.com/ingitdb/scoop-bucket
+scoop install ingitdb
+```
+
+### Go (any platform)
+
+```shell
+go install github.com/ingitdb/ingitdb-cli/cmd/ingitdb@latest
+```
+
+### Binary download
+
+Pre-built binaries for all platforms are available on the [GitHub Releases](https://github.com/ingitdb/ingitdb-cli/releases) page.
 
 ## 🚀 Quick start
 
