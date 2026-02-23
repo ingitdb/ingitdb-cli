@@ -145,7 +145,7 @@ body {
 .lang-selector-bar {
     border-bottom: 1px solid var(--border-color);
     background-color: var(--bg-primary);
-    padding: 1rem 0;
+    padding: 0.75rem 0;
     text-align: center;
     width: 100%;
 }
@@ -154,29 +154,23 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 0.5rem;
+    gap: 2rem;
     flex-wrap: wrap;
 }
 
 .lang-selector-bar a {
-    padding: 0.5rem 1rem;
     color: var(--text-secondary);
-    background-color: var(--bg-secondary);
     text-decoration: none;
     font-weight: 500;
-    font-size: 0.9rem;
-    border-radius: 0.5rem;
-    transition: all 0.2s;
+    transition: color 0.2s;
 }
 
 .lang-selector-bar a:hover {
-    background-color: var(--bg-tertiary);
     color: var(--accent-primary);
 }
 
 .lang-selector-bar a.active {
-    background-color: var(--accent-primary);
-    color: white;
+    color: var(--accent-primary);
     font-weight: 600;
 }
 
