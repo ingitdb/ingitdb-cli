@@ -13,7 +13,7 @@
     <header class="header">
         <div class="container">
             <div class="header-content">
-                <a href="/server/ingitdb.com/public" class="logo">
+                <a href="/" class="logo">
                     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect width="32" height="32" rx="6" fill="currentColor" opacity="0.1"/>
                         <path d="M8 12L16 8L24 12V20L16 24L8 20V12Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
@@ -22,7 +22,7 @@
                     <span class="logo-text">inGitDB</span>
                 </a>
                 <nav class="nav">
-                    <a href="/server/ingitdb.com/public">Home</a>
+                    <a href="/">Home</a>
                     <a href="/docs">Documentation</a>
                     <a href="https://github.com/ingitdb/ingitdb-cli" target="_blank" rel="noopener">GitHub</a>
                     <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
@@ -139,19 +139,56 @@ ingitdb delete record --id=geo/nations/ie</code></pre>
 
             <section id="installation">
                 <h2>Installation</h2>
-                <p>inGitDB is written in Go and can be built from source:</p>
-                
+
+                <h3>macOS — Homebrew</h3>
                 <div class="code-example">
-                    <pre><code># Clone the repository
-git clone https://github.com/ingitdb/ingitdb-cli.git
-cd ingitdb-cli
-
-# Build the CLI
-go build -o ingitdb ./cmd/ingitdb
-
-# Optional: move to your PATH
-sudo mv ingitdb /usr/local/bin/</code></pre>
+                    <pre><code>brew tap ingitdb/cli
+brew install ingitdb</code></pre>
                 </div>
+
+                <h3>Linux</h3>
+                <div class="code-example">
+                    <h4>AUR (Arch Linux)</h4>
+                    <pre><code>yay -S ingitdb-bin</code></pre>
+                </div>
+                <div class="code-example">
+                    <h4>Snap</h4>
+                    <pre><code>snap install ingitdb</code></pre>
+                </div>
+                <div class="code-example">
+                    <h4>Linuxbrew</h4>
+                    <pre><code>brew tap ingitdb/cli
+brew install ingitdb</code></pre>
+                </div>
+
+                <h3>Windows</h3>
+                <div class="code-example">
+                    <h4>WinGet</h4>
+                    <pre><code>winget install ingitdb</code></pre>
+                </div>
+                <div class="code-example">
+                    <h4>Chocolatey</h4>
+                    <pre><code>choco install ingitdb</code></pre>
+                </div>
+                <div class="code-example">
+                    <h4>Scoop</h4>
+                    <pre><code>scoop bucket add ingitdb https://github.com/ingitdb/scoop-bucket
+scoop install ingitdb</code></pre>
+                </div>
+
+                <h3>Go (any platform)</h3>
+                <div class="code-example">
+                    <pre><code>go install github.com/ingitdb/ingitdb-cli/cmd/ingitdb@latest</code></pre>
+                </div>
+
+                <h3>Build from source</h3>
+                <div class="code-example">
+                    <pre><code>git clone https://github.com/ingitdb/ingitdb-cli.git
+cd ingitdb-cli
+go build -o ingitdb ./cmd/ingitdb</code></pre>
+                </div>
+
+                <p>Pre-built binaries for all platforms are also available on the <a href="https://github.com/ingitdb/ingitdb-cli/releases" target="_blank" rel="noopener">GitHub Releases</a> page.</p>
             </section>
 
             <section id="cli-commands">

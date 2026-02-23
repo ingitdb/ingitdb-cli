@@ -135,24 +135,33 @@
         <section class="quick-start" id="quick-start">
             <div class="container">
                 <h2 class="section-title">Quick Start</h2>
+                <h3 class="section-subtitle">Install</h3>
                 <div class="code-block">
-                    <pre><code># Build the CLI
-go build -o ingitdb ./cmd/ingitdb
+                    <pre><code># macOS
+brew tap ingitdb/cli &amp;&amp; brew install ingitdb
 
-# Validate a database directory
+# Windows
+winget install ingitdb
+
+# Linux (Snap)
+snap install ingitdb
+
+# Go (any platform)
+go install github.com/ingitdb/ingitdb-cli/cmd/ingitdb@latest</code></pre>
+                </div>
+                <h3 class="section-subtitle">Use</h3>
+                <div class="code-block">
+                    <pre><code># Validate a database directory
 ingitdb validate
 
 # List all collections
 ingitdb list collections
 
-# Search records
-ingitdb find --substr=Dublin
-
 # Create a new record
-ingitdb create record --id=geo/nations/ie --data='{title: "Ireland"}'
+ingitdb create record --id=geo.nations/ie --data='{title: "Ireland"}'
 
 # Read a record
-ingitdb read record --id=geo/nations/ie</code></pre>
+ingitdb read record --id=geo.nations/ie</code></pre>
                 </div>
                 <div class="cta-section">
                     <a href="/docs" class="btn btn-primary">Read Full Documentation</a>
