@@ -165,7 +165,7 @@ jobs:
       - uses: goreleaser/goreleaser-action@v7
         with:
           version: v2
-          args: release --skip=build,archive,checksum,validate --config .github/goreleaser-publish-winget.yaml
+          args: publish --config .github/goreleaser-publish-winget.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
 
@@ -199,7 +199,7 @@ jobs:
       - uses: goreleaser/goreleaser-action@v7
         with:
           version: v2
-          args: release --skip=build,archive,checksum,validate --config .github/goreleaser-publish-chocolatey.yaml
+          args: publish --config .github/goreleaser-publish-chocolatey.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
           CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
