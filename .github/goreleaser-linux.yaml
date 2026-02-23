@@ -50,3 +50,34 @@ release:
   github:
     owner: ingitdb
     name: ingitdb-cli
+
+aurs:
+  - name: ingitdb-bin
+    ids:
+      - tarball
+    homepage: https://ingitdb.com
+    description: "ingitdb – a CLI for a developer-grade, schema-validated, AI-native database whose storage engine is a Git repository."
+    license: MIT
+    maintainers:
+      - "ingitdb <hello@ingitdb.com>"
+    git_url: "ssh://aur@aur.archlinux.org/ingitdb-bin.git"
+    private_key: "{{ .Env.AUR_SSH_PRIVATE_KEY }}"
+    package: |
+      install -Dm755 "./ingitdb" "${pkgdir}/usr/bin/ingitdb"
+    skip_upload: auto
+
+brews:
+  - name: ingitdb
+    ids:
+      - tarball
+    description: "ingitdb – a CLI for a developer-grade, schema-validated, AI-native database whose storage engine is a Git repository."
+    homepage: https://ingitdb.com
+    license: MIT
+    repository:
+      owner: ingitdb
+      name: homebrew-cli
+      token: "{{ .Env.GITHUB_TOKEN }}"
+    install: |
+      bin.install "ingitdb"
+    test: |
+      system "#{bin}/ingitdb", "--version"

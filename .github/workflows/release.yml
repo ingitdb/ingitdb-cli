@@ -23,6 +23,13 @@ jobs:
         with:
           go-version: stable
 
+      - name: Setup SSH key for AUR
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/aur_key
+          chmod 600 ~/.ssh/aur_key
+          echo "AUR_SSH_PRIVATE_KEY=$HOME/.ssh/aur_key" >> $GITHUB_ENV
+
       - uses: goreleaser/goreleaser-action@v7
         with:
           version: v2
@@ -61,67 +68,6 @@ jobs:
           NOTARIZE_ISSUER_ID: ${{ secrets.NOTARIZE_ISSUER_ID }}
           NOTARIZE_KEY_ID: ${{ secrets.NOTARIZE_KEY_ID }}
           NOTARIZE_KEY: ${{ secrets.NOTARIZE_KEY }}
-
-  publish-aur:
-    name: Publish to AUR
-    needs:
-      - build-linux
-    if: always() && !failure() && !cancelled()
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Fetch all tags
-        run: git fetch --tags --force
-
-      - uses: actions/setup-go@v6
-        with:
-          go-version: stable
-
-      - name: Setup SSH key for AUR
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/aur_key
-          chmod 600 ~/.ssh/aur_key
-          echo "AUR_SSH_PRIVATE_KEY=$HOME/.ssh/aur_key" >> $GITHUB_ENV
-
-      - uses: goreleaser/goreleaser-action@v7
-        with:
-          version: v2
-          args: release --clean --config .github/goreleaser-publish-aur.yaml
-        env:
-          GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
-
-  publish-homebrew:
-    name: Publish Homebrew Formula
-    needs:
-      - build-linux
-    if: always() && !failure() && !cancelled()
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Fetch all tags
-        run: git fetch --tags --force
-
-      - uses: actions/setup-go@v6
-        with:
-          go-version: stable
-
-      - uses: goreleaser/goreleaser-action@v7
-        with:
-          version: v2
-          args: release --clean --config .github/goreleaser-publish-homebrew.yaml
-        env:
-          GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
 
   publish-snap:
     name: Publish to Snapcraft
