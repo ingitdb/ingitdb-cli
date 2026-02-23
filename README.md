@@ -57,38 +57,42 @@ brew tap ingitdb/cli
 brew install ingitdb
 ```
 
-### Linux — AUR (Arch Linux)
+### Linux
+
+#### AUR (Arch Linux)
 
 ```shell
 yay -S ingitdb-bin
 ```
 
-### Linux — Snap
+#### Snap
 
 ```shell
 snap install ingitdb
 ```
 
-### Linux — Linuxbrew
+#### Linuxbrew
 
 ```shell
 brew tap ingitdb/cli
 brew install ingitdb
 ```
 
-### Windows — WinGet
+### Windows
+
+#### WinGet
 
 ```powershell
 winget install ingitdb
 ```
 
-### Windows — Chocolatey
+#### Chocolatey
 
 ```powershell
 choco install ingitdb
 ```
 
-### Windows — Scoop
+#### Scoop
 
 ```powershell
 scoop bucket add ingitdb https://github.com/ingitdb/scoop-bucket
