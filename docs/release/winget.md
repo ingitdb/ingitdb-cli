@@ -53,4 +53,4 @@ winget uninstall ingitdb
 ## References
 
 - [WinGet Package Manager](https://github.com/microsoft/winget-pkgs)
-- [GoReleaser: WinGet Publishing](https://goreleaser.com/customization/wingets/)
+- [GoReleaser: WinGet Publishing](https://goreleaser.com/customization/winget/)

@@ -27,11 +27,13 @@ archives:
 checksum:
   name_template: checksums.txt
 
-wingets:
+winget:
   - name: ingitdb
     ids:
       - zip
     publisher: ingitdb
+    publisher_url: https://ingitdb.com
+    package_identifier: ingitdb.ingitdb
     license: MIT
     homepage: https://ingitdb.com
     short_description: "A CLI for a schema-validated, AI-native database backed by a Git repository."
@@ -44,7 +46,8 @@ wingets:
       name: winget-pkgs
       branch: master
       token: "{{ .Env.GITHUB_TOKEN }}"
-      pull_request: true
+      pull_request:
+        enabled: true
 
 release:
   skip_upload: true
