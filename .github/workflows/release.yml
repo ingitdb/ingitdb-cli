@@ -35,7 +35,7 @@ jobs:
     name: Build, Sign & Notarize macOS
     needs:
       - build-linux
-    if: always() && !failure() && !cancelled()
+    if: !failure() && !cancelled()
     runs-on: macos-latest
     permissions:
       contents: write
@@ -68,7 +68,7 @@ jobs:
     name: Publish to AUR
     needs:
       - build-linux
-    if: always() && !failure() && !cancelled()
+    if: !failure() && !cancelled()
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -103,7 +103,7 @@ jobs:
     name: Publish Homebrew Formula
     needs:
       - build-linux
-    if: always() && !failure() && !cancelled()
+    if: !failure() && !cancelled()
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -131,7 +131,7 @@ jobs:
     name: Publish to Snapcraft
     needs:
       - build-linux
-    if: always() && !failure() && !cancelled()
+    if: !failure() && !cancelled()
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -163,7 +163,7 @@ jobs:
     name: Publish to Chocolatey
     needs:
       - build-linux
-    if: always() && !failure() && !cancelled()
+    if: !failure() && !cancelled()
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -192,7 +192,7 @@ jobs:
     name: Publish to WinGet
     needs:
       - build-linux
-    if: always() && !failure() && !cancelled()
+    if: !failure() && !cancelled()
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -220,7 +220,7 @@ jobs:
     name: Publish to Scoop
     needs:
       - build-linux
-    if: always() && !failure() && !cancelled()
+    if: !failure() && !cancelled()
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -247,7 +247,7 @@ jobs:
     name: Deploy to Cloud Run
     needs:
       - build-linux
-    if: always() && !failure() && !cancelled()
+    if: !failure() && !cancelled()
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
@@ -276,7 +276,7 @@ jobs:
     name: Deploy Website
     needs:
       - build-linux
-    if: always() && !failure() && !cancelled()
+    if: !failure() && !cancelled()
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
