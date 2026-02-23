@@ -18,6 +18,7 @@ winget:
     repository:
       owner: ingitdb
       name: winget-pkgs
+      branch: "{{.ProjectName}}-{{.Version}}"
       token: "{{ .Env.GITHUB_TOKEN }}"
       pull_request:
         enabled: true
@@ -36,20 +37,19 @@ builds:
   - id: ingitdb-windows
     main: ./cmd/ingitdb
     binary: ingitdb
-    env: [ CGO_ENABLED=0 ]
-    goos: [ windows ]
-    goarch: [ amd64 ]
+    env: [CGO_ENABLED=0]
+    goos: [windows]
+    goarch: [amd64]
     flags:
       - -trimpath
-    mod_timestamp: '{{ .CommitTimestamp }}'
+    mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags:
       - -s -w
       - -X main.version={{.Version}}
 
 archives:
   - id: zip
-    formats: [ zip ]
+    formats: [zip]
     name_template: >-
       {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
-    ids: [ ingitdb-windows ]
-
+    ids: [ingitdb-windows]
