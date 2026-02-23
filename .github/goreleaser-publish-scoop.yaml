@@ -39,7 +39,6 @@ scoops:
       name: scoop-bucket
       branch: main
       token: "{{ .Env.GITHUB_TOKEN }}"
-      pull_request: false
 
 release:
   skip_upload: true
