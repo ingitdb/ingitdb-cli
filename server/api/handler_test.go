@@ -202,6 +202,42 @@ func newTestHandler() (*Handler, *fakeStore) {
 
 // --- tests ---
 
+func TestNewHandler(t *testing.T) {
+	t.Parallel()
+	h := NewHandler()
+	if h == nil {
+		t.Fatal("expected handler")
+	}
+	if h.router == nil {
+		t.Error("expected router")
+	}
+}
+
+func TestNewHandlerWithAuth(t *testing.T) {
+	t.Parallel()
+	h := NewHandlerWithAuth(auth.Config{}, false)
+	if h == nil {
+		t.Fatal("expected handler")
+	}
+	if h.requireAuth {
+		t.Error("expected requireAuth=false")
+	}
+}
+
+func TestServeIndex(t *testing.T) {
+	t.Parallel()
+	h, _ := newTestHandler()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+	if w.Header().Get("Content-Type") != "text/html; charset=utf-8" {
+		t.Errorf("unexpected Content-Type: %s", w.Header().Get("Content-Type"))
+	}
+}
+
 func TestListCollections_MissingDB(t *testing.T) {
 	t.Parallel()
 	h, _ := newTestHandler()
@@ -424,6 +460,18 @@ func TestGitHubLoginRedirect(t *testing.T) {
 	}
 }
 
+func TestGitHubLoginRedirect_ConfigError(t *testing.T) {
+	t.Parallel()
+	h, _ := newTestHandler()
+	h.authConfig.GitHubClientID = "" // Invalid config
+	req := httptest.NewRequest(http.MethodGet, "/auth/github/login", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("expected 500, got %d", w.Code)
+	}
+}
+
 func TestGitHubCallbackSetsCookie(t *testing.T) {
 	t.Parallel()
 	h, _ := newTestHandler()
@@ -455,6 +503,82 @@ func TestGitHubCallbackAcceptsLegacyStateCookie(t *testing.T) {
 	}
 }
 
+func TestGitHubCallback_Errors(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		query      string
+		cookies    []*http.Cookie
+		setupH     func(*Handler)
+		wantCode   int
+		wantBody   string
+		skipConfig bool
+	}{
+		{
+			name:     "missing code or state",
+			query:    "code=abc",
+			wantCode: http.StatusBadRequest,
+			wantBody: "missing code or state",
+		},
+		{
+			name:     "missing state cookie",
+			query:    "code=abc&state=xyz",
+			wantCode: http.StatusBadRequest,
+			wantBody: "missing oauth state cookie",
+		},
+		{
+			name:     "state mismatch",
+			query:    "code=abc&state=xyz",
+			cookies:  []*http.Cookie{{Name: oauthStateCookieName, Value: "abc"}},
+			wantCode: http.StatusBadRequest,
+			wantBody: "invalid oauth state",
+		},
+		{
+			name:    "exchange error",
+			query:   "code=fail&state=xyz",
+			cookies: []*http.Cookie{{Name: oauthStateCookieName, Value: "xyz"}},
+			setupH: func(h *Handler) {
+				h.exchangeCodeForToken = func(_ context.Context, _ string) (string, error) {
+					return "", fmt.Errorf("exchange failed")
+				}
+			},
+			wantCode: http.StatusBadGateway,
+			wantBody: "oauth token exchange failed",
+		},
+		{
+			name:       "config validation error",
+			query:      "code=abc&state=xyz",
+			skipConfig: true,
+			wantCode:   http.StatusInternalServerError,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			h, _ := newTestHandler()
+			if tc.skipConfig {
+				h.authConfig.GitHubClientID = ""
+			}
+			if tc.setupH != nil {
+				tc.setupH(h)
+			}
+			req := httptest.NewRequest(http.MethodGet, "/auth/github/callback?"+tc.query, nil)
+			for _, c := range tc.cookies {
+				req.AddCookie(c)
+			}
+			w := httptest.NewRecorder()
+			h.ServeHTTP(w, req)
+			if w.Code != tc.wantCode {
+				t.Fatalf("expected %d, got %d", tc.wantCode, w.Code)
+			}
+			if tc.wantBody != "" && !strings.Contains(w.Body.String(), tc.wantBody) {
+				t.Fatalf("expected body to contain %q, got %q", tc.wantBody, w.Body.String())
+			}
+		})
+	}
+}
+
 func TestGitHubStatusWithCookie(t *testing.T) {
 	t.Parallel()
 	h, _ := newTestHandler()
@@ -464,6 +588,31 @@ func TestGitHubStatusWithCookie(t *testing.T) {
 	h.ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestGitHubStatus_Errors(t *testing.T) {
+	t.Parallel()
+	h, _ := newTestHandler()
+
+	// Missing token
+	req := httptest.NewRequest(http.MethodGet, "/auth/github/status", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d", w.Code)
+	}
+
+	// Invalid token
+	h.validateToken = func(_ context.Context, _ string) error {
+		return fmt.Errorf("invalid token")
+	}
+	req = httptest.NewRequest(http.MethodGet, "/auth/github/status", nil)
+	req.AddCookie(&http.Cookie{Name: "ingitdb_github_token", Value: "bad-token"})
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d", w.Code)
 	}
 }
 
@@ -528,4 +677,115 @@ func TestReadDefinitionFromGitHub_MissingRoot(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for missing root config")
 	}
+}
+
+func TestCookieNames(t *testing.T) {
+	t.Parallel()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	if got := cookieNames(req); got != "" {
+		t.Errorf("expected empty string, got %q", got)
+	}
+	req.AddCookie(&http.Cookie{Name: "c1", Value: "v1"})
+	req.AddCookie(&http.Cookie{Name: "c2", Value: "v2"})
+	got := cookieNames(req)
+	if !strings.Contains(got, "c1") || !strings.Contains(got, "c2") {
+		t.Errorf("expected c1 and c2, got %q", got)
+	}
+}
+
+func TestCRUDErrors(t *testing.T) {
+	t.Parallel()
+
+	setupH := func(t *testing.T) *Handler {
+		h, _ := newTestHandler()
+		return h
+	}
+
+	t.Run("list collections file reader error", func(t *testing.T) {
+		h := setupH(t)
+		h.newGitHubFileReader = func(cfg dalgo2ghingitdb.Config) (dalgo2ghingitdb.FileReader, error) {
+			return nil, fmt.Errorf("reader failed")
+		}
+		req := httptest.NewRequest(http.MethodGet, "/ingitdb/v0/collections?db=owner/repo", nil)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+		if w.Code != http.StatusInternalServerError {
+			t.Errorf("expected 500, got %d", w.Code)
+		}
+	})
+
+	t.Run("list collections def read error", func(t *testing.T) {
+		h := setupH(t)
+		h.newGitHubFileReader = func(cfg dalgo2ghingitdb.Config) (dalgo2ghingitdb.FileReader, error) {
+			return &fakeFileReader{files: map[string][]byte{}}, nil
+		}
+		req := httptest.NewRequest(http.MethodGet, "/ingitdb/v0/collections?db=owner/repo", nil)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+		if w.Code != http.StatusInternalServerError {
+			t.Errorf("expected 500, got %d", w.Code)
+		}
+	})
+
+	t.Run("read record file reader error", func(t *testing.T) {
+		h := setupH(t)
+		h.newGitHubFileReader = func(cfg dalgo2ghingitdb.Config) (dalgo2ghingitdb.FileReader, error) {
+			return nil, fmt.Errorf("reader failed")
+		}
+		req := httptest.NewRequest(http.MethodGet, "/ingitdb/v0/record?db=owner/repo&key=countries/ie", nil)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+		if w.Code != http.StatusInternalServerError {
+			t.Errorf("expected 500, got %d", w.Code)
+		}
+	})
+
+	t.Run("read record invalid key", func(t *testing.T) {
+		h := setupH(t)
+		req := httptest.NewRequest(http.MethodGet, "/ingitdb/v0/record?db=owner/repo&key=invalid-key-no-slash", nil)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("expected 400, got %d", w.Code)
+		}
+	})
+
+	t.Run("read record db open error", func(t *testing.T) {
+		h := setupH(t)
+		h.newGitHubDBWithDef = func(cfg dalgo2ghingitdb.Config, def *ingitdb.Definition) (dal.DB, error) {
+			return nil, fmt.Errorf("db fail")
+		}
+		req := httptest.NewRequest(http.MethodGet, "/ingitdb/v0/record?db=owner/repo&key=countries/ie", nil)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+		if w.Code != http.StatusInternalServerError {
+			t.Errorf("expected 500, got %d", w.Code)
+		}
+	})
+
+	t.Run("create record body read error", func(t *testing.T) {
+		h := setupH(t)
+		req := httptest.NewRequest(http.MethodPost, "/ingitdb/v0/record?db=owner/repo&key=countries/new", &errorReader{})
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("expected 400, got %d", w.Code)
+		}
+	})
+
+	t.Run("update record body read error", func(t *testing.T) {
+		h := setupH(t)
+		req := httptest.NewRequest(http.MethodPut, "/ingitdb/v0/record?db=owner/repo&key=countries/ie", &errorReader{})
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("expected 400, got %d", w.Code)
+		}
+	})
+}
+
+type errorReader struct{}
+
+func (e *errorReader) Read(p []byte) (n int, err error) {
+	return 0, fmt.Errorf("read error")
 }
