@@ -31,8 +31,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
 
-  macos-releaser:
-    name: Build, Sign & Notarize macOS
+  # See docs/release/homebrew.md for setup instructions
+  publish-homebrew:
+    name: Publish to Homebrew
     needs:
       - build-linux
     if: '!failure() && !cancelled()'
@@ -54,7 +55,7 @@ jobs:
       - uses: goreleaser/goreleaser-action@v7
         with:
           version: v2
-          args: release --clean --config .github/goreleaser-macos.yaml
+          args: release --clean --config .github/goreleaser-homebrew.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
           MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}

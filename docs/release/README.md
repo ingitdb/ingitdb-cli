@@ -80,8 +80,8 @@ Before making a real release, test the configs without uploading:
 # Test linux-releaser config
 goreleaser release --clean --config .github/goreleaser-linux.yaml --skip=upload
 
-# Test macos-releaser config
-goreleaser release --clean --config .github/goreleaser-macos.yaml --skip=upload
+# Test publish-homebrew config
+goreleaser release --clean --config .github/goreleaser-homebrew.yaml --skip=upload
 
 # Test Windows publishers (Chocolatey, WinGet, Scoop)
 goreleaser release --clean --config .github/goreleaser-publish-chocolatey.yaml --skip=upload
@@ -101,7 +101,7 @@ Once everything is verified:
 
 2. Watch the release workflow:
    - Go to **Actions** → **Release**
-   - All jobs should run: `build-linux`, `macos-releaser`, `publish-aur`, `publish-snap`, `publish-homebrew`, `publish-chocolatey`, `publish-winget`, `publish-scoop`
+   - All jobs should run: `build-linux`, `publish-homebrew`, `publish-aur`, `publish-snap`, `publish-chocolatey`, `publish-winget`, `publish-scoop`
    - Check logs for successful package publishes
 
 3. Verify packages appear:

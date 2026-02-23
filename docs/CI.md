@@ -17,22 +17,22 @@ Builds Linux and Windows binaries, creates the GitHub release, and uploads artif
 
 **Secrets used:** `INGITDB_GORELEASER_GITHUB_TOKEN`
 
-#### 2. `macos-releaser` (runs on macOS, after `build-linux`)
+#### 2. `publish-homebrew` (runs on macOS, after `build-linux`)
 
-Builds, signs, and notarizes macOS binaries, then publishes the Homebrew Cask.
+Builds, signs, and notarizes macOS binaries, then publishes the Homebrew Cask covering both macOS and Linux.
 
-**Config:** [`.github/goreleaser-macos.yaml`](../.github/goreleaser-macos.yaml)
+**Config:** [`.github/goreleaser-homebrew.yaml`](../.github/goreleaser-homebrew.yaml)
 
-- Builds Darwin binaries (amd64, arm64)
-- Code-signs and notarizes with Apple credentials
+- Builds Darwin binaries (amd64, arm64) and Linux binaries (amd64, arm64)
+- Code-signs and notarizes macOS binaries with Apple credentials
 - Uploads macOS archives to the existing GitHub release
-- Publishes macOS Cask to [`ingitdb/homebrew-cli`](https://github.com/ingitdb/homebrew-cli)
+- Publishes Homebrew Cask (macOS + Linux) to [`ingitdb/homebrew-cli`](https://github.com/ingitdb/homebrew-cli)
 
-**Secrets used:** `MACOS_SIGN_P12`, `MACOS_SIGN_PASSWORD`, `NOTARIZE_ISSUER_ID`, `NOTARIZE_KEY_ID`, `NOTARIZE_KEY`
+**Secrets used:** `INGITDB_GORELEASER_GITHUB_TOKEN`, `MACOS_SIGN_P12`, `MACOS_SIGN_PASSWORD`, `NOTARIZE_ISSUER_ID`, `NOTARIZE_KEY_ID`, `NOTARIZE_KEY`
 
 #### 3. `publish-aur` (runs on Ubuntu, after `build-linux`)
 
-Publishes the AUR package using the pre-built Linux artifacts.
+Publishes the AUR package.
 
 **Config:** [`.github/goreleaser-publish-aur.yaml`](../.github/goreleaser-publish-aur.yaml)
 
@@ -41,18 +41,7 @@ Publishes the AUR package using the pre-built Linux artifacts.
 
 **Secrets used:** `AUR_SSH_PRIVATE_KEY` (raw ED25519 private key)
 
-#### 4. `publish-homebrew` (runs on Ubuntu, after `build-linux`)
-
-Publishes the Homebrew Formula (Linuxbrew) using the pre-built Linux artifacts.
-
-**Config:** [`.github/goreleaser-publish-homebrew.yaml`](../.github/goreleaser-publish-homebrew.yaml)
-
-- Rebuilds Linux binaries (goreleaser produces reproducible archives, so checksums match the release)
-- Pushes Formula to [`ingitdb/homebrew-cli`](https://github.com/ingitdb/homebrew-cli)
-
-**Secrets used:** `INGITDB_GORELEASER_GITHUB_TOKEN`
-
-#### 5. `publish-snap` (runs on Ubuntu, after `build-linux`)
+#### 4. `publish-snap` (runs on Ubuntu, after `build-linux`)
 
 Builds and publishes the Snapcraft package.
 
@@ -63,7 +52,41 @@ Builds and publishes the Snapcraft package.
 
 **Secrets used:** `SNAPCRAFT_STORE_CREDENTIALS`
 
-#### 6. `deploy-server` and `deploy-website` (after `build-linux`)
+#### 5. `publish-chocolatey` (runs on Windows, after `build-linux`)
+
+Publishes the Chocolatey package. Runs on `windows-latest` because `choco` CLI is required.
+
+**Config:** [`.github/goreleaser-publish-chocolatey.yaml`](../.github/goreleaser-publish-chocolatey.yaml)
+
+- Builds Windows binary (amd64)
+- Packs and pushes `.nupkg` to [Chocolatey Community Repository](https://community.chocolatey.org/packages/ingitdb)
+
+**Secrets used:** `INGITDB_GORELEASER_GITHUB_TOKEN`, `CHOCOLATEY_API_KEY`
+
+#### 6. `publish-winget` (runs on Ubuntu, after `build-linux`)
+
+Publishes to WinGet via fork + PR to `microsoft/winget-pkgs`.
+
+**Config:** [`.github/goreleaser-publish-winget.yaml`](../.github/goreleaser-publish-winget.yaml)
+
+- Builds Windows binary (amd64)
+- Generates WinGet manifests and pushes to `ingitdb/winget-pkgs` fork
+- Opens a PR to `microsoft/winget-pkgs`
+
+**Secrets used:** `INGITDB_GORELEASER_GITHUB_TOKEN`
+
+#### 7. `publish-scoop` (runs on Ubuntu, after `build-linux`)
+
+Publishes the Scoop manifest to `ingitdb/scoop-bucket`.
+
+**Config:** [`.github/goreleaser-publish-scoop.yaml`](../.github/goreleaser-publish-scoop.yaml)
+
+- Builds Windows binary (amd64)
+- Generates Scoop manifest JSON and pushes to [`ingitdb/scoop-bucket`](https://github.com/ingitdb/scoop-bucket)
+
+**Secrets used:** `INGITDB_GORELEASER_GITHUB_TOKEN`
+
+#### 8. `deploy-server` and `deploy-website` (after `build-linux`)
 
 - `deploy-server` — Deploys to Google Cloud Run
 - `deploy-website` — Deploys website to Firebase
@@ -73,15 +96,20 @@ Builds and publishes the Snapcraft package.
 | Config | Job | Purpose |
 |--------|-----|---------|
 | [`goreleaser-linux.yaml`](../.github/goreleaser-linux.yaml) | `build-linux` | Linux/Windows builds, GitHub release |
-| [`goreleaser-macos.yaml`](../.github/goreleaser-macos.yaml) | `macos-releaser` | macOS builds, signing, notarization, Homebrew Cask |
+| [`goreleaser-homebrew.yaml`](../.github/goreleaser-homebrew.yaml) | `publish-homebrew` | macOS builds, signing, notarization, Homebrew Cask (macOS + Linux) |
 | [`goreleaser-publish-aur.yaml`](../.github/goreleaser-publish-aur.yaml) | `publish-aur` | AUR PKGBUILD generation and push |
-| [`goreleaser-publish-homebrew.yaml`](../.github/goreleaser-publish-homebrew.yaml) | `publish-homebrew` | Homebrew Formula push (Linuxbrew) |
 | [`goreleaser-publish-snap.yaml`](../.github/goreleaser-publish-snap.yaml) | `publish-snap` | Snapcraft build and publish |
+| [`goreleaser-publish-chocolatey.yaml`](../.github/goreleaser-publish-chocolatey.yaml) | `publish-chocolatey` | Chocolatey package pack and push |
+| [`goreleaser-publish-winget.yaml`](../.github/goreleaser-publish-winget.yaml) | `publish-winget` | WinGet manifest and PR to microsoft/winget-pkgs |
+| [`goreleaser-publish-scoop.yaml`](../.github/goreleaser-publish-scoop.yaml) | `publish-scoop` | Scoop manifest push to ingitdb/scoop-bucket |
 
 ## Initial Setup
 
-To enable all package manager distributions, follow [RELEASE_SETUP.md](./RELEASE_SETUP.md) for step-by-step instructions on:
+To enable all package manager distributions, follow the guides in [`docs/release/`](./release/README.md):
 
 - **AUR** — Register package on Arch Linux User Repository
 - **Snapcraft** — Reserve snap name and generate credentials
 - **Homebrew** — Set up tap repository
+- **Chocolatey** — Create account and generate API key
+- **WinGet** — Fork microsoft/winget-pkgs to ingitdb org
+- **Scoop** — Create ingitdb/scoop-bucket repository

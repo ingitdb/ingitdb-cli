@@ -121,7 +121,7 @@ gh secret set WINDOWS_SIGN_PASSWORD --repo ingitdb/ingitdb-cli
 ### [CODE] 3.1 Add `notarize.windows` block to `.github/goreleaser-linux.yaml` ⏱ ~5 min
 
 > **Note:** ingitdb separates goreleaser configs by platform:
-> - `.github/goreleaser-macos.yaml` — macOS builds only
+> - `.github/goreleaser-homebrew.yaml` — macOS builds, signing, notarization, Homebrew Cask
 > - `.github/goreleaser-linux.yaml` — Linux, Windows, and Snap builds
 >
 > Windows binaries are built on `ubuntu-latest` in the `linux-releaser` job.
