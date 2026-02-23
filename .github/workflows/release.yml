@@ -169,7 +169,7 @@ jobs:
     name: Publish to WinGet
     needs:
       - build-linux
-    if: '!failure() && !cancelled()'
+    if: false
     runs-on: ubuntu-latest
     permissions:
       contents: read
