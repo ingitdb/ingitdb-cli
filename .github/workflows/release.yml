@@ -95,7 +95,6 @@ jobs:
           args: release --clean --config .github/goreleaser-publish-aur.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
-          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
 
   publish-homebrew:
     name: Publish Homebrew Formula
