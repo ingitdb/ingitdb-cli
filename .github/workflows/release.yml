@@ -142,6 +142,9 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Enable Git long paths
+        run: git config --system core.longpaths true
+
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
