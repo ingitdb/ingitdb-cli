@@ -95,29 +95,20 @@ After this, goreleaser will automatically update the PKGBUILD and .SRCINFO on ea
 
 ### 1.5 Store SSH Private Key as GitHub Secret
 
-1. Encode the private key as base64 (single line, **no newlines** — this is critical):
+1. Print the raw private key:
    ```bash
-   cat ~/.ssh/aur_key | base64 | tr -d '\n'
+   cat ~/.ssh/aur_key
    ```
-
-   **Important:** The `tr -d '\n'` removes all newlines. Copy the entire single-line output.
 
 2. Go to your GitHub repo → **Settings** → **Secrets and variables** → **Actions**
 
 3. Click **New repository secret**
    - **Name:** `AUR_SSH_PRIVATE_KEY`
-   - **Secret:** Paste the **entire** base64 output (single line, no newlines)
+   - **Secret:** Paste the **entire** key content including the `-----BEGIN ...-----` and `-----END ...-----` lines
 
 4. Click **Add secret**
 
-5. Verify on macOS that the encoding worked:
-   ```bash
-   # The output should be a single long line with no spaces
-   cat ~/.ssh/aur_key | base64 | tr -d '\n' | wc -c
-   # Output: a number like 1234 (the length of the key)
-   ```
-
-6. Securely delete the local key files:
+5. Securely delete the local key files:
    ```bash
    rm ~/.ssh/aur_key ~/.ssh/aur_key.pub
    ```
@@ -125,12 +116,11 @@ After this, goreleaser will automatically update the PKGBUILD and .SRCINFO on ea
 **Note on CI/CD Implementation:**
 
 The GitHub Actions workflow automatically:
-1. Decodes the base64-encoded SSH key from the secret
-2. Writes it to `~/.ssh/aur_key` with proper permissions (600)
-3. Updates the `AUR_SSH_PRIVATE_KEY` environment variable to point to the file
-4. Passes this file path to goreleaser for SSH authentication
+1. Writes the SSH key from the secret to `~/.ssh/aur_key` with proper permissions (600)
+2. Updates the `AUR_SSH_PRIVATE_KEY` environment variable to point to the file path
+3. Passes this file path to goreleaser for SSH authentication
 
-This is necessary because goreleaser expects `private_key` to be a file path, not the raw key content. The CI workflow handles this conversion automatically.
+This is necessary because goreleaser expects `private_key` to be a file path, not the raw key content.
 
 ### 1.6 Verify AUR Setup
 
@@ -353,8 +343,8 @@ ingitdb --version
   - Create PKGBUILD and .SRCINFO files
   - `git commit -m "initial commit"`
   - `git push origin HEAD:master` (note: must be master, not main)
-- [ ] Stored private key as `AUR_SSH_PRIVATE_KEY` GitHub secret (no newlines):
-  - `cat ~/.ssh/aur_key | base64 | tr -d '\n'` (copy the single-line output)
+- [ ] Stored private key as `AUR_SSH_PRIVATE_KEY` GitHub secret:
+  - `cat ~/.ssh/aur_key` (copy the full output including BEGIN/END lines)
   - Paste in GitHub → Settings → Secrets → AUR_SSH_PRIVATE_KEY
 
 ### Snapcraft
@@ -412,8 +402,8 @@ Once everything is verified:
 ### AUR: "Permission denied (publickey)"
 
 - Verify SSH key is added to AUR account: [aur.archlinux.org/account](https://aur.archlinux.org/account)
-- Check base64 encoding has no newlines: `base64 -i key | tr -d '\n'`
-- Re-encode and update the GitHub secret
+- Verify the `AUR_SSH_PRIVATE_KEY` secret contains the full raw key including `-----BEGIN ...-----` and `-----END ...-----` lines
+- Re-generate the key and update the GitHub secret if needed
 
 ### AUR: "git: could not stat private_key: stat ***: file name too long"
 

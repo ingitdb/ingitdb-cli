@@ -26,7 +26,7 @@ jobs:
       - name: Setup SSH key for AUR
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" | base64 -d > ~/.ssh/aur_key
+          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/aur_key
           chmod 600 ~/.ssh/aur_key
           echo "AUR_SSH_PRIVATE_KEY=$HOME/.ssh/aur_key" >> $GITHUB_ENV
 
