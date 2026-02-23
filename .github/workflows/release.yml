@@ -250,8 +250,33 @@ jobs:
           gcp_oauth_client_secret_name: ${{ vars.GCP_OAUTH_CLIENT_SECRET_NAME }}
           workload_identity_provider: ${{ vars.WORKLOAD_IDENTITY_PROVIDER || 'projects/152447355531/locations/global/workloadIdentityPools/github/providers/ingitdb' }}
 
+  check-website-changes:
+    name: Check Website Changes
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check for changes in server/ingitdb.com since previous tag
+        id: check
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          elif git diff --name-only "$PREV_TAG" HEAD -- server/ingitdb.com/ | grep -q .; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
   deploy-website:
     name: Deploy Website
+    needs:
+      - check-website-changes
+    if: '!failure() && !cancelled() && needs.check-website-changes.outputs.changed == ''true'''
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
