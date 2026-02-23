@@ -1,65 +1,91 @@
-# 🔁 Continuous integration for inGitDB
+# Continuous integration for inGitDB
 
-## 📂 Release Workflow
+## Release Workflow
 
-The release workflow is defined in [`.github/workflows/release.yml`](../.github/workflows/release.yml) and triggered on version tags (`v*`).
+The release workflow is defined in [`.github/workflows/release.yml`](../.github/workflows/release.yml) and triggered manually via `workflow_dispatch`.
 
 ### Release Jobs
 
-#### 1. `macos-releaser` (runs on macOS)
+#### 1. `build-linux` (runs on Ubuntu)
 
-Builds and publishes for macOS.
-
-**Config:** [`.github/goreleaser-macos.yaml`](../.github/goreleaser-macos.yaml)
-
-- **Builds:** Darwin (macOS) binaries for amd64 and arm64
-- **Signing & Notarization:** Code signs and notarizes macOS binaries with Apple credentials
-- **Distribution:** Publishes macOS Cask to [`ingitdb/homebrew-cli`](https://github.com/ingitdb/homebrew-cli) Homebrew tap
-
-**Environment variables:**
-- `MACOS_SIGN_P12`, `MACOS_SIGN_PASSWORD` — Apple code signing certificate
-- `NOTARIZE_ISSUER_ID`, `NOTARIZE_KEY_ID`, `NOTARIZE_KEY` — Apple notarization credentials
-
-#### 2. `linux-releaser` (runs on Ubuntu)
-
-Builds and publishes for Linux, Windows, and Snap.
+Builds Linux and Windows binaries, creates the GitHub release, and uploads artifacts.
 
 **Config:** [`.github/goreleaser-linux.yaml`](../.github/goreleaser-linux.yaml)
 
-- **Builds:**
-  - Linux binaries (amd64, arm64) for GitHub releases
-  - Windows binaries (amd64) for GitHub releases
-  - Linux binaries (amd64, arm64) for Snapcraft
-- **Distribution:**
-  - Publishes Linux and Windows archives to GitHub releases
-  - Publishes Homebrew Formula to [`ingitdb/homebrew-cli`](https://github.com/ingitdb/homebrew-cli) (Linuxbrew)
-  - Publishes to AUR as `ingitdb-bin`
-  - Publishes snap to [Snapcraft Store](https://snapcraft.io/ingitdb)
+- Builds Linux binaries (amd64, arm64) and Windows binaries (amd64)
+- Creates the GitHub release and uploads archives + checksums
+- Saves `dist/` as a workflow artifact (`linux-dist`) for use by publish jobs
 
-**Environment variables:**
-- `AUR_SSH_PRIVATE_KEY` — SSH private key for AUR publishing
-- `SNAPCRAFT_STORE_CREDENTIALS` — Snapcraft Store login token
+**Secrets used:** `INGITDB_GORELEASER_GITHUB_TOKEN`
 
-### Deployment
+#### 2. `macos-releaser` (runs on macOS, after `build-linux`)
 
-After both `macos-releaser` and `linux-releaser` complete successfully, the following jobs run in parallel:
+Builds, signs, and notarizes macOS binaries, then publishes the Homebrew Cask.
+
+**Config:** [`.github/goreleaser-macos.yaml`](../.github/goreleaser-macos.yaml)
+
+- Builds Darwin binaries (amd64, arm64)
+- Code-signs and notarizes with Apple credentials
+- Uploads macOS archives to the existing GitHub release
+- Publishes macOS Cask to [`ingitdb/homebrew-cli`](https://github.com/ingitdb/homebrew-cli)
+
+**Secrets used:** `MACOS_SIGN_P12`, `MACOS_SIGN_PASSWORD`, `NOTARIZE_ISSUER_ID`, `NOTARIZE_KEY_ID`, `NOTARIZE_KEY`
+
+#### 3. `publish-aur` (runs on Ubuntu, after `build-linux`)
+
+Publishes the AUR package using the pre-built Linux artifacts.
+
+**Config:** [`.github/goreleaser-publish-aur.yaml`](../.github/goreleaser-publish-aur.yaml)
+
+- Downloads the `linux-dist` workflow artifact (no rebuild)
+- Runs goreleaser with `--skip=build,archive,checksum,before` to publish only
+- Generates PKGBUILD and .SRCINFO with checksums matching the actual release tarballs
+- Pushes to AUR as `ingitdb-bin` via SSH
+
+**Secrets used:** `AUR_SSH_PRIVATE_KEY` (raw ED25519 private key)
+
+#### 4. `publish-homebrew` (runs on Ubuntu, after `build-linux`)
+
+Publishes the Homebrew Formula (Linuxbrew) using the pre-built Linux artifacts.
+
+**Config:** [`.github/goreleaser-publish-homebrew.yaml`](../.github/goreleaser-publish-homebrew.yaml)
+
+- Downloads the `linux-dist` workflow artifact (no rebuild)
+- Runs goreleaser with `--skip=build,archive,checksum,before` to publish only
+- Pushes Formula to [`ingitdb/homebrew-cli`](https://github.com/ingitdb/homebrew-cli)
+
+**Secrets used:** `INGITDB_GORELEASER_GITHUB_TOKEN`
+
+#### 5. `publish-snap` (runs on Ubuntu, after `build-linux`)
+
+Builds and publishes the Snapcraft package.
+
+**Config:** [`.github/goreleaser-publish-snap.yaml`](../.github/goreleaser-publish-snap.yaml)
+
+- Builds Linux binaries (snap requires its own build inside the snap toolchain)
+- Publishes to [Snapcraft Store](https://snapcraft.io/ingitdb)
+
+**Secrets used:** `SNAPCRAFT_STORE_CREDENTIALS`
+
+#### 6. `deploy-server` and `deploy-website` (after `build-linux`)
 
 - `deploy-server` — Deploys to Google Cloud Run
 - `deploy-website` — Deploys website to Firebase
 
 ### GoReleaser Configurations
 
-ingitdb uses separate GoReleaser configs for clarity:
+| Config | Job | Purpose |
+|--------|-----|---------|
+| [`goreleaser-linux.yaml`](../.github/goreleaser-linux.yaml) | `build-linux` | Linux/Windows builds, GitHub release |
+| [`goreleaser-macos.yaml`](../.github/goreleaser-macos.yaml) | `macos-releaser` | macOS builds, signing, notarization, Homebrew Cask |
+| [`goreleaser-publish-aur.yaml`](../.github/goreleaser-publish-aur.yaml) | `publish-aur` | AUR PKGBUILD generation and push |
+| [`goreleaser-publish-homebrew.yaml`](../.github/goreleaser-publish-homebrew.yaml) | `publish-homebrew` | Homebrew Formula push (Linuxbrew) |
+| [`goreleaser-publish-snap.yaml`](../.github/goreleaser-publish-snap.yaml) | `publish-snap` | Snapcraft build and publish |
 
-| Config | Purpose |
-|--------|---------|
-| [`goreleaser-macos.yaml`](../.github/goreleaser-macos.yaml) | macOS builds, signing, notarization, and Cask |
-| [`goreleaser-linux.yaml`](../.github/goreleaser-linux.yaml) | Linux/Windows builds, Homebrew Formula, AUR, Snap |
-
-## 📋 Initial Setup
+## Initial Setup
 
 To enable all package manager distributions, follow [RELEASE_SETUP.md](./RELEASE_SETUP.md) for step-by-step instructions on:
 
 - **AUR** — Register package on Arch Linux User Repository
 - **Snapcraft** — Reserve snap name and generate credentials
-- **Homebrew Formula** — Set up Linuxbrew tap repository
+- **Homebrew** — Set up tap repository

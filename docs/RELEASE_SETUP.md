@@ -115,12 +115,11 @@ After this, goreleaser will automatically update the PKGBUILD and .SRCINFO on ea
 
 **Note on CI/CD Implementation:**
 
-The GitHub Actions workflow automatically:
-1. Writes the SSH key from the secret to `~/.ssh/aur_key` with proper permissions (600)
-2. Updates the `AUR_SSH_PRIVATE_KEY` environment variable to point to the file path
-3. Passes this file path to goreleaser for SSH authentication
-
-This is necessary because goreleaser expects `private_key` to be a file path, not the raw key content.
+The `publish-aur` GitHub Actions job automatically:
+1. Downloads the pre-built Linux artifacts from the `build-linux` job (no rebuild)
+2. Writes the SSH key from the secret to `~/.ssh/aur_key` with proper permissions (600)
+3. Passes the file path to goreleaser, which expects `private_key` to be a path, not key content
+4. Runs goreleaser with `--skip=build,archive` so checksums in the PKGBUILD match the actual GitHub release tarballs
 
 ### 1.6 Verify AUR Setup
 
@@ -409,12 +408,7 @@ Once everything is verified:
 
 This error occurs when goreleaser receives the SSH key content instead of a file path.
 
-**Solution:** The GitHub Actions release workflow automatically converts the base64-encoded secret to a file. Ensure you're using the standard `release.yml` workflow which includes the "Setup SSH key for AUR" step. This step:
-- Decodes the `AUR_SSH_PRIVATE_KEY` secret
-- Writes it to `~/.ssh/aur_key`
-- Updates the environment variable to point to the file path
-
-If you've customized the workflow, ensure this setup step is present before the goreleaser action.
+**Solution:** Ensure the `publish-aur` job in `release.yml` includes the "Setup SSH key for AUR" step before the goreleaser action. This step writes the secret to `~/.ssh/aur_key` and sets `AUR_SSH_PRIVATE_KEY` to that file path.
 
 ### Snapcraft: "Invalid credentials"
 
