@@ -139,6 +139,7 @@ jobs:
       - build-linux
     if: '!failure() && !cancelled()'
     runs-on: windows-latest
+    continue-on-error: true
     permissions:
       contents: read
     steps:
