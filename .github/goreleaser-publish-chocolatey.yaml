@@ -9,6 +9,7 @@ chocolateys:
     title: ingitdb
     authors: ingitdb
     summary: "A CLI for a schema-validated, AI-native database backed by a Git repository."
+    url_template: "https://github.com/ingitdb/ingitdb-cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
     description: |
       ingitdb is a developer-grade, schema-validated, AI-native database
       whose storage engine is a Git repository. Records are YAML/JSON files,

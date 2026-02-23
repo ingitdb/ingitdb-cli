@@ -35,6 +35,7 @@ scoops:
     ids:
       - zip
     description: "A CLI for a schema-validated, AI-native database backed by a Git repository."
+    url_template: "https://github.com/ingitdb/ingitdb-cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
     homepage: https://ingitdb.com
     license: MIT
     repository:
