@@ -38,7 +38,7 @@ scoops:
       owner: ingitdb
       name: scoop-bucket
       branch: main
-      token: "{{ .Env.GITHUB_TOKEN }}"
+      token: "{{ .Env.INGITDB_GORELEASER_GITHUB_TOKEN }}"
 
 release:
   skip_upload: true

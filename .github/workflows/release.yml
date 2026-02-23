@@ -242,6 +242,7 @@ jobs:
           args: release --clean --config .github/goreleaser-publish-scoop.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
+          INGITDB_GORELEASER_GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
 
   deploy-server:
     name: Deploy to Cloud Run
