@@ -1,20 +1,18 @@
-name: Deploy website
+name: Deploy Website
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'server/ingitdb.com/**'
 
 jobs:
-  deploy:
-    name: Deploy website
+  deploy-website:
+    name: Deploy Website
     runs-on: ubuntu-latest
-
-    env:
-      GCLOUD_PROJECT_ID: ingitdb
-      FIREBASE_TARGET: ingitdb-com
-
     permissions:
-      contents: "read"
-      id-token: "write"
+      contents: 'read'
+      id-token: 'write'
 
     steps:
       - uses: actions/checkout@v6
@@ -22,8 +20,8 @@ jobs:
       - name: Deploy website
         uses: ./.github/actions/deploy-website
         with:
-          gcloud_project_id: ${{ env.GCLOUD_PROJECT_ID }}
-          firebase_target: ${{ env.FIREBASE_TARGET }}
+          gcloud_project_id: ${{ vars.GCLOUD_PROJECT_ID || 'ingitdb' }}
+          firebase_target: ${{ vars.FIREBASE_TARGET || 'ingitdb-com' }}
           firebase_config_path: server/firebase.json
-          workload_identity_provider: projects/152447355531/locations/global/workloadIdentityPools/github/providers/ingitdb
+          workload_identity_provider: ${{ vars.WORKLOAD_IDENTITY_PROVIDER || 'projects/152447355531/locations/global/workloadIdentityPools/github/providers/ingitdb' }}
           node_version: "20"
