@@ -26,4 +26,29 @@ winget:
           branch: master
 
 release:
-  skip_upload: true
+  github:
+    owner: ingitdb
+    name: ingitdb-cli
+  disable: true
+
+builds:
+  - id: ingitdb-windows
+    main: ./cmd/ingitdb
+    binary: ingitdb
+    env: [ CGO_ENABLED=0 ]
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    flags:
+      - -trimpath
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+
+archives:
+  - id: zip
+    formats: [ zip ]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    ids: [ ingitdb-windows ]
+

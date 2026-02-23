@@ -22,7 +22,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: stable
+          go-version: '1.24.0'
 
       - uses: goreleaser/goreleaser-action@v7
         with:
@@ -57,7 +57,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: stable
+          go-version: '1.24.0'
 
       - uses: goreleaser/goreleaser-action@v7
         with:
@@ -90,7 +90,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: stable
+          go-version: '1.24.0'
 
       - name: Setup SSH key for AUR
         run: |
@@ -126,7 +126,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: stable
+          go-version: '1.24.0'
 
       - name: Install snapcraft
         run: sudo snap install snapcraft --classic
@@ -156,16 +156,14 @@ jobs:
       - name: Fetch all tags
         run: git fetch --tags --force
 
-      - name: Download dist artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/setup-go@v6
         with:
-          name: goreleaser-dist
-          path: dist
+          go-version: '1.24.0'
 
       - uses: goreleaser/goreleaser-action@v7
         with:
           version: v2
-          args: publish --config .github/goreleaser-publish-winget.yaml
+          args: release --clean --config .github/goreleaser-publish-winget.yaml --skip=validate
         env:
           GITHUB_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
 
@@ -190,16 +188,14 @@ jobs:
       - name: Fetch all tags
         run: git fetch --tags --force
 
-      - name: Download dist artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/setup-go@v6
         with:
-          name: goreleaser-dist
-          path: dist
+          go-version: '1.24.0'
 
       - uses: goreleaser/goreleaser-action@v7
         with:
           version: v2
-          args: publish --config .github/goreleaser-publish-chocolatey.yaml
+          args: release --clean --config .github/goreleaser-publish-chocolatey.yaml --skip=validate
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
           CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
@@ -223,7 +219,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: stable
+          go-version: '1.24.0'
 
       - uses: goreleaser/goreleaser-action@v7
         with:
