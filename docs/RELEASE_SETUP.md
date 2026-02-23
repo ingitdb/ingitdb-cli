@@ -116,10 +116,9 @@ After this, goreleaser will automatically update the PKGBUILD and .SRCINFO on ea
 **Note on CI/CD Implementation:**
 
 The `publish-aur` GitHub Actions job automatically:
-1. Downloads the pre-built Linux artifacts from the `build-linux` job (no rebuild)
+1. Rebuilds Linux binaries from the same source and flags — goreleaser strips timestamps from archives, making them reproducible, so checksums match the actual GitHub release tarballs
 2. Writes the SSH key from the secret to `~/.ssh/aur_key` with proper permissions (600)
 3. Passes the file path to goreleaser, which expects `private_key` to be a path, not key content
-4. Runs goreleaser with `--skip=build,archive` so checksums in the PKGBUILD match the actual GitHub release tarballs
 
 ### 1.6 Verify AUR Setup
 

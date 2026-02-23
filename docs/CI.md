@@ -14,7 +14,6 @@ Builds Linux and Windows binaries, creates the GitHub release, and uploads artif
 
 - Builds Linux binaries (amd64, arm64) and Windows binaries (amd64)
 - Creates the GitHub release and uploads archives + checksums
-- Saves `dist/` as a workflow artifact (`linux-dist`) for use by publish jobs
 
 **Secrets used:** `INGITDB_GORELEASER_GITHUB_TOKEN`
 
@@ -37,10 +36,8 @@ Publishes the AUR package using the pre-built Linux artifacts.
 
 **Config:** [`.github/goreleaser-publish-aur.yaml`](../.github/goreleaser-publish-aur.yaml)
 
-- Downloads the `linux-dist` workflow artifact (no rebuild)
-- Runs goreleaser with `--skip=build,archive,checksum,before` to publish only
-- Generates PKGBUILD and .SRCINFO with checksums matching the actual release tarballs
-- Pushes to AUR as `ingitdb-bin` via SSH
+- Rebuilds Linux binaries (goreleaser produces reproducible archives, so checksums match the release)
+- Generates PKGBUILD and .SRCINFO and pushes to AUR as `ingitdb-bin` via SSH
 
 **Secrets used:** `AUR_SSH_PRIVATE_KEY` (raw ED25519 private key)
 
@@ -50,8 +47,7 @@ Publishes the Homebrew Formula (Linuxbrew) using the pre-built Linux artifacts.
 
 **Config:** [`.github/goreleaser-publish-homebrew.yaml`](../.github/goreleaser-publish-homebrew.yaml)
 
-- Downloads the `linux-dist` workflow artifact (no rebuild)
-- Runs goreleaser with `--skip=build,archive,checksum,before` to publish only
+- Rebuilds Linux binaries (goreleaser produces reproducible archives, so checksums match the release)
 - Pushes Formula to [`ingitdb/homebrew-cli`](https://github.com/ingitdb/homebrew-cli)
 
 **Secrets used:** `INGITDB_GORELEASER_GITHUB_TOKEN`
