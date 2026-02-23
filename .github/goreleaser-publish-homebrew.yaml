@@ -27,7 +27,7 @@ archives:
 release:
   skip_upload: true
 
-brews:
+homebrew_casks:
   - name: ingitdb
     ids:
       - tarball
