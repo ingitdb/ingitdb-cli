@@ -17,16 +17,6 @@ builds:
       - -s -w
       - -X main.version={{.Version}}
 
-  - id: ingitdb-linux
-    main: ./cmd/ingitdb
-    binary: ingitdb
-    env: [ CGO_ENABLED=0 ]
-    goos: [ linux ]
-    goarch: [ amd64, arm64 ]
-    ldflags:
-      - -s -w
-      - -X main.version={{.Version}}
-
 archives:
   - id: tarball-macos
     formats: [ tar.gz ]
@@ -37,17 +27,8 @@ archives:
       - README.md
       - LICENSE*
 
-  - id: tarball-linux
-    formats: [ tar.gz ]
-    name_template: >-
-      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
-    ids: [ ingitdb-linux ]
-    files:
-      - README.md
-      - LICENSE*
-
 checksum:
-  name_template: checksums.txt
+  name_template: checksums-darwin.txt
 
 notarize:
   macos:
@@ -64,13 +45,15 @@ notarize:
         timeout:   20m
 
 release:
-  skip_upload: true
+  github:
+    owner: ingitdb
+    name: ingitdb-cli
+  mode: keep-existing
 
 homebrew_casks:
   - name: ingitdb
     ids:
       - tarball-macos
-      - tarball-linux
     description: "ingitdb – a CLI for a developer-grade, schema-validated, AI-native database whose storage engine is a Git repository."
     homepage: https://ingitdb.com
     license: MIT
