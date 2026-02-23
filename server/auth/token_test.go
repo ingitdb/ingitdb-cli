@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -54,7 +55,7 @@ func TestValidateGitHubToken(t *testing.T) {
 					return
 				}
 				w.Header().Set("Content-Type", "application/json")
-				fmt.Fprintln(w, `{"login": "octocat"}`)
+				_, _ = fmt.Fprintln(w, `{"login": "octocat"}`)
 			},
 			wantErr: false,
 		},
@@ -69,7 +70,7 @@ func TestValidateGitHubToken(t *testing.T) {
 			token: "bad-token",
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusUnauthorized)
-				fmt.Fprintln(w, `{"message": "Bad credentials"}`)
+				_, _ = fmt.Fprintln(w, `{"message": "Bad credentials"}`)
 			},
 			wantErr:    true,
 			errContain: "github token validation failed",
@@ -98,9 +99,8 @@ func TestValidateGitHubToken(t *testing.T) {
 				t.Fatalf("ValidateGitHubToken() error = %v, wantErr %v", err, tc.wantErr)
 			}
 			if err != nil && tc.errContain != "" {
-				// We expect "github token validation failed" prefix, but check substring just in case
-				if len(tc.errContain) > 0 { // Just to avoid unused var warning if I expand logic later
-					// Actually check content
+				if !strings.Contains(err.Error(), tc.errContain) {
+					t.Errorf("error %q does not contain %q", err.Error(), tc.errContain)
 				}
 			}
 		})

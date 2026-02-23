@@ -73,7 +73,7 @@ func TestExchangeCodeForToken(t *testing.T) {
 					return
 				}
 				w.Header().Set("Content-Type", "application/json")
-				fmt.Fprintln(w, `{"access_token": "token123", "token_type": "bearer"}`)
+				_, _ = fmt.Fprintln(w, `{"access_token": "token123", "token_type": "bearer"}`)
 			},
 			wantToken: "token123",
 		},
@@ -88,7 +88,7 @@ func TestExchangeCodeForToken(t *testing.T) {
 			code: "valid-code",
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprintln(w, `{}`)
+				_, _ = fmt.Fprintln(w, `{}`)
 			},
 			wantErr:    true,
 			errContain: "token exchange failed with status 500",
@@ -98,7 +98,7 @@ func TestExchangeCodeForToken(t *testing.T) {
 			code: "bad-code",
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
-				fmt.Fprintln(w, `{"error": "bad_verification_code", "error_description": "The code passed is incorrect or expired."}`)
+				_, _ = fmt.Fprintln(w, `{"error": "bad_verification_code", "error_description": "The code passed is incorrect or expired."}`)
 			},
 			wantErr:    true,
 			errContain: "bad_verification_code",
@@ -108,7 +108,7 @@ func TestExchangeCodeForToken(t *testing.T) {
 			code: "valid-code",
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
-				fmt.Fprintln(w, `not json`)
+				_, _ = fmt.Fprintln(w, `not json`)
 			},
 			wantErr:    true,
 			errContain: "failed to decode token exchange response",
@@ -118,7 +118,7 @@ func TestExchangeCodeForToken(t *testing.T) {
 			code: "valid-code",
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
-				fmt.Fprintln(w, `{"foo": "bar"}`)
+				_, _ = fmt.Fprintln(w, `{"foo": "bar"}`)
 			},
 			wantErr:    true,
 			errContain: "did not include access_token",
