@@ -248,9 +248,6 @@ jobs:
 
   deploy-website:
     name: Deploy Website
-    needs:
-      - build-linux
-    if: '!failure() && !cancelled()'
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
