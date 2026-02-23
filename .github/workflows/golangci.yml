@@ -1,4 +1,4 @@
-name: CI (build, lint, test)
+name: CI (build, lint, test, bump)
 
 on:
   workflow_dispatch:
