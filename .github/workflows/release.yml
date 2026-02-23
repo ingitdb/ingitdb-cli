@@ -82,6 +82,13 @@ jobs:
         with:
           go-version: stable
 
+      - name: Setup SSH key for AUR
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/aur_key
+          chmod 600 ~/.ssh/aur_key
+          echo "AUR_SSH_PRIVATE_KEY=$HOME/.ssh/aur_key" >> $GITHUB_ENV
+
       - uses: goreleaser/goreleaser-action@v7
         with:
           version: v2
