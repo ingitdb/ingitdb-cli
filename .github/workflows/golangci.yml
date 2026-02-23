@@ -11,7 +11,7 @@ on:
       - '**/*.go'
       - 'src/**'
       - '.github/workflows/*.yml'
-      - '.github/goreleaser.yaml'
+      - '.github/goreleaser*.yaml'
 
   pull_request:
     branches:
@@ -21,7 +21,7 @@ on:
       - '**/*.go'
       - 'src/**'
       - '.github/workflows/*.yml'
-      - '.github/goreleaser.yaml'
+      - '.github/goreleaser*.yaml'
 
 jobs:
   strongo_workflow:
