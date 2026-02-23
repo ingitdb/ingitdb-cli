@@ -100,7 +100,7 @@ jobs:
       - uses: goreleaser/goreleaser-action@v7
         with:
           version: v2
-          args: release --skip=build,archive,checksum,before --config .github/goreleaser-publish-aur.yaml
+          args: release --skip=before,archive --config .github/goreleaser-publish-aur.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
 
@@ -128,7 +128,7 @@ jobs:
       - uses: goreleaser/goreleaser-action@v7
         with:
           version: v2
-          args: release --skip=build,archive,checksum,before --config .github/goreleaser-publish-homebrew.yaml
+          args: release --skip=before,archive --config .github/goreleaser-publish-homebrew.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
 
