@@ -29,7 +29,8 @@ jobs:
       contents: write
     uses: strongo/go-ci-action/.github/workflows/workflow.yml@main
     secrets:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
       GORELEASER_GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
     with:
       code_coverage: true
