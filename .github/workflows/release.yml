@@ -30,6 +30,7 @@ jobs:
           args: release --clean --config .github/goreleaser-linux.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
+          WINGET_GITHUB_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
 
       - name: Upload dist artifacts
         uses: actions/upload-artifact@v4
@@ -137,34 +138,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-
-  # See docs/release/winget.md for setup instructions
-  publish-winget:
-    name: Publish to WinGet
-    needs:
-      - build-linux
-    if: "!failure() && !cancelled()"
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Fetch all tags
-        run: git fetch --tags --force
-
-      - uses: actions/setup-go@v6
-        with:
-          go-version: "1.24.1"
-
-      - uses: goreleaser/goreleaser-action@v7
-        with:
-          version: v2
-          args: release --clean --config .github/goreleaser-publish-winget.yaml --skip=validate
-        env:
-          GITHUB_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
 
   # See docs/release/chocolatey.md for setup instructions
   publish-chocolatey:
