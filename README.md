@@ -75,6 +75,9 @@ brew install ingitdb
 ### Windows
 
 ```powershell
+# WinGet
+winget install ingitdb
+
 # Chocolatey
 choco install ingitdb
 
