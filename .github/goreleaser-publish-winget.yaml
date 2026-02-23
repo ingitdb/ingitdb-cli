@@ -42,12 +42,15 @@ winget:
       whose storage engine is a Git repository. Records are YAML/JSON files,
       collections and schemas are defined declaratively.
     repository:
-      owner: microsoft
+      owner: ingitdb
       name: winget-pkgs
-      branch: master
       token: "{{ .Env.GITHUB_TOKEN }}"
       pull_request:
         enabled: true
+        base:
+          owner: microsoft
+          name: winget-pkgs
+          branch: master
 
 release:
   skip_upload: true
