@@ -22,7 +22,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.24.0'
+          go-version: '1.24.1'
 
       - uses: goreleaser/goreleaser-action@v7
         with:
@@ -57,7 +57,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.24.0'
+          go-version: '1.24.1'
 
       - uses: goreleaser/goreleaser-action@v7
         with:
@@ -90,7 +90,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.24.0'
+          go-version: '1.24.1'
 
       - name: Setup SSH key for AUR
         run: |
@@ -126,7 +126,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.24.0'
+          go-version: '1.24.1'
 
       - name: Install snapcraft
         run: sudo snap install snapcraft --classic
@@ -158,7 +158,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.24.0'
+          go-version: '1.24.1'
 
       - uses: goreleaser/goreleaser-action@v7
         with:
@@ -190,7 +190,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.24.0'
+          go-version: '1.24.1'
 
       - uses: goreleaser/goreleaser-action@v7
         with:
@@ -219,7 +219,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.24.0'
+          go-version: '1.24.1'
 
       - uses: goreleaser/goreleaser-action@v7
         with:
