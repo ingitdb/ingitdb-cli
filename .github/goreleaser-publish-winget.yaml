@@ -2,35 +2,8 @@ version: 2
 
 project_name: ingitdb
 
-before:
-  hooks:
-    - go mod tidy
-
-builds:
-  - id: ingitdb-windows
-    main: ./cmd/ingitdb
-    binary: ingitdb
-    env: [ CGO_ENABLED=0 ]
-    goos: [ windows ]
-    goarch: [ amd64 ]
-    ldflags:
-      - -s -w
-      - -X main.version={{.Version}}
-
-archives:
-  - id: zip
-    formats: [ zip ]
-    name_template: >-
-      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
-    ids: [ ingitdb-windows ]
-
-checksum:
-  name_template: checksums.txt
-
 winget:
   - name: ingitdb
-    ids:
-      - zip
     publisher: ingitdb
     publisher_url: https://ingitdb.com
     package_identifier: ingitdb.ingitdb
