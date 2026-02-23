@@ -11,9 +11,21 @@ WinGet requires submitting packages via pull request to Microsoft's repository. 
 3. Set **Owner** to `ingitdb`
 4. Click **Create fork**
 
-## 2. Verify Token Permissions
+## 2. Create a Classic PAT for WinGet
 
-The `INGITDB_GORELEASER_GITHUB_TOKEN` must have `contents: write` access to `ingitdb/winget-pkgs` (the fork). No additional secrets are needed — the same token is used for the PR to `microsoft/winget-pkgs`.
+WinGet requires creating a PR on `microsoft/winget-pkgs`, which is outside the `ingitdb` org. Fine-grained PATs scoped to an organization cannot call GitHub APIs on external repositories, so a **classic PAT** is required.
+
+1. Go to **GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)**
+2. Click **Generate new token (classic)**
+3. Set scope: `public_repo` (under `repo`)
+4. Copy the token
+5. Add it as a secret in `ingitdb/ingitdb-cli`:
+   - **Name:** `WINGET_GITHUB_TOKEN`
+   - **Value:** the classic PAT
+
+The token needs access to:
+- `ingitdb/winget-pkgs` — to push manifests to the fork
+- `microsoft/winget-pkgs` — to open the PR (requires classic PAT with `public_repo`)
 
 ## 3. How It Works
 
@@ -58,9 +70,7 @@ winget uninstall ingitdb
 
 ### "403 Resource not accessible by personal access token"
 
-The token is trying to push directly to `microsoft/winget-pkgs`. Ensure:
-- The fork `ingitdb/winget-pkgs` exists (see Step 1)
-- `INGITDB_GORELEASER_GITHUB_TOKEN` has write access to the fork
+This means a fine-grained PAT is being used. Fine-grained PATs cannot create PRs on repositories outside the configured organization scope. Use a classic PAT with `public_repo` scope stored as `WINGET_GITHUB_TOKEN` (see Step 2).
 
 ### "404 Not Found" on fork sync
 

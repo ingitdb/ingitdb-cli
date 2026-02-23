@@ -73,7 +73,7 @@ Publishes to WinGet via fork + PR to `microsoft/winget-pkgs`.
 - Generates WinGet manifests and pushes to `ingitdb/winget-pkgs` fork
 - Opens a PR to `microsoft/winget-pkgs`
 
-**Secrets used:** `INGITDB_GORELEASER_GITHUB_TOKEN`
+**Secrets used:** `WINGET_GITHUB_TOKEN` (classic PAT with `public_repo` scope — required to open PRs on `microsoft/winget-pkgs`)
 
 #### 7. `publish-scoop` (runs on Ubuntu, after `build-linux`)
 
