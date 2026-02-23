@@ -10,7 +10,10 @@ Each package manager has its own setup guide:
 
 - **[AUR (Arch Linux User Repository)](./aur.md)** - For Arch Linux users
 - **[Snapcraft](./snapcraft.md)** - For universal Linux users
-- **[Homebrew](./homebrew.md)** - For macOS Linuxbrew and macOS users
+
+### macOS Package Managers
+
+- **[Homebrew](./homebrew.md)** - Published via the macOS build job (signed + notarized)
 
 ### Windows Package Managers
 
