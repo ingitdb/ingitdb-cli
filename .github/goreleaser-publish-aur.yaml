@@ -2,9 +2,27 @@ version: 2
 
 project_name: ingitdb
 
-builds: []
+before:
+  hooks:
+    - go mod tidy
 
-archives: []
+builds:
+  - id: ingitdb-linux
+    main: ./cmd/ingitdb
+    binary: ingitdb
+    env: [ CGO_ENABLED=0 ]
+    goos: [ linux ]
+    goarch: [ amd64, arm64 ]
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+
+archives:
+  - id: tarball
+    formats: [ tar.gz ]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    ids: [ ingitdb-linux ]
 
 release:
   skip_upload: true

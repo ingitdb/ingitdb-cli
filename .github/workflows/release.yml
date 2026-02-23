@@ -31,12 +31,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux-dist
-          path: dist/
-          retention-days: 1
-
   macos-releaser:
     name: Build, Sign & Notarize macOS
     needs:
@@ -85,10 +79,9 @@ jobs:
       - name: Fetch all tags
         run: git fetch --tags --force
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/setup-go@v6
         with:
-          name: linux-dist
-          path: dist/
+          go-version: stable
 
       - name: Setup SSH key for AUR
         run: |
@@ -100,7 +93,7 @@ jobs:
       - uses: goreleaser/goreleaser-action@v7
         with:
           version: v2
-          args: release --skip=before,archive,validate --config .github/goreleaser-publish-aur.yaml
+          args: release --clean --config .github/goreleaser-publish-aur.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
 
@@ -120,15 +113,14 @@ jobs:
       - name: Fetch all tags
         run: git fetch --tags --force
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/setup-go@v6
         with:
-          name: linux-dist
-          path: dist/
+          go-version: stable
 
       - uses: goreleaser/goreleaser-action@v7
         with:
           version: v2
-          args: release --skip=before,archive,validate --config .github/goreleaser-publish-homebrew.yaml
+          args: release --clean --config .github/goreleaser-publish-homebrew.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
 
