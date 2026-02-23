@@ -1,7 +1,7 @@
 name: CI (build, lint, test, bump)
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Allows manual run
 
   push:
     branches:
