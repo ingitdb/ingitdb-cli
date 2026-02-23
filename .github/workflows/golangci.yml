@@ -30,7 +30,6 @@ jobs:
     uses: strongo/go-ci-action/.github/workflows/workflow.yml@main
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # DO not use INGITDB_GORELEASER_GITHUB_TOKEN here (why?)
-      GORELEASER_GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
     with:
       code_coverage: true
       min_test_coverage_percent: 80
