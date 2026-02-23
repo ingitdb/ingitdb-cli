@@ -1,7 +1,7 @@
 name: Release
 
 on:
-  workflow_dispatch: # Allows manual trigger from Actions tab
+  workflow_dispatch: # Allows manual trigger from Actions tab.
 #  push:
 #    tags: [ 'v*' ]
 
@@ -22,7 +22,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.24.1'
+          go-version: "1.24.1"
 
       - uses: goreleaser/goreleaser-action@v7
         with:
@@ -43,7 +43,7 @@ jobs:
     name: Publish to Homebrew
     needs:
       - build-linux
-    if: '!failure() && !cancelled()'
+    if: "!failure() && !cancelled()"
     runs-on: macos-latest
     permissions:
       contents: write
@@ -57,7 +57,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.24.1'
+          go-version: "1.24.1"
 
       - uses: goreleaser/goreleaser-action@v7
         with:
@@ -76,7 +76,7 @@ jobs:
     name: Publish to AUR
     needs:
       - build-linux
-    if: '!failure() && !cancelled()'
+    if: "!failure() && !cancelled()"
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -90,7 +90,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.24.1'
+          go-version: "1.24.1"
 
       - name: Setup SSH key for AUR
         run: |
@@ -106,13 +106,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
 
-
   # See docs/release/snapcraft.md for setup instructions
   publish-snap:
     name: Publish to Snapcraft
     needs:
       - build-linux
-    if: '!failure() && !cancelled()'
+    if: "!failure() && !cancelled()"
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -126,7 +125,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.24.1'
+          go-version: "1.24.1"
 
       - name: Install snapcraft
         run: sudo snap install snapcraft --classic
@@ -144,7 +143,7 @@ jobs:
     name: Publish to WinGet
     needs:
       - build-linux
-    if: '!failure() && !cancelled()'
+    if: "!failure() && !cancelled()"
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -158,7 +157,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.24.1'
+          go-version: "1.24.1"
 
       - uses: goreleaser/goreleaser-action@v7
         with:
@@ -172,7 +171,7 @@ jobs:
     name: Publish to Chocolatey
     needs:
       - build-linux
-    if: '!failure() && !cancelled()'
+    if: "!failure() && !cancelled()"
     runs-on: windows-latest
     continue-on-error: true
     permissions:
@@ -190,7 +189,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.24.1'
+          go-version: "1.24.1"
 
       - uses: goreleaser/goreleaser-action@v7
         with:
@@ -205,7 +204,7 @@ jobs:
     name: Publish to Scoop
     needs:
       - build-linux
-    if: '!failure() && !cancelled()'
+    if: "!failure() && !cancelled()"
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -219,7 +218,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.24.1'
+          go-version: "1.24.1"
 
       - uses: goreleaser/goreleaser-action@v7
         with:
@@ -233,12 +232,12 @@ jobs:
     name: Deploy to Cloud Run
     needs:
       - build-linux
-    if: '!failure() && !cancelled()'
+    if: "!failure() && !cancelled()"
     runs-on: ubuntu-latest
     permissions:
-      contents: 'read'
-      id-token: 'write'
-      packages: 'read'
+      contents: "read"
+      id-token: "write"
+      packages: "read"
 
     steps:
       - uses: actions/checkout@v6
@@ -257,4 +256,3 @@ jobs:
           ingitdb_auth_cookie_secure: ${{ vars.INGITDB_AUTH_COOKIE_SECURE || 'true' }}
           gcp_oauth_client_secret_name: ${{ vars.GCP_OAUTH_CLIENT_SECRET_NAME }}
           workload_identity_provider: ${{ vars.WORKLOAD_IDENTITY_PROVIDER || 'projects/152447355531/locations/global/workloadIdentityPools/github/providers/ingitdb' }}
-
