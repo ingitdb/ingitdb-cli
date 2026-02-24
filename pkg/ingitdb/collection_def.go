@@ -17,6 +17,9 @@ type CollectionDef struct {
 	// SubCollections are not part of the collection definition file,
 	// they are stored in the "subcollections" subdirectory.
 	SubCollections map[string]*CollectionDef `yaml:"-" json:"-"`
+	// Views are not part of the collection definition file,
+	// they are stored in the "views" subdirectory.
+	Views map[string]*ViewDef `yaml:"-" json:"-"`
 }
 
 func (v *CollectionDef) Validate() error {
@@ -52,6 +55,13 @@ func (v *CollectionDef) Validate() error {
 		for id, subColDef := range v.SubCollections {
 			if err := subColDef.Validate(); err != nil {
 				allErrors = append(allErrors, fmt.Errorf("invalid subcollection '%s': %w", id, err))
+			}
+		}
+	}
+	if v.Views != nil {
+		for id, viewDef := range v.Views {
+			if err := viewDef.Validate(); err != nil {
+				allErrors = append(allErrors, fmt.Errorf("invalid view '%s': %w", id, err))
 			}
 		}
 	}

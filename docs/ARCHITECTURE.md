@@ -13,10 +13,12 @@ A database is a directory tree inside a Git repository:
 ├── .ingitdb.yaml                          # DB-level config (collections, languages)
 └── <group>/
     └── <collection>/
-        ├── .ingitdb-collection.yaml       # Collection schema
-        ├── $records/
-        │   └── <record-id>.json           # Individual record files (JSON or YAML)
-        ├── .ingitdb-view.<name>.yaml      # View definitions
+        ├── .ingitdb-collection/
+        │   ├── <collection_id>.yaml         # Collection schema
+        │   ├── subcollections/              # Subcollection definitions
+        │   │   └── <name>.yaml
+        │   └── views/                       # View definitions
+        │       └── <name>.yaml
         └── $views/
             └── <view-name>/
                 └── <partition>.md         # Materialized view output files
@@ -43,8 +45,8 @@ titles:
 data_dir: $records
 record_file:
   name: "$records/{key}.json"
-  type: "[]map[string]any"   # or "map[string]any" (single record) or "map[string]map[string]any" (keyed dict)
-  format: json               # or yaml
+  type: "[]map[string]any" # or "map[string]any" (single record) or "map[string]map[string]any" (keyed dict)
+  format: json # or yaml
 columns:
   title:
     type: string
@@ -56,14 +58,14 @@ columns:
   status:
     type: string
     required: true
-    foreign_key: statuses    # value must be a valid record ID in the 'statuses' collection
+    foreign_key: statuses # value must be a valid record ID in the 'statuses' collection
 ```
 
 **Column types:** `string`, `int`, `float`, `bool`, `date`, `time`, `datetime`, `map[locale]string`, `any`
 
 **Record files** live in the collection's `data_dir`. A file holds either one record (`map[string]any`) or an array of records (`[]map[string]any`), as declared in `record_file.type`.
 
-**View definitions** (`.ingitdb-view.<name>.yaml`) declare how to partition and render records into materialized view files under `$views/`.
+**View definitions** (`.ingitdb-collection/views/<name>.yaml`) declare how to partition and render records into materialized view files under `$views/`.
 
 ## 🏗️ Component Architecture
 
@@ -100,14 +102,14 @@ The **Scanner** (see `docs/components/scanner.md`) orchestrates the full pipelin
 
 ## 📂 Package Map
 
-| Package | Responsibility |
-|---|---|
-| `pkg/ingitdb` | Domain types only: `Definition`, `CollectionDef`, `ColumnDef`, `ViewDef`, etc. No I/O. |
-| `pkg/ingitdb/config` | Reads `.ingitdb.yaml` (root config) and `~/.ingitdb/.ingitdb-user.yaml` (user config). |
-| `pkg/ingitdb/validator` | Reads and validates collection schemas. Entry point: `ReadDefinition()`. |
-| `pkg/dalgo2ingitdb` | DALgo integration: implements `dal.DB`, read-only and read-write transactions. |
-| `cmd/ingitdb/commands` | One file per CLI command. Each exports a single `*cli.Command` constructor. Subcommands are unexported functions named after the subcommand (parent-prefixed on name collisions). |
-| `cmd/ingitdb` | CLI entry point only: assembles the `commands` slice, injects dependencies, and handles process exit. |
+| Package                 | Responsibility                                                                                                                                                                    |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pkg/ingitdb`           | Domain types only: `Definition`, `CollectionDef`, `ColumnDef`, `ViewDef`, etc. No I/O.                                                                                            |
+| `pkg/ingitdb/config`    | Reads `.ingitdb.yaml` (root config) and `~/.ingitdb/.ingitdb-user.yaml` (user config).                                                                                            |
+| `pkg/ingitdb/validator` | Reads and validates collection schemas. Entry point: `ReadDefinition()`.                                                                                                          |
+| `pkg/dalgo2ingitdb`     | DALgo integration: implements `dal.DB`, read-only and read-write transactions.                                                                                                    |
+| `cmd/ingitdb/commands`  | One file per CLI command. Each exports a single `*cli.Command` constructor. Subcommands are unexported functions named after the subcommand (parent-prefixed on name collisions). |
+| `cmd/ingitdb`           | CLI entry point only: assembles the `commands` slice, injects dependencies, and handles process exit.                                                                             |
 
 ## 🔁 Key Design Decisions
 

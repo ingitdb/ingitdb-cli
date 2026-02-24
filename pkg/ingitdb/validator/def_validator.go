@@ -89,6 +89,11 @@ func readCollectionDef(rootPath, relPath, id string, o ingitdb.ReadOptions) (col
 		return
 	}
 
+	if colDef.Views, err = loadViews(rootPath, relPath, o); err != nil {
+		err = fmt.Errorf("failed to load views for '%s': %w", id, err)
+		return
+	}
+
 	return
 }
 
@@ -146,4 +151,49 @@ func loadSubCollections(rootPath, relPath, parentSubDir, parentPath string, o in
 		}
 	}
 	return subCollections, nil
+}
+
+func loadViews(rootPath, relPath string, o ingitdb.ReadOptions) (map[string]*ingitdb.ViewDef, error) {
+	viewsPath := filepath.Join(rootPath, relPath, ingitdb.SchemaDir, "views")
+	entries, err := os.ReadDir(viewsPath)
+	if os.IsNotExist(err) {
+		return nil, nil // No views
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to read views directory: %w", err)
+	}
+
+	var views map[string]*ingitdb.ViewDef
+
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".yaml") {
+			continue
+		}
+		id := strings.TrimSuffix(entry.Name(), ".yaml")
+		viewDefFilePath := filepath.Join(viewsPath, entry.Name())
+
+		fileContent, err := os.ReadFile(viewDefFilePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read file %s: %w", viewDefFilePath, err)
+		}
+
+		viewDef := new(ingitdb.ViewDef)
+		if err = yaml.Unmarshal(fileContent, viewDef); err != nil {
+			return nil, fmt.Errorf("failed to parse YAML file %s: %w", viewDefFilePath, err)
+		}
+		viewDef.ID = id
+
+		if o.IsValidationRequired() {
+			if err = viewDef.Validate(); err != nil {
+				return nil, fmt.Errorf("not valid definition of view '%s': %w", id, err)
+			}
+			log.Printf("Definition of view '%s' is valid", id)
+		}
+
+		if views == nil {
+			views = make(map[string]*ingitdb.ViewDef)
+		}
+		views[id] = viewDef
+	}
+	return views, nil
 }

@@ -1,12 +1,12 @@
-# ⚙️ View Definition File (`.ingitdb-collection/view_<name>.yaml`)
+# ⚙️ View Definition File (`.ingitdb-collection/views/<name>.yaml`)
 
 A materialized view definition specifies how records from a collection should be queried, mapped, sorted, and output into distinct formats or files. It maps to the [`ViewDef`](../../pkg/ingitdb/view_def.go) type.
 
 ## 📂 File location
 
-Each view is defined in a file starting with `view_` (such as `view_{status}.yaml`) inside the collection's `.ingitdb-collection` directory.
+Each view is defined in a YAML file inside the `.ingitdb-collection/views/` subdirectory of the collection's directory. For example, `.ingitdb-collection/views/readme.yaml` defines a view named `readme`. The file name (without the `.yaml` extension) becomes the view's identifier.
 
-The string `<name>` following `view_` becomes the name of the output directory under the main view directory. Views support string substitution in names using `{field}` placeholders.
+Views support string substitution in names using `{field}` placeholders (e.g., `status_{status}.yaml`).
 
 ## 📂 Top-level fields
 
@@ -23,7 +23,7 @@ The string `<name>` following `view_` becomes the name of the output directory u
 
 ## 📂 Field references in view partitions
 
-When defining names using `{field}` blocks (for example, `.ingitdb-collection/view_status_{status}.yaml`), the output engine will output a separate, distinct view file layout for every identified value matching that partition field, simplifying data segmentation in your system.
+When defining names using `{field}` blocks (for example, `.ingitdb-collection/views/status_{status}.yaml`), the output engine will output a separate, distinct view file layout for every identified value matching that partition field, simplifying data segmentation in your system.
 
 ## 📂 Further Reading
 

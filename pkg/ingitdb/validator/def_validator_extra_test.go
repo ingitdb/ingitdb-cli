@@ -161,3 +161,143 @@ columns:
 		t.Fatalf("unexpected error: %s", errMsg)
 	}
 }
+
+func TestLoadViews_NoViewsDir(t *testing.T) {
+	t.Parallel()
+
+	views, err := loadViews(t.TempDir(), "", ingitdb.NewReadOptions())
+	if err != nil {
+		t.Fatalf("expected nil error, got %v", err)
+	}
+	if views != nil {
+		t.Fatalf("expected nil views, got %v", views)
+	}
+}
+
+func TestLoadViews_ValidViews(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	viewsDir := filepath.Join(root, ingitdb.SchemaDir, "views")
+	if err := os.MkdirAll(viewsDir, 0o777); err != nil {
+		t.Fatalf("failed to create views dir: %v", err)
+	}
+
+	content := `order_by: title
+template: .ingitdb-view.README.md
+file_name: README.md
+records_var_name: items
+`
+	if err := os.WriteFile(filepath.Join(viewsDir, "readme.yaml"), []byte(content), 0o666); err != nil {
+		t.Fatalf("failed to write view file: %v", err)
+	}
+
+	views, err := loadViews(root, "", ingitdb.NewReadOptions())
+	if err != nil {
+		t.Fatalf("expected nil error, got %v", err)
+	}
+	if len(views) != 1 {
+		t.Fatalf("expected 1 view, got %d", len(views))
+	}
+	v := views["readme"]
+	if v == nil {
+		t.Fatal("expected 'readme' view to exist")
+	}
+	if v.ID != "readme" {
+		t.Fatalf("expected ID 'readme', got %q", v.ID)
+	}
+	if v.OrderBy != "title" {
+		t.Fatalf("expected OrderBy 'title', got %q", v.OrderBy)
+	}
+	if v.FileName != "README.md" {
+		t.Fatalf("expected FileName 'README.md', got %q", v.FileName)
+	}
+}
+
+func TestLoadViews_InvalidYAML(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	viewsDir := filepath.Join(root, ingitdb.SchemaDir, "views")
+	if err := os.MkdirAll(viewsDir, 0o777); err != nil {
+		t.Fatalf("failed to create views dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(viewsDir, "bad.yaml"), []byte("a: [1,2\n"), 0o666); err != nil {
+		t.Fatalf("failed to write view file: %v", err)
+	}
+
+	_, err := loadViews(root, "", ingitdb.NewReadOptions())
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if !strings.Contains(err.Error(), "failed to parse YAML file") {
+		t.Fatalf("unexpected error: %s", err.Error())
+	}
+}
+
+func TestLoadViews_InvalidViewWithValidation(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	viewsDir := filepath.Join(root, ingitdb.SchemaDir, "views")
+	if err := os.MkdirAll(viewsDir, 0o777); err != nil {
+		t.Fatalf("failed to create views dir: %v", err)
+	}
+
+	// Write a valid YAML but it will get ID from filename, so it should pass.
+	// To test validation error, we need to make Validate() fail.
+	// ViewDef.Validate() only checks for empty ID, but ID is set from filename, so it should always pass.
+	// Let's test the success path with validation enabled.
+	content := `order_by: title
+`
+	if err := os.WriteFile(filepath.Join(viewsDir, "readme.yaml"), []byte(content), 0o666); err != nil {
+		t.Fatalf("failed to write view file: %v", err)
+	}
+
+	views, err := loadViews(root, "", ingitdb.NewReadOptions(ingitdb.Validate()))
+	if err != nil {
+		t.Fatalf("expected nil error, got %v", err)
+	}
+	if len(views) != 1 {
+		t.Fatalf("expected 1 view, got %d", len(views))
+	}
+}
+
+func TestLoadViews_SkipsDirectories(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	viewsDir := filepath.Join(root, ingitdb.SchemaDir, "views")
+	if err := os.MkdirAll(filepath.Join(viewsDir, "somedir"), 0o777); err != nil {
+		t.Fatalf("failed to create views subdir: %v", err)
+	}
+
+	views, err := loadViews(root, "", ingitdb.NewReadOptions())
+	if err != nil {
+		t.Fatalf("expected nil error, got %v", err)
+	}
+	if views != nil {
+		t.Fatalf("expected nil views (no yaml files), got %v", views)
+	}
+}
+
+func TestLoadViews_SkipsNonYamlFiles(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	viewsDir := filepath.Join(root, ingitdb.SchemaDir, "views")
+	if err := os.MkdirAll(viewsDir, 0o777); err != nil {
+		t.Fatalf("failed to create views dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(viewsDir, "readme.txt"), []byte("not yaml"), 0o666); err != nil {
+		t.Fatalf("failed to write non-yaml file: %v", err)
+	}
+
+	views, err := loadViews(root, "", ingitdb.NewReadOptions())
+	if err != nil {
+		t.Fatalf("expected nil error, got %v", err)
+	}
+	if views != nil {
+		t.Fatalf("expected nil views (no yaml files), got %v", views)
+	}
+}

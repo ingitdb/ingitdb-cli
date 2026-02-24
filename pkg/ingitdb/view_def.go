@@ -1,5 +1,7 @@
 package ingitdb
 
+import "fmt"
+
 type ViewDef struct {
 	ID      string            `yaml:"-"`
 	Titles  map[string]string `yaml:"titles,omitempty"`
@@ -14,4 +16,12 @@ type ViewDef struct {
 	FileName string `yaml:"file_name,omitempty"`
 	// Template variable name for the records slice.
 	RecordsVarName string `yaml:"records_var_name,omitempty"`
+}
+
+// Validate checks the view definition for consistency.
+func (v *ViewDef) Validate() error {
+	if v.ID == "" {
+		return fmt.Errorf("missing 'id' in view definition")
+	}
+	return nil
 }

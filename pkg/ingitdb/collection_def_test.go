@@ -82,6 +82,18 @@ func TestCollectionDefValidate_Errors(t *testing.T) {
 			},
 			err: "invalid record_file definition",
 		},
+		{
+			name: "invalid_view",
+			def: &CollectionDef{
+				ID:         "test_id",
+				Columns:    columns,
+				RecordFile: recordFile,
+				Views: map[string]*ViewDef{
+					"readme": {},
+				},
+			},
+			err: "invalid view 'readme'",
+		},
 	}
 
 	for _, tt := range tests {
@@ -114,6 +126,9 @@ func TestCollectionDefValidate_Success(t *testing.T) {
 			Format:     "JSON",
 			RecordType: "map[string]any",
 			Name:       "{key}.json",
+		},
+		Views: map[string]*ViewDef{
+			"readme": {ID: "readme", OrderBy: "title"},
 		},
 	}
 
