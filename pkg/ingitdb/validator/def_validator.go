@@ -30,7 +30,15 @@ func ReadDefinition(rootPath string, o ...ingitdb.ReadOption) (def *ingitdb.Defi
 		err = fmt.Errorf("failed to read root config file %s: %v", config.RootConfigFileName, err)
 		return
 	}
-	return readRootCollections(rootPath, rootConfig, opts)
+	def, err = readRootCollections(rootPath, rootConfig, opts)
+	if err != nil {
+		return nil, err
+	}
+	def.Subscribers, err = ReadSubscribers(rootPath, opts)
+	if err != nil {
+		return nil, err
+	}
+	return def, nil
 }
 
 func readRootCollections(rootPath string, rootConfig config.RootConfig, o ingitdb.ReadOptions) (def *ingitdb.Definition, err error) {

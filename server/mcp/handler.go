@@ -190,6 +190,17 @@ func readDefinitionFromGitHub(ctx context.Context, fileReader dalgo2ghingitdb.Fi
 		colDef.DirPath = path.Clean(colPath)
 		def.Collections[id] = colDef
 	}
+	subscribersContent, subFound, subErr := fileReader.ReadFile(ctx, config.SubscribersConfigFileName)
+	if subErr != nil {
+		return nil, fmt.Errorf("failed to read subscribers config %s: %w", config.SubscribersConfigFileName, subErr)
+	}
+	if subFound {
+		var subCfg config.SubscribersConfig
+		if err = yaml.Unmarshal(subscribersContent, &subCfg); err != nil {
+			return nil, fmt.Errorf("failed to parse subscribers config %s: %w", config.SubscribersConfigFileName, err)
+		}
+		def.Subscribers = subCfg.Subscribers
+	}
 	return def, nil
 }
 
