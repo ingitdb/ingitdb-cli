@@ -146,7 +146,6 @@ jobs:
     name: Deploy to Cloud Run
     needs:
       - build-linux
-      - build-windows
     if: "!failure() && !cancelled()"
     runs-on: ubuntu-latest
     permissions:
