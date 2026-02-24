@@ -104,20 +104,20 @@ Example: `subject: "Record {event}: {path}"`
 
 Each handler entry may include an optional `name` field (a free-form label shown in logs). All other fields are type-specific.
 
-| Handler key                           | Implementation Type                                         | Description                                       |
-| ------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------- |
-| [`webhooks`](webhooks.md)             | [`WebhookDef`](../../../pkg/ingitdb/subscriber_def.go)      | HTTP POST to any URL                              |
-| [`emails`](emails.md)                 | [`EmailDef`](../../../pkg/ingitdb/subscriber_def.go)        | SMTP email notification                           |
-| [`telegrams`](telegrams.md)           | [`TelegramDef`](../../../pkg/ingitdb/subscriber_def.go)     | Telegram Bot API message                          |
-| [`whatsapp`](whatsapp.md)             | [`WhatsAppDef`](../../../pkg/ingitdb/subscriber_def.go)     | WhatsApp Business API message                     |
-| [`slacks`](slacks.md)                 | [`SlackDef`](../../../pkg/ingitdb/subscriber_def.go)        | Slack incoming webhook                            |
-| [`discords`](discords.md)             | [`DiscordDef`](../../../pkg/ingitdb/subscriber_def.go)      | Discord channel webhook                           |
-| [`github_actions`](github_actions.md) | [`GitHubActionDef`](../../../pkg/ingitdb/subscriber_def.go) | Trigger a GitHub Actions `workflow_dispatch`      |
-| [`gitlab_ci`](gitlab_ci.md)           | [`GitLabCIDef`](../../../pkg/ingitdb/subscriber_def.go)     | Trigger a GitLab pipeline                         |
-| [`ntfy`](ntfy.md)                     | [`NtfyDef`](../../../pkg/ingitdb/subscriber_def.go)         | Push notification via ntfy.sh                     |
-| [`sms`](sms.md)                       | [`SMSDef`](../../../pkg/ingitdb/subscriber_def.go)          | SMS via Twilio or Vonage                          |
-| [`search_indexes`](search_indexes.md) | [`SearchIndexDef`](../../../pkg/ingitdb/subscriber_def.go)  | Push changes to Algolia / Meilisearch / Typesense |
-| [`rss`](rss.md)                       | [`RSSDef`](../../../pkg/ingitdb/subscriber_def.go)          | Regenerate an RSS or Atom feed file               |
+| Handler key                                    | Implementation Type                                         | Description                                       |
+| ---------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------- |
+| [`webhooks`](handlers/webhooks.md)             | [`WebhookDef`](../../../pkg/ingitdb/subscriber_def.go)      | HTTP POST to any URL                              |
+| [`emails`](handlers/emails.md)                 | [`EmailDef`](../../../pkg/ingitdb/subscriber_def.go)        | SMTP email notification                           |
+| [`telegrams`](handlers/telegrams.md)           | [`TelegramDef`](../../../pkg/ingitdb/subscriber_def.go)     | Telegram Bot API message                          |
+| [`whatsapp`](handlers/whatsapp.md)             | [`WhatsAppDef`](../../../pkg/ingitdb/subscriber_def.go)     | WhatsApp Business API message                     |
+| [`slacks`](handlers/slacks.md)                 | [`SlackDef`](../../../pkg/ingitdb/subscriber_def.go)        | Slack incoming webhook                            |
+| [`discords`](handlers/discords.md)             | [`DiscordDef`](../../../pkg/ingitdb/subscriber_def.go)      | Discord channel webhook                           |
+| [`github_actions`](handlers/github_actions.md) | [`GitHubActionDef`](../../../pkg/ingitdb/subscriber_def.go) | Trigger a GitHub Actions `workflow_dispatch`      |
+| [`gitlab_ci`](handlers/gitlab_ci.md)           | [`GitLabCIDef`](../../../pkg/ingitdb/subscriber_def.go)     | Trigger a GitLab pipeline                         |
+| [`ntfy`](handlers/ntfy.md)                     | [`NtfyDef`](../../../pkg/ingitdb/subscriber_def.go)         | Push notification via ntfy.sh                     |
+| [`sms`](handlers/sms.md)                       | [`SMSDef`](../../../pkg/ingitdb/subscriber_def.go)          | SMS via Twilio or Vonage                          |
+| [`search_indexes`](handlers/search_indexes.md) | [`SearchIndexDef`](../../../pkg/ingitdb/subscriber_def.go)  | Push changes to Algolia / Meilisearch / Typesense |
+| [`rss`](handlers/rss.md)                       | [`RSSDef`](../../../pkg/ingitdb/subscriber_def.go)          | Regenerate an RSS or Atom feed file               |
 
 ---
 
