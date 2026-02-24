@@ -155,6 +155,27 @@ func TestRootConfigValidate(t *testing.T) {
 			err:  "",
 		},
 		{
+			name: "valid_default_namespace",
+			rc: &RootConfig{
+				DefaultNamespace: "todo",
+			},
+			err: "",
+		},
+		{
+			name: "valid_default_namespace_dotted",
+			rc: &RootConfig{
+				DefaultNamespace: "app.data",
+			},
+			err: "",
+		},
+		{
+			name: "invalid_default_namespace",
+			rc: &RootConfig{
+				DefaultNamespace: ".bad",
+			},
+			err: "invalid default_namespace",
+		},
+		{
 			name: "empty_id",
 			rc: &RootConfig{
 				RootCollections: map[string]string{
@@ -714,6 +735,21 @@ func TestReadRootConfigFromFile(t *testing.T) {
 			},
 			options:       ingitdb.NewReadOptions(ingitdb.Validate()),
 			expectedError: "",
+		},
+		{
+			name: "default_namespace_parsed",
+			setup: func(dir string) error {
+				filePath := filepath.Join(dir, RootConfigFileName)
+				content := []byte("default_namespace: myapp\nrootCollections:\n  users: users\n")
+				return os.WriteFile(filePath, content, 0666)
+			},
+			options:       ingitdb.NewReadOptions(ingitdb.Validate()),
+			expectedError: "",
+			verify: func(t *testing.T, rc RootConfig) {
+				if rc.DefaultNamespace != "myapp" {
+					t.Fatalf("expected default_namespace 'myapp', got %q", rc.DefaultNamespace)
+				}
+			},
 		},
 		{
 			name: "valid_languages_yaml",

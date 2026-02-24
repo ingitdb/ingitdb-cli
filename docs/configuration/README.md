@@ -9,7 +9,7 @@ This is not required as `ingitdb` CLI will autodetect repository config when sta
 
 At the root of the repository you should have a `.ingitdb.yaml` file that defines:
 
-- [root_collections](root-collections.md)
+- [root_collections](root-collections.md) (including [namespace imports](root-collections.md#namespace-imports) and [`default_namespace`](root-collections.md#default_namespace))
 - [languages](languages.md)
 
 Each collection directory contains an `.ingitdb-collection/collection.yaml` file:

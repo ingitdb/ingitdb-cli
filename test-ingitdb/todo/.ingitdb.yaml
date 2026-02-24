@@ -1,0 +1,6 @@
+default_namespace: todo
+
+rootCollections:
+  statuses: statuses
+  tags: tags
+  tasks: tasks

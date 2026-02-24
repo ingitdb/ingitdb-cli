@@ -23,8 +23,13 @@ type Language struct {
 }
 
 type RootConfig struct {
-	RootCollections map[string]string `yaml:"rootCollections,omitempty"`
-	Languages       []Language        `yaml:"languages,omitempty"`
+	// DefaultNamespace is used as the collection ID prefix when this DB is
+	// opened directly (not imported via a namespace import). For example,
+	// if DefaultNamespace is "todo" and the DB has collection "tasks",
+	// it becomes "todo.tasks" when opened directly.
+	DefaultNamespace string            `yaml:"default_namespace,omitempty"`
+	RootCollections  map[string]string `yaml:"rootCollections,omitempty"`
+	Languages        []Language        `yaml:"languages,omitempty"`
 }
 
 // IsNamespaceImport returns true if the key ends with ".*" suffix,
@@ -43,6 +48,11 @@ func namespaceImportPrefix(key string) string {
 func (rc *RootConfig) Validate() error {
 	if rc == nil {
 		return nil
+	}
+	if rc.DefaultNamespace != "" {
+		if err := ingitdb.ValidateCollectionID(rc.DefaultNamespace); err != nil {
+			return fmt.Errorf("invalid default_namespace %q: %w", rc.DefaultNamespace, err)
+		}
 	}
 	var paths []string
 	for id, path := range rc.RootCollections {
