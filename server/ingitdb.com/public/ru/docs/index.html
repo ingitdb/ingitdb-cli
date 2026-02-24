@@ -43,11 +43,7 @@
     <div class="lang-selector-bar">
         <div class="container">
             <a href="/en/docs/" title="English">English</a>
-            <a href="/es/docs/" title="Español">Español</a>
-            <a href="/de/docs/" title="Deutsch">Deutsch</a>
-            <a href="/fr/docs/" title="Français">Français</a>
             <a href="/ru/docs/" class="active" title="Русский">Русский</a>
-            <a href="/uk/docs/" title="Українська">Українська</a>
         </div>
     </div>
 
@@ -69,6 +65,7 @@
                         <li><a href="#configuration">Конфигурация</a></li>
                         <li><a href="#github-access">Доступ к GitHub</a></li>
                         <li><a href="#features">Возможности</a></li>
+                        <li><a href="#triggers">Триггеры и подписчики</a></li>
                     </ul>
                 </div>
                 <div class="docs-nav-section">
@@ -505,6 +502,105 @@ db := dalgo2ingitdb.NewDatabase(path)
                 </div>
 
                 <p>Посмотрите <a href="https://github.com/ingitdb/ingitdb-cli/blob/main/docs/COMPETITORS.md" target="_blank" rel="noopener">подробное сравнение</a> для получения дополнительной информации.</p>
+            </section>
+
+            <section id="triggers">
+                <h2>Триггеры и подписчики</h2>
+                <p>inGitDB может автоматически выполнять пользовательские рабочие процессы при создании, обновлении или удалении записей. Существуют два взаимодополняющих механизма:</p>
+
+                <h3>Триггеры</h3>
+                <p>Триггеры используют синтаксис, вдохновлённый GitHub Actions. Блок <code>on</code> объявляет, какие события запускают триггер; карта <code>jobs</code> определяет shell-команды для выполнения. Файлы триггеров находятся в <code>.ingitdb-collection/trigger_&lt;name&gt;.yaml</code>.</p>
+
+                <div class="code-example">
+                    <h4>.ingitdb-collection/trigger_rebuild.yaml</h4>
+                    <pre><code>on:
+  - created
+  - updated
+
+jobs:
+  build:
+    runs-on: "."
+    steps:
+      - run: echo "Запись изменена"
+      - run: npm run generate</code></pre>
+                </div>
+
+                <h3>Подписчики</h3>
+                <p>Подписчики — встроенные интеграции, работающие внутри CLI-процесса ingitdb — никаких дополнительных инструментов не требуется. Настраиваются в <code>.ingitdb/subscribers.yaml</code>.</p>
+
+                <div class="commands-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Подписчик</th>
+                                <th>Статус</th>
+                                <th>Описание</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Webhook</td>
+                                <td><span class="badge badge-warning">Planned</span></td>
+                                <td>HTTP POST по любому URL</td>
+                            </tr>
+                            <tr>
+                                <td>Email</td>
+                                <td><span class="badge badge-warning">Planned</span></td>
+                                <td>SMTP email-уведомление</td>
+                            </tr>
+                            <tr>
+                                <td>Telegram</td>
+                                <td><span class="badge badge-warning">Planned</span></td>
+                                <td>Сообщение через Telegram Bot API</td>
+                            </tr>
+                            <tr>
+                                <td>Slack</td>
+                                <td><span class="badge badge-proposal">Proposal</span></td>
+                                <td>Публикация в канал Slack через входящий вебхук</td>
+                            </tr>
+                            <tr>
+                                <td>Discord</td>
+                                <td><span class="badge badge-proposal">Proposal</span></td>
+                                <td>Публикация в канал Discord через вебхук</td>
+                            </tr>
+                            <tr>
+                                <td>WhatsApp</td>
+                                <td><span class="badge badge-proposal">Proposal</span></td>
+                                <td>Отправка сообщения WhatsApp</td>
+                            </tr>
+                            <tr>
+                                <td>GitHub Actions</td>
+                                <td><span class="badge badge-proposal">Proposal</span></td>
+                                <td>Запуск события <code>workflow_dispatch</code></td>
+                            </tr>
+                            <tr>
+                                <td>GitLab CI</td>
+                                <td><span class="badge badge-proposal">Proposal</span></td>
+                                <td>Запуск GitLab pipeline</td>
+                            </tr>
+                            <tr>
+                                <td>ntfy.sh</td>
+                                <td><span class="badge badge-proposal">Proposal</span></td>
+                                <td>Самостоятельно размещаемые push-уведомления</td>
+                            </tr>
+                            <tr>
+                                <td>SMS</td>
+                                <td><span class="badge badge-proposal">Proposal</span></td>
+                                <td>Отправка SMS через Twilio или Vonage</td>
+                            </tr>
+                            <tr>
+                                <td>Search index sync</td>
+                                <td><span class="badge badge-proposal">Proposal</span></td>
+                                <td>Синхронизация изменений с Algolia / Meilisearch / Typesense</td>
+                            </tr>
+                            <tr>
+                                <td>RSS/Atom feed</td>
+                                <td><span class="badge badge-proposal">Proposal</span></td>
+                                <td>Генерация файла RSS или Atom feed</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </section>
 
             <section class="cta-section-docs">

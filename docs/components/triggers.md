@@ -1,8 +1,11 @@
-# 🧩 inGitDB Triggers
+# inGitDB Triggers
 
-Triggers are pluggable scripts, executable and webhooks
-that can be called when data change.
+Triggers run shell commands automatically when records in a collection are created, updated, or deleted. They follow a GitHub Actions-inspired workflow model: an `on` block declares which events fire the trigger, and a `jobs` map defines what to run.
 
-Some triggers, like web-hooks, are built-in and can be configured within inGitDB collection definition.
+Each job specifies `runs-on: "."` (meaning it runs in the same environment as ingitdb itself) and a list of `steps`, where each step has a `run` field containing the shell command to execute.
 
-Other triggers are just executables receiving events (though `stdin|HTTP|pipe`) and can do anything you want. 
+See [Trigger Definition File](../schema/trigger.md) for the full YAML reference and an example.
+
+## Subscribers
+
+For common integrations — webhooks, email, Slack, Telegram, search index sync, and more — ingitdb provides [Subscribers](../features/subscribers.md): built-in, configurable event handlers that run inside the CLI process with no external tooling required. Subscribers are a higher-level alternative to shell-step triggers for these well-known targets.

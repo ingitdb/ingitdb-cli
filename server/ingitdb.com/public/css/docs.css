@@ -256,6 +256,11 @@
     color: white;
 }
 
+.badge-proposal {
+    background-color: #6366f1;
+    color: white;
+}
+
 .feature-list {
     list-style: none;
     padding-left: 0;

@@ -1,50 +1,67 @@
-# ⚙️ Trigger Definition File (`.ingitdb-collection/trigger_<name>.yaml`)
+# Trigger Definition File (`.ingitdb-collection/trigger_<name>.yaml`)
 
-Triggers are pluggable components that execute custom commands or HTTP requests when a given collection or document experiences specific data events.
+A trigger workflow runs shell commands in response to record lifecycle events in a collection. The syntax is modelled after [GitHub Actions](https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions) workflows.
 
-## 📂 File location
+## File location
 
-Like views, trigger definitions are found within the `.ingitdb-collection/trigger_<name>.yaml` file. These can exist at the root collection level or within subcollection directories to provide finely tuned event-based routing.
+Trigger definitions live inside the `.ingitdb-collection/` directory alongside view definitions:
 
-## 📂 Top-level fields
-
-| Field    | Type       | Description                                                                   |
-| -------- | ---------- | ----------------------------------------------------------------------------- |
-| `type`   | `string`   | The mechanism to fire: generally `webhook` or `shell`, defining execution.    |
-| `name`   | `string`   | Display name of the active trigger handler.                                   |
-| `on`     | `[]string` | RecordEvents to bind against (e.g., `insert`, `update`, `delete`, or `*`).    |
-| `config` | `object`   | The mapping used depending entirely on the given `type` field representation. |
-
-## 📂 Webhook Trigger Example
-
-Creating an implicit REST notification webhook:
-
-```yaml
-type: webhook
-name: NotifySlack
-on:
-  - insert
-  - update
-config:
-  url: "https://hooks.slack.com/services/T00000000/B00000000/YOUR_WEBHOOK_URL"
-  method: POST
+```
+<collection-dir>/
+  .ingitdb-collection/
+    trigger_<name>.yaml
 ```
 
-## 📂 Shell Executable Trigger Example
+The `<name>` part is a free-form identifier used to distinguish multiple triggers on the same collection.
 
-Creating a command runner bound to the OS system:
+## Top-level fields
+
+| Field  | Type              | Required | Description                                              |
+| ------ | ----------------- | -------- | -------------------------------------------------------- |
+| `on`   | `[]string`        | yes      | List of events that fire this trigger (see values below) |
+| `jobs` | `map[string]job`  | yes      | Map of job ID → job definition                           |
+
+### `on` values
+
+| Value     | Description                              |
+| --------- | ---------------------------------------- |
+| `created` | Fires when a record is created           |
+| `updated` | Fires when a record is updated           |
+| `deleted` | Fires when a record is deleted           |
+
+## Job fields
+
+Each entry in the `jobs` map is a job definition:
+
+| Field      | Type       | Required | Description                                                       |
+| ---------- | ---------- | -------- | ----------------------------------------------------------------- |
+| `runs-on`  | `string`   | yes      | Execution environment. Only `"."` (same process as ingitdb) is supported |
+| `steps`    | `[]step`   | yes      | Ordered list of steps to run                                      |
+
+## Step fields
+
+| Field | Type     | Required | Description                   |
+| ----- | -------- | -------- | ----------------------------- |
+| `run` | `string` | yes      | Shell command to execute       |
+
+## Example
 
 ```yaml
-type: shell
-name: BuildStaticSite
 on:
-  - "*"
-config:
-  command: "npm run generate"
+  - created
+  - updated
+
+jobs:
+  build:
+    runs-on: "."
+    steps:
+      - run: echo "Record changed, rebuilding site"
+      - run: npm run generate
+
+  notify:
+    runs-on: "."
+    steps:
+      - run: curl -s -X POST "$SLACK_WEBHOOK_URL" -d '{"text":"Record updated"}'
 ```
 
-## 📂 Custom Extensible Types
-
-Triggers are simply interface models extending the `Trigger.Fire(ctx, event)` signature, allowing you to build or implement anything you'd like handling the generated system event streams.
-
-See the [Triggers documentation](../components/triggers.md) for more details.
+See [Triggers](../components/triggers.md) for a conceptual overview.

@@ -43,11 +43,7 @@
     <div class="lang-selector-bar">
         <div class="container">
             <a href="/en/docs/" class="active" title="English">English</a>
-            <a href="/es/docs/" title="Español">Español</a>
-            <a href="/de/docs/" title="Deutsch">Deutsch</a>
-            <a href="/fr/docs/" title="Français">Français</a>
             <a href="/ru/docs/" title="Русский">Русский</a>
-            <a href="/uk/docs/" title="Українська">Українська</a>
         </div>
     </div>
 
@@ -69,6 +65,7 @@
                         <li><a href="#configuration">Configuration</a></li>
                         <li><a href="#github-access">GitHub Access</a></li>
                         <li><a href="#features">Features</a></li>
+                        <li><a href="#triggers">Triggers &amp; Subscribers</a></li>
                     </ul>
                 </div>
                 <div class="docs-nav-section">
@@ -505,6 +502,105 @@ db := dalgo2ingitdb.NewDatabase(path)
                 </div>
 
                 <p>See the <a href="https://github.com/ingitdb/ingitdb-cli/blob/main/docs/COMPETITORS.md" target="_blank" rel="noopener">detailed comparison</a> for more.</p>
+            </section>
+
+            <section id="triggers">
+                <h2>Triggers &amp; Subscribers</h2>
+                <p>inGitDB can execute custom workflows automatically when records are created, updated, or deleted. There are two complementary mechanisms:</p>
+
+                <h3>Triggers</h3>
+                <p>Triggers use a GitHub Actions-inspired syntax. An <code>on</code> block declares which events fire the trigger; a <code>jobs</code> map defines what shell commands to run. Trigger files live in <code>.ingitdb-collection/trigger_&lt;name&gt;.yaml</code>.</p>
+
+                <div class="code-example">
+                    <h4>.ingitdb-collection/trigger_rebuild.yaml</h4>
+                    <pre><code>on:
+  - created
+  - updated
+
+jobs:
+  build:
+    runs-on: "."
+    steps:
+      - run: echo "Record changed"
+      - run: npm run generate</code></pre>
+                </div>
+
+                <h3>Subscribers</h3>
+                <p>Subscribers are built-in integrations that run inside the ingitdb CLI process — no extra tooling needed. Configured in <code>.ingitdb/subscribers.yaml</code>.</p>
+
+                <div class="commands-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Subscriber</th>
+                                <th>Status</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Webhook</td>
+                                <td><span class="badge badge-warning">Planned</span></td>
+                                <td>HTTP POST to any URL</td>
+                            </tr>
+                            <tr>
+                                <td>Email</td>
+                                <td><span class="badge badge-warning">Planned</span></td>
+                                <td>SMTP email notification</td>
+                            </tr>
+                            <tr>
+                                <td>Telegram</td>
+                                <td><span class="badge badge-warning">Planned</span></td>
+                                <td>Message via Telegram Bot API</td>
+                            </tr>
+                            <tr>
+                                <td>Slack</td>
+                                <td><span class="badge badge-proposal">Proposal</span></td>
+                                <td>Post to a Slack channel via incoming webhook</td>
+                            </tr>
+                            <tr>
+                                <td>Discord</td>
+                                <td><span class="badge badge-proposal">Proposal</span></td>
+                                <td>Post to a Discord channel via webhook</td>
+                            </tr>
+                            <tr>
+                                <td>WhatsApp</td>
+                                <td><span class="badge badge-proposal">Proposal</span></td>
+                                <td>Send a WhatsApp message</td>
+                            </tr>
+                            <tr>
+                                <td>GitHub Actions</td>
+                                <td><span class="badge badge-proposal">Proposal</span></td>
+                                <td>Trigger a <code>workflow_dispatch</code> event</td>
+                            </tr>
+                            <tr>
+                                <td>GitLab CI</td>
+                                <td><span class="badge badge-proposal">Proposal</span></td>
+                                <td>Trigger a GitLab pipeline</td>
+                            </tr>
+                            <tr>
+                                <td>ntfy.sh</td>
+                                <td><span class="badge badge-proposal">Proposal</span></td>
+                                <td>Self-hostable push notifications</td>
+                            </tr>
+                            <tr>
+                                <td>SMS</td>
+                                <td><span class="badge badge-proposal">Proposal</span></td>
+                                <td>Send an SMS via Twilio or Vonage</td>
+                            </tr>
+                            <tr>
+                                <td>Search index sync</td>
+                                <td><span class="badge badge-proposal">Proposal</span></td>
+                                <td>Push changes to Algolia / Meilisearch / Typesense</td>
+                            </tr>
+                            <tr>
+                                <td>RSS/Atom feed</td>
+                                <td><span class="badge badge-proposal">Proposal</span></td>
+                                <td>Regenerate an RSS or Atom feed file</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </section>
 
             <section class="cta-section-docs">
