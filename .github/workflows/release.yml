@@ -2,8 +2,6 @@ name: Release
 
 on:
   workflow_dispatch: # Allows manual trigger from Actions tab.
-#  push:
-#    tags: [ 'v*' ]
 
 jobs:
   build-linux:
