@@ -1,18 +1,18 @@
 # ⚙️ Collection Definition File (`.ingitdb-collection/<collection_id>.yaml`)
 
 Each collection directory contains an `.ingitdb-collection/<collection_id>.yaml` file that describes
-how records are stored and what columns (fields) they have.
+how records are stored and what columns (fields) they have. The file structure maps to the [`CollectionDef`](../../pkg/ingitdb/collection_def.go) type.
 
 ## 📂 Top-level fields
 
-| Field           | Type                   | Description                                     |
-| --------------- | ---------------------- | ----------------------------------------------- |
-| `titles`        | `map[locale]string`    | Human-readable collection name, keyed by locale |
-| `record_file`   | `RecordFileDef`        | How records are stored on disk (required)       |
-| `data_dir`      | `string`               | Custom data directory (optional)                |
-| `columns`       | `map[string]ColumnDef` | Column (field) definitions                      |
-| `columns_order` | `[]string`             | Display order for columns                       |
-| `default_view`  | `string`               | Default view name (optional)                    |
+| Field           | Type                                                        | Description                                     |
+| --------------- | ----------------------------------------------------------- | ----------------------------------------------- |
+| `titles`        | `map[locale]string`                                         | Human-readable collection name, keyed by locale |
+| `record_file`   | [`RecordFileDef`](../../pkg/ingitdb/record_file_def.go)     | How records are stored on disk (required)       |
+| `data_dir`      | `string`                                                    | Custom data directory (optional)                |
+| `columns`       | `map[string]`[`ColumnDef`](../../pkg/ingitdb/column_def.go) | Column (field) definitions                      |
+| `columns_order` | `[]string`                                                  | Display order for columns                       |
+| `default_view`  | `string`                                                    | Default view name (optional)                    |
 
 ---
 
@@ -20,11 +20,11 @@ how records are stored and what columns (fields) they have.
 
 Controls how records are physically stored.
 
-| Field    | Type         | Description                                                               |
-| -------- | ------------ | ------------------------------------------------------------------------- |
-| `name`   | `string`     | File name or pattern. May contain `{key}` and `{fieldName}` placeholders. |
-| `format` | `string`     | File format: `json`, `yaml`, or `yml`                                     |
-| `type`   | `RecordType` | Layout of records within the file (see below)                             |
+| Field    | Type                                                 | Description                                                               |
+| -------- | ---------------------------------------------------- | ------------------------------------------------------------------------- |
+| `name`   | `string`                                             | File name or pattern. May contain `{key}` and `{fieldName}` placeholders. |
+| `format` | `string`                                             | File format: `json`, `yaml`, or `yml`                                     |
+| `type`   | [`RecordType`](../../pkg/ingitdb/record_file_def.go) | Layout of records within the file (see below)                             |
 
 ### 🔹 record_file.type` values
 
@@ -124,17 +124,17 @@ File `tags.json`:
 
 Each entry under `columns` is a **ColumnDef** keyed by the field name.
 
-| Field         | Type                | Description                       |
-| ------------- | ------------------- | --------------------------------- |
-| `type`        | `ColumnType`        | Field type (required)             |
-| `required`    | `bool`              | Whether the field must be present |
-| `title`       | `string`            | Display label                     |
-| `titles`      | `map[locale]string` | Localized display labels          |
-| `length`      | `int`               | Exact length constraint           |
-| `min_length`  | `int`               | Minimum length                    |
-| `max_length`  | `int`               | Maximum length                    |
-| `foreign_key` | `string`            | Reference to another collection   |
-| `locale`      | `string`            | Locale shortcut (see below)       |
+| Field         | Type                                             | Description                       |
+| ------------- | ------------------------------------------------ | --------------------------------- |
+| `type`        | [`ColumnType`](../../pkg/ingitdb/column_type.go) | Field type (required)             |
+| `required`    | `bool`                                           | Whether the field must be present |
+| `title`       | `string`                                         | Display label                     |
+| `titles`      | `map[locale]string`                              | Localized display labels          |
+| `length`      | `int`                                            | Exact length constraint           |
+| `min_length`  | `int`                                            | Minimum length                    |
+| `max_length`  | `int`                                            | Maximum length                    |
+| `foreign_key` | `string`                                         | Reference to another collection   |
+| `locale`      | `string`                                         | Locale shortcut (see below)       |
 
 ### 🔹 Column types
 

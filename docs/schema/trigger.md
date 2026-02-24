@@ -1,6 +1,6 @@
 # Trigger Definition File (`.ingitdb-collection/trigger_<name>.yaml`)
 
-A trigger workflow runs shell commands in response to record lifecycle events in a collection. The syntax is modelled after [GitHub Actions](https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions) workflows.
+A trigger workflow runs shell commands in response to record lifecycle events in a collection. The syntax is modelled after [GitHub Actions](https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions) workflows and maps to the [`TriggerDef`](../../pkg/ingitdb/trigger_def.go) type internally.
 
 ## File location
 
@@ -16,33 +16,33 @@ The `<name>` part is a free-form identifier used to distinguish multiple trigger
 
 ## Top-level fields
 
-| Field  | Type              | Required | Description                                              |
-| ------ | ----------------- | -------- | -------------------------------------------------------- |
-| `on`   | `[]string`        | yes      | List of events that fire this trigger (see values below) |
-| `jobs` | `map[string]job`  | yes      | Map of job ID → job definition                           |
+| Field  | Type             | Required | Description                                              |
+| ------ | ---------------- | -------- | -------------------------------------------------------- |
+| `on`   | `[]string`       | yes      | List of events that fire this trigger (see values below) |
+| `jobs` | `map[string]job` | yes      | Map of job ID → job definition                           |
 
 ### `on` values
 
-| Value     | Description                              |
-| --------- | ---------------------------------------- |
-| `created` | Fires when a record is created           |
-| `updated` | Fires when a record is updated           |
-| `deleted` | Fires when a record is deleted           |
+| Value     | Description                    |
+| --------- | ------------------------------ |
+| `created` | Fires when a record is created |
+| `updated` | Fires when a record is updated |
+| `deleted` | Fires when a record is deleted |
 
 ## Job fields
 
 Each entry in the `jobs` map is a job definition:
 
-| Field      | Type       | Required | Description                                                       |
-| ---------- | ---------- | -------- | ----------------------------------------------------------------- |
-| `runs-on`  | `string`   | yes      | Execution environment. Only `"."` (same process as ingitdb) is supported |
-| `steps`    | `[]step`   | yes      | Ordered list of steps to run                                      |
+| Field     | Type     | Required | Description                                                              |
+| --------- | -------- | -------- | ------------------------------------------------------------------------ |
+| `runs-on` | `string` | yes      | Execution environment. Only `"."` (same process as ingitdb) is supported |
+| `steps`   | `[]step` | yes      | Ordered list of steps to run                                             |
 
 ## Step fields
 
-| Field | Type     | Required | Description                   |
-| ----- | -------- | -------- | ----------------------------- |
-| `run` | `string` | yes      | Shell command to execute       |
+| Field | Type     | Required | Description              |
+| ----- | -------- | -------- | ------------------------ |
+| `run` | `string` | yes      | Shell command to execute |
 
 ## Example
 

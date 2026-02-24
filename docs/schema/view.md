@@ -1,6 +1,6 @@
 # ⚙️ View Definition File (`.ingitdb-collection/view_<name>.yaml`)
 
-A materialized view definition specifies how records from a collection should be queried, mapped, sorted, and output into distinct formats or files.
+A materialized view definition specifies how records from a collection should be queried, mapped, sorted, and output into distinct formats or files. It maps to the [`ViewDef`](../../pkg/ingitdb/view_def.go) type.
 
 ## 📂 File location
 

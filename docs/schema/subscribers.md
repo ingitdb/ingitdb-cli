@@ -14,11 +14,10 @@ See [Subscribers feature overview](../features/subscribers.md) for a conceptual 
 
 ## Top-level structure
 
-The file contains a single `subscribers` map. Each key is a **unique ID** that identifies the subscriber group — useful for targeting specific entries when adding paths, modifying events, or disabling a group. The value is a **subscriber definition** pairing a `for` selector with one or more handler lists.
+The file contains a single `subscribers` map. Each key is a **unique ID** that identifies the subscriber group — useful for targeting specific entries when adding paths, modifying events, or disabling a group. The value is a **subscriber definition** ([`SubscriberDef`](../../pkg/ingitdb/subscriber_def.go)) pairing a `for` selector with one or more handler lists.
 
 ```yaml
 subscribers:
-
   <id>:
     name: <optional display name>
     for:
@@ -37,17 +36,17 @@ subscribers:
 
 ## Subscriber entry fields
 
-| Field         | Type     | Required | Description                                              |
-| ------------- | -------- | -------- | -------------------------------------------------------- |
-| `name`        | `string` | no       | Human-readable description of this subscriber group      |
-| `for`         | `object` | yes      | Selector — which paths and events trigger the handlers   |
-| handler types | —        | yes      | At least one handler list (e.g. `webhooks`, `emails`)    |
+| Field         | Type     | Required | Description                                            |
+| ------------- | -------- | -------- | ------------------------------------------------------ |
+| `name`        | `string` | no       | Human-readable description of this subscriber group    |
+| `for`         | `object` | yes      | Selector — which paths and events trigger the handlers |
+| handler types | —        | yes      | At least one handler list (e.g. `webhooks`, `emails`)  |
 
 ## `for` selector fields
 
 | Field    | Type       | Required | Description                                                                           |
 | -------- | ---------- | -------- | ------------------------------------------------------------------------------------- |
-| `paths`  | `[]string` | no       | Path patterns to watch. Omit (or use `['*']`) to match all paths                     |
+| `paths`  | `[]string` | no       | Path patterns to watch. Omit (or use `['*']`) to match all paths                      |
 | `events` | `[]string` | no       | Events that fire the handlers. Defaults to all three: `created`, `updated`, `deleted` |
 
 ### `events` values
@@ -74,15 +73,15 @@ The handlers fire when the path of the changed record matches **any** of the lis
 
 ### Pattern examples
 
-| Pattern                               | Watches                                                                |
-| ------------------------------------- | ---------------------------------------------------------------------- |
-| `*`                                   | Every record in the entire database                                    |
-| `companies/*/departments`             | All records in the `departments` subcollection under any company       |
-| `companies/*/offices`                 | All records in the `offices` subcollection under any company           |
-| `companies/*/offices/dublin`          | The `dublin` record in `offices` under any company                     |
-| `companies/*/departments/*/*`         | All records in any subcollection of any department                     |
+| Pattern                               | Watches                                                               |
+| ------------------------------------- | --------------------------------------------------------------------- |
+| `*`                                   | Every record in the entire database                                   |
+| `companies/*/departments`             | All records in the `departments` subcollection under any company      |
+| `companies/*/offices`                 | All records in the `offices` subcollection under any company          |
+| `companies/*/offices/dublin`          | The `dublin` record in `offices` under any company                    |
+| `companies/*/departments/*/*`         | All records in any subcollection of any department                    |
 | `companies/acme-inc/offices/[DL].+`   | Records in `offices` under `acme-inc` whose ID starts with `D` or `L` |
-| `companies/acme-inc/offices/[DL].+/*` | All subcollection records under those matched offices                  |
+| `companies/acme-inc/offices/[DL].+/*` | All subcollection records under those matched offices                 |
 
 ---
 
@@ -105,20 +104,20 @@ Example: `subject: "Record {event}: {path}"`
 
 Each handler entry may include an optional `name` field (a free-form label shown in logs). All other fields are type-specific.
 
-| Handler key                            | Description                                       |
-| -------------------------------------- | ------------------------------------------------- |
-| [`webhooks`](#webhooks)                | HTTP POST to any URL                              |
-| [`emails`](#emails)                    | SMTP email notification                           |
-| [`telegrams`](#telegrams)              | Telegram Bot API message                          |
-| [`whatsapp`](#whatsapp)                | WhatsApp Business API message                     |
-| [`slacks`](#slacks)                    | Slack incoming webhook                            |
-| [`discords`](#discords)                | Discord channel webhook                           |
-| [`github_actions`](#github-actions)    | Trigger a GitHub Actions `workflow_dispatch`      |
-| [`gitlab_ci`](#gitlab-ci)              | Trigger a GitLab pipeline                         |
-| [`ntfy`](#ntfysh)                      | Push notification via ntfy.sh                     |
-| [`sms`](#sms)                          | SMS via Twilio or Vonage                          |
-| [`search_indexes`](#search-index-sync) | Push changes to Algolia / Meilisearch / Typesense |
-| [`rss`](#rssatom-feed)                 | Regenerate an RSS or Atom feed file               |
+| Handler key                            | Implementation Type                                      | Description                                       |
+| -------------------------------------- | -------------------------------------------------------- | ------------------------------------------------- |
+| [`webhooks`](#webhooks)                | [`WebhookDef`](../../pkg/ingitdb/subscriber_def.go)      | HTTP POST to any URL                              |
+| [`emails`](#emails)                    | [`EmailDef`](../../pkg/ingitdb/subscriber_def.go)        | SMTP email notification                           |
+| [`telegrams`](#telegrams)              | [`TelegramDef`](../../pkg/ingitdb/subscriber_def.go)     | Telegram Bot API message                          |
+| [`whatsapp`](#whatsapp)                | [`WhatsAppDef`](../../pkg/ingitdb/subscriber_def.go)     | WhatsApp Business API message                     |
+| [`slacks`](#slacks)                    | [`SlackDef`](../../pkg/ingitdb/subscriber_def.go)        | Slack incoming webhook                            |
+| [`discords`](#discords)                | [`DiscordDef`](../../pkg/ingitdb/subscriber_def.go)      | Discord channel webhook                           |
+| [`github_actions`](#github-actions)    | [`GitHubActionDef`](../../pkg/ingitdb/subscriber_def.go) | Trigger a GitHub Actions `workflow_dispatch`      |
+| [`gitlab_ci`](#gitlab-ci)              | [`GitLabCIDef`](../../pkg/ingitdb/subscriber_def.go)     | Trigger a GitLab pipeline                         |
+| [`ntfy`](#ntfysh)                      | [`NtfyDef`](../../pkg/ingitdb/subscriber_def.go)         | Push notification via ntfy.sh                     |
+| [`sms`](#sms)                          | [`SMSDef`](../../pkg/ingitdb/subscriber_def.go)          | SMS via Twilio or Vonage                          |
+| [`search_indexes`](#search-index-sync) | [`SearchIndexDef`](../../pkg/ingitdb/subscriber_def.go)  | Push changes to Algolia / Meilisearch / Typesense |
+| [`rss`](#rssatom-feed)                 | [`RSSDef`](../../pkg/ingitdb/subscriber_def.go)          | Regenerate an RSS or Atom feed file               |
 
 ---
 
@@ -139,7 +138,6 @@ Issues an HTTP POST request when a record event fires. Events are batched per re
 
 ```yaml
 subscribers:
-
   all-changes:
     name: "Notify backend on all changes"
     for:
@@ -160,7 +158,6 @@ With path filtering:
 
 ```yaml
 subscribers:
-
   company-structure:
     name: "Department and office changes"
     for:
@@ -180,7 +177,6 @@ Regex pattern — offices whose ID starts with `D` or `L` under acme-inc:
 
 ```yaml
 subscribers:
-
   acme-dl-offices:
     name: "Acme-inc D/L offices and subcollections"
     for:
@@ -241,11 +237,11 @@ Authorization: Bearer <TOKEN>
 
 ### Event object fields
 
-| Field  | Type     | Description                                             |
-| ------ | -------- | ------------------------------------------------------- |
-| `event`| `string` | One of `created`, `updated`, `deleted`                  |
-| `id`   | `string` | Record key                                              |
-| `data` | `object` | Full record data after the change; `null` for `deleted` |
+| Field   | Type     | Description                                             |
+| ------- | -------- | ------------------------------------------------------- |
+| `event` | `string` | One of `created`, `updated`, `deleted`                  |
+| `id`    | `string` | Record key                                              |
+| `data`  | `object` | Full record data after the change; `null` for `deleted` |
 
 ---
 
@@ -255,22 +251,21 @@ Sends an email notification via SMTP.
 
 ### Fields
 
-| Field     | Type       | Required | Description                                                          |
-| --------- | ---------- | -------- | -------------------------------------------------------------------- |
-| `name`    | `string`   | no       | Label shown in logs                                                  |
-| `from`    | `string`   | no       | Sender address (defaults to the SMTP `user`)                         |
-| `to`      | `[]string` | yes      | Recipient addresses                                                  |
-| `smtp`    | `string`   | yes      | SMTP server hostname                                                 |
-| `port`    | `int`      | no       | SMTP port (default: `587`)                                           |
-| `user`    | `string`   | no       | SMTP username                                                        |
-| `pass`    | `string`   | no       | SMTP password                                                        |
+| Field     | Type       | Required | Description                                                            |
+| --------- | ---------- | -------- | ---------------------------------------------------------------------- |
+| `name`    | `string`   | no       | Label shown in logs                                                    |
+| `from`    | `string`   | no       | Sender address (defaults to the SMTP `user`)                           |
+| `to`      | `[]string` | yes      | Recipient addresses                                                    |
+| `smtp`    | `string`   | yes      | SMTP server hostname                                                   |
+| `port`    | `int`      | no       | SMTP port (default: `587`)                                             |
+| `user`    | `string`   | no       | SMTP username                                                          |
+| `pass`    | `string`   | no       | SMTP password                                                          |
 | `subject` | `string`   | no       | Email subject line. Supports [template variables](#template-variables) |
 
 ### YAML example
 
 ```yaml
 subscribers:
-
   department-emails:
     name: "Alert teams on department changes"
     for:
@@ -316,7 +311,6 @@ Sends a message to a Telegram chat via the Bot API.
 
 ```yaml
 subscribers:
-
   new-record-telegram:
     for:
       events:
@@ -347,7 +341,6 @@ Sends a WhatsApp message via the WhatsApp Business API (Twilio or Meta Cloud API
 
 ```yaml
 subscribers:
-
   oncall-whatsapp:
     for:
       events:
@@ -378,7 +371,6 @@ Posts a message to a Slack channel via an [incoming webhook](https://api.slack.c
 
 ```yaml
 subscribers:
-
   content-slack:
     name: "Notify content team on post/page changes"
     for:
@@ -412,7 +404,6 @@ Posts a message to a Discord channel via a server webhook.
 
 ```yaml
 subscribers:
-
   new-record-discord:
     for:
       events:
@@ -443,7 +434,6 @@ Triggers a [`workflow_dispatch`](https://docs.github.com/en/actions/writing-work
 
 ```yaml
 subscribers:
-
   deploy-site:
     name: "Rebuild and deploy site on any change"
     for:
@@ -480,7 +470,6 @@ Triggers a GitLab pipeline via the [pipeline trigger API](https://docs.gitlab.co
 
 ```yaml
 subscribers:
-
   deploy-pipeline:
     for:
       events:
@@ -512,7 +501,6 @@ Sends a push notification via [ntfy.sh](https://ntfy.sh) — a simple, open-sour
 
 ```yaml
 subscribers:
-
   push-notifications:
     for:
       events:
@@ -548,7 +536,6 @@ Sends an SMS via Twilio or Vonage. Useful for high-priority alerts.
 
 ```yaml
 subscribers:
-
   oncall-sms:
     for:
       events:
@@ -590,7 +577,6 @@ Pushes record changes to a full-text search index. Useful for content-management
 
 ```yaml
 subscribers:
-
   content-search-sync:
     name: "Keep search indexes in sync with content"
     for:
@@ -631,7 +617,6 @@ Regenerates an RSS or Atom feed file whenever records are created or updated. In
 
 ```yaml
 subscribers:
-
   blog-feeds:
     for:
       paths:
@@ -660,7 +645,6 @@ subscribers:
 
 ```yaml
 subscribers:
-
   all-changes:
     name: "Notify backend and rebuild site on any change"
     for:
