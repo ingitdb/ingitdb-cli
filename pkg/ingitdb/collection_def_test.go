@@ -25,6 +25,7 @@ func TestCollectionDefValidate_Errors(t *testing.T) {
 		{
 			name: "missing_columns",
 			def: &CollectionDef{
+				ID:         "test_id",
 				Columns:    map[string]*ColumnDef{},
 				RecordFile: recordFile,
 			},
@@ -33,6 +34,7 @@ func TestCollectionDefValidate_Errors(t *testing.T) {
 		{
 			name: "missing_column_type",
 			def: &CollectionDef{
+				ID: "test_id",
 				Columns: map[string]*ColumnDef{
 					"name": {},
 				},
@@ -43,6 +45,7 @@ func TestCollectionDefValidate_Errors(t *testing.T) {
 		{
 			name: "columns_order_unknown_column",
 			def: &CollectionDef{
+				ID:           "test_id",
 				Columns:      columns,
 				ColumnsOrder: []string{"age"},
 				RecordFile:   recordFile,
@@ -52,6 +55,7 @@ func TestCollectionDefValidate_Errors(t *testing.T) {
 		{
 			name: "columns_order_duplicate",
 			def: &CollectionDef{
+				ID: "test_id",
 				Columns: map[string]*ColumnDef{
 					"name": {Type: "string"},
 					"age":  {Type: "int"},
@@ -64,6 +68,7 @@ func TestCollectionDefValidate_Errors(t *testing.T) {
 		{
 			name: "missing_record_file",
 			def: &CollectionDef{
+				ID:      "test_id",
 				Columns: columns,
 			},
 			err: "missing 'record_file' in collection definition",
@@ -71,6 +76,7 @@ func TestCollectionDefValidate_Errors(t *testing.T) {
 		{
 			name: "invalid_record_file",
 			def: &CollectionDef{
+				ID:         "test_id",
 				Columns:    columns,
 				RecordFile: &RecordFileDef{},
 			},
@@ -99,6 +105,7 @@ func TestCollectionDefValidate_Success(t *testing.T) {
 	t.Parallel()
 
 	def := &CollectionDef{
+		ID: "test_id",
 		Columns: map[string]*ColumnDef{
 			"name": {Type: "string"},
 		},

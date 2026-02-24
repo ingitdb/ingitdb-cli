@@ -52,7 +52,7 @@ func readRootCollections(rootPath string, rootConfig config.RootConfig, o ingitd
 }
 
 func readCollectionDef(rootPath, relPath, id string, o ingitdb.ReadOptions) (colDef *ingitdb.CollectionDef, err error) {
-	colDefFilePath := filepath.Join(rootPath, relPath, ingitdb.CollectionDefFileName)
+	colDefFilePath := filepath.Join(rootPath, relPath, ingitdb.SchemaDir, id+".yaml")
 	var fileContent []byte
 	fileContent, err = os.ReadFile(colDefFilePath)
 	if err != nil {
@@ -75,5 +75,67 @@ func readCollectionDef(rootPath, relPath, id string, o ingitdb.ReadOptions) (col
 		}
 		log.Printf("Definition of collection '%s' is valid", colDef.ID)
 	}
+
+	if colDef.SubCollections, err = loadSubCollections(rootPath, relPath, "", id, o); err != nil {
+		err = fmt.Errorf("failed to load subcollections for '%s': %w", id, err)
+		return
+	}
+
 	return
+}
+
+func loadSubCollections(rootPath, relPath, parentSubDir, parentPath string, o ingitdb.ReadOptions) (map[string]*ingitdb.CollectionDef, error) {
+	subCollectionsPath := filepath.Join(rootPath, relPath, ingitdb.SchemaDir, "subcollections", parentSubDir)
+	entries, err := os.ReadDir(subCollectionsPath)
+	if os.IsNotExist(err) {
+		return nil, nil // No subcollections
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to read subcollections directory: %w", err)
+	}
+
+	var subCollections map[string]*ingitdb.CollectionDef
+
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".yaml") {
+			id := strings.TrimSuffix(entry.Name(), ".yaml")
+			colDefFilePath := filepath.Join(subCollectionsPath, entry.Name())
+
+			fileContent, err := os.ReadFile(colDefFilePath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read file %s: %w", colDefFilePath, err)
+			}
+
+			colDef := new(ingitdb.CollectionDef)
+			if err = yaml.Unmarshal(fileContent, colDef); err != nil {
+				return nil, fmt.Errorf("failed to parse YAML file %s: %w", colDefFilePath, err)
+			}
+			colDef.ID = id
+			colDef.DirPath = filepath.Join(rootPath, relPath)
+
+			fullPath := parentPath + "/" + id
+
+			if o.IsValidationRequired() {
+				if err = colDef.Validate(); err != nil {
+					return nil, fmt.Errorf("not valid definition of subcollection '%s': %w", fullPath, err)
+				}
+				log.Printf("Definition of subcollection '%s' is valid", fullPath)
+			}
+
+			subSubDir := filepath.Join(parentSubDir, id)
+			subCols, err := loadSubCollections(rootPath, relPath, subSubDir, fullPath, o)
+			if err != nil {
+				return nil, err
+			}
+			if len(subCols) > 0 {
+				colDef.SubCollections = subCols
+			}
+
+			if subCollections == nil {
+				subCollections = make(map[string]*ingitdb.CollectionDef)
+			}
+			subCollections[id] = colDef
+		}
+	}
+	return subCollections, nil
 }

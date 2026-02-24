@@ -91,7 +91,7 @@ func readRemoteDefinitionForIDWithReader(ctx context.Context, id string, fileRea
 	if err != nil {
 		return nil, "", "", err
 	}
-	collectionDefPath := path.Join(collectionPath, ingitdb.CollectionDefFileName)
+	collectionDefPath := path.Join(collectionPath, ingitdb.SchemaDir, collectionID+".yaml")
 	collectionDefContent, found, err := fileReader.ReadFile(ctx, collectionDefPath)
 	if err != nil {
 		return nil, "", "", err

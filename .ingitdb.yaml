@@ -1,6 +1,6 @@
 # You can link a specific collection or a directory with collections
 rootCollections:
-  countries: test-ingitdb/countries
+  companies: test-ingitdb/companies
   todo.statuses: test-ingitdb/todo/statuses
   todo.tags: test-ingitdb/todo/tags
   todo.tasks: test-ingitdb/todo/tasks
@@ -18,6 +18,6 @@ rootCollections:
 # Language selector will show languages in order defined in this list.
 languages:
   - required: en
-  - required: fr
-  - required: es
+  - optional: fr
+  - optional: es
   - optional: ru

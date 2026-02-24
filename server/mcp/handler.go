@@ -174,7 +174,7 @@ func readDefinitionFromGitHub(ctx context.Context, fileReader dalgo2ghingitdb.Fi
 	}
 	def := &ingitdb.Definition{Collections: make(map[string]*ingitdb.CollectionDef)}
 	for id, colPath := range rootConfig.RootCollections {
-		colDefPath := path.Join(colPath, ingitdb.CollectionDefFileName)
+		colDefPath := path.Join(colPath, ingitdb.SchemaDir, id+".yaml")
 		colDefContent, colFound, readErr := fileReader.ReadFile(ctx, colDefPath)
 		if readErr != nil {
 			return nil, fmt.Errorf("failed to read collection def %s: %w", colDefPath, readErr)

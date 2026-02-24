@@ -1,0 +1,10 @@
+titles:
+  en: Daily Questions
+record_file:
+  name: "daily-questions.json"
+  type: "map[string]any"
+  format: json
+columns:
+  questions:
+    type: "[]map[string]any"
+    required: true

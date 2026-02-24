@@ -92,7 +92,7 @@ func TestResolveRemoteCollectionPath(t *testing.T) {
 func TestReadRemoteDefinitionForIDWithReader(t *testing.T) {
 	reader := fakeFileReader{files: map[string][]byte{
 		".ingitdb.yaml": []byte("rootCollections:\n  todo.tags: test-ingitdb/todo/tags\n"),
-		"test-ingitdb/todo/tags/.ingitdb-collection.yaml": []byte("record_file:\n  name: tags.json\n  type: map[string]map[string]any\n  format: json\ncolumns:\n  title:\n    type: string\n"),
+		"test-ingitdb/todo/tags/.ingitdb-collection/todo.tags.yaml": []byte("record_file:\n  name: tags.json\n  type: map[string]map[string]any\n  format: json\ncolumns:\n  title:\n    type: string\n"),
 	}}
 	def, collectionID, recordKey, err := readRemoteDefinitionForIDWithReader(context.Background(), "todo.tags/active", reader)
 	if err != nil {
@@ -265,7 +265,7 @@ func TestReadRemoteDefinitionForIDWithReader_InvalidCollectionDef(t *testing.T) 
 
 	reader := fakeFileReader{files: map[string][]byte{
 		".ingitdb.yaml": []byte("rootCollections:\n  todo.tags: test-ingitdb/todo/tags\n"),
-		"test-ingitdb/todo/tags/.ingitdb-collection.yaml": []byte("invalid yaml: ["),
+		"test-ingitdb/todo/tags/.ingitdb-collection/todo.tags.yaml": []byte("invalid yaml: ["),
 	}}
 	_, _, _, err := readRemoteDefinitionForIDWithReader(context.Background(), "todo.tags/active", reader)
 	if err == nil {
@@ -419,7 +419,7 @@ func TestReadRecord_GitHub_DBOpenError(t *testing.T) {
 
 	mockReader := &fakeFileReader{files: map[string][]byte{
 		".ingitdb.yaml": []byte("rootCollections:\n  test.items: test-ingitdb/items\n"),
-		"test-ingitdb/items/.ingitdb-collection.yaml": []byte("record_file:\n  name: items.json\n  type: map[string]map[string]any\n  format: json\ncolumns:\n  name:\n    type: string\n"),
+		"test-ingitdb/items/.ingitdb-collection/test.items.yaml": []byte("record_file:\n  name: items.json\n  type: map[string]map[string]any\n  format: json\ncolumns:\n  name:\n    type: string\n"),
 	}}
 	mockReaderFactory := NewMockGitHubFileReaderFactory(ctrl)
 	mockReaderFactory.EXPECT().NewGitHubFileReader(gomock.Any()).Return(mockReader, nil).AnyTimes()
@@ -458,7 +458,7 @@ func TestReadRemoteDefinitionForID_WithMock(t *testing.T) {
 
 	reader := fakeFileReader{files: map[string][]byte{
 		".ingitdb.yaml": []byte("rootCollections:\n  todo.tags: test-ingitdb/todo/tags\n"),
-		"test-ingitdb/todo/tags/.ingitdb-collection.yaml": []byte("record_file:\n  name: tags.json\n  type: map[string]map[string]any\n  format: json\ncolumns:\n  title:\n    type: string\n"),
+		"test-ingitdb/todo/tags/.ingitdb-collection/todo.tags.yaml": []byte("record_file:\n  name: tags.json\n  type: map[string]map[string]any\n  format: json\ncolumns:\n  title:\n    type: string\n"),
 	}}
 	mockFactory := NewMockGitHubFileReaderFactory(ctrl)
 	mockFactory.EXPECT().NewGitHubFileReader(gomock.Any()).Return(reader, nil)

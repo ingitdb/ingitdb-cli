@@ -62,7 +62,7 @@ func TestDeleteRecord_GitHub_DBOpenError(t *testing.T) {
 
 	mockReader := &fakeFileReader{files: map[string][]byte{
 		".ingitdb.yaml": []byte("rootCollections:\n  test.items: test-ingitdb/items\n"),
-		"test-ingitdb/items/.ingitdb-collection.yaml": []byte("record_file:\n  name: items.json\n  type: map[string]map[string]any\n  format: json\ncolumns:\n  name:\n    type: string\n"),
+		"test-ingitdb/items/.ingitdb-schema/collection.yaml": []byte("record_file:\n  name: items.json\n  type: map[string]map[string]any\n  format: json\ncolumns:\n  name:\n    type: string\n"),
 	}}
 	mockReaderFactory := NewMockGitHubFileReaderFactory(ctrl)
 	mockReaderFactory.EXPECT().NewGitHubFileReader(gomock.Any()).Return(mockReader, nil).AnyTimes()

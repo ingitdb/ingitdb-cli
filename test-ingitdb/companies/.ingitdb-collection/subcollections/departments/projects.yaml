@@ -1,0 +1,10 @@
+titles:
+  en: Projects
+record_file:
+  name: "{key}/{key}.json"
+  type: "map[string]any"
+  format: json
+columns:
+  title:
+    type: string
+    required: true

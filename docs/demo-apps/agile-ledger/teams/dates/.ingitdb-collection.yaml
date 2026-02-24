@@ -1,0 +1,10 @@
+titles:
+  en: Dates
+record_file:
+  name: "{key}/{key}.json"
+  type: "map[string]any"
+  format: json
+columns:
+  is_holiday:
+    type: bool
+    required: false

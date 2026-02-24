@@ -58,12 +58,13 @@ func TestDefinitionReader_ReadDefinition(t *testing.T) {
 
 				// Create collection definition
 				collectionDir := filepath.Join(root, "test-ingitdb")
-				err = os.MkdirAll(collectionDir, 0755)
+				schemaDir := filepath.Join(collectionDir, ingitdb.SchemaDir)
+				err = os.MkdirAll(schemaDir, 0755)
 				if err != nil {
 					t.Fatalf("setup: create collection dir: %v", err)
 				}
 
-				collectionDefPath := filepath.Join(collectionDir, ingitdb.CollectionDefFileName)
+				collectionDefPath := filepath.Join(schemaDir, "test.yaml")
 				collectionDefContent := `record_file:
   name: "{key}.yaml"
   type: "map[string]any"
@@ -101,12 +102,13 @@ columns:
 
 				// Create collection with invalid YAML
 				collectionDir := filepath.Join(root, "bad-collection")
-				err = os.MkdirAll(collectionDir, 0755)
+				schemaDir := filepath.Join(collectionDir, ingitdb.SchemaDir)
+				err = os.MkdirAll(schemaDir, 0755)
 				if err != nil {
 					t.Fatalf("setup: create collection dir: %v", err)
 				}
 
-				collectionDefPath := filepath.Join(collectionDir, ingitdb.CollectionDefFileName)
+				collectionDefPath := filepath.Join(schemaDir, "bad.yaml")
 				invalidYAML := "columns: [invalid yaml\n"
 				err = os.WriteFile(collectionDefPath, []byte(invalidYAML), 0644)
 				if err != nil {
@@ -134,12 +136,13 @@ columns:
 
 				// Create collection with valid YAML but invalid schema
 				collectionDir := filepath.Join(root, "invalid-schema")
-				err = os.MkdirAll(collectionDir, 0755)
+				schemaDir := filepath.Join(collectionDir, ingitdb.SchemaDir)
+				err = os.MkdirAll(schemaDir, 0755)
 				if err != nil {
 					t.Fatalf("setup: create collection dir: %v", err)
 				}
 
-				collectionDefPath := filepath.Join(collectionDir, ingitdb.CollectionDefFileName)
+				collectionDefPath := filepath.Join(schemaDir, "invalid.yaml")
 				// Empty columns map is invalid when validation is enabled
 				invalidSchemaContent := "columns: {}\n"
 				err = os.WriteFile(collectionDefPath, []byte(invalidSchemaContent), 0644)
@@ -206,12 +209,13 @@ func TestDefinitionReader_ReadDefinition_WithoutValidation(t *testing.T) {
 
 	// Create collection definition
 	collectionDir := filepath.Join(root, "data", "users")
-	err = os.MkdirAll(collectionDir, 0755)
+	schemaDir := filepath.Join(collectionDir, ingitdb.SchemaDir)
+	err = os.MkdirAll(schemaDir, 0755)
 	if err != nil {
 		t.Fatalf("setup: create collection dir: %v", err)
 	}
 
-	collectionDefPath := filepath.Join(collectionDir, ingitdb.CollectionDefFileName)
+	collectionDefPath := filepath.Join(schemaDir, "users.yaml")
 	collectionDefContent := `record_file:
   name: "{key}.yaml"
   type: "map[string]any"

@@ -1,10 +1,12 @@
 titles:
-  en: Countries
+  en: Members
 record_file:
-  name: "{key}/{key}.yaml"
+  name: "{key}/{key}.json"
   type: "map[string]any"
-  format: yaml
+  format: json
 columns:
-  title:
+  name:
     type: string
     required: true
+  role:
+    type: string

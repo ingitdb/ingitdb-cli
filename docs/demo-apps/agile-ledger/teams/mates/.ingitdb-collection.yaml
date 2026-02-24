@@ -1,0 +1,10 @@
+titles:
+  en: Team Mates
+record_file:
+  name: "{key}.json"
+  type: "map[string]any"
+  format: json
+columns:
+  role:
+    type: string
+    required: false

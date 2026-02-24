@@ -1,0 +1,6 @@
+titles:
+  en: Date Mates
+record_file:
+  name: "{key}/mate.json"
+  type: "map[string]any"
+  format: json

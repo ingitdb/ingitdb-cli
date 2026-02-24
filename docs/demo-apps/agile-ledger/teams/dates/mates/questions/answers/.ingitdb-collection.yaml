@@ -1,0 +1,10 @@
+titles:
+  en: Answers
+record_file:
+  name: "{key}.json"
+  type: "map[string]any"
+  format: json
+columns:
+  answer:
+    type: string
+    required: true

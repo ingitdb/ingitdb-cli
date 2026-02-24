@@ -1,11 +1,12 @@
 package ingitdb
 
-import "fmt"
-
-const CollectionDefFileName = ".ingitdb-collection.yaml"
+import (
+	"errors"
+	"fmt"
+)
 
 type CollectionDef struct {
-	ID           string                `json:"-"`
+	ID           string                `json:"-"` // Taken from dir name
 	DirPath      string                `yaml:"-" json:"-"`
 	Titles       map[string]string     `yaml:"titles,omitempty"`
 	RecordFile   *RecordFileDef        `yaml:"record_file"`
@@ -13,9 +14,16 @@ type CollectionDef struct {
 	Columns      map[string]*ColumnDef `yaml:"columns"`
 	ColumnsOrder []string              `yaml:"columns_order,omitempty"`
 	DefaultView  string                `yaml:"default_view,omitempty"`
+	// SubCollections are not part of the collection definition file,
+	// they are stored in the "subcollections" subdirectory.
+	SubCollections map[string]*CollectionDef `yaml:"-" json:"-"`
 }
 
 func (v *CollectionDef) Validate() error {
+	if v.ID == "" {
+		return fmt.Errorf("missing 'id' in collection definition")
+	}
+	var allErrors []error
 	if len(v.Columns) == 0 {
 		return fmt.Errorf("missing 'columns' in collection definition")
 	}
@@ -39,6 +47,16 @@ func (v *CollectionDef) Validate() error {
 	}
 	if err := v.RecordFile.Validate(); err != nil {
 		return fmt.Errorf("invalid record_file definition: %w", err)
+	}
+	if v.SubCollections != nil {
+		for id, subColDef := range v.SubCollections {
+			if err := subColDef.Validate(); err != nil {
+				allErrors = append(allErrors, fmt.Errorf("invalid subcollection '%s': %w", id, err))
+			}
+		}
+	}
+	if len(allErrors) > 0 {
+		return fmt.Errorf("%d errors: %w", len(allErrors), errors.Join(allErrors...))
 	}
 	return nil
 }

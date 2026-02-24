@@ -16,8 +16,12 @@ func TestReadCollection_Success(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
+	if err := os.Mkdir(filepath.Join(dir, ingitdb.SchemaDir), 0o755); err != nil {
+		t.Fatalf("Mkdir: %v", err)
+	}
 	defContent := []byte("titles:\n  en: Test Items\nrecord_file:\n  name: \"{key}.yaml\"\n  type: \"map[string]any\"\n  format: yaml\ncolumns:\n  name:\n    type: string\n")
-	if err := os.WriteFile(filepath.Join(dir, ingitdb.CollectionDefFileName), defContent, 0o644); err != nil {
+	collectionDefPath := filepath.Join(dir, ingitdb.SchemaDir, "test.items.yaml")
+	if err := os.WriteFile(collectionDefPath, defContent, 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
 

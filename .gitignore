@@ -9,6 +9,8 @@ ingitdb-cli
 *.dll
 *.so
 *.dylib
+*.zip
+out/
 
 .firebase/
 

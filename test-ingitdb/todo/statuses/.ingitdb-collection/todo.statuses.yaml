@@ -1,0 +1,11 @@
+titles:
+  en: Tags
+  ru: Тэги
+record_file:
+  name: "statuses.yaml"
+  type: "[]map[string]any"
+  format: yaml
+columns:
+  titles:
+    type: "map[locale]string"
+    required: true

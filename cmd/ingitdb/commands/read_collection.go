@@ -48,7 +48,7 @@ func readCollection(
 				return fmt.Errorf("collection %q not found", cmd.String("collection"))
 			}
 
-			defPath := filepath.Join(colDef.DirPath, ingitdb.CollectionDefFileName)
+			defPath := filepath.Join(colDef.DirPath, ingitdb.SchemaDir, colDef.ID+".yaml")
 			content, readErr := os.ReadFile(defPath)
 			if readErr != nil {
 				return fmt.Errorf("failed to read collection definition file: %w", readErr)

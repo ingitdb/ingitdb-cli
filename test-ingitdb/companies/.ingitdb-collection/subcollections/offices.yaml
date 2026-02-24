@@ -1,0 +1,10 @@
+titles:
+  en: Offices
+record_file:
+  name: "{key}/{key}.json"
+  type: "map[string]any"
+  format: json
+columns:
+  city:
+    type: string
+    required: true

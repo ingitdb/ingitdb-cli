@@ -1,0 +1,5 @@
+rootCollections:
+  teams: teams
+
+languages:
+  - required: en

@@ -1,0 +1,6 @@
+titles:
+  en: Questions
+record_file:
+  name: "{key}/question.json"
+  type: "map[string]any"
+  format: json
