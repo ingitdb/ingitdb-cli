@@ -89,9 +89,8 @@ goreleaser release --clean --config .github/goreleaser-linux.yaml --skip=upload
 # Test publish-homebrew config
 goreleaser release --clean --config .github/goreleaser-homebrew.yaml --skip=upload
 
-# Test Windows publishers (WinGet, Scoop)
-goreleaser release --clean --config .github/goreleaser-publish-winget.yaml --skip=upload
-goreleaser release --clean --config .github/goreleaser-publish-scoop.yaml --skip=upload
+# Test Windows publishers (Chocolatey, WinGet, Scoop)
+goreleaser release --clean --config .github/goreleaser-windows.yaml --skip=upload
 ```
 
 ### Real Release
@@ -107,7 +106,7 @@ Once everything is verified:
 
 2. Watch the release workflow:
    - Go to **Actions** → **Release**
-   - All jobs should run: `build-linux`, `publish-homebrew`, `publish-aur`, `publish-snap`, `publish-winget`, `publish-scoop`
+   - All jobs should run: `build-linux`, `build-windows`, `publish-homebrew`, `publish-aur`, `publish-snap`
    - Check logs for successful package publishes
 
 3. Verify packages appear:

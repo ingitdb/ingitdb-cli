@@ -8,17 +8,29 @@ The release workflow is defined in [`.github/workflows/release.yml`](../.github/
 
 #### 1. `build-linux` (runs on Ubuntu)
 
-Builds Linux and Windows binaries, creates the GitHub release, and uploads artifacts.
+Builds Linux binaries, creates the GitHub release, and uploads artifacts.
 
 **Config:** [`.github/goreleaser-linux.yaml`](../.github/goreleaser-linux.yaml)
 
-- Builds Linux binaries (amd64, arm64) and Windows binaries (amd64)
+- Builds Linux binaries (amd64, arm64)
 - Creates the GitHub release and uploads archives + checksums
-- Builds and pushes Chocolatey package `.nupkg` to Community Repository
 
-**Secrets used:** `INGITDB_GORELEASER_GITHUB_TOKEN`, `CHOCOLATEY_API_KEY`
+**Secrets used:** `INGITDB_GORELEASER_GITHUB_TOKEN`
 
-#### 2. `publish-homebrew` (runs on macOS, after `build-linux`)
+#### 2. `build-windows` (runs on Windows, after `build-linux`)
+
+Builds Windows binaries, zip archives, and all Windows distributions.
+
+**Config:** [`.github/goreleaser-windows.yaml`](../.github/goreleaser-windows.yaml)
+
+- Builds Windows binary (amd64) and uploads Windows `zip` archive to GitHub release
+- Generates WinGet manifests and pushes to WinGet repo
+- Builds Scoop manifest and pushes it
+- Packs and pushes Chocolatey package `.nupkg` to Community Repository
+
+**Secrets used:** `INGITDB_GORELEASER_GITHUB_TOKEN`, `WINGET_GITHUB_TOKEN`, `CHOCOLATEY_API_KEY`
+
+#### 3. `publish-homebrew` (runs on macOS, after `build-linux`)
 
 Builds, signs, and notarizes macOS binaries, then publishes the Homebrew Cask covering both macOS and Linux.
 
@@ -31,7 +43,7 @@ Builds, signs, and notarizes macOS binaries, then publishes the Homebrew Cask co
 
 **Secrets used:** `INGITDB_GORELEASER_GITHUB_TOKEN`, `MACOS_SIGN_P12`, `MACOS_SIGN_PASSWORD`, `NOTARIZE_ISSUER_ID`, `NOTARIZE_KEY_ID`, `NOTARIZE_KEY`
 
-#### 3. `publish-aur` (runs on Ubuntu, after `build-linux`)
+#### 4. `publish-aur` (runs on Ubuntu, after `build-linux`)
 
 Publishes the AUR package.
 
@@ -42,7 +54,7 @@ Publishes the AUR package.
 
 **Secrets used:** `AUR_SSH_PRIVATE_KEY` (raw ED25519 private key)
 
-#### 4. `publish-snap` (runs on Ubuntu, after `build-linux`)
+#### 5. `publish-snap` (runs on Ubuntu, after `build-linux`)
 
 Builds and publishes the Snapcraft package.
 
@@ -53,30 +65,7 @@ Builds and publishes the Snapcraft package.
 
 **Secrets used:** `SNAPCRAFT_STORE_CREDENTIALS`
 
-#### 6. `publish-winget` (runs on Ubuntu, after `build-linux`)
-
-Publishes to WinGet via fork + PR to `microsoft/winget-pkgs`.
-
-**Config:** [`.github/goreleaser-publish-winget.yaml`](../.github/goreleaser-publish-winget.yaml)
-
-- Builds Windows binary (amd64)
-- Generates WinGet manifests and pushes to `ingitdb/winget-pkgs` fork
-- Opens a PR to `microsoft/winget-pkgs`
-
-**Secrets used:** `WINGET_GITHUB_TOKEN` (classic PAT with `public_repo` scope — required to open PRs on `microsoft/winget-pkgs`)
-
-#### 7. `publish-scoop` (runs on Ubuntu, after `build-linux`)
-
-Publishes the Scoop manifest to `ingitdb/scoop-bucket`.
-
-**Config:** [`.github/goreleaser-publish-scoop.yaml`](../.github/goreleaser-publish-scoop.yaml)
-
-- Builds Windows binary (amd64)
-- Generates Scoop manifest JSON and pushes to [`ingitdb/scoop-bucket`](https://github.com/ingitdb/scoop-bucket)
-
-**Secrets used:** `INGITDB_GORELEASER_GITHUB_TOKEN`
-
-#### 8. `deploy-server` and `deploy-website` (after `build-linux`)
+#### 6. `deploy-server` and `deploy-website` (after `build-linux`)
 
 - `deploy-server` — Deploys to Google Cloud Run
 - `deploy-website` — Deploys website to Firebase
@@ -85,13 +74,11 @@ Publishes the Scoop manifest to `ingitdb/scoop-bucket`.
 
 | Config                                                                    | Job                | Purpose                                                            |
 | ------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------ |
-| [`goreleaser-linux.yaml`](../.github/goreleaser-linux.yaml)               | `build-linux`      | Linux/Windows builds, GitHub release                               |
+| [`goreleaser-linux.yaml`](../.github/goreleaser-linux.yaml)               | `build-linux`      | Linux builds, GitHub release                                       |
+| [`goreleaser-windows.yaml`](../.github/goreleaser-windows.yaml)           | `build-windows`    | Windows builds, WinGet, Scoop, and Chocolatey packages             |
 | [`goreleaser-homebrew.yaml`](../.github/goreleaser-homebrew.yaml)         | `publish-homebrew` | macOS builds, signing, notarization, Homebrew Cask (macOS + Linux) |
 | [`goreleaser-publish-aur.yaml`](../.github/goreleaser-publish-aur.yaml)   | `publish-aur`      | AUR PKGBUILD generation and push                                   |
 | [`goreleaser-publish-snap.yaml`](../.github/goreleaser-publish-snap.yaml) | `publish-snap`     | Snapcraft build and publish                                        |
-
-| [`goreleaser-publish-winget.yaml`](../.github/goreleaser-publish-winget.yaml) | `publish-winget` | WinGet manifest and PR to microsoft/winget-pkgs |
-| [`goreleaser-publish-scoop.yaml`](../.github/goreleaser-publish-scoop.yaml) | `publish-scoop` | Scoop manifest push to ingitdb/scoop-bucket |
 
 ## Initial Setup
 

@@ -20,19 +20,6 @@ builds:
       - -s -w
       - -X main.version={{.Version}}
 
-  - id: ingitdb-windows
-    main: ./cmd/ingitdb
-    binary: ingitdb
-    env: [CGO_ENABLED=0]
-    goos: [windows]
-    goarch: [amd64]
-    flags:
-      - -trimpath
-    mod_timestamp: "{{ .CommitTimestamp }}"
-    ldflags:
-      - -s -w
-      - -X main.version={{.Version}}
-
 archives:
   - id: tarball
     formats: [tar.gz]
@@ -43,12 +30,6 @@ archives:
       - README.md
       - LICENSE*
 
-  - id: zip
-    formats: [zip]
-    name_template: >-
-      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
-    ids: [ingitdb-windows]
-
 checksum:
   name_template: checksums.txt
 
@@ -56,69 +37,6 @@ release:
   github:
     owner: ingitdb
     name: ingitdb-cli
-
-winget:
-  - name: ingitdb
-    publisher: ingitdb
-    publisher_url: https://ingitdb.com
-    package_identifier: ingitdb.ingitdb
-    license: MIT
-    homepage: https://ingitdb.com
-    short_description: "A CLI for a schema-validated, AI-native database backed by a Git repository."
-    url_template: "https://github.com/ingitdb/ingitdb-cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-    description: |
-      ingitdb is a developer-grade, schema-validated, AI-native database
-      whose storage engine is a Git repository. Records are YAML/JSON files,
-      collections and schemas are defined declaratively.
-    repository:
-      owner: ingitdb
-      name: winget-pkgs
-      branch: "{{.ProjectName}}-{{.Version}}"
-      token: "{{ .Env.WINGET_GITHUB_TOKEN }}"
-      pull_request:
-        enabled: true
-        base:
-          owner: microsoft
-          name: winget-pkgs
-          branch: master
-
-chocolateys:
-  - name: ingitdb
-    ids:
-      - zip
-    title: inGitDB - Git-based Database
-    authors: inGitDB Contributors
-    owners: inGitDB
-    project_url: https://ingitdb.com/
-    project_source_url: https://github.com/ingitdb/ingitdb-cli
-    package_source_url: https://github.com/ingitdb/ingitdb-cli
-    docs_url: https://ingitdb.com/en/docs/
-    bug_tracker_url: https://github.com/ingitdb/ingitdb-cli/issues
-    tags: database git schema-validation cli developer-tools yaml json ai-native
-    license_url: https://github.com/ingitdb/ingitdb-cli/blob/main/LICENSE
-    icon_url: https://ingitdb.com/ingitdb-logo.png
-    release_notes: "https://github.com/ingitdb/ingitdb-cli/releases/tag/{{ .Tag }}"
-    summary: "A CLI for a schema-validated, AI-native database backed by a Git repository."
-    url_template: "https://github.com/ingitdb/ingitdb-cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-    description: |
-      ingitdb is a developer-grade, schema-validated, AI-native database
-      whose storage engine is a Git repository. Records are YAML/JSON files,
-      collections and schemas are defined declaratively.
-    api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
-
-scoops:
-  - name: ingitdb
-    ids:
-      - zip
-    description: "A CLI for a schema-validated, AI-native database backed by a Git repository."
-    url_template: "https://github.com/ingitdb/ingitdb-cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-    homepage: https://ingitdb.com
-    license: MIT
-    repository:
-      owner: ingitdb
-      name: scoop-bucket
-      branch: main
-      token: "{{ .Env.INGITDB_GORELEASER_GITHUB_TOKEN }}"
 
 aurs:
   - name: ingitdb-bin
