@@ -81,3 +81,55 @@ winget:
           owner: microsoft
           name: winget-pkgs
           branch: master
+
+chocolateys:
+  - name: ingitdb
+    ids:
+      - zip
+    title: inGitDB - Git-based Database
+    authors: inGitDB Contributors
+    owners: inGitDB
+    project_url: https://ingitdb.com/
+    project_source_url: https://github.com/ingitdb/ingitdb-cli
+    package_source_url: https://github.com/ingitdb/ingitdb-cli
+    docs_url: https://ingitdb.com/en/docs/
+    bug_tracker_url: https://github.com/ingitdb/ingitdb-cli/issues
+    tags: database git schema-validation cli developer-tools yaml json ai-native
+    license_url: https://github.com/ingitdb/ingitdb-cli/blob/main/LICENSE
+    icon_url: https://ingitdb.com/ingitdb-logo.png
+    release_notes: "https://github.com/ingitdb/ingitdb-cli/releases/tag/{{ .Tag }}"
+    summary: "A CLI for a schema-validated, AI-native database backed by a Git repository."
+    url_template: "https://github.com/ingitdb/ingitdb-cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    description: |
+      ingitdb is a developer-grade, schema-validated, AI-native database
+      whose storage engine is a Git repository. Records are YAML/JSON files,
+      collections and schemas are defined declaratively.
+    api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
+
+scoops:
+  - name: ingitdb
+    ids:
+      - zip
+    description: "A CLI for a schema-validated, AI-native database backed by a Git repository."
+    url_template: "https://github.com/ingitdb/ingitdb-cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    homepage: https://ingitdb.com
+    license: MIT
+    repository:
+      owner: ingitdb
+      name: scoop-bucket
+      branch: main
+      token: "{{ .Env.INGITDB_GORELEASER_GITHUB_TOKEN }}"
+
+aurs:
+  - name: ingitdb-bin
+    ids:
+      - tarball
+    homepage: https://ingitdb.com
+    description: "ingitdb – a CLI for a developer-grade, schema-validated, AI-native database whose storage engine is a Git repository."
+    license: MIT
+    maintainers:
+      - "ingitdb <hello@ingitdb.com>"
+    git_url: "ssh://aur@aur.archlinux.org/ingitdb-bin.git"
+    private_key: "{{ .Env.AUR_SSH_PRIVATE_KEY }}"
+    package: |
+      install -Dm755 "./ingitdb" "${pkgdir}/usr/bin/ingitdb"

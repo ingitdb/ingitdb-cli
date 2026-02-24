@@ -28,6 +28,7 @@ Each package manager has its own setup guide:
 ### Linux Packages
 
 #### AUR
+
 - [ ] Created AUR account at [aur.archlinux.org](https://aur.archlinux.org)
 - [ ] Generated ED25519 SSH key: `ssh-keygen -t ed25519 -C "goreleaser@ingitdb" -N "" -f ~/.ssh/aur_key`
 - [ ] Added public key to AUR account (SSH Public Keys section)
@@ -35,6 +36,7 @@ Each package manager has its own setup guide:
 - [ ] Stored private key as `AUR_SSH_PRIVATE_KEY` GitHub secret
 
 #### Snapcraft
+
 - [ ] Created Snapcraft account at [snapcraft.io/account/register](https://snapcraft.io/account/register)
 - [ ] Reserved snap name `ingitdb` at [snapcraft.io/snaps](https://snapcraft.io/snaps)
 - [ ] Generated login credentials: `snapcraft export-login /tmp/snap.login`
@@ -42,6 +44,7 @@ Each package manager has its own setup guide:
 - [ ] (After first release) Requested classic confinement at [forum.snapcraft.io](https://forum.snapcraft.io/c/snap-requests/49)
 
 #### Homebrew Formula
+
 - [ ] Created `homebrew-cli` repository in ingitdb organization
 - [ ] Added README to homebrew-cli repo
 - [ ] Verified goreleaser can push to the repo (uses `GITHUB_TOKEN` from workflow)
@@ -49,6 +52,7 @@ Each package manager has its own setup guide:
 ### Windows Packages
 
 #### Chocolatey
+
 - [ ] Created Chocolatey account at [community.chocolatey.org](https://community.chocolatey.org/account/Register)
 - [ ] Generated API key from account settings
 - [ ] Stored API key as `CHOCOLATEY_API_KEY` GitHub secret
@@ -56,12 +60,14 @@ Each package manager has its own setup guide:
 - [ ] Verified installation: `choco install ingitdb` && `ingitdb --version`
 
 #### WinGet
+
 - [ ] No account setup required (uses GITHUB_TOKEN)
 - [ ] Verified PR auto-submission to microsoft/winget-pkgs on first release
 - [ ] Awaited PR approval and merge (1-3 days)
 - [ ] Verified installation: `winget install ingitdb` && `ingitdb --version`
 
 #### Scoop
+
 - [ ] Created `scoop-bucket` repository in ingitdb organization
 - [ ] Generated ED25519 SSH key: `ssh-keygen -t ed25519 -C "goreleaser@ingitdb" -N "" -f ~/.ssh/scoop_key`
 - [ ] Added public key as deploy key to scoop-bucket repo (with write access)
@@ -83,8 +89,7 @@ goreleaser release --clean --config .github/goreleaser-linux.yaml --skip=upload
 # Test publish-homebrew config
 goreleaser release --clean --config .github/goreleaser-homebrew.yaml --skip=upload
 
-# Test Windows publishers (Chocolatey, WinGet, Scoop)
-goreleaser release --clean --config .github/goreleaser-publish-chocolatey.yaml --skip=upload
+# Test Windows publishers (WinGet, Scoop)
 goreleaser release --clean --config .github/goreleaser-publish-winget.yaml --skip=upload
 goreleaser release --clean --config .github/goreleaser-publish-scoop.yaml --skip=upload
 ```
@@ -94,6 +99,7 @@ goreleaser release --clean --config .github/goreleaser-publish-scoop.yaml --skip
 Once everything is verified:
 
 1. Push a version tag:
+
    ```bash
    git tag v0.1.0
    git push origin v0.1.0
@@ -101,7 +107,7 @@ Once everything is verified:
 
 2. Watch the release workflow:
    - Go to **Actions** → **Release**
-   - All jobs should run: `build-linux`, `publish-homebrew`, `publish-aur`, `publish-snap`, `publish-chocolatey`, `publish-winget`, `publish-scoop`
+   - All jobs should run: `build-linux`, `publish-homebrew`, `publish-aur`, `publish-snap`, `publish-winget`, `publish-scoop`
    - Check logs for successful package publishes
 
 3. Verify packages appear:

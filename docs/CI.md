@@ -14,8 +14,9 @@ Builds Linux and Windows binaries, creates the GitHub release, and uploads artif
 
 - Builds Linux binaries (amd64, arm64) and Windows binaries (amd64)
 - Creates the GitHub release and uploads archives + checksums
+- Builds and pushes Chocolatey package `.nupkg` to Community Repository
 
-**Secrets used:** `INGITDB_GORELEASER_GITHUB_TOKEN`
+**Secrets used:** `INGITDB_GORELEASER_GITHUB_TOKEN`, `CHOCOLATEY_API_KEY`
 
 #### 2. `publish-homebrew` (runs on macOS, after `build-linux`)
 
@@ -52,17 +53,6 @@ Builds and publishes the Snapcraft package.
 
 **Secrets used:** `SNAPCRAFT_STORE_CREDENTIALS`
 
-#### 5. `publish-chocolatey` (runs on Windows, after `build-linux`)
-
-Publishes the Chocolatey package. Runs on `windows-latest` because `choco` CLI is required.
-
-**Config:** [`.github/goreleaser-publish-chocolatey.yaml`](../.github/goreleaser-publish-chocolatey.yaml)
-
-- Builds Windows binary (amd64)
-- Packs and pushes `.nupkg` to [Chocolatey Community Repository](https://community.chocolatey.org/packages/ingitdb)
-
-**Secrets used:** `INGITDB_GORELEASER_GITHUB_TOKEN`, `CHOCOLATEY_API_KEY`
-
 #### 6. `publish-winget` (runs on Ubuntu, after `build-linux`)
 
 Publishes to WinGet via fork + PR to `microsoft/winget-pkgs`.
@@ -93,13 +83,13 @@ Publishes the Scoop manifest to `ingitdb/scoop-bucket`.
 
 ### GoReleaser Configurations
 
-| Config | Job | Purpose |
-|--------|-----|---------|
-| [`goreleaser-linux.yaml`](../.github/goreleaser-linux.yaml) | `build-linux` | Linux/Windows builds, GitHub release |
-| [`goreleaser-homebrew.yaml`](../.github/goreleaser-homebrew.yaml) | `publish-homebrew` | macOS builds, signing, notarization, Homebrew Cask (macOS + Linux) |
-| [`goreleaser-publish-aur.yaml`](../.github/goreleaser-publish-aur.yaml) | `publish-aur` | AUR PKGBUILD generation and push |
-| [`goreleaser-publish-snap.yaml`](../.github/goreleaser-publish-snap.yaml) | `publish-snap` | Snapcraft build and publish |
-| [`goreleaser-publish-chocolatey.yaml`](../.github/goreleaser-publish-chocolatey.yaml) | `publish-chocolatey` | Chocolatey package pack and push |
+| Config                                                                    | Job                | Purpose                                                            |
+| ------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------ |
+| [`goreleaser-linux.yaml`](../.github/goreleaser-linux.yaml)               | `build-linux`      | Linux/Windows builds, GitHub release                               |
+| [`goreleaser-homebrew.yaml`](../.github/goreleaser-homebrew.yaml)         | `publish-homebrew` | macOS builds, signing, notarization, Homebrew Cask (macOS + Linux) |
+| [`goreleaser-publish-aur.yaml`](../.github/goreleaser-publish-aur.yaml)   | `publish-aur`      | AUR PKGBUILD generation and push                                   |
+| [`goreleaser-publish-snap.yaml`](../.github/goreleaser-publish-snap.yaml) | `publish-snap`     | Snapcraft build and publish                                        |
+
 | [`goreleaser-publish-winget.yaml`](../.github/goreleaser-publish-winget.yaml) | `publish-winget` | WinGet manifest and PR to microsoft/winget-pkgs |
 | [`goreleaser-publish-scoop.yaml`](../.github/goreleaser-publish-scoop.yaml) | `publish-scoop` | Scoop manifest push to ingitdb/scoop-bucket |
 
