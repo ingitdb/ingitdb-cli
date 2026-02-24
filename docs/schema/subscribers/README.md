@@ -2,7 +2,7 @@
 
 Subscribers are built-in, configurable event handlers that react to record lifecycle events (`created`, `updated`, `deleted`). Unlike [triggers](../trigger.md) (which execute arbitrary shell commands), subscribers are first-class integrations with zero external tooling required.
 
-See [Subscribers feature overview](../../features/subscribers.md) for a conceptual introduction.
+See [Subscribers feature overview](../../features/subscribers/) for a conceptual introduction.
 
 ## File location
 

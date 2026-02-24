@@ -2,7 +2,7 @@
 
 Subscribers are built-in, configurable event handlers that run inside the ingitdb CLI process and react to record lifecycle events (`created`, `updated`, `deleted`). Unlike [triggers](../schema/trigger.md) (which execute arbitrary shell commands), subscribers are first-class integrations with zero external tooling required.
 
-Configuration lives in `.ingitdb/subscribers.yaml` at the root of your database directory. See the [Subscriber schema reference](../schema/subscribers.md) for the full YAML specification.
+Configuration lives in `.ingitdb/subscribers.yaml` at the root of your database directory. See the [Subscriber schema reference](../schema/subscribers/) for the full YAML specification.
 
 ## Structure
 
@@ -10,12 +10,11 @@ Configuration lives in `.ingitdb/subscribers.yaml` at the root of your database 
 
 ```yaml
 subscribers:
-
   my-group:
     name: "Optional description"
     for:
       paths:
-        - companies/*/departments   # path pattern — omit to match all
+        - companies/*/departments # path pattern — omit to match all
       events:
         - created
         - updated
@@ -31,20 +30,20 @@ Using map keys (e.g. `my-group`) makes it easy to target a specific group when a
 
 ## Subscriber catalogue
 
-| Subscriber | Status | Description |
-|---|---|---|
-| [Webhook](#webhook) | planned | HTTP POST to any URL |
-| [Email](#email) | planned | SMTP email notification |
-| [Telegram](#telegram) | planned | Send a Telegram message |
-| [WhatsApp](#whatsapp) | proposal | Send a WhatsApp message |
-| [Slack](#slack) | proposal | Post to a Slack channel via incoming webhook |
-| [Discord](#discord) | proposal | Post to a Discord channel via webhook |
-| [GitHub Actions](#github-actions) | proposal | Trigger a `workflow_dispatch` event |
-| [GitLab CI](#gitlab-ci) | proposal | Trigger a GitLab pipeline |
-| [ntfy.sh](#ntfysh) | proposal | Send a push notification via ntfy.sh (self-hostable) |
-| [SMS](#sms) | proposal | Send an SMS via Twilio or Vonage |
+| Subscriber                              | Status   | Description                                              |
+| --------------------------------------- | -------- | -------------------------------------------------------- |
+| [Webhook](#webhook)                     | planned  | HTTP POST to any URL                                     |
+| [Email](#email)                         | planned  | SMTP email notification                                  |
+| [Telegram](#telegram)                   | planned  | Send a Telegram message                                  |
+| [WhatsApp](#whatsapp)                   | proposal | Send a WhatsApp message                                  |
+| [Slack](#slack)                         | proposal | Post to a Slack channel via incoming webhook             |
+| [Discord](#discord)                     | proposal | Post to a Discord channel via webhook                    |
+| [GitHub Actions](#github-actions)       | proposal | Trigger a `workflow_dispatch` event                      |
+| [GitLab CI](#gitlab-ci)                 | proposal | Trigger a GitLab pipeline                                |
+| [ntfy.sh](#ntfysh)                      | proposal | Send a push notification via ntfy.sh (self-hostable)     |
+| [SMS](#sms)                             | proposal | Send an SMS via Twilio or Vonage                         |
 | [Search index sync](#search-index-sync) | proposal | Push record changes to Algolia / Meilisearch / Typesense |
-| [RSS/Atom feed](#rssatom-feed) | proposal | Regenerate an RSS or Atom feed file |
+| [RSS/Atom feed](#rssatom-feed)          | proposal | Regenerate an RSS or Atom feed file                      |
 
 ---
 
@@ -54,7 +53,6 @@ Issues an HTTP POST to a URL when a record event fires. Multiple webhooks can be
 
 ```yaml
 subscribers:
-
   notify-backend:
     for:
       events:
@@ -76,7 +74,6 @@ Sends an email notification via SMTP.
 
 ```yaml
 subscribers:
-
   department-emails:
     for:
       paths:
@@ -108,7 +105,6 @@ Sends a message to a Telegram chat via the Bot API.
 
 ```yaml
 subscribers:
-
   new-record-telegram:
     for:
       events:
@@ -126,7 +122,6 @@ Sends a WhatsApp message via the WhatsApp Business API (e.g. Twilio or Meta Clou
 
 ```yaml
 subscribers:
-
   oncall-whatsapp:
     for:
       events:
@@ -135,7 +130,7 @@ subscribers:
     whatsapp:
       - from: "whatsapp:+14155238886"
         to: "whatsapp:+15005550006"
-        account_sid: ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX   # Twilio
+        account_sid: ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX # Twilio
         auth_token: "<AUTH_TOKEN>"
 ```
 
@@ -147,7 +142,6 @@ Posts a message to a Slack channel via an [incoming webhook](https://api.slack.c
 
 ```yaml
 subscribers:
-
   content-slack:
     for:
       paths:
@@ -168,7 +162,6 @@ Posts a message to a Discord channel via a server webhook.
 
 ```yaml
 subscribers:
-
   new-record-discord:
     for:
       events:
@@ -185,7 +178,6 @@ Triggers a [`workflow_dispatch`](https://docs.github.com/en/actions/writing-work
 
 ```yaml
 subscribers:
-
   deploy-site:
     for:
       events:
@@ -208,7 +200,6 @@ Triggers a GitLab pipeline via the [pipeline trigger API](https://docs.gitlab.co
 
 ```yaml
 subscribers:
-
   deploy-pipeline:
     for:
       events:
@@ -229,7 +220,6 @@ Sends a push notification via [ntfy.sh](https://ntfy.sh) — a simple, open-sour
 
 ```yaml
 subscribers:
-
   push-notifications:
     for:
       events:
@@ -237,7 +227,7 @@ subscribers:
         - updated
     ntfy:
       - topic: my-ingitdb-alerts
-        server: https://ntfy.sh   # optional, defaults to ntfy.sh
+        server: https://ntfy.sh # optional, defaults to ntfy.sh
 ```
 
 ---
@@ -248,13 +238,12 @@ Sends an SMS via Twilio or Vonage. Useful for high-priority record alerts.
 
 ```yaml
 subscribers:
-
   oncall-sms:
     for:
       events:
         - created
     sms:
-      - provider: twilio          # or: vonage
+      - provider: twilio # or: vonage
         from: "+15005550006"
         to: "+14155238886"
         account_sid: ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -269,14 +258,13 @@ Pushes record changes to a search index. Useful for content-management databases
 
 ```yaml
 subscribers:
-
   content-search-sync:
     for:
       paths:
         - content/posts
         - content/pages
     search_indexes:
-      - provider: algolia         # or: meilisearch, typesense
+      - provider: algolia # or: meilisearch, typesense
         app_id: XXXXXXXXXX
         api_key: "<API_KEY>"
         index: content
@@ -295,7 +283,6 @@ Regenerates an RSS or Atom feed file whenever records are created or updated. In
 
 ```yaml
 subscribers:
-
   blog-feeds:
     for:
       paths:
@@ -307,5 +294,5 @@ subscribers:
       - output: public/feed.xml
         title: "My Blog"
         link: https://example.com
-        format: rss2              # or: atom
+        format: rss2 # or: atom
 ```

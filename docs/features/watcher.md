@@ -42,5 +42,5 @@ See [CLI reference](../CLI.md#watch--watch-database-for-changes-not-yet-implemen
 
 ## 📂 Related
 
-- [Subscribers](subscribers.md) — configurable event handlers (webhooks, email, shell) triggered by the same events.
+- [Subscribers](subscribers/) — configurable event handlers (webhooks, email, shell) triggered by the same events.
 - [Triggers](../components/triggers.md) — pluggable scripts called on data change.

@@ -8,4 +8,4 @@ See [Trigger Definition File](../schema/trigger.md) for the full YAML reference 
 
 ## Subscribers
 
-For common integrations — webhooks, email, Slack, Telegram, search index sync, and more — ingitdb provides [Subscribers](../features/subscribers.md): built-in, configurable event handlers that run inside the CLI process with no external tooling required. Subscribers are a higher-level alternative to shell-step triggers for these well-known targets.
+For common integrations — webhooks, email, Slack, Telegram, search index sync, and more — ingitdb provides [Subscribers](../features/subscribers/): built-in, configurable event handlers that run inside the CLI process with no external tooling required. Subscribers are a higher-level alternative to shell-step triggers for these well-known targets.
