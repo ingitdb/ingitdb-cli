@@ -527,74 +527,113 @@ jobs:
 
                 <h3>Subscribers</h3>
                 <p>Subscribers are built-in integrations that run inside the ingitdb CLI process — no extra tooling needed. Configured in <code>.ingitdb/subscribers.yaml</code>.</p>
+                <p>The <code>subscribers</code> field is a <strong>map keyed by unique IDs</strong>, so each group can be addressed and modified independently. Each group has a <code>for</code> selector — <code>paths</code> (supporting literal names, <code>*</code> wildcard, and regex segments) plus <code>events</code> — and one or more handler lists. Multiple handlers of the same type can be combined under a single selector:</p>
+
+                <div class="code-example">
+                    <h4>.ingitdb/subscribers.yaml</h4>
+                    <pre><code>subscribers:
+
+  notify-backend:
+    name: "Notify on any change"
+    for:
+      events:
+        - created
+        - updated
+        - deleted
+    webhooks:
+      - url: https://api.example.com/hook
+        headers:
+          Authorization: "Bearer &lt;TOKEN&gt;"
+
+  content-updates:
+    name: "Sync content to Slack, search, and email"
+    for:
+      paths:
+        - content/posts
+        - content/pages
+      events:
+        - created
+        - updated
+    slacks:
+      - webhook_url: https://hooks.slack.com/services/...
+    search_indexes:
+      - provider: algolia
+        app_id: XXXXXXXXXX
+        api_key: "&lt;API_KEY&gt;"
+        index: content
+    emails:
+      - to: [editors@example.com]
+        smtp: smtp.example.com
+        subject: "{event} on {path}"</code></pre>
+                </div>
 
                 <div class="commands-table">
                     <table>
                         <thead>
                             <tr>
-                                <th>Subscriber</th>
+                                <th>Handler</th>
                                 <th>Status</th>
                                 <th>Description</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td>Webhook</td>
+                                <td><code>webhooks</code></td>
                                 <td><span class="badge badge-warning">Planned</span></td>
                                 <td>HTTP POST to any URL</td>
                             </tr>
                             <tr>
-                                <td>Email</td>
+                                <td><code>emails</code></td>
                                 <td><span class="badge badge-warning">Planned</span></td>
                                 <td>SMTP email notification</td>
                             </tr>
                             <tr>
-                                <td>Telegram</td>
+                                <td><code>telegrams</code></td>
                                 <td><span class="badge badge-warning">Planned</span></td>
                                 <td>Message via Telegram Bot API</td>
                             </tr>
                             <tr>
-                                <td>Slack</td>
+                                <td><code>slacks</code></td>
                                 <td><span class="badge badge-proposal">Proposal</span></td>
                                 <td>Post to a Slack channel via incoming webhook</td>
                             </tr>
                             <tr>
-                                <td>Discord</td>
+                                <td><code>discords</code></td>
                                 <td><span class="badge badge-proposal">Proposal</span></td>
                                 <td>Post to a Discord channel via webhook</td>
                             </tr>
                             <tr>
-                                <td>WhatsApp</td>
+                                <td><code>whatsapp</code></td>
                                 <td><span class="badge badge-proposal">Proposal</span></td>
                                 <td>Send a WhatsApp message</td>
                             </tr>
                             <tr>
-                                <td>GitHub Actions</td>
+                                <td><code>github_actions</code></td>
                                 <td><span class="badge badge-proposal">Proposal</span></td>
                                 <td>Trigger a <code>workflow_dispatch</code> event</td>
                             </tr>
                             <tr>
-                                <td>GitLab CI</td>
+                                <td><code>gitlab_ci</code></td>
                                 <td><span class="badge badge-proposal">Proposal</span></td>
                                 <td>Trigger a GitLab pipeline</td>
                             </tr>
                             <tr>
-                                <td>ntfy.sh</td>
+                                <td><code>ntfy</code></td>
                                 <td><span class="badge badge-proposal">Proposal</span></td>
-                                <td>Self-hostable push notifications</td>
+                                <td>Self-hostable push notifications via ntfy.sh</td>
                             </tr>
                             <tr>
-                                <td>SMS</td>
+                                <td><code>sms</code></td>
                                 <td><span class="badge badge-proposal">Proposal</span></td>
                                 <td>Send an SMS via Twilio or Vonage</td>
                             </tr>
                             <tr>
-                                <td>Search index sync</td>
+                                <td><code>search_indexes</code></td>
                                 <td><span class="badge badge-proposal">Proposal</span></td>
                                 <td>Push changes to Algolia / Meilisearch / Typesense</td>
                             </tr>
                             <tr>
-                                <td>RSS/Atom feed</td>
+                                <td><code>rss</code></td>
                                 <td><span class="badge badge-proposal">Proposal</span></td>
                                 <td>Regenerate an RSS or Atom feed file</td>
                             </tr>

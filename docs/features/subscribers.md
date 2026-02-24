@@ -2,7 +2,32 @@
 
 Subscribers are built-in, configurable event handlers that run inside the ingitdb CLI process and react to record lifecycle events (`created`, `updated`, `deleted`). Unlike [triggers](../schema/trigger.md) (which execute arbitrary shell commands), subscribers are first-class integrations with zero external tooling required.
 
-Configuration lives in `.ingitdb/subscribers.yaml` at the root of your database directory.
+Configuration lives in `.ingitdb/subscribers.yaml` at the root of your database directory. See the [Subscriber schema reference](../schema/subscribers.md) for the full YAML specification.
+
+## Structure
+
+`subscribers` is a map of uniquely-identified groups. Each group has a `for` selector (which paths and events to watch) and one or more handler lists:
+
+```yaml
+subscribers:
+
+  my-group:
+    name: "Optional description"
+    for:
+      paths:
+        - companies/*/departments   # path pattern — omit to match all
+      events:
+        - created
+        - updated
+        - deleted
+    webhooks:
+      - url: https://example.com/hook
+    emails:
+      - to: [alice@example.com]
+        smtp: smtp.example.com
+```
+
+Using map keys (e.g. `my-group`) makes it easy to target a specific group when adding paths, changing events, or extending its handlers.
 
 ## Subscriber catalogue
 
@@ -25,14 +50,22 @@ Configuration lives in `.ingitdb/subscribers.yaml` at the root of your database 
 
 ## Webhook
 
-Issues an HTTP request when a record event fires.
+Issues an HTTP POST to a URL when a record event fires. Multiple webhooks can be listed under the same `for` selector.
 
 ```yaml
 subscribers:
-  - name: Notify external service
-    webhook:
-      url: https://example.com/webhook/
-      method: POST          # default: POST
+
+  notify-backend:
+    for:
+      events:
+        - created
+        - updated
+        - deleted
+    webhooks:
+      - name: Primary endpoint
+        url: https://example.com/ingitdb-webhooks/data-change
+        headers:
+          Authorization: "Bearer <TOKEN>"
 ```
 
 ---
@@ -43,13 +76,28 @@ Sends an email notification via SMTP.
 
 ```yaml
 subscribers:
-  - name: Alert team
-    email:
-      from: ingitdb@example.com
-      to:
-        - alice@example.com
-        - bob@example.com
-      smtp: smtp.example.com
+
+  department-emails:
+    for:
+      paths:
+        - companies/*/departments
+      events:
+        - created
+        - updated
+    emails:
+      - name: HR team
+        to:
+          - alice@example.com
+        smtp: smtp.example.com
+        user: ingitdb@example.com
+        pass: "<SMTP_PASSWORD>"
+      - name: Ops team
+        to:
+          - bob@example.com
+        smtp: smtp.example.com
+        user: ingitdb@example.com
+        pass: "<SMTP_PASSWORD>"
+        subject: "{event} on {path}"
 ```
 
 ---
@@ -60,10 +108,14 @@ Sends a message to a Telegram chat via the Bot API.
 
 ```yaml
 subscribers:
-  - name: Telegram alert
-    telegram:
-      token: "123456:ABC-DEF..."
-      chat_id: "-1001234567890"
+
+  new-record-telegram:
+    for:
+      events:
+        - created
+    telegrams:
+      - token: "123456:ABC-DEF..."
+        chat_id: "-1001234567890"
 ```
 
 ---
@@ -74,12 +126,17 @@ Sends a WhatsApp message via the WhatsApp Business API (e.g. Twilio or Meta Clou
 
 ```yaml
 subscribers:
-  - name: WhatsApp alert
+
+  oncall-whatsapp:
+    for:
+      events:
+        - created
+        - updated
     whatsapp:
-      from: "whatsapp:+14155238886"
-      to: "whatsapp:+15005550006"
-      account_sid: ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX   # Twilio
-      auth_token: your_auth_token
+      - from: "whatsapp:+14155238886"
+        to: "whatsapp:+15005550006"
+        account_sid: ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX   # Twilio
+        auth_token: "<AUTH_TOKEN>"
 ```
 
 ---
@@ -90,9 +147,17 @@ Posts a message to a Slack channel via an [incoming webhook](https://api.slack.c
 
 ```yaml
 subscribers:
-  - name: Slack notification
-    slack:
-      webhook_url: https://hooks.slack.com/services/T00000000/B00000000/XXXX
+
+  content-slack:
+    for:
+      paths:
+        - content/posts
+        - content/pages
+      events:
+        - created
+        - updated
+    slacks:
+      - webhook_url: https://hooks.slack.com/services/<WORKSPACE_ID>/<CHANNEL_ID>/<WEBHOOK_TOKEN>
 ```
 
 ---
@@ -103,9 +168,13 @@ Posts a message to a Discord channel via a server webhook.
 
 ```yaml
 subscribers:
-  - name: Discord notification
-    discord:
-      webhook_url: https://discord.com/api/webhooks/000000000/XXXX
+
+  new-record-discord:
+    for:
+      events:
+        - created
+    discords:
+      - webhook_url: https://discord.com/api/webhooks/000000000/XXXX
 ```
 
 ---
@@ -116,13 +185,19 @@ Triggers a [`workflow_dispatch`](https://docs.github.com/en/actions/writing-work
 
 ```yaml
 subscribers:
-  - name: Rebuild site on GitHub Actions
+
+  deploy-site:
+    for:
+      events:
+        - created
+        - updated
+        - deleted
     github_actions:
-      owner: my-org
-      repo: my-site
-      workflow: deploy.yml
-      ref: main
-      token: ghp_XXXX
+      - owner: my-org
+        repo: my-site
+        workflow: deploy.yml
+        ref: main
+        token: ghp_XXXX
 ```
 
 ---
@@ -133,11 +208,17 @@ Triggers a GitLab pipeline via the [pipeline trigger API](https://docs.gitlab.co
 
 ```yaml
 subscribers:
-  - name: Trigger GitLab pipeline
+
+  deploy-pipeline:
+    for:
+      events:
+        - created
+        - updated
+        - deleted
     gitlab_ci:
-      project_id: "12345678"
-      ref: main
-      token: glptt-XXXX
+      - project_id: "12345678"
+        ref: main
+        token: glptt-XXXX
 ```
 
 ---
@@ -148,10 +229,15 @@ Sends a push notification via [ntfy.sh](https://ntfy.sh) — a simple, open-sour
 
 ```yaml
 subscribers:
-  - name: Push notification
+
+  push-notifications:
+    for:
+      events:
+        - created
+        - updated
     ntfy:
-      topic: my-ingitdb-alerts
-      server: https://ntfy.sh   # optional, defaults to ntfy.sh
+      - topic: my-ingitdb-alerts
+        server: https://ntfy.sh   # optional, defaults to ntfy.sh
 ```
 
 ---
@@ -162,13 +248,17 @@ Sends an SMS via Twilio or Vonage. Useful for high-priority record alerts.
 
 ```yaml
 subscribers:
-  - name: SMS alert
+
+  oncall-sms:
+    for:
+      events:
+        - created
     sms:
-      provider: twilio          # or: vonage
-      from: "+15005550006"
-      to: "+14155238886"
-      account_sid: ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-      auth_token: your_auth_token
+      - provider: twilio          # or: vonage
+        from: "+15005550006"
+        to: "+14155238886"
+        account_sid: ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        auth_token: "<AUTH_TOKEN>"
 ```
 
 ---
@@ -179,19 +269,22 @@ Pushes record changes to a search index. Useful for content-management databases
 
 ```yaml
 subscribers:
-  - name: Algolia sync
-    search_index:
-      provider: algolia         # or: meilisearch, typesense
-      app_id: XXXXXXXXXX
-      api_key: your_api_key
-      index: records
 
-  - name: Meilisearch sync
-    search_index:
-      provider: meilisearch
-      host: http://localhost:7700
-      api_key: your_api_key
-      index: records
+  content-search-sync:
+    for:
+      paths:
+        - content/posts
+        - content/pages
+    search_indexes:
+      - provider: algolia         # or: meilisearch, typesense
+        app_id: XXXXXXXXXX
+        api_key: "<API_KEY>"
+        index: content
+
+      - provider: meilisearch
+        host: http://localhost:7700
+        api_key: "<API_KEY>"
+        index: content
 ```
 
 ---
@@ -202,10 +295,17 @@ Regenerates an RSS or Atom feed file whenever records are created or updated. In
 
 ```yaml
 subscribers:
-  - name: Blog RSS feed
+
+  blog-feeds:
+    for:
+      paths:
+        - content/posts
+      events:
+        - created
+        - updated
     rss:
-      output: public/feed.xml
-      title: "My Blog"
-      link: https://example.com
-      format: rss2              # or: atom
+      - output: public/feed.xml
+        title: "My Blog"
+        link: https://example.com
+        format: rss2              # or: atom
 ```

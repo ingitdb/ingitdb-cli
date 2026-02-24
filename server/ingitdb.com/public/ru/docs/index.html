@@ -527,74 +527,113 @@ jobs:
 
                 <h3>Подписчики</h3>
                 <p>Подписчики — встроенные интеграции, работающие внутри CLI-процесса ingitdb — никаких дополнительных инструментов не требуется. Настраиваются в <code>.ingitdb/subscribers.yaml</code>.</p>
+                <p>Поле <code>subscribers</code> — это <strong>словарь с уникальными идентификаторами</strong>, что позволяет адресовать и изменять каждую группу независимо. Каждая группа содержит селектор <code>for</code> — <code>paths</code> (поддерживает литеральные имена, подстановочный знак <code>*</code> и regex-сегменты) и <code>events</code> — а также один или несколько списков обработчиков. Под одним селектором можно объединять несколько обработчиков одного или разных типов:</p>
+
+                <div class="code-example">
+                    <h4>.ingitdb/subscribers.yaml</h4>
+                    <pre><code>subscribers:
+
+  notify-backend:
+    name: "Уведомить при любом изменении"
+    for:
+      events:
+        - created
+        - updated
+        - deleted
+    webhooks:
+      - url: https://api.example.com/hook
+        headers:
+          Authorization: "Bearer &lt;TOKEN&gt;"
+
+  content-updates:
+    name: "Slack, поиск и email при изменении контента"
+    for:
+      paths:
+        - content/posts
+        - content/pages
+      events:
+        - created
+        - updated
+    slacks:
+      - webhook_url: https://hooks.slack.com/services/...
+    search_indexes:
+      - provider: algolia
+        app_id: XXXXXXXXXX
+        api_key: "&lt;API_KEY&gt;"
+        index: content
+    emails:
+      - to: [editors@example.com]
+        smtp: smtp.example.com
+        subject: "{event} on {path}"</code></pre>
+                </div>
 
                 <div class="commands-table">
                     <table>
                         <thead>
                             <tr>
-                                <th>Подписчик</th>
+                                <th>Обработчик</th>
                                 <th>Статус</th>
                                 <th>Описание</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td>Webhook</td>
+                                <td><code>webhooks</code></td>
                                 <td><span class="badge badge-warning">Planned</span></td>
                                 <td>HTTP POST по любому URL</td>
                             </tr>
                             <tr>
-                                <td>Email</td>
+                                <td><code>emails</code></td>
                                 <td><span class="badge badge-warning">Planned</span></td>
                                 <td>SMTP email-уведомление</td>
                             </tr>
                             <tr>
-                                <td>Telegram</td>
+                                <td><code>telegrams</code></td>
                                 <td><span class="badge badge-warning">Planned</span></td>
                                 <td>Сообщение через Telegram Bot API</td>
                             </tr>
                             <tr>
-                                <td>Slack</td>
+                                <td><code>slacks</code></td>
                                 <td><span class="badge badge-proposal">Proposal</span></td>
                                 <td>Публикация в канал Slack через входящий вебхук</td>
                             </tr>
                             <tr>
-                                <td>Discord</td>
+                                <td><code>discords</code></td>
                                 <td><span class="badge badge-proposal">Proposal</span></td>
                                 <td>Публикация в канал Discord через вебхук</td>
                             </tr>
                             <tr>
-                                <td>WhatsApp</td>
+                                <td><code>whatsapp</code></td>
                                 <td><span class="badge badge-proposal">Proposal</span></td>
                                 <td>Отправка сообщения WhatsApp</td>
                             </tr>
                             <tr>
-                                <td>GitHub Actions</td>
+                                <td><code>github_actions</code></td>
                                 <td><span class="badge badge-proposal">Proposal</span></td>
                                 <td>Запуск события <code>workflow_dispatch</code></td>
                             </tr>
                             <tr>
-                                <td>GitLab CI</td>
+                                <td><code>gitlab_ci</code></td>
                                 <td><span class="badge badge-proposal">Proposal</span></td>
                                 <td>Запуск GitLab pipeline</td>
                             </tr>
                             <tr>
-                                <td>ntfy.sh</td>
+                                <td><code>ntfy</code></td>
                                 <td><span class="badge badge-proposal">Proposal</span></td>
-                                <td>Самостоятельно размещаемые push-уведомления</td>
+                                <td>Push-уведомления через ntfy.sh (self-hosted)</td>
                             </tr>
                             <tr>
-                                <td>SMS</td>
+                                <td><code>sms</code></td>
                                 <td><span class="badge badge-proposal">Proposal</span></td>
                                 <td>Отправка SMS через Twilio или Vonage</td>
                             </tr>
                             <tr>
-                                <td>Search index sync</td>
+                                <td><code>search_indexes</code></td>
                                 <td><span class="badge badge-proposal">Proposal</span></td>
-                                <td>Синхронизация изменений с Algolia / Meilisearch / Typesense</td>
+                                <td>Синхронизация с Algolia / Meilisearch / Typesense</td>
                             </tr>
                             <tr>
-                                <td>RSS/Atom feed</td>
+                                <td><code>rss</code></td>
                                 <td><span class="badge badge-proposal">Proposal</span></td>
                                 <td>Генерация файла RSS или Atom feed</td>
                             </tr>
