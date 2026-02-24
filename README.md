@@ -230,14 +230,14 @@ languages:
 ## 🛠️ Commands
 
 | Command             | Status     | Description                                              |
-|---------------------|:-----------|----------------------------------------------------------|
-| `version`           | ✅ done     | Print build version, commit hash, and date               |
-| `validate`          | ✅ done     | Check every record against its collection schema         |
-| `read record`       | ✅ done     | Read a single record by ID (local or GitHub)             |
-| `create record`     | ✅ done     | Create a new record in a collection                      |
-| `update record`     | ✅ done     | Update fields of an existing record (local or GitHub)    |
-| `delete record`     | ✅ done     | Delete a single record by ID (local or GitHub)           |
-| `list collections`  | ✅ done     | List collection IDs (local or GitHub)                    |
+| ------------------- | :--------- | -------------------------------------------------------- |
+| `version`           | ✅ done    | Print build version, commit hash, and date               |
+| `validate`          | ✅ done    | Check every record against its collection schema         |
+| `read record`       | ✅ done    | Read a single record by ID (local or GitHub)             |
+| `create record`     | ✅ done    | Create a new record in a collection                      |
+| `update record`     | ✅ done    | Update fields of an existing record (local or GitHub)    |
+| `delete record`     | ✅ done    | Delete a single record by ID (local or GitHub)           |
+| `list collections`  | ✅ done    | List collection IDs (local or GitHub)                    |
 | `list view`         | 🟡 planned | List view definition                                     |
 | `list subscribers`  | 🟡 planned | List subscribers                                         |
 | `find`              | 🟡 planned | Search records by substring, regex, or exact value       |
@@ -269,14 +269,14 @@ The longest matching collection prefix wins when ambiguous.
 Only collections with `record_file.type: "map[string]any"` support CRUD. Collections using
 `[]map[string]any` (list) or `map[string]map[string]any` (dictionary) are not yet implemented.
 
-See the [CLI reference](docs/CLI.md) for flags and examples.
+See the [CLI reference](docs/cli/) for flags and examples.
 
 ## 📚 Documentation
 
 | Document                                                      | Description                                                          |
-|---------------------------------------------------------------|----------------------------------------------------------------------|
+| ------------------------------------------------------------- | -------------------------------------------------------------------- |
 | [Documentation](docs/README.md)                               | Full docs index — start here                                         |
-| [CLI reference](docs/CLI.md)                                  | Every subcommand, flag, and exit code                                |
+| [CLI reference](docs/cli/)                                    | Every subcommand, flag, and exit code                                |
 | [Features](docs/features/README.md)                           | What inGitDB can do today and what is coming                         |
 | [GitHub Direct Access](docs/features/github-direct-access.md) | Read and write records in remote GitHub repositories without cloning |
 | [Architecture](docs/ARCHITECTURE.md)                          | Data model, package map, and key design decisions                    |

@@ -1,19 +1,20 @@
 ---
 name: spec-writer
-description: 'Use this agent to turn a vague feature idea, ROADMAP entry, or user
+description:
+  "Use this agent to turn a vague feature idea, ROADMAP entry, or user
   story into a well-structured BACKLOG.md entry ready for go-engineer to act on. Produces
   a problem statement, acceptance criteria, implementation notes, and test cases.
   Use before go-engineer starts coding whenever requirements are unclear or acceptance
   criteria are missing.
 
-  '
+  "
 target: github-copilot
 tools:
-- read
-- glob
-- grep
-- websearch
-- webfetch
+  - read
+  - glob
+  - grep
+  - websearch
+  - webfetch
 model: sonnet
 ---
 
@@ -72,22 +73,26 @@ Output a BACKLOG.md-style section using this exact structure:
 **Why:** One sentence explaining the value — who benefits and how.
 
 **Acceptance criteria:**
+
 - Observable, testable, binary (pass/fail) statements
 - Include the exact CLI invocation and expected output/exit code for each case
 - Cover the happy path, error cases, and edge cases
 - Each criterion must be verifiable without reading the implementation
 
 **Implementation notes:**
+
 - Which packages and files to touch
 - Which existing patterns or interfaces to reuse
 - Constraints from CLAUDE.md conventions (nested calls, stderr, etc.)
 - Any known pitfalls
 
 **Test cases:**
+
 - Input → expected output / side effect
 - At minimum: one happy path, one error path, one edge case
 
 **Out of scope:**
+
 - Explicit list of related features deferred to future tasks
 ```
 
@@ -96,7 +101,7 @@ Output a BACKLOG.md-style section using this exact structure:
 Before finishing:
 
 - Does every acceptance criterion have at least one corresponding test case?
-- Are all CLI flags consistent with `docs/CLI.md`?
+- Are all CLI flags consistent with `docs/cli/`?
 - Do the implementation notes reference specific files/packages, not just vague
   descriptions?
 - Is anything in the spec contradicted by the existing code or docs?

@@ -35,11 +35,11 @@ and great documentation is your best recruiting tool.
 
 Write with all three audiences in mind simultaneously:
 
-| Audience | What they need |
-|----------|----------------|
-| **First-time visitors** | A great first impression, a clear value proposition, and irresistible links that pull them deeper into the project. |
-| **Working developers** | Accurate spec details, concrete examples, interface signatures, and acceptance criteria they can code against without guessing. |
-| **AI agents** | Unambiguous execution plans, explicit boundaries, success criteria, and enough context to act autonomously without back-and-forth. |
+| Audience                | What they need                                                                                                                     |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **First-time visitors** | A great first impression, a clear value proposition, and irresistible links that pull them deeper into the project.                |
+| **Working developers**  | Accurate spec details, concrete examples, interface signatures, and acceptance criteria they can code against without guessing.    |
+| **AI agents**           | Unambiguous execution plans, explicit boundaries, success criteria, and enough context to act autonomously without back-and-forth. |
 
 ## How you write
 
@@ -60,7 +60,7 @@ Before finishing any task, check:
 - **Conflicts** — does any doc claim something the code contradicts?
 - **Missing implementation** — is there a spec with no corresponding code?
 - **Undocumented code** — is there code with no doc coverage?
-- **Stale CLI reference** — do the flags in `docs/CLI.md` match `cmd/ingitdb/main.go`?
+- **Stale CLI reference** — do the flags in `docs/cli/` match `cmd/ingitdb/main.go`?
 - **README and index files** — are they updated with links to any new pages?
 
 ## Competitor awareness
@@ -77,6 +77,7 @@ inGitDB stores database records as YAML/JSON files in a Git repository.
 It is schema-validated, queryable, event-driven, and AI-native (MCP support).
 
 Core differentiators:
+
 - **Git is the database engine** — history, branching, and merging come for free.
 - **Human-readable records** — every record is a plain file; any text editor or
   git client works.
@@ -85,6 +86,7 @@ Core differentiators:
   system and git.
 
 Codebase layout (for cross-referencing docs against code):
+
 - `cmd/ingitdb/main.go` — CLI entry point; stub commands live here.
 - `pkg/ingitdb/` — core types: `Definition`, `CollectionDef`, `ColumnDef`, views.
 - `pkg/ingitdb/validator/` — schema and data validation.
