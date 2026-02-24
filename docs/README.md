@@ -37,55 +37,55 @@ A one-line description of each document, grouped by purpose.
 
 ### 📂 User docs
 
-| Document | What it covers |
-|---|---|
-| [CLI](CLI.md) | Every subcommand, flag, and exit code for the `ingitdb` binary |
-| [Configuration](configuration/README.md) | Root DB config (`.ingitdb.yaml`) and per-collection schema files |
-| [Features](features/README.md) | Full feature list with status (WIP / pending) and links to detail pages |
-| [GitHub Direct Access](features/github-direct-access.md) | Read and write records in remote GitHub repositories without cloning |
+| Document                                                 | What it covers                                                          |
+| -------------------------------------------------------- | ----------------------------------------------------------------------- |
+| [CLI](CLI.md)                                            | Every subcommand, flag, and exit code for the `ingitdb` binary          |
+| [Configuration](configuration/README.md)                 | Root DB config (`.ingitdb.yaml`) and per-collection schema files        |
+| [Features](features/README.md)                           | Full feature list with status (WIP / pending) and links to detail pages |
+| [GitHub Direct Access](features/github-direct-access.md) | Read and write records in remote GitHub repositories without cloning    |
 
 ### 📂 Developer docs
 
-| Document | What it covers |
-|---|---|
-| [Architecture](ARCHITECTURE.md) | Filesystem layout, package responsibilities, and key design decisions |
-| [Components](components/README.md) | Scanner, Validator, Views Builder, Watcher, Triggers, MCP Server, and more |
-| [Contributing](CONTRIBUTING.md) | Bug reports, feature suggestions, pull request workflow |
-| [Coding Standards](CODING_STANDARDS.md) | Go conventions enforced in this codebase |
-| [Guidelines](GUIDELINES.md) | Design and process guidelines that apply project-wide |
-| [CI](CI.md) | What the CI pipeline runs and how to satisfy it locally |
+| Document                                | What it covers                                                                             |
+| --------------------------------------- | ------------------------------------------------------------------------------------------ |
+| [Architecture](ARCHITECTURE.md)         | Filesystem layout, package responsibilities, and key design decisions                      |
+| [Components](components/README.md)      | Scanner, Validator, Views Builder, README Builder, Watcher, Triggers, MCP Server, and more |
+| [Contributing](CONTRIBUTING.md)         | Bug reports, feature suggestions, pull request workflow                                    |
+| [Coding Standards](CODING_STANDARDS.md) | Go conventions enforced in this codebase                                                   |
+| [Guidelines](GUIDELINES.md)             | Design and process guidelines that apply project-wide                                      |
+| [CI](CI.md)                             | What the CI pipeline runs and how to satisfy it locally                                    |
 
 ### 📂 Project docs
 
-| Document | What it covers |
-|---|---|
-| [Roadmap](ROADMAP.md) | Nine delivery phases from schema validation to GraphQL and migration tooling |
-| [Backlog](BACKLOG.md) | Actionable tasks with acceptance criteria and implementation notes |
-| [Competitors](COMPETITORS.md) | Feature matrix comparing inGitDB to related tools |
+| Document                      | What it covers                                                               |
+| ----------------------------- | ---------------------------------------------------------------------------- |
+| [Roadmap](ROADMAP.md)         | Nine delivery phases from schema validation to GraphQL and migration tooling |
+| [Backlog](BACKLOG.md)         | Actionable tasks with acceptance criteria and implementation notes           |
+| [Competitors](COMPETITORS.md) | Feature matrix comparing inGitDB to related tools                            |
 
 ---
 
 ## 🖥️ CLI Commands at a Glance
 
-| Command | Subcommands | Status | Description |
-|---|---|---|---|
-| `version` | — | implemented | Print build version, commit hash, and date |
-| `validate` | — | implemented | Check schema and data against `.ingitdb.yaml` |
-| `read` | `record` | implemented | Read a single record by ID (local or GitHub) |
-| `create` | `record` | implemented | Create a new record (local or GitHub) |
-| `update` | `record` | implemented | Update fields of an existing record (local or GitHub) |
-| `delete` | `record` `collection` `view` `records` | `record` implemented; others planned | Remove a record, collection, view definition, or individual records |
-| `list` | `collections` `view` `subscribers` | `collections` implemented; others planned | List schema objects, optionally scoped with `--in` and `--filter-name` |
-| `find` | — | planned | Search records by `--substr`, `--re`, or `--exact`; scope with `--in`, `--fields`, `--limit` |
-| `truncate` | — | planned | Remove all records from a collection while keeping its schema |
-| `query` | — | planned | Query and format records from a collection |
-| `materialize` | — | planned | Build materialized views into `$views/` |
-| `pull` | — | planned | Pull remote changes, auto-resolve generated-file conflicts, rebuild views |
-| `watch` | — | planned | Stream change events to stdout as records are added, updated, or deleted |
-| `serve` | — | planned | Start MCP server, HTTP API server, or file watcher (flags: `--mcp`, `--http`, `--watcher`) |
-| `resolve` | — | planned | Interactive TUI for resolving merge conflicts in data files |
-| `setup` | — | planned | Initialise a new database directory with a starter `.ingitdb.yaml` |
-| `migrate` | — | planned | Migrate records between schema versions |
+| Command       | Subcommands                            | Status                                    | Description                                                                                  |
+| ------------- | -------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `version`     | —                                      | implemented                               | Print build version, commit hash, and date                                                   |
+| `validate`    | —                                      | implemented                               | Check schema and data against `.ingitdb.yaml`                                                |
+| `read`        | `record`                               | implemented                               | Read a single record by ID (local or GitHub)                                                 |
+| `create`      | `record`                               | implemented                               | Create a new record (local or GitHub)                                                        |
+| `update`      | `record`                               | implemented                               | Update fields of an existing record (local or GitHub)                                        |
+| `delete`      | `record` `collection` `view` `records` | `record` implemented; others planned      | Remove a record, collection, view definition, or individual records                          |
+| `list`        | `collections` `view` `subscribers`     | `collections` implemented; others planned | List schema objects, optionally scoped with `--in` and `--filter-name`                       |
+| `find`        | —                                      | planned                                   | Search records by `--substr`, `--re`, or `--exact`; scope with `--in`, `--fields`, `--limit` |
+| `truncate`    | —                                      | planned                                   | Remove all records from a collection while keeping its schema                                |
+| `query`       | —                                      | planned                                   | Query and format records from a collection                                                   |
+| `materialize` | —                                      | planned                                   | Build materialized views into `$views/`                                                      |
+| `pull`        | —                                      | planned                                   | Pull remote changes, auto-resolve generated-file conflicts, rebuild views                    |
+| `watch`       | —                                      | planned                                   | Stream change events to stdout as records are added, updated, or deleted                     |
+| `serve`       | —                                      | planned                                   | Start MCP server, HTTP API server, or file watcher (flags: `--mcp`, `--http`, `--watcher`)   |
+| `resolve`     | —                                      | planned                                   | Interactive TUI for resolving merge conflicts in data files                                  |
+| `setup`       | —                                      | planned                                   | Initialise a new database directory with a starter `.ingitdb.yaml`                           |
+| `migrate`     | —                                      | planned                                   | Migrate records between schema versions                                                      |
 
 See [CLI.md](CLI.md) for the full flag reference.
 

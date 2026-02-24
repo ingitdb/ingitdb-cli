@@ -3,6 +3,8 @@
 Each collection directory contains an `.collection/definition.yaml` file that describes
 how records are stored and what columns (fields) they have. The file structure maps to the [`CollectionDef`](../../pkg/ingitdb/collection_def.go) type.
 
+See the [README Builder](../components/readme-builders/README.md) documentation for details on how a collection's `README.md` is automatically populated and updated.
+
 ## 📂 Top-level fields
 
 | Field           | Type                                                        | Description                                     |
@@ -16,7 +18,7 @@ how records are stored and what columns (fields) they have. The file structure m
 
 ---
 
-## 📂 record_file`
+## 📂 `record_file`
 
 Controls how records are physically stored.
 
@@ -26,9 +28,9 @@ Controls how records are physically stored.
 | `format` | `string`                                             | File format: `json`, `yaml`, or `yml`                                     |
 | `type`   | [`RecordType`](../../pkg/ingitdb/record_file_def.go) | Layout of records within the file (see below)                             |
 
-### 🔹 record_file.type` values
+### 🔹 `record_file.type` values
 
-#### 🔸 map[string]any` — one record per file
+#### 🔸 `map[string]any` — one record per file
 
 Each record is a separate file. The file name typically contains `{key}`.
 
@@ -48,7 +50,7 @@ File `$records/ireland.json`:
 }
 ```
 
-#### 🔸 map[string]any` — list of records in one file
+#### 🔸 `map[string]any` — list of records in one file
 
 All records are stored as an array (or YAML list) in a single file.
 
@@ -68,7 +70,7 @@ File `statuses.yaml`:
   title: In Progress
 ```
 
-#### 🔸 map[string]map[string]any` — dictionary of records
+#### 🔸 `map[string]map[string]any` — dictionary of records
 
 All records are stored in one file as a dictionary where the top-level key is
 the record ID.
@@ -89,7 +91,7 @@ in_progress:
   titles: { en: In Progress, ru: В работе }
 ```
 
-#### 🔸 map[id]map[field]any` — all records in one file keyed by ID
+#### 🔸 `map[id]map[field]any` — all records in one file keyed by ID
 
 Similar to `map[string]map[string]any` but used when the file name is static
 (no `{key}` placeholder). Top-level keys are record IDs, second-level keys are

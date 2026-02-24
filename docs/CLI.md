@@ -4,8 +4,8 @@
 
 ## 📂 Global flags
 
-| Flag | Description |
-|------|-------------|
+| Flag           | Description                       |
+| -------------- | --------------------------------- |
 | `--help`, `-h` | Print usage information and exit. |
 
 ## 🖥️ Commands
@@ -30,11 +30,11 @@ Prints build version, commit hash, and build date.
 ingitdb validate [--path=PATH] [--from-commit=SHA] [--to-commit=SHA]
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--path=PATH` | Path to the database directory. Defaults to the current working directory. |
-| `--from-commit=SHA` | Validate only records changed since this commit. |
-| `--to-commit=SHA` | Validate only records up to this commit. |
+| Flag                | Description                                                                |
+| ------------------- | -------------------------------------------------------------------------- |
+| `--path=PATH`       | Path to the database directory. Defaults to the current working directory. |
+| `--from-commit=SHA` | Validate only records changed since this commit.                           |
+| `--to-commit=SHA`   | Validate only records up to this commit.                                   |
 
 Reads `.ingitdb.yaml`, checks that every record file matches its collection schema, and reports any violations to stderr. With `--from-commit` / `--to-commit`, only files changed in that commit range are checked (see [Validator docs](components/validator/README.md)).
 
@@ -64,13 +64,13 @@ ingitdb read record --id=ID --github=OWNER/REPO[@REF] [--token=TOKEN] [--format=
 
 Reads a single record by ID and writes it to stdout.
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--id=ID` | yes | Record ID as `collection/path/key` (e.g. `countries/ie`). |
-| `--path=PATH` | no | Path to the local database directory. Defaults to the current working directory. |
-| `--github=OWNER/REPO[@REF]` | no | GitHub repository as `owner/repo` or `owner/repo@ref`. Mutually exclusive with `--path`. |
-| `--token=TOKEN` | no | GitHub personal access token. Falls back to `GITHUB_TOKEN` env var. |
-| `--format=FORMAT` | no | Output format: `yaml` (default) or `json`. |
+| Flag                        | Required | Description                                                                              |
+| --------------------------- | -------- | ---------------------------------------------------------------------------------------- |
+| `--id=ID`                   | yes      | Record ID as `collection/path/key` (e.g. `countries/ie`).                                |
+| `--path=PATH`               | no       | Path to the local database directory. Defaults to the current working directory.         |
+| `--github=OWNER/REPO[@REF]` | no       | GitHub repository as `owner/repo` or `owner/repo@ref`. Mutually exclusive with `--path`. |
+| `--token=TOKEN`             | no       | GitHub personal access token. Falls back to `GITHUB_TOKEN` env var.                      |
+| `--format=FORMAT`           | no       | Output format: `yaml` (default) or `json`.                                               |
 
 **Examples:**
 
@@ -105,13 +105,13 @@ ingitdb create record --id=ID --data=YAML --github=OWNER/REPO[@REF] [--token=TOK
 
 Creates a new record. Fails if a record with the same key already exists in the collection.
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--id=ID` | yes | Record ID as `collection/path/key`. |
-| `--data=YAML` | yes | Record fields as YAML or JSON (e.g. `'{name: Ireland}'`). |
-| `--path=PATH` | no | Path to the local database directory. Defaults to the current working directory. |
-| `--github=OWNER/REPO[@REF]` | no | GitHub repository. Mutually exclusive with `--path`. |
-| `--token=TOKEN` | no | GitHub personal access token. Falls back to `GITHUB_TOKEN`. Required for GitHub writes. |
+| Flag                        | Required | Description                                                                             |
+| --------------------------- | -------- | --------------------------------------------------------------------------------------- |
+| `--id=ID`                   | yes      | Record ID as `collection/path/key`.                                                     |
+| `--data=YAML`               | yes      | Record fields as YAML or JSON (e.g. `'{name: Ireland}'`).                               |
+| `--path=PATH`               | no       | Path to the local database directory. Defaults to the current working directory.        |
+| `--github=OWNER/REPO[@REF]` | no       | GitHub repository. Mutually exclusive with `--path`.                                    |
+| `--token=TOKEN`             | no       | GitHub personal access token. Falls back to `GITHUB_TOKEN`. Required for GitHub writes. |
 
 **Examples:**
 
@@ -137,13 +137,13 @@ ingitdb update record --id=ID --set=YAML --github=OWNER/REPO[@REF] [--token=TOKE
 Updates fields of an existing record using patch semantics: only the fields listed in `--set`
 are changed; all other fields are preserved.
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--id=ID` | yes | Record ID as `collection/path/key`. |
-| `--set=YAML` | yes | Fields to patch as YAML or JSON (e.g. `'{capital: Dublin}'`). |
-| `--path=PATH` | no | Path to the local database directory. Defaults to the current working directory. |
-| `--github=OWNER/REPO[@REF]` | no | GitHub repository. Mutually exclusive with `--path`. |
-| `--token=TOKEN` | no | GitHub personal access token. Falls back to `GITHUB_TOKEN`. Required for GitHub writes. |
+| Flag                        | Required | Description                                                                             |
+| --------------------------- | -------- | --------------------------------------------------------------------------------------- |
+| `--id=ID`                   | yes      | Record ID as `collection/path/key`.                                                     |
+| `--set=YAML`                | yes      | Fields to patch as YAML or JSON (e.g. `'{capital: Dublin}'`).                           |
+| `--path=PATH`               | no       | Path to the local database directory. Defaults to the current working directory.        |
+| `--github=OWNER/REPO[@REF]` | no       | GitHub repository. Mutually exclusive with `--path`.                                    |
+| `--token=TOKEN`             | no       | GitHub personal access token. Falls back to `GITHUB_TOKEN`. Required for GitHub writes. |
 
 **Examples:**
 
@@ -159,17 +159,17 @@ ingitdb update record --github=myorg/mydb --id=countries/ie \
 
 ---
 
-### ⚙️ query` — query records from a collection *(not yet implemented)*
+### ⚙️ query` — query records from a collection _(not yet implemented)_
 
 ```
 ingitdb query --collection=KEY [--path=PATH] [--format=json|yaml]
 ```
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--collection=KEY` | yes | Key of the collection to query. |
-| `--path=PATH` | no | Path to the database directory. Defaults to the current working directory. |
-| `--format=FORMAT` | no | Output format: `json` (default) or `yaml`. |
+| Flag               | Required | Description                                                                |
+| ------------------ | -------- | -------------------------------------------------------------------------- |
+| `--collection=KEY` | yes      | Key of the collection to query.                                            |
+| `--path=PATH`      | no       | Path to the database directory. Defaults to the current working directory. |
+| `--format=FORMAT`  | no       | Output format: `json` (default) or `yaml`.                                 |
 
 **Examples:**
 
@@ -186,15 +186,32 @@ ingitdb query --collection=users --path=/var/db/myapp
 
 ---
 
-### 🧾 materialize` — build materialized views *(not yet implemented)*
+### 🧾 materialize` — build generated files from records _(not yet implemented)_
+
+Top-level command with subcommands for materializing views and README files.
+
+#### 🔸 materialize collection`
 
 ```
-ingitdb materialize [--path=PATH] [--views=VIEW1,VIEW2,...]
+ingitdb materialize collection [--collection=ID] [--path=PATH]
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--path=PATH` | Path to the database directory. Defaults to the current working directory. |
+Renders the `README.md` file for a collection. If the generated content differs from the existing file, it is automatically updated. See [README Builder](components/readme-builders/README.md) for details on what is included in the generated README.
+
+| Flag              | Description                                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------------------- |
+| `--collection=ID` | Collection ID to materialize (e.g. `countries`). If omitted, READMEs for all collections are processed. |
+| `--path=PATH`     | Path to the database directory. Defaults to the current working directory.                              |
+
+#### 🔸 materialize views`
+
+```
+ingitdb materialize views [--path=PATH] [--views=VIEW1,VIEW2,...]
+```
+
+| Flag           | Description                                                                                       |
+| -------------- | ------------------------------------------------------------------------------------------------- |
+| `--path=PATH`  | Path to the database directory. Defaults to the current working directory.                        |
 | `--views=LIST` | Comma-separated list of view names to materialize. Without this flag, all views are materialized. |
 
 Output is written into the `$views/` directory defined in `.ingitdb.yaml`.
@@ -214,18 +231,18 @@ ingitdb materialize --path=/var/db/myapp
 
 ---
 
-### 🧾 pull` — pull latest changes, resolve conflicts, and rebuild views *(not yet implemented)*
+### 🧾 pull` — pull latest changes, resolve conflicts, and rebuild views _(not yet implemented)_
 
 ```
 ingitdb pull [--path=PATH] [--strategy=rebase|merge] [--remote=REMOTE] [--branch=BRANCH]
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--path=PATH` | Path to the database directory. Defaults to the current working directory. |
-| `--strategy=rebase\|merge` | Git pull strategy. Default: `rebase`. |
-| `--remote=REMOTE` | Remote to pull from. Default: `origin`. |
-| `--branch=BRANCH` | Branch to pull. Default: the current branch's tracking branch. |
+| Flag                       | Description                                                                |
+| -------------------------- | -------------------------------------------------------------------------- |
+| `--path=PATH`              | Path to the database directory. Defaults to the current working directory. |
+| `--strategy=rebase\|merge` | Git pull strategy. Default: `rebase`.                                      |
+| `--remote=REMOTE`          | Remote to pull from. Default: `origin`.                                    |
+| `--branch=BRANCH`          | Branch to pull. Default: the current branch's tracking branch.             |
 
 Performs a complete pull cycle in one command:
 
@@ -252,14 +269,14 @@ ingitdb pull --remote=upstream --branch=main
 
 ---
 
-### 🔹 setup` — initialise a new database directory *(not yet implemented)*
+### 🔹 setup` — initialise a new database directory _(not yet implemented)_
 
 ```
 ingitdb setup [--path=PATH]
 ```
 
-| Flag | Description |
-|------|-------------|
+| Flag          | Description                                                                     |
+| ------------- | ------------------------------------------------------------------------------- |
 | `--path=PATH` | Path to the directory to initialise. Defaults to the current working directory. |
 
 **Examples:**
@@ -274,15 +291,15 @@ ingitdb setup --path=/var/db/myapp
 
 ---
 
-### 🔹 resolve` — resolve merge conflicts in database files *(not yet implemented)*
+### 🔹 resolve` — resolve merge conflicts in database files _(not yet implemented)_
 
 ```
 ingitdb resolve [--path=PATH] [--file=FILE]
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--path=PATH` | Path to the database directory. Defaults to the current working directory. |
+| Flag          | Description                                                                               |
+| ------------- | ----------------------------------------------------------------------------------------- |
+| `--path=PATH` | Path to the database directory. Defaults to the current working directory.                |
 | `--file=FILE` | Specific conflict file to resolve. Without this flag, all conflicted files are processed. |
 
 **Examples:**
@@ -297,16 +314,16 @@ ingitdb resolve --file=countries/ie/counties/dublin.yaml
 
 ---
 
-### 🔹 watch` — watch database for changes *(not yet implemented)*
+### 🔹 watch` — watch database for changes _(not yet implemented)_
 
 ```
 ingitdb watch [--path=PATH] [--format=text|json]
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--path=PATH` | Path to the database directory. Defaults to the current working directory. |
-| `--format=FORMAT` | Output format: `text` (default) or `json`. |
+| Flag              | Description                                                                |
+| ----------------- | -------------------------------------------------------------------------- |
+| `--path=PATH`     | Path to the database directory. Defaults to the current working directory. |
+| `--format=FORMAT` | Output format: `text` (default) or `json`.                                 |
 
 Watches the database directory for file-system changes and writes a structured event to **stdout** for every record that is added, updated, or deleted. Runs in the foreground until interrupted.
 
@@ -338,18 +355,18 @@ Record /countries/gb/cities/london: deleted
 
 ---
 
-### 🔹 serve` — start one or more servers *(not yet implemented)*
+### 🔹 serve` — start one or more servers _(not yet implemented)_
 
 ```
 ingitdb serve [--path=PATH] [--mcp] [--http] [--watcher]
 ```
 
-| Flag | Description |
-|------|-------------|
+| Flag          | Description                                                                |
+| ------------- | -------------------------------------------------------------------------- |
 | `--path=PATH` | Path to the database directory. Defaults to the current working directory. |
-| `--mcp` | Enable the MCP (Model Context Protocol) server. |
-| `--http` | Enable the HTTP API server. |
-| `--watcher` | Enable the file watcher. |
+| `--mcp`       | Enable the MCP (Model Context Protocol) server.                            |
+| `--http`      | Enable the HTTP API server.                                                |
+| `--watcher`   | Enable the file watcher.                                                   |
 
 At least one service flag must be provided. Multiple flags may be combined to run services together in a single process.
 
@@ -375,11 +392,11 @@ ingitdb serve --mcp --http --watcher --path=/var/db/myapp
 
 Top-level command with three subcommands. Shared flags on every subcommand:
 
-| Flag | Description |
-|------|-------------|
-| `--path=PATH` | Path to the database directory. Defaults to the current working directory. |
-| `--in=REGEXP` | Regular expression that matches the starting-point path. Only objects under matching paths are listed. |
-| `--filter-name=PATTERN` | Glob-style pattern to filter by name (e.g. `*substr*`). |
+| Flag                    | Description                                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------------------------------ |
+| `--path=PATH`           | Path to the database directory. Defaults to the current working directory.                             |
+| `--in=REGEXP`           | Regular expression that matches the starting-point path. Only objects under matching paths are listed. |
+| `--filter-name=PATTERN` | Glob-style pattern to filter by name (e.g. `*substr*`).                                                |
 
 #### ⚙️ list collections`
 
@@ -390,13 +407,13 @@ ingitdb list collections --github=OWNER/REPO[@REF] [--token=TOKEN]
 
 Lists all collection IDs defined in the database.
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--path=PATH` | no | Path to the local database directory. Defaults to the current working directory. |
-| `--github=OWNER/REPO[@REF]` | no | GitHub repository as `owner/repo` or `owner/repo@ref`. Mutually exclusive with `--path`. |
-| `--token=TOKEN` | no | GitHub personal access token. Falls back to `GITHUB_TOKEN` env var. Required for private repos. |
-| `--in=REGEXP` | no | Regular expression that matches the starting-point path. |
-| `--filter-name=PATTERN` | no | Glob-style pattern to filter collection names (e.g. `*city*`). |
+| Flag                        | Required | Description                                                                                     |
+| --------------------------- | -------- | ----------------------------------------------------------------------------------------------- |
+| `--path=PATH`               | no       | Path to the local database directory. Defaults to the current working directory.                |
+| `--github=OWNER/REPO[@REF]` | no       | GitHub repository as `owner/repo` or `owner/repo@ref`. Mutually exclusive with `--path`.        |
+| `--token=TOKEN`             | no       | GitHub personal access token. Falls back to `GITHUB_TOKEN` env var. Required for private repos. |
+| `--in=REGEXP`               | no       | Regular expression that matches the starting-point path.                                        |
+| `--filter-name=PATTERN`     | no       | Glob-style pattern to filter collection names (e.g. `*city*`).                                  |
 
 **Examples:**
 
@@ -459,7 +476,7 @@ ingitdb list subscribers --filter-name='*webhook*'
 
 ---
 
-### 🔹 find` — search records by value *(not yet implemented)*
+### 🔹 find` — search records by value _(not yet implemented)_
 
 ```
 ingitdb find [--path=PATH] [--in=REGEXP] [--substr=TEXT] [--re=REGEXP] [--exact=VALUE] [--fields=FIELDS] [--limit=N]
@@ -468,15 +485,15 @@ ingitdb find [--path=PATH] [--in=REGEXP] [--substr=TEXT] [--re=REGEXP] [--exact=
 Searches record files for fields matching the given pattern. At least one of `--substr`, `--re`, or `--exact` must
 be provided. When multiple search flags are given they are combined with OR.
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--path=PATH` | no | Path to the database directory. Defaults to the current working directory. |
-| `--substr=TEXT` | one of three | Match records where any field contains TEXT as a substring. |
-| `--re=REGEXP` | one of three | Match records where any field value matches REGEXP. |
-| `--exact=VALUE` | one of three | Match records where any field value equals VALUE exactly. |
-| `--in=REGEXP` | no | Regular expression scoping the search to a sub-path. |
-| `--fields=LIST` | no | Comma-separated list of field names to search. Without this flag all fields are searched. |
-| `--limit=N` | no | Maximum number of matching records to return. |
+| Flag            | Required     | Description                                                                               |
+| --------------- | ------------ | ----------------------------------------------------------------------------------------- |
+| `--path=PATH`   | no           | Path to the database directory. Defaults to the current working directory.                |
+| `--substr=TEXT` | one of three | Match records where any field contains TEXT as a substring.                               |
+| `--re=REGEXP`   | one of three | Match records where any field value matches REGEXP.                                       |
+| `--exact=VALUE` | one of three | Match records where any field value equals VALUE exactly.                                 |
+| `--in=REGEXP`   | no           | Regular expression scoping the search to a sub-path.                                      |
+| `--fields=LIST` | no           | Comma-separated list of field names to search. Without this flag all fields are searched. |
+| `--limit=N`     | no           | Maximum number of matching records to return.                                             |
 
 **Examples:**
 
@@ -510,12 +527,12 @@ ingitdb delete record --id=ID --github=OWNER/REPO[@REF] [--token=TOKEN]
 Deletes a single record by ID. For `SingleRecord` collections, the record file is removed. For
 `MapOfIDRecords` collections, the key is removed from the shared map file.
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--id=ID` | yes | Record ID as `collection/path/key`. |
-| `--path=PATH` | no | Path to the local database directory. Defaults to the current working directory. |
-| `--github=OWNER/REPO[@REF]` | no | GitHub repository. Mutually exclusive with `--path`. |
-| `--token=TOKEN` | no | GitHub personal access token. Falls back to `GITHUB_TOKEN`. Required for GitHub writes. |
+| Flag                        | Required | Description                                                                             |
+| --------------------------- | -------- | --------------------------------------------------------------------------------------- |
+| `--id=ID`                   | yes      | Record ID as `collection/path/key`.                                                     |
+| `--path=PATH`               | no       | Path to the local database directory. Defaults to the current working directory.        |
+| `--github=OWNER/REPO[@REF]` | no       | GitHub repository. Mutually exclusive with `--path`.                                    |
+| `--token=TOKEN`             | no       | GitHub personal access token. Falls back to `GITHUB_TOKEN`. Required for GitHub writes. |
 
 **Examples:**
 
@@ -538,10 +555,10 @@ ingitdb delete collection --collection=ID [--path=PATH]
 
 Deletes a collection definition and all of its record files.
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--collection=ID` | yes | Collection id to delete (e.g. `countries.counties`). |
-| `--path=PATH` | no | Path to the database directory. Defaults to the current working directory. |
+| Flag              | Required | Description                                                                |
+| ----------------- | -------- | -------------------------------------------------------------------------- |
+| `--collection=ID` | yes      | Collection id to delete (e.g. `countries.counties`).                       |
+| `--path=PATH`     | no       | Path to the database directory. Defaults to the current working directory. |
 
 **Example:**
 
@@ -557,10 +574,10 @@ ingitdb delete view --view=ID [--path=PATH]
 
 Deletes a view definition and removes its materialised output files.
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--view=ID` | yes | View id to delete. |
-| `--path=PATH` | no | Path to the database directory. Defaults to the current working directory. |
+| Flag          | Required | Description                                                                |
+| ------------- | -------- | -------------------------------------------------------------------------- |
+| `--view=ID`   | yes      | View id to delete.                                                         |
+| `--path=PATH` | no       | Path to the database directory. Defaults to the current working directory. |
 
 **Example:**
 
@@ -576,12 +593,12 @@ ingitdb delete records --collection=ID [--path=PATH] [--in=REGEXP] [--filter-nam
 
 Deletes individual records from a collection. Use `--in` and `--filter-name` to scope which records are removed.
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--collection=ID` | yes | Collection to delete records from. |
-| `--path=PATH` | no | Path to the database directory. Defaults to the current working directory. |
-| `--in=REGEXP` | no | Regular expression scoping deletion to a sub-path. |
-| `--filter-name=PATTERN` | no | Glob-style pattern to match record names to delete. |
+| Flag                    | Required | Description                                                                |
+| ----------------------- | -------- | -------------------------------------------------------------------------- |
+| `--collection=ID`       | yes      | Collection to delete records from.                                         |
+| `--path=PATH`           | no       | Path to the database directory. Defaults to the current working directory. |
+| `--in=REGEXP`           | no       | Regular expression scoping deletion to a sub-path.                         |
+| `--filter-name=PATTERN` | no       | Glob-style pattern to match record names to delete.                        |
 
 **Example:**
 
@@ -591,7 +608,7 @@ ingitdb delete records --collection=countries.counties --filter-name='*old*'
 
 ---
 
-### ⚙️ truncate` — remove all records from a collection *(not yet implemented)*
+### ⚙️ truncate` — remove all records from a collection _(not yet implemented)_
 
 ```
 ingitdb truncate --collection=ID [--path=PATH]
@@ -599,10 +616,10 @@ ingitdb truncate --collection=ID [--path=PATH]
 
 Removes every record file from the specified collection, leaving the collection definition intact.
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--collection=ID` | yes | Collection id to truncate (e.g. `countries.counties.dublin`). |
-| `--path=PATH` | no | Path to the database directory. Defaults to the current working directory. |
+| Flag              | Required | Description                                                                |
+| ----------------- | -------- | -------------------------------------------------------------------------- |
+| `--collection=ID` | yes      | Collection id to truncate (e.g. `countries.counties.dublin`).              |
+| `--path=PATH`     | no       | Path to the database directory. Defaults to the current working directory. |
 
 **Example:**
 
@@ -612,22 +629,22 @@ ingitdb truncate --collection=countries.counties
 
 ---
 
-### 🔁 migrate` — migrate data between schema versions *(not yet implemented)*
+### 🔁 migrate` — migrate data between schema versions _(not yet implemented)_
 
 ```
 ingitdb migrate --from=VERSION --to=VERSION --target=TARGET \
     [--path=PATH] [--format=FORMAT] [--collections=LIST] [--output-dir=DIR]
 ```
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--from=VERSION` | yes | Source schema version. |
-| `--to=VERSION` | yes | Target schema version. |
-| `--target=TARGET` | yes | Migration target identifier. |
-| `--path=PATH` | no | Path to the database directory. Defaults to the current working directory. |
-| `--format=FORMAT` | no | Output format for migrated records. |
-| `--collections=LIST` | no | Comma-separated list of collections to migrate. Without this flag, all collections are migrated. |
-| `--output-dir=DIR` | no | Directory to write migrated records into. |
+| Flag                 | Required | Description                                                                                      |
+| -------------------- | -------- | ------------------------------------------------------------------------------------------------ |
+| `--from=VERSION`     | yes      | Source schema version.                                                                           |
+| `--to=VERSION`       | yes      | Target schema version.                                                                           |
+| `--target=TARGET`    | yes      | Migration target identifier.                                                                     |
+| `--path=PATH`        | no       | Path to the database directory. Defaults to the current working directory.                       |
+| `--format=FORMAT`    | no       | Output format for migrated records.                                                              |
+| `--collections=LIST` | no       | Comma-separated list of collections to migrate. Without this flag, all collections are migrated. |
+| `--output-dir=DIR`   | no       | Directory to write migrated records into.                                                        |
 
 **Examples:**
 
