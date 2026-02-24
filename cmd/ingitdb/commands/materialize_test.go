@@ -30,6 +30,7 @@ func TestMaterialize_ReturnsCommand(t *testing.T) {
 	cmd := Materialize(homeDir, getWd, readDef, nil, logf)
 	if cmd == nil {
 		t.Fatal("Materialize() returned nil")
+		return
 	}
 	if cmd.Name != "materialize" {
 		t.Errorf("expected name 'materialize', got %q", cmd.Name)

@@ -10,6 +10,7 @@ func TestPull_ReturnsCommand(t *testing.T) {
 	cmd := Pull()
 	if cmd == nil {
 		t.Fatal("Pull() returned nil")
+		return
 	}
 	if cmd.Name != "pull" {
 		t.Errorf("expected name 'pull', got %q", cmd.Name)

@@ -10,6 +10,7 @@ func TestMigrate_ReturnsCommand(t *testing.T) {
 	cmd := Migrate()
 	if cmd == nil {
 		t.Fatal("Migrate() returned nil")
+		return
 	}
 	if cmd.Name != "migrate" {
 		t.Errorf("expected name 'migrate', got %q", cmd.Name)
