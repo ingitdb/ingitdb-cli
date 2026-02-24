@@ -10,13 +10,17 @@ func TestFileViewDefReader_ReadViewDefs(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
-	viewPath := filepath.Join(dir, ".ingitdb-view.README.yaml")
+	viewDir := filepath.Join(dir, ".collection", "views")
+	if err := os.MkdirAll(viewDir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	viewPath := filepath.Join(viewDir, "README.yaml")
 	content := []byte("order_by: title\ntemplate: .ingitdb-view.README.md\nfile_name: README.md\nrecords_var_name: tags\n")
 	if err := os.WriteFile(viewPath, content, 0o644); err != nil {
 		t.Fatalf("write view def: %v", err)
 	}
 
-	otherPath := filepath.Join(dir, ".ingitdb-view.secondary.yaml")
+	otherPath := filepath.Join(viewDir, "secondary.yaml")
 	if err := os.WriteFile(otherPath, []byte("order_by: title\n"), 0o644); err != nil {
 		t.Fatalf("write secondary view def: %v", err)
 	}
@@ -51,10 +55,10 @@ func TestFileViewDefReader_ReadViewDefs(t *testing.T) {
 func TestViewNameFromPath_Invalid(t *testing.T) {
 	t.Parallel()
 
-	if _, err := viewNameFromPath("README.yaml"); err == nil {
-		t.Fatalf("expected error for missing prefix")
+	if _, err := viewNameFromPath("README.yml"); err == nil {
+		t.Fatalf("expected error for missing suffix")
 	}
-	if _, err := viewNameFromPath(".ingitdb-view..yaml"); err == nil {
+	if _, err := viewNameFromPath(".yaml"); err == nil {
 		t.Fatalf("expected error for empty view name")
 	}
 }

@@ -36,7 +36,7 @@ Tasks within each phase are ordered by dependency — implement them top to bott
 
 **What:** After loading collection schemas, walk each collection's `data_dir` and validate every record file against its schema.
 
-**Why:** The validator currently only validates schema files (`.ingitdb-collection.yaml`). Actual record data is never checked.
+**Why:** The validator currently only validates schema files (`.definition.yaml`). Actual record data is never checked.
 
 **Acceptance criteria:**
 
@@ -62,13 +62,13 @@ Tasks within each phase are ordered by dependency — implement them top to bott
 
 ### 🧾 P1-3: Implement materialized views builder
 
-**What:** After successful validation, read each collection's view definitions (`.ingitdb-collection/views/<name>.yaml`) and generate the corresponding output files under `$views/`.
+**What:** After successful validation, read each collection's view definitions (`.collection/views/<name>.yaml`) and generate the corresponding output files under `$views/`.
 
 **Why:** Materialized views are precomputed outputs derived from the same records the validator has just read. Rebuilding them in the same pass avoids a second full scan.
 
 **Acceptance criteria:**
 
-- For each `.ingitdb-collection/views/<name>.yaml` in a collection directory, the corresponding `$views/<name>/` output is created or updated
+- For each `.collection/views/<name>.yaml` in a collection directory, the corresponding `$views/<name>/` output is created or updated
 - Output files respect `order_by`, `columns`, and `formats` defined in the view definition
 - Views are only rebuilt for collections that passed validation — invalid collections are skipped
 - `ingitdb validate` rebuilds all views by default; a future `--no-materialize` flag may opt out (not required in this task)
@@ -91,7 +91,7 @@ Tasks within each phase are ordered by dependency — implement them top to bott
 **Acceptance criteria:**
 
 - `ingitdb validate --path=PATH --from-commit=SHA1 --to-commit=SHA2` validates only changed records and rebuilds only affected views
-- Schema config files (`.ingitdb.yaml`, `.ingitdb-collection.yaml`) are always fully re-validated regardless of the commit range
+- Schema config files (`.ingitdb.yaml`, `.definition.yaml`) are always fully re-validated regardless of the commit range
 - `--from-commit` without `--to-commit` defaults to HEAD as the "to" commit
 - If `git diff` fails (not a git repo, bad SHA, git not installed), error is reported clearly and process exits with code 2 (infrastructure error, distinct from validation failure)
 

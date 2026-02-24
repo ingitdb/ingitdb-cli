@@ -10,11 +10,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// FileViewDefReader reads view definitions from .ingitdb-view.*.yaml files.
+// FileViewDefReader reads view definitions from .collection/views/*.yaml files.
 type FileViewDefReader struct{}
 
 func (FileViewDefReader) ReadViewDefs(colDirPath string) (map[string]*ingitdb.ViewDef, error) {
-	pattern := filepath.Join(colDirPath, ".ingitdb-view.*.yaml")
+	pattern := filepath.Join(colDirPath, ".collection", "views", "*.yaml")
 	matches, err := filepath.Glob(pattern)
 	if err != nil {
 		return nil, fmt.Errorf("failed to glob view defs: %w", err)
@@ -41,12 +41,11 @@ func (FileViewDefReader) ReadViewDefs(colDirPath string) (map[string]*ingitdb.Vi
 
 func viewNameFromPath(path string) (string, error) {
 	base := filepath.Base(path)
-	const prefix = ".ingitdb-view."
 	const suffix = ".yaml"
-	if !strings.HasPrefix(base, prefix) || !strings.HasSuffix(base, suffix) {
+	if !strings.HasSuffix(base, suffix) {
 		return "", fmt.Errorf("invalid view def file name: %s", base)
 	}
-	name := strings.TrimSuffix(strings.TrimPrefix(base, prefix), suffix)
+	name := strings.TrimSuffix(base, suffix)
 	if name == "" {
 		return "", fmt.Errorf("missing view name in file: %s", base)
 	}

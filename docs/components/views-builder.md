@@ -4,11 +4,11 @@ Responsible for creating and updating materialized views. The views builder runs
 
 ## 📂 View definition files
 
-Each view is defined in a YAML file inside the `.ingitdb-collection/views/` subdirectory of the collection directory. The file name (without `.yaml`) becomes the view's identifier.
+Each view is defined in a YAML file inside the `.collection/views/` subdirectory of the collection directory. The file name (without `.yaml`) becomes the view's identifier.
 
 **Field references in the name pattern** use `{field}` syntax. The field value from each record is substituted to determine which output partition file the record belongs to.
 
-Example: `.ingitdb-collection/views/status_{status}.yaml` → output in `$views/status_{status}/`, one file per distinct status value (e.g. `status_in_progress.md`, `status_done.md`).
+Example: `.collection/views/status_{status}.yaml` → output in `$views/status_{status}/`, one file per distinct status value (e.g. `status_in_progress.md`, `status_done.md`).
 
 ## 📂 View definition format
 
@@ -28,7 +28,7 @@ formats:
   - md
 
 # 📘 columns: ordered list of column IDs to include in the output.
-# ⚙️ Must match column IDs defined in .ingitdb-collection.yaml.
+# ⚙️ Must match column IDs defined in .definition.yaml.
 columns:
   - title
   - status

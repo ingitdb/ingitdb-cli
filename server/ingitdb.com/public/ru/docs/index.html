@@ -509,10 +509,10 @@ db := dalgo2ingitdb.NewDatabase(path)
                 <p>inGitDB может автоматически выполнять пользовательские рабочие процессы при создании, обновлении или удалении записей. Существуют два взаимодополняющих механизма:</p>
 
                 <h3>Триггеры</h3>
-                <p>Триггеры используют синтаксис, вдохновлённый GitHub Actions. Блок <code>on</code> объявляет, какие события запускают триггер; карта <code>jobs</code> определяет shell-команды для выполнения. Файлы триггеров находятся в <code>.ingitdb-collection/trigger_&lt;name&gt;.yaml</code>.</p>
+                <p>Триггеры используют синтаксис, вдохновлённый GitHub Actions. Блок <code>on</code> объявляет, какие события запускают триггер; карта <code>jobs</code> определяет shell-команды для выполнения. Файлы триггеров находятся в <code>.collection/trigger_&lt;name&gt;.yaml</code>.</p>
 
                 <div class="code-example">
-                    <h4>.ingitdb-collection/trigger_rebuild.yaml</h4>
+                    <h4>.collection/trigger_rebuild.yaml</h4>
                     <pre><code>on:
   - created
   - updated

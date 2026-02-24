@@ -113,7 +113,7 @@ A CLI tool that turns a Git repository into a fully-featured, AI-friendly databa
 **Implementation:** Uses [graphql-go/graphql](https://github.com/graphql-go/graphql) library for schema and query execution.
 
 **Deliverables:**
-- Schema derived from `.ingitdb-collection.yaml` definitions
+- Schema derived from `.definition.yaml` definitions
 - Query and mutation support
 - Auto-generated GraphQL schema from collection definitions
 

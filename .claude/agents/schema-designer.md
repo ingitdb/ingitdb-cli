@@ -2,7 +2,7 @@
 name: schema-designer
 description: >
   Use this agent to design inGitDB schemas: .ingitdb.yaml (root config),
-  .ingitdb-collection.yaml (collection schemas), and .ingitdb-view.<name>.yaml
+  .definition.yaml (collection schemas), and .ingitdb-view.<name>.yaml
   (materialized view definitions). Given a description of data to store,
   schema-designer produces ready-to-use YAML files with explanatory comments.
   Also use it to review and improve an existing schema, or to check whether a
@@ -57,7 +57,7 @@ languages:
 
 ---
 
-### File 2: `.ingitdb-collection.yaml` — collection schema
+### File 2: `.definition.yaml` — collection schema
 
 Lives inside each collection directory. Defines record structure and storage.
 
@@ -144,7 +144,7 @@ default_view: by_status         # optional: name of the default materialized vie
 
 ### File 3: `.ingitdb-view.<name>.yaml` — materialized view
 
-Lives alongside `.ingitdb-collection.yaml`. The file name encodes the view name
+Lives alongside `.definition.yaml`. The file name encodes the view name
 and its partition key.
 
 **File naming:**
@@ -249,12 +249,12 @@ types in `pkg/ingitdb/` to verify every field name and value is legal.
 ├── .ingitdb.yaml
 └── todo/
     ├── tasks/
-    │   ├── .ingitdb-collection.yaml
+    │   ├── .definition.yaml
     │   ├── .ingitdb-view.status_{status}.yaml
     │   └── $records/
     │       └── <task-id>.json
     └── statuses/
-        ├── .ingitdb-collection.yaml
+        ├── .definition.yaml
         └── statuses.yaml
 ```
 

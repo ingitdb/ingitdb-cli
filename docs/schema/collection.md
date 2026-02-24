@@ -1,6 +1,6 @@
-# ⚙️ Collection Definition File (`.ingitdb-collection/collection.yaml`)
+# ⚙️ Collection Definition File (`.collection/definition.yaml`)
 
-Each collection directory contains an `.ingitdb-collection/collection.yaml` file that describes
+Each collection directory contains an `.collection/definition.yaml` file that describes
 how records are stored and what columns (fields) they have. The file structure maps to the [`CollectionDef`](../../pkg/ingitdb/collection_def.go) type.
 
 ## 📂 Top-level fields
@@ -216,7 +216,7 @@ same value in two places.
 
 ## 📂 Full example
 
-`todo/tags/.ingitdb-collection/collection.yaml`:
+`todo/tags/.collection/definition.yaml`:
 
 ```yaml
 titles:

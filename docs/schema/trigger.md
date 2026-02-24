@@ -1,14 +1,14 @@
-# Trigger Definition File (`.ingitdb-collection/trigger_<name>.yaml`)
+# Trigger Definition File (`.collection/trigger_<name>.yaml`)
 
 A trigger workflow runs shell commands in response to record lifecycle events in a collection. The syntax is modelled after [GitHub Actions](https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions) workflows and maps to the [`TriggerDef`](../../pkg/ingitdb/trigger_def.go) type internally.
 
 ## File location
 
-Trigger definitions live inside the `.ingitdb-collection/` directory alongside view definitions:
+Trigger definitions live inside the `.collection/` directory alongside view definitions:
 
 ```
 <collection-dir>/
-  .ingitdb-collection/
+  .collection/
     trigger_<name>.yaml
 ```
 

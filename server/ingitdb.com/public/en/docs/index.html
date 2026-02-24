@@ -694,11 +694,11 @@ db := dalgo2ingitdb.NewDatabase(path)
             <code>on</code> block declares which events fire the trigger; a
             <code>jobs</code> map defines what shell commands to run. Trigger
             files live in
-            <code>.ingitdb-collection/trigger_&lt;name&gt;.yaml</code>.
+            <code>.collection/trigger_&lt;name&gt;.yaml</code>.
           </p>
 
           <div class="code-example">
-            <h4>.ingitdb-collection/trigger_rebuild.yaml</h4>
+            <h4>.collection/trigger_rebuild.yaml</h4>
             <pre><code>on:
   - created
   - updated

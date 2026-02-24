@@ -22,7 +22,7 @@ type TriggerJobDef struct {
 }
 
 // TriggerDef is the schema for a trigger workflow file
-// (.ingitdb-collection/trigger_<name>.yaml).
+// (.collection/trigger_<name>.yaml).
 // Modelled after GitHub Actions workflow syntax.
 type TriggerDef struct {
 	On   []TriggerEventType        `yaml:"on"`

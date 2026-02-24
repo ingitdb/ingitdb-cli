@@ -1,10 +1,10 @@
-# ⚙️ Subcollection Definition File (`.ingitdb-collection/subcollections/<name>.yaml`)
+# ⚙️ Subcollection Definition File (`.collection/subcollections/<name>.yaml`)
 
 A **subcollection** is a collection nested within another collection's records. Subcollections use the exact same definition format as standard root-level collections (mapping to the [`CollectionDef`](../../pkg/ingitdb/collection_def.go) type), with their placement defining their relationship to parent data.
 
 ## 📂 File location
 
-The definitions for subcollections are located in the `.ingitdb-collection/subcollections` subdirectory of the parent collection's directory. Each file within this subdirectory (e.g., `.ingitdb-collection/subcollections/dates.yaml`) defines a specific subcollection, where the file name dictates the subcollection's identifier.
+The definitions for subcollections are located in the `.collection/subcollections` subdirectory of the parent collection's directory. Each file within this subdirectory (e.g., `.collection/subcollections/dates.yaml`) defines a specific subcollection, where the file name dictates the subcollection's identifier.
 
 ## 📂 Schema Format
 
@@ -54,7 +54,7 @@ companies
 If you manage a `companies` collection and you want to track `departments` (a subcollection) for each company:
 
 ```yaml
-# companies/.ingitdb-collection/subcollections/departments.yaml
+# companies/.collection/subcollections/departments.yaml
 titles:
   en: Departments
 record_file:

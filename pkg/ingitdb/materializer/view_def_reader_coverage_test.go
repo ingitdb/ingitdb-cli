@@ -22,7 +22,11 @@ func TestFileViewDefReader_ReadViewDefs_ReadFileError(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
-	viewPath := filepath.Join(dir, ".ingitdb-view.test.yaml")
+	viewDir := filepath.Join(dir, ".collection", "views")
+	if err := os.MkdirAll(viewDir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	viewPath := filepath.Join(viewDir, "test.yaml")
 	// Create a directory instead of a file to cause read error
 	if err := os.Mkdir(viewPath, 0o755); err != nil {
 		t.Fatalf("create directory: %v", err)
@@ -39,7 +43,11 @@ func TestFileViewDefReader_ReadViewDefs_ParseError(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
-	viewPath := filepath.Join(dir, ".ingitdb-view.test.yaml")
+	viewDir := filepath.Join(dir, ".collection", "views")
+	if err := os.MkdirAll(viewDir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	viewPath := filepath.Join(viewDir, "test.yaml")
 	// Write invalid YAML
 	content := []byte("invalid: yaml: content:\n  - unclosed")
 	if err := os.WriteFile(viewPath, content, 0o644); err != nil {
@@ -57,8 +65,12 @@ func TestFileViewDefReader_ReadViewDefs_InvalidFileName(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
+	viewDir := filepath.Join(dir, ".collection", "views")
+	if err := os.MkdirAll(viewDir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
 	// Create a file that matches the pattern but has invalid name format
-	viewPath := filepath.Join(dir, ".ingitdb-view..yaml")
+	viewPath := filepath.Join(viewDir, ".yaml")
 	content := []byte("order_by: title\n")
 	if err := os.WriteFile(viewPath, content, 0o644); err != nil {
 		t.Fatalf("write view def: %v", err)
@@ -89,7 +101,7 @@ func TestFileViewDefReader_ReadViewDefs_NoFiles(t *testing.T) {
 func TestViewNameFromPath_ValidPath(t *testing.T) {
 	t.Parallel()
 
-	name, err := viewNameFromPath("/tmp/.ingitdb-view.README.yaml")
+	name, err := viewNameFromPath("/tmp/.collection/views/README.yaml")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -101,16 +113,16 @@ func TestViewNameFromPath_ValidPath(t *testing.T) {
 func TestViewNameFromPath_MissingPrefix(t *testing.T) {
 	t.Parallel()
 
-	_, err := viewNameFromPath("/tmp/view.README.yaml")
+	_, err := viewNameFromPath("/tmp/view.README.yml")
 	if err == nil {
-		t.Fatal("expected error for missing prefix")
+		t.Fatal("expected error for missing suffix")
 	}
 }
 
 func TestViewNameFromPath_MissingSuffix(t *testing.T) {
 	t.Parallel()
 
-	_, err := viewNameFromPath("/tmp/.ingitdb-view.README.yml")
+	_, err := viewNameFromPath("/tmp/README.yml")
 	if err == nil {
 		t.Fatal("expected error for wrong suffix")
 	}
@@ -119,7 +131,7 @@ func TestViewNameFromPath_MissingSuffix(t *testing.T) {
 func TestViewNameFromPath_EmptyName(t *testing.T) {
 	t.Parallel()
 
-	_, err := viewNameFromPath(".ingitdb-view..yaml")
+	_, err := viewNameFromPath(".yaml")
 	if err == nil {
 		t.Fatal("expected error for empty view name")
 	}

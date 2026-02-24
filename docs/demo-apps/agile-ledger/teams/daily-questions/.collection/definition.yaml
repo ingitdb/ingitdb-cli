@@ -5,6 +5,5 @@ record_file:
   type: "map[string]any"
   format: json
 columns:
-  questions:
-    type: "[]map[string]any"
-    required: true
+  question: string
+  required: bool

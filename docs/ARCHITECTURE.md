@@ -13,8 +13,8 @@ A database is a directory tree inside a Git repository:
 ├── .ingitdb.yaml                          # DB-level config (collections, languages)
 └── <group>/
     └── <collection>/
-        ├── .ingitdb-collection/
-        │   ├── collection.yaml               # Collection schema
+        ├── .collection/
+        │   ├── definition.yaml               # Collection schema
         │   ├── subcollections/              # Subcollection definitions
         │   │   └── <name>.yaml
         │   └── views/                       # View definitions
@@ -37,7 +37,7 @@ languages:
   - optional: ru
 ```
 
-**`.ingitdb-collection.yaml`** — Collection schema: titles (i18n), column definitions, record file format.
+**`.definition.yaml`** — Collection schema: titles (i18n), column definitions, record file format.
 
 ```yaml
 titles:
@@ -65,7 +65,7 @@ columns:
 
 **Record files** live in the collection's `data_dir`. A file holds either one record (`map[string]any`) or an array of records (`[]map[string]any`), as declared in `record_file.type`.
 
-**View definitions** (`.ingitdb-collection/views/<name>.yaml`) declare how to partition and render records into materialized view files under `$views/`.
+**View definitions** (`.collection/views/<name>.yaml`) declare how to partition and render records into materialized view files under `$views/`.
 
 ## 🏗️ Component Architecture
 
@@ -77,7 +77,7 @@ CLI (cmd/ingitdb)
     │       ├── validate [--path] [--from-commit] [--to-commit]
     │       │       └── validator.ReadDefinition()
     │       │               ├── config.ReadRootConfigFromFile()     reads .ingitdb.yaml
-    │       │               ├── readCollectionDef() × N             reads .ingitdb-collection.yaml per collection
+    │       │               ├── readCollectionDef() × N             reads .definition.yaml per collection
     │       │               └── colDef.Validate()                   validates schema structure
     │       │               └── [TODO] DataValidator                walks $records/, validates records against schema
     │       │

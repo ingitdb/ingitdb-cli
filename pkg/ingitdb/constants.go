@@ -2,8 +2,8 @@ package ingitdb
 
 type RecordFormat string
 
-const SchemaDir = ".ingitdb-collection"
+const SchemaDir = ".collection"
 
 // CollectionDefFileName is the fixed file name for collection definitions
 // inside the SchemaDir directory.
-const CollectionDefFileName = "collection.yaml"
+const CollectionDefFileName = "definition.yaml"

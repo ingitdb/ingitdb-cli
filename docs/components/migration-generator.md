@@ -9,7 +9,7 @@ The Migration Generator diffs two versions of an inGitDB database and produces a
    - Added records → `INSERT` (migration) / `DELETE` (rollback)
    - Removed records → `DELETE` (migration) / `INSERT` (rollback)
    - Changed records → `UPDATE` both ways (field-level diff to produce minimal statements)
-3. **Diff schema** — compare `.ingitdb-collection.yaml` at both versions:
+3. **Diff schema** — compare `.definition.yaml` at both versions:
    - Added columns → `ALTER TABLE ADD COLUMN` (migration) / `ALTER TABLE DROP COLUMN` (rollback)
    - Removed columns → `ALTER TABLE DROP COLUMN` (migration) / `ALTER TABLE ADD COLUMN` (rollback)
    - Type changes → handled per target database dialect

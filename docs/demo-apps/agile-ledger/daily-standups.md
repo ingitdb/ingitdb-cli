@@ -22,7 +22,7 @@ The directory structure and relationships for a daily standup setup are complete
 - **Team Mates**:
   `/teams/{team}/mates/{github_user_name}.json`
   Defines individual team members and their specific data or roles.
-  _Definition (in `teams/mates/.ingitdb-collection.yaml`):_
+  _Definition (in `teams/mates/.definition.yaml`):_
   ```yaml
   titles:
     en: Team Mates
@@ -34,7 +34,7 @@ The directory structure and relationships for a daily standup setup are complete
 - **Daily Questions**:
   `/teams/{team}/daily-questions/daily-questions.json`
   Stores the template of mandatory and optional questions (e.g., `what-i-did-yesterday`, `what-i-will-do-today`) to be used in standups.
-  _Definition (in `teams/daily-questions/.ingitdb-collection.yaml`):_
+  _Definition (in `teams/daily-questions/.definition.yaml`):_
 
   ```yaml
   titles:
@@ -48,7 +48,7 @@ The directory structure and relationships for a daily standup setup are complete
 - **Dates**:
   `/teams/{team}/dates/{yyyy-mm-dd}/{yyyy-mm-dd}.json`
   Holds top-level metadata about a specific date (e.g., if a date was a public holiday, sprint boundary, etc.).
-  _Definition (in `teams/dates/.ingitdb-collection.yaml`):_
+  _Definition (in `teams/dates/.definition.yaml`):_
 
   ```yaml
   titles:
@@ -62,7 +62,7 @@ The directory structure and relationships for a daily standup setup are complete
 - **User Answers**:
   `/teams/{team}/dates/{yyyy-mm-dd}/mates/{github_user_name}/questions/{question_slug}/answers/{answer_timestamp}.json`
   Individual answers are stored granularly by user, question slug, and the exact timestamp of submission. This structure avoids concurrent write conflicts, making it ideal for the underlying git repository.
-  _Definition (in `teams/dates/mates/questions/answers/.ingitdb-collection.yaml`):_
+  _Definition (in `teams/dates/mates/questions/answers/.definition.yaml`):_
   ```yaml
   titles:
     en: Answers

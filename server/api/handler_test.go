@@ -170,7 +170,7 @@ func newTestHandler() (*Handler, *fakeStore) {
 		newGitHubFileReader: func(cfg dalgo2ghingitdb.Config) (dalgo2ghingitdb.FileReader, error) {
 			return &fakeFileReader{files: map[string][]byte{
 				".ingitdb.yaml": []byte(rootConfigYAML),
-				"data/countries/.ingitdb-collection/countries.yaml": []byte(countryColDefYAML),
+				"data/countries/.collection/countries.yaml": []byte(countryColDefYAML),
 			}}, nil
 		},
 		newGitHubDBWithDef: func(cfg dalgo2ghingitdb.Config, def *ingitdb.Definition) (dal.DB, error) {
@@ -659,7 +659,7 @@ func TestReadDefinitionFromGitHub_Success(t *testing.T) {
 	t.Parallel()
 	fr := &fakeFileReader{files: map[string][]byte{
 		".ingitdb.yaml": []byte(rootConfigYAML),
-		"data/countries/.ingitdb-collection/countries.yaml": []byte(countryColDefYAML),
+		"data/countries/.collection/countries.yaml": []byte(countryColDefYAML),
 	}}
 	def, err := readDefinitionFromGitHub(context.Background(), fr)
 	if err != nil {
