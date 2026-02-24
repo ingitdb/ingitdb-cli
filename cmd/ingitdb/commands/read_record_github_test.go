@@ -50,7 +50,6 @@ func TestParseGitHubRepoSpec(t *testing.T) {
 		{name: "invalid", input: "ingitdb", wantErr: true},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			spec, err := parseGitHubRepoSpec(tt.input)
 			if tt.wantErr {
@@ -107,6 +106,7 @@ func TestReadRemoteDefinitionForIDWithReader(t *testing.T) {
 	colDef := def.Collections[collectionID]
 	if colDef == nil {
 		t.Fatal("expected collection in definition")
+		return
 	}
 	if colDef.DirPath != "docs/demo-apps/todo/tags" {
 		t.Fatalf("unexpected DirPath: %s", colDef.DirPath)

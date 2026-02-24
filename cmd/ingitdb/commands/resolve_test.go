@@ -10,6 +10,7 @@ func TestResolve_ReturnsCommand(t *testing.T) {
 	cmd := Resolve()
 	if cmd == nil {
 		t.Fatal("Resolve() returned nil")
+		return
 	}
 	if cmd.Name != "resolve" {
 		t.Errorf("expected name 'resolve', got %q", cmd.Name)

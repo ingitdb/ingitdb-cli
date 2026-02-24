@@ -10,6 +10,7 @@ func TestQuery_ReturnsCommand(t *testing.T) {
 	cmd := Query()
 	if cmd == nil {
 		t.Fatal("Query() returned nil")
+		return
 	}
 	if cmd.Name != "query" {
 		t.Errorf("expected name 'query', got %q", cmd.Name)
