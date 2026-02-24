@@ -6,8 +6,18 @@ chocolateys:
   - name: ingitdb
     ids:
       - zip
-    title: ingitdb
-    authors: ingitdb
+    title: inGitDB - Git-based Database
+    authors: inGitDB Contributors
+    owners: inGitDB
+    project_url: https://ingitdb.com/
+    project_source_url: https://github.com/ingitdb/ingitdb-cli
+    package_source_url: https://github.com/ingitdb/ingitdb-cli
+    docs_url: https://ingitdb.com/en/docs/
+    bug_tracker_url: https://github.com/ingitdb/ingitdb-cli/issues
+    tags: database git schema-validation cli developer-tools yaml json ai-native
+    license_url: https://github.com/ingitdb/ingitdb-cli/blob/main/LICENSE
+    icon_url: https://ingitdb.com/ingitdb-logo.png
+    release_notes: "https://github.com/ingitdb/ingitdb-cli/releases/tag/{{ .Tag }}"
     summary: "A CLI for a schema-validated, AI-native database backed by a Git repository."
     url_template: "https://github.com/ingitdb/ingitdb-cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
     description: |
@@ -26,20 +36,19 @@ builds:
   - id: ingitdb-windows
     main: ./cmd/ingitdb
     binary: ingitdb
-    env: [ CGO_ENABLED=0 ]
-    goos: [ windows ]
-    goarch: [ amd64 ]
+    env: [CGO_ENABLED=0]
+    goos: [windows]
+    goarch: [amd64]
     flags:
       - -trimpath
-    mod_timestamp: '{{ .CommitTimestamp }}'
+    mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags:
       - -s -w
       - -X main.version={{.Version}}
 
 archives:
   - id: zip
-    formats: [ zip ]
+    formats: [zip]
     name_template: >-
       {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
-    ids: [ ingitdb-windows ]
-
+    ids: [ingitdb-windows]
