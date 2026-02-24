@@ -6,7 +6,7 @@ inGitDB defines schemas for your core records, workflows, and output routing ent
 
 This section outlines the reference file structures for modeling collections, materialized views, triggers, and hierarchical boundaries.
 
-- **[Collections](collection.md)** (`.ingitdb-collection/<collection_id>.yaml`) — The foundational database tables defining underlying properties, storage layouts, and type requirements for mapped documents.
+- **[Collections](collection.md)** (`.ingitdb-collection/collection.yaml`) — The foundational database tables defining underlying properties, storage layouts, and type requirements for mapped documents.
 - **[Subcollections](subcollection.md)** (`.ingitdb-collection/subcollections/<name>.yaml`) — Hierarchical subsets of standard collections supporting distinct relation and subset logic structures while preserving exact collection syntax.
 - **[Views](view.md)** (`.ingitdb-collection/views/<name>.yaml`) — Materialized view setups to filter, paginate, sort, and pipe your documents into generated outputs.
 - **[Triggers](trigger.md)** (`.ingitdb-collection/trigger_<name>.yaml`) — Workflow events mapping your modifications directly onto shell hooks and external REST webhooks.

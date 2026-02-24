@@ -6,12 +6,16 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 	"gopkg.in/yaml.v3"
 )
 
 const RootConfigFileName = ".ingitdb.yaml"
+
+// NamespaceImportSuffix is the suffix used to identify namespace import keys.
+const NamespaceImportSuffix = ".*"
 
 type Language struct {
 	Required string `yaml:"required,omitempty"`
@@ -23,6 +27,19 @@ type RootConfig struct {
 	Languages       []Language        `yaml:"languages,omitempty"`
 }
 
+// IsNamespaceImport returns true if the key ends with ".*" suffix,
+// indicating it is a namespace import that references another directory's
+// .ingitdb.yaml file.
+func IsNamespaceImport(key string) bool {
+	return strings.HasSuffix(key, NamespaceImportSuffix)
+}
+
+// namespaceImportPrefix returns the prefix part of a namespace import key.
+// For example, "agile.*" returns "agile".
+func namespaceImportPrefix(key string) string {
+	return strings.TrimSuffix(key, NamespaceImportSuffix)
+}
+
 func (rc *RootConfig) Validate() error {
 	if rc == nil {
 		return nil
@@ -32,16 +49,30 @@ func (rc *RootConfig) Validate() error {
 		if id == "" {
 			return errors.New("root collection id cannot be empty")
 		}
-		if err := ingitdb.ValidateCollectionID(id); err != nil {
-			return fmt.Errorf("invalid root collection id %q: %w", id, err)
-		}
-		if path == "" {
-			return fmt.Errorf("root collection path cannot be empty, ID=%s", id)
-		}
-		if path != "" {
-			for _, r := range path {
-				if r == '*' {
-					return fmt.Errorf("root collection path cannot contain wildcard '*', ID=%s, path=%s", id, path)
+		if IsNamespaceImport(id) {
+			// Validate the prefix before ".*"
+			prefix := namespaceImportPrefix(id)
+			if prefix == "" {
+				return fmt.Errorf("namespace import prefix cannot be empty for key %q", id)
+			}
+			if err := ingitdb.ValidateCollectionID(prefix); err != nil {
+				return fmt.Errorf("invalid namespace import prefix %q: %w", id, err)
+			}
+			if path == "" {
+				return fmt.Errorf("namespace import path cannot be empty, key=%s", id)
+			}
+		} else {
+			if err := ingitdb.ValidateCollectionID(id); err != nil {
+				return fmt.Errorf("invalid root collection id %q: %w", id, err)
+			}
+			if path == "" {
+				return fmt.Errorf("root collection path cannot be empty, ID=%s", id)
+			}
+			if path != "" {
+				for _, r := range path {
+					if r == '*' {
+						return fmt.Errorf("root collection path cannot contain wildcard '*', ID=%s, path=%s", id, path)
+					}
 				}
 			}
 		}
@@ -96,6 +127,111 @@ func (rc *RootConfig) Validate() error {
 	return nil
 }
 
+// resolvePath resolves a path that can be relative to baseDirPath, absolute,
+// or prefixed with ~ for the user's home directory.
+func resolvePath(baseDirPath, path string, userHomeDir func() (string, error)) (string, error) {
+	if strings.HasPrefix(path, "~/") || path == "~" {
+		home, err := userHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("failed to resolve home directory: %w", err)
+		}
+		path = filepath.Join(home, path[1:])
+	}
+	if filepath.IsAbs(path) {
+		return path, nil
+	}
+	return filepath.Join(baseDirPath, path), nil
+}
+
+// ResolveNamespaceImports resolves all namespace import keys (ending with ".*")
+// in rootCollections. For each such key, it reads the .ingitdb.yaml file from
+// the referenced directory and imports all its rootCollections with the
+// namespace prefix prepended.
+//
+// baseDirPath is the directory containing the current .ingitdb.yaml file.
+//
+// Returns an error if:
+//   - The referenced directory does not exist
+//   - The referenced directory has no .ingitdb.yaml file
+//   - The referenced .ingitdb.yaml has no or empty rootCollections
+func (rc *RootConfig) ResolveNamespaceImports(baseDirPath string) error {
+	return rc.resolveNamespaceImports(baseDirPath, os.UserHomeDir, os.ReadFile, osStat)
+}
+
+// osStat is a variable for testing
+var osStat = os.Stat
+
+func (rc *RootConfig) resolveNamespaceImports(
+	baseDirPath string,
+	userHomeDir func() (string, error),
+	readFile func(string) ([]byte, error),
+	statFn func(string) (os.FileInfo, error),
+) error {
+	if rc == nil {
+		return nil
+	}
+	if len(rc.RootCollections) == 0 {
+		return nil
+	}
+
+	// Collect namespace import keys separately to avoid modifying map during iteration
+	var nsKeys []string
+	for k := range rc.RootCollections {
+		if IsNamespaceImport(k) {
+			nsKeys = append(nsKeys, k)
+		}
+	}
+
+	for _, key := range nsKeys {
+		path := rc.RootCollections[key]
+		prefix := namespaceImportPrefix(key)
+
+		// Resolve the path
+		resolvedPath, err := resolvePath(baseDirPath, path, userHomeDir)
+		if err != nil {
+			return fmt.Errorf("failed to resolve namespace import path for key %q: %w", key, err)
+		}
+
+		// Check if directory exists
+		info, err := statFn(resolvedPath)
+		if err != nil {
+			return fmt.Errorf("namespace import directory not found for key %q, path=%q: %w", key, path, err)
+		}
+		if !info.IsDir() {
+			return fmt.Errorf("namespace import path is not a directory for key %q, path=%q", key, path)
+		}
+
+		// Read .ingitdb.yaml from the referenced directory
+		configFilePath := filepath.Join(resolvedPath, RootConfigFileName)
+		data, err := readFile(configFilePath)
+		if err != nil {
+			return fmt.Errorf("failed to read %s for namespace import key %q, path=%q: %w", RootConfigFileName, key, path, err)
+		}
+
+		var importedConfig RootConfig
+		if err = yaml.Unmarshal(data, &importedConfig); err != nil {
+			return fmt.Errorf("failed to parse %s for namespace import key %q, path=%q: %w", RootConfigFileName, key, path, err)
+		}
+
+		if len(importedConfig.RootCollections) == 0 {
+			return fmt.Errorf("namespace import has no rootCollections for key %q, path=%q", key, path)
+		}
+
+		// Remove the namespace import key
+		delete(rc.RootCollections, key)
+
+		// Import collections with prefix
+		for importedID, importedPath := range importedConfig.RootCollections {
+			newID := prefix + "." + importedID
+			// Make imported paths relative to the current config's base dir
+			newPath := filepath.Join(path, importedPath)
+			rc.RootCollections[newID] = newPath
+		}
+	}
+
+	return nil
+}
+
 func ReadRootConfigFromFile(dirPath string, o ingitdb.ReadOptions) (rootConfig RootConfig, err error) {
 	return readRootConfigFromFile(dirPath, o, os.OpenFile)
 }
@@ -132,5 +268,11 @@ func readRootConfigFromFile(dirPath string, o ingitdb.ReadOptions, openFile func
 		}
 		log.Println(".ingitdb.yaml is valid")
 	}
+
+	// Resolve namespace imports after validation
+	if err = rootConfig.ResolveNamespaceImports(dirPath); err != nil {
+		return rootConfig, fmt.Errorf("failed to resolve namespace imports: %w", err)
+	}
+
 	return
 }

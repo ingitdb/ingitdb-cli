@@ -4,6 +4,9 @@ rootCollections:
   todo.statuses: test-ingitdb/todo/statuses
   todo.tags: test-ingitdb/todo/tags
   todo.tasks: test-ingitdb/todo/tasks
+  # Namespace import: imports all root collections from another .ingitdb.yaml
+  # with "agile." prefix (e.g., agile.teams)
+  agile.*: docs/demo-apps/agile-ledger
 
 # `languages` list supported languages should preferably use `ISO 639-1`
 #  or alternatively `IERF BCP 47` (`RFC 5646` / `RFC 4647`).

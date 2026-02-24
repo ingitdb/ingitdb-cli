@@ -64,7 +64,7 @@ func TestDefinitionReader_ReadDefinition(t *testing.T) {
 					t.Fatalf("setup: create collection dir: %v", err)
 				}
 
-				collectionDefPath := filepath.Join(schemaDir, "test.yaml")
+				collectionDefPath := filepath.Join(schemaDir, ingitdb.CollectionDefFileName)
 				collectionDefContent := `record_file:
   name: "{key}.yaml"
   type: "map[string]any"
@@ -108,7 +108,7 @@ columns:
 					t.Fatalf("setup: create collection dir: %v", err)
 				}
 
-				collectionDefPath := filepath.Join(schemaDir, "bad.yaml")
+				collectionDefPath := filepath.Join(schemaDir, ingitdb.CollectionDefFileName)
 				invalidYAML := "columns: [invalid yaml\n"
 				err = os.WriteFile(collectionDefPath, []byte(invalidYAML), 0644)
 				if err != nil {
@@ -142,7 +142,7 @@ columns:
 					t.Fatalf("setup: create collection dir: %v", err)
 				}
 
-				collectionDefPath := filepath.Join(schemaDir, "invalid.yaml")
+				collectionDefPath := filepath.Join(schemaDir, ingitdb.CollectionDefFileName)
 				// Empty columns map is invalid when validation is enabled
 				invalidSchemaContent := "columns: {}\n"
 				err = os.WriteFile(collectionDefPath, []byte(invalidSchemaContent), 0644)
@@ -215,7 +215,7 @@ func TestDefinitionReader_ReadDefinition_WithoutValidation(t *testing.T) {
 		t.Fatalf("setup: create collection dir: %v", err)
 	}
 
-	collectionDefPath := filepath.Join(schemaDir, "users.yaml")
+	collectionDefPath := filepath.Join(schemaDir, ingitdb.CollectionDefFileName)
 	collectionDefContent := `record_file:
   name: "{key}.yaml"
   type: "map[string]any"

@@ -12,6 +12,6 @@ At the root of the repository you should have a `.ingitdb.yaml` file that define
 - [root_collections](root-collections.md)
 - [languages](languages.md)
 
-Each collection directory contains an `.ingitdb-collection/<collection_id>.yaml` file:
+Each collection directory contains an `.ingitdb-collection/collection.yaml` file:
 
 - [collection definitions](../schema/README.md)

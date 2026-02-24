@@ -14,7 +14,7 @@ A database is a directory tree inside a Git repository:
 └── <group>/
     └── <collection>/
         ├── .ingitdb-collection/
-        │   ├── <collection_id>.yaml         # Collection schema
+        │   ├── collection.yaml               # Collection schema
         │   ├── subcollections/              # Subcollection definitions
         │   │   └── <name>.yaml
         │   └── views/                       # View definitions

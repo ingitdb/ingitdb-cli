@@ -1,0 +1,10 @@
+record_file:
+  name: "{key}.yaml"
+  type: "map[string]any"
+  format: yaml
+columns:
+  id:
+    type: string
+    primaryKey: true
+  title:
+    type: string

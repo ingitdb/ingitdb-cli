@@ -60,7 +60,7 @@ func readRootCollections(rootPath string, rootConfig config.RootConfig, o ingitd
 }
 
 func readCollectionDef(rootPath, relPath, id string, o ingitdb.ReadOptions) (colDef *ingitdb.CollectionDef, err error) {
-	colDefFilePath := filepath.Join(rootPath, relPath, ingitdb.SchemaDir, id+".yaml")
+	colDefFilePath := filepath.Join(rootPath, relPath, ingitdb.SchemaDir, ingitdb.CollectionDefFileName)
 	var fileContent []byte
 	fileContent, err = os.ReadFile(colDefFilePath)
 	if err != nil {

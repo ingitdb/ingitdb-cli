@@ -10,7 +10,7 @@ import (
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/config"
 )
 
-func writeCollectionDef(t *testing.T, dir string, id string, content string) {
+func writeCollectionDef(t *testing.T, dir string, content string) {
 	t.Helper()
 
 	schemaDir := filepath.Join(dir, ingitdb.SchemaDir)
@@ -18,7 +18,7 @@ func writeCollectionDef(t *testing.T, dir string, id string, content string) {
 	if err != nil {
 		t.Fatalf("failed to create dir: %s", err)
 	}
-	path := filepath.Join(schemaDir, id+".yaml")
+	path := filepath.Join(schemaDir, ingitdb.CollectionDefFileName)
 	err = os.WriteFile(path, []byte(content), 0666)
 	if err != nil {
 		t.Fatalf("failed to write file: %s", err)
@@ -81,7 +81,7 @@ func TestReadCollectionDef_InvalidYAML(t *testing.T) {
 
 	root := t.TempDir()
 	dir := filepath.Join(root, "bad")
-	writeCollectionDef(t, dir, "id", "a: [1,2\n")
+	writeCollectionDef(t, dir, "a: [1,2\n")
 
 	_, err := readCollectionDef(root, "bad", "id", ingitdb.NewReadOptions())
 	if err == nil {
@@ -98,7 +98,7 @@ func TestReadCollectionDef_InvalidDefinitionWithValidation(t *testing.T) {
 
 	root := t.TempDir()
 	dir := filepath.Join(root, "invalid")
-	writeCollectionDef(t, dir, "id", "columns: {}\n")
+	writeCollectionDef(t, dir, "columns: {}\n")
 
 	_, err := readCollectionDef(root, "invalid", "id", ingitdb.NewReadOptions(ingitdb.Validate()))
 	if err == nil {
@@ -130,7 +130,7 @@ columns:
   title:
     type: string
 `
-	if err := os.WriteFile(filepath.Join(rootSchemaDir, "companies.yaml"), []byte(rootContent), 0666); err != nil {
+	if err := os.WriteFile(filepath.Join(rootSchemaDir, ingitdb.CollectionDefFileName), []byte(rootContent), 0666); err != nil {
 		t.Fatalf("failed to write root collection file: %s", err)
 	}
 
