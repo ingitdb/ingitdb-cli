@@ -10,6 +10,7 @@ func TestDeleteView_ReturnsCommand(t *testing.T) {
 	cmd := deleteView()
 	if cmd == nil {
 		t.Fatal("deleteView() returned nil")
+		return
 	}
 	if cmd.Name != "view" {
 		t.Errorf("expected name 'view', got %q", cmd.Name)

@@ -10,6 +10,7 @@ func TestDeleteRecords_ReturnsCommand(t *testing.T) {
 	cmd := deleteRecords()
 	if cmd == nil {
 		t.Fatal("deleteRecords() returned nil")
+		return
 	}
 	if cmd.Name != "records" {
 		t.Errorf("expected name 'records', got %q", cmd.Name)

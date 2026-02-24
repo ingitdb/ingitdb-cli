@@ -10,6 +10,7 @@ func TestDeleteCollection_ReturnsCommand(t *testing.T) {
 	cmd := deleteCollection()
 	if cmd == nil {
 		t.Fatal("deleteCollection() returned nil")
+		return
 	}
 	if cmd.Name != "collection" {
 		t.Errorf("expected name 'collection', got %q", cmd.Name)
