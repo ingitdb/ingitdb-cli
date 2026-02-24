@@ -17,12 +17,12 @@ import (
 func TestCRUDRecord_UpdatesTagsReadme(t *testing.T) {
 	repoRoot := findRepoRoot(t)
 	tmpDir := t.TempDir()
-	dstTagsDir := filepath.Join(tmpDir, "test-ingitdb", "todo", "tags")
-	srcTagsDir := filepath.Join(repoRoot, "test-ingitdb", "todo", "tags")
+	dstTagsDir := filepath.Join(tmpDir, "docs", "demo-apps", "todo", "tags")
+	srcTagsDir := filepath.Join(repoRoot, "docs", "demo-apps", "todo", "tags")
 	if err := copyDir(srcTagsDir, dstTagsDir); err != nil {
 		t.Fatalf("copy tags dir: %v", err)
 	}
-	rootConfig := []byte("rootCollections:\n  todo.tags: test-ingitdb/todo/tags\n")
+	rootConfig := []byte("rootCollections:\n  todo.tags: docs/demo-apps/todo/tags\n")
 	if err := os.WriteFile(filepath.Join(tmpDir, ".ingitdb.yaml"), rootConfig, 0o644); err != nil {
 		t.Fatalf("write root config: %v", err)
 	}

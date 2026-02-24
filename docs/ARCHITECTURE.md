@@ -28,8 +28,8 @@ A database is a directory tree inside a Git repository:
 
 ```yaml
 rootCollections:
-  todo.tags: test-ingitdb/todo/tags
-  todo.tasks: test-ingitdb/todo/tasks
+  todo.tags: docs/demo-apps/todo/tags
+  todo.tasks: docs/demo-apps/todo/tasks
   countries: geo/countries
 languages:
   - required: en

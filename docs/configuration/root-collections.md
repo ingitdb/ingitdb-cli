@@ -53,7 +53,7 @@ An error is returned when:
 The optional `default_namespace` field specifies a namespace prefix for collections
 when the DB is opened directly (not imported via a namespace import).
 
-For example, if `test-ingitdb/todo/.ingitdb.yaml` contains:
+For example, if `docs/demo-apps/todo/.ingitdb.yaml` contains:
 
 ```yaml
 default_namespace: todo
@@ -67,13 +67,13 @@ rootCollections:
 Then when this DB is opened directly, the collections are presented as
 `todo.statuses`, `todo.tags`, and `todo.tasks`.
 
-When imported via a namespace import (e.g. `todo.*: test-ingitdb/todo`),
+When imported via a namespace import (e.g. `todo.*: docs/demo-apps/todo`),
 the import alias is used instead of `default_namespace`.
 
 # 📘 Examples:
 
 - [/.ingitdb.yaml](../../.ingitdb.yaml) - config for inGitDB in this repository.
-- [/test-ingitdb/todo/.ingitdb.yaml](../../test-ingitdb/todo/.ingitdb.yaml) - todo collections with `default_namespace`.
+- [/docs/demo-apps/todo/.ingitdb.yaml](../../docs/demo-apps/todo/.ingitdb.yaml) - todo collections with `default_namespace`.
 - [/docs/demo-apps/agile-ledger/.ingitdb.yaml](../../docs/demo-apps/agile-ledger/.ingitdb.yaml) - agile-ledger with `default_namespace`.
 
 Collection IDs (the keys in `rootCollections`) must use only alphanumeric characters and `.`,

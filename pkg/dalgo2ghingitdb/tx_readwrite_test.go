@@ -190,7 +190,7 @@ func TestReadwriteTx_InsertMulti(t *testing.T) {
 func TestReadwriteTx_SetMapOfIDRecords(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
-		path:    "test-ingitdb/todo/tags/tags.json",
+		path:    "docs/demo-apps/todo/tags/tags.json",
 		content: `{"active": {"title": "Active"}}`,
 	}}
 	server := newGitHubContentsServer(t, fixtures)
@@ -200,7 +200,7 @@ func TestReadwriteTx_SetMapOfIDRecords(t *testing.T) {
 		Collections: map[string]*ingitdb.CollectionDef{
 			"todo.tags": {
 				ID:      "todo.tags",
-				DirPath: "test-ingitdb/todo/tags",
+				DirPath: "docs/demo-apps/todo/tags",
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",
@@ -240,7 +240,7 @@ func TestReadwriteTx_SetMapOfIDRecords_NewFile(t *testing.T) {
 		Collections: map[string]*ingitdb.CollectionDef{
 			"todo.tags": {
 				ID:      "todo.tags",
-				DirPath: "test-ingitdb/todo/tags",
+				DirPath: "docs/demo-apps/todo/tags",
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",
@@ -273,7 +273,7 @@ func TestReadwriteTx_SetMapOfIDRecords_NewFile(t *testing.T) {
 func TestReadwriteTx_InsertMapOfIDRecords(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
-		path:    "test-ingitdb/todo/tags/tags.json",
+		path:    "docs/demo-apps/todo/tags/tags.json",
 		content: `{"active": {"title": "Active"}}`,
 	}}
 	server := newGitHubContentsServer(t, fixtures)
@@ -283,7 +283,7 @@ func TestReadwriteTx_InsertMapOfIDRecords(t *testing.T) {
 		Collections: map[string]*ingitdb.CollectionDef{
 			"todo.tags": {
 				ID:      "todo.tags",
-				DirPath: "test-ingitdb/todo/tags",
+				DirPath: "docs/demo-apps/todo/tags",
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",
@@ -316,7 +316,7 @@ func TestReadwriteTx_InsertMapOfIDRecords(t *testing.T) {
 func TestReadwriteTx_InsertMapOfIDRecords_AlreadyExists(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
-		path:    "test-ingitdb/todo/tags/tags.json",
+		path:    "docs/demo-apps/todo/tags/tags.json",
 		content: `{"active": {"title": "Active"}}`,
 	}}
 	server := newGitHubContentsServer(t, fixtures)
@@ -326,7 +326,7 @@ func TestReadwriteTx_InsertMapOfIDRecords_AlreadyExists(t *testing.T) {
 		Collections: map[string]*ingitdb.CollectionDef{
 			"todo.tags": {
 				ID:      "todo.tags",
-				DirPath: "test-ingitdb/todo/tags",
+				DirPath: "docs/demo-apps/todo/tags",
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",
@@ -363,7 +363,7 @@ func TestReadwriteTx_InsertMapOfIDRecords_AlreadyExists(t *testing.T) {
 func TestReadwriteTx_DeleteMapOfIDRecords(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
-		path:    "test-ingitdb/todo/tags/tags.json",
+		path:    "docs/demo-apps/todo/tags/tags.json",
 		content: `{"active": {"title": "Active"}}`,
 	}}
 	server := newGitHubContentsServer(t, fixtures)
@@ -373,7 +373,7 @@ func TestReadwriteTx_DeleteMapOfIDRecords(t *testing.T) {
 		Collections: map[string]*ingitdb.CollectionDef{
 			"todo.tags": {
 				ID:      "todo.tags",
-				DirPath: "test-ingitdb/todo/tags",
+				DirPath: "docs/demo-apps/todo/tags",
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",
@@ -411,7 +411,7 @@ func TestReadwriteTx_DeleteMapOfIDRecords_FileNotFound(t *testing.T) {
 		Collections: map[string]*ingitdb.CollectionDef{
 			"todo.tags": {
 				ID:      "todo.tags",
-				DirPath: "test-ingitdb/todo/tags",
+				DirPath: "docs/demo-apps/todo/tags",
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",
@@ -442,7 +442,7 @@ func TestReadwriteTx_DeleteMapOfIDRecords_FileNotFound(t *testing.T) {
 func TestReadwriteTx_DeleteMapOfIDRecords_RecordNotInMap(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
-		path:    "test-ingitdb/todo/tags/tags.json",
+		path:    "docs/demo-apps/todo/tags/tags.json",
 		content: `{"active": {"title": "Active"}}`,
 	}}
 	server := newGitHubContentsServer(t, fixtures)
@@ -452,7 +452,7 @@ func TestReadwriteTx_DeleteMapOfIDRecords_RecordNotInMap(t *testing.T) {
 		Collections: map[string]*ingitdb.CollectionDef{
 			"todo.tags": {
 				ID:      "todo.tags",
-				DirPath: "test-ingitdb/todo/tags",
+				DirPath: "docs/demo-apps/todo/tags",
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",
