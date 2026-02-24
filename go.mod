@@ -1,6 +1,6 @@
 module github.com/ingitdb/ingitdb-cli
 
-go 1.24.1
+go 1.26.0
 
 require (
 	github.com/julienschmidt/httprouter v1.3.0
