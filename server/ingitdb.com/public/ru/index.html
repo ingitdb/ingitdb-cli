@@ -100,9 +100,9 @@
                         <p>Планируемый сервер MCP будет предоставлять операции CRUD агентам ИИ через Model Context Protocol без необходимости пользовательской интеграции.</p>
                     </div>
                     <div class="feature-card">
-                        <div class="feature-icon">🔧</div>
-                        <h3>Библиотека Go через DALgo</h3>
-                        <p><code>pkg/dalgo2ingitdb</code> реализует интерфейс DALgo <code>dal.DB</code>, поэтому любая программа на Go может использовать inGitDB как абстракцию стандартной базы данных.</p>
+                        <div class="feature-icon">🔔</div>
+                        <h3>Подписчики и триггеры</h3>
+                        <p>Реагируйте на изменения записей через встроенные вебхуки, email, уведомления Telegram и другие каналы — или запускайте пользовательские shell-рабочие процессы с синтаксисом, вдохновлённым GitHub Actions.</p>
                     </div>
                 </div>
             </div>
@@ -196,6 +196,26 @@ ingitdb read record --id=geo.nations/ie</code></pre>
                     <div class="use-case">
                         <h3>Данные для обучения ИИ</h3>
                         <p>Отслеживайте версии наборов данных и изменения для конвейеров машинного обучения</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="client-libraries">
+            <div class="container">
+                <h2 class="section-title">Клиентские библиотеки</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🐹</div>
+                        <h3>Go</h3>
+                        <p>Официальный Go-клиент для inGitDB с полной поддержкой CRUD и совместимостью с интерфейсом DALgo.</p>
+                        <a href="https://github.com/ingitdb/ingitdb-go" class="btn btn-secondary" target="_blank" rel="noopener" style="margin-top: 1rem; display: inline-block;">github.com/ingitdb/ingitdb-go</a>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🌐</div>
+                        <h3>TypeScript / JavaScript</h3>
+                        <p>Официальный TypeScript/JavaScript-клиент для inGitDB для Node.js и браузерных сред.</p>
+                        <a href="https://github.com/ingitdb-ts" class="btn btn-secondary" target="_blank" rel="noopener" style="margin-top: 1rem; display: inline-block;">github.com/ingitdb-ts</a>
                     </div>
                 </div>
             </div>
