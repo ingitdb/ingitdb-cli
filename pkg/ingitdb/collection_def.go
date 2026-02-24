@@ -15,7 +15,8 @@ type CollectionDef struct {
 	ColumnsOrder []string              `yaml:"columns_order,omitempty"`
 	DefaultView  string                `yaml:"default_view,omitempty"`
 	// SubCollections are not part of the collection definition file,
-	// they are stored in the "subcollections" subdirectory.
+	// they are stored in the "subcollections" subdirectory as directories,
+	// each containing their own .collection/definition.yaml.
 	SubCollections map[string]*CollectionDef `yaml:"-" json:"-"`
 	// Views are not part of the collection definition file,
 	// they are stored in the "views" subdirectory.

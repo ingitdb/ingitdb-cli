@@ -4,3 +4,6 @@ record_file:
   name: "{key}/question.json"
   type: "map[string]any"
   format: json
+columns:
+  id:
+    type: string
