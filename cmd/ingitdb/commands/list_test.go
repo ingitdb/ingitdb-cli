@@ -23,6 +23,7 @@ func TestList_ReturnsCommand(t *testing.T) {
 	cmd := List(homeDir, getWd, readDef)
 	if cmd == nil {
 		t.Fatal("List() returned nil")
+		return
 	}
 	if cmd.Name != "list" {
 		t.Errorf("expected name 'list', got %q", cmd.Name)
@@ -143,6 +144,7 @@ func TestListCollectionsGitHub_Success(t *testing.T) {
 	cmd := List(homeDir, getWd, readDef)
 	if cmd == nil {
 		t.Fatal("List() returned nil")
+		return
 	}
 
 	// Find the collections subcommand
@@ -305,7 +307,6 @@ func TestParseGitHubRepoSpec_Valid(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -341,7 +342,6 @@ func TestParseGitHubRepoSpec_Invalid(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -393,7 +393,6 @@ func TestResolveRemoteCollectionPath_Success(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 

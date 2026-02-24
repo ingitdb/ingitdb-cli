@@ -10,6 +10,7 @@ func TestFind_ReturnsCommand(t *testing.T) {
 	cmd := Find()
 	if cmd == nil {
 		t.Fatal("Find() returned nil")
+		return
 	}
 	if cmd.Name != "find" {
 		t.Errorf("expected name 'find', got %q", cmd.Name)
