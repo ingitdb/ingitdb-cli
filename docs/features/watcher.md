@@ -38,7 +38,7 @@ Record /countries/gb/cities/london: deleted
 ingitdb watch [--path=PATH] [--format=text|json]
 ```
 
-See [CLI reference](../CLI.md#watch--watch-database-for-changes-not-yet-implemented).
+See [CLI reference](../cli/README.md#watch--watch-database-for-changes-not-yet-implemented).
 
 ## 📂 Related
 

@@ -115,7 +115,7 @@ The **Scanner** (see `docs/components/scanner.md`) orchestrates the full pipelin
 
 **Commands package.** Each top-level CLI command lives in its own file under `cmd/ingitdb/commands/` and exposes a single exported constructor (e.g. `Validate(...)`, `List()`, `Find()`). Subcommands are unexported functions whose names match the subcommand name; when the same subcommand name appears under multiple parents (e.g. `view` in both `list` and `delete`), the function is prefixed with the parent name (`listView`, `deleteView`). `cmd/ingitdb/main.go` is reduced to wiring and process-level concerns.
 
-**Subcommand-based CLI.** Commands are implemented using `github.com/urfave/cli/v3`. `--path` is a per-subcommand flag defaulting to the current working directory. See `docs/CLI.md` for the full interface spec.
+**Subcommand-based CLI.** Commands are implemented using `github.com/urfave/cli/v3`. `--path` is a per-subcommand flag defaulting to the current working directory. See `docs/cli/README.md` for the full interface spec.
 
 **Stdout reserved for data output.** All diagnostic output (logs, errors) goes to `os.Stderr`. Stdout carries only structured data (query results) or TUI output. This allows piping without mixing logs into results.
 

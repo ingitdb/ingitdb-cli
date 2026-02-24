@@ -30,7 +30,7 @@ A CLI tool that turns a Git repository into a fully-featured, AI-friendly databa
 - `ingitdb validate [--path=PATH] [--from-commit=SHA] [--to-commit=SHA]` validates schema and all records, then rebuilds materialized views for affected collections
 - Clear, actionable error messages: collection, file path, field, and violation description
 - Change validation mode: validate and rematerialize only files changed between two commits
-- CLI subcommand interface per `docs/CLI.md`
+- CLI subcommand interface per `docs/cli/README.md`
 
 ---
 

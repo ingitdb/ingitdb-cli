@@ -31,7 +31,7 @@ ingitdb pull [--path=PATH] [--strategy=rebase|merge] [--remote=REMOTE] [--branch
 | `--remote=REMOTE` | Remote to pull from. Default: `origin`. |
 | `--branch=BRANCH` | Branch to pull. Default: the current branch's tracking branch. |
 
-See [CLI reference](../CLI.md#pull--pull-latest-changes-resolve-conflicts-and-rebuild-views-not-yet-implemented).
+See [CLI reference](../cli/README.md#pull--pull-latest-changes-resolve-conflicts-and-rebuild-views-not-yet-implemented).
 
 ## 📂 Change summary format
 

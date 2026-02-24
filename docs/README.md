@@ -10,7 +10,7 @@ trade-off for your project, read on — and consider contributing.
 
 ### 📂 User docs
 
-- [CLI](CLI.md) — command reference: flags, subcommands, exit codes
+- [CLI](cli/README.md) — command reference: flags, subcommands, exit codes
 - [Configuration](configuration/README.md) — `.ingitdb.yaml` and collection config files
 - [Features](features/README.md) — what inGitDB can do (and what is coming)
 
@@ -39,7 +39,7 @@ A one-line description of each document, grouped by purpose.
 
 | Document                                                 | What it covers                                                          |
 | -------------------------------------------------------- | ----------------------------------------------------------------------- |
-| [CLI](CLI.md)                                            | Every subcommand, flag, and exit code for the `ingitdb` binary          |
+| [CLI](cli/README.md)                                            | Every subcommand, flag, and exit code for the `ingitdb` binary          |
 | [Configuration](configuration/README.md)                 | Root DB config (`.ingitdb.yaml`) and per-collection schema files        |
 | [Features](features/README.md)                           | Full feature list with status (WIP / pending) and links to detail pages |
 | [GitHub Direct Access](features/github-direct-access.md) | Read and write records in remote GitHub repositories without cloning    |
@@ -87,7 +87,7 @@ A one-line description of each document, grouped by purpose.
 | `setup`       | —                                      | planned                                   | Initialise a new database directory with a starter `.ingitdb.yaml`                           |
 | `migrate`     | —                                      | planned                                   | Migrate records between schema versions                                                      |
 
-See [CLI.md](CLI.md) for the full flag reference.
+See [cli/README.md](cli/README.md) for the full flag reference.
 
 ---
 

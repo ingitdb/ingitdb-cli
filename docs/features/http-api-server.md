@@ -13,5 +13,5 @@ GraphQL support is tracked separately (Phase 8).
 
 ## 📂 Related
 
-- [CLI reference: `serve --http`](../CLI.md#serve--start-one-or-more-servers-not-yet-implemented)
+- [CLI reference: `serve --http`](../cli/README.md#serve--start-one-or-more-servers-not-yet-implemented)
 - [MCP Server](mcp-server.md)

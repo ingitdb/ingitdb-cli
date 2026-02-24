@@ -12,7 +12,7 @@ Tasks within each phase are ordered by dependency — implement them top to bott
 
 **What:** Replace the positional argument in `cmd/ingitdb/main.go` with a subcommand dispatcher using `github.com/urfave/cli/v3`. For this phase, implement the `validate` subcommand with a `--path` flag.
 
-**Why:** The current `args[1]` positional approach is a temporary placeholder. The intended interface is subcommand-based (`ingitdb validate --path=PATH`), which is the standard Go CLI pattern and matches `docs/CLI.md`.
+**Why:** The current `args[1]` positional approach is a temporary placeholder. The intended interface is subcommand-based (`ingitdb validate --path=PATH`), which is the standard Go CLI pattern and matches `docs/cli/README.md`.
 
 **Acceptance criteria:**
 
