@@ -15,6 +15,9 @@ type ViewDef struct {
 	// How many records to include; 0 means all
 	Top int `yaml:"top,omitempty"`
 
+	// Where holds filtering condition
+	Where string `yaml:"where,omitempty"`
+
 	// Template path relative to the collection directory.
 	/*
 		Build in templates:
