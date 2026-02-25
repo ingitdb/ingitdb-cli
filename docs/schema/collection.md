@@ -7,14 +7,15 @@ See the [Collection README Builder](../components/readme-builders/collection.md)
 
 ## 📂 Top-level fields
 
-| Field           | Type                                                        | Description                                     |
-| --------------- | ----------------------------------------------------------- | ----------------------------------------------- |
-| `titles`        | `map[locale]string`                                         | Human-readable collection name, keyed by locale |
-| `record_file`   | [`RecordFileDef`](../../pkg/ingitdb/record_file_def.go)     | How records are stored on disk (required)       |
-| `data_dir`      | `string`                                                    | Custom data directory (optional)                |
-| `columns`       | `map[string]`[`ColumnDef`](../../pkg/ingitdb/column_def.go) | Column (field) definitions                      |
-| `columns_order` | `[]string`                                                  | Display order for columns                       |
-| `default_view`  | `string`                                                    | Default view name (optional)                    |
+| Field           | Type                                                         | Description                                     |
+| --------------- | ------------------------------------------------------------ | ----------------------------------------------- |
+| `titles`        | `map[locale]string`                                          | Human-readable collection name, keyed by locale |
+| `record_file`   | [`RecordFileDef`](../../pkg/ingitdb/record_file_def.go)      | How records are stored on disk (required)       |
+| `data_dir`      | `string`                                                     | Custom data directory (optional)                |
+| `readme`        | [`CollectionReadmeDef`](../../pkg/ingitdb/collection_def.go) | README.md generation configuration (optional)   |
+| `columns`       | `map[string]`[`ColumnDef`](../../pkg/ingitdb/column_def.go)  | Column (field) definitions                      |
+| `columns_order` | `[]string`                                                   | Display order for columns                       |
+| `default_view`  | `string`                                                     | Default view name (optional)                    |
 
 ---
 

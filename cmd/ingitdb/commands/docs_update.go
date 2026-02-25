@@ -10,6 +10,7 @@ import (
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/docsbuilder"
+	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/materializer"
 )
 
 func docsUpdate(
@@ -110,9 +111,10 @@ func runDocsUpdate(ctx context.Context, dirPath string, def *ingitdb.Definition,
 			return fmt.Errorf("unresolved conflicts remain:\n%s", strings.Join(unresolved, "\n"))
 		}
 
+		recordsReader := materializer.NewFileRecordsReader()
 		result = &ingitdb.MaterializeResult{}
 		for _, col := range collectionsToUpdate {
-			changed, err := docsbuilder.ProcessCollection(ctx, def, col)
+			changed, err := docsbuilder.ProcessCollection(ctx, def, col, dirPath, recordsReader)
 			if err != nil {
 				result.Errors = append(result.Errors, fmt.Errorf("collection %s: %w", col.ID, err))
 				continue
@@ -137,7 +139,8 @@ func runDocsUpdate(ctx context.Context, dirPath string, def *ingitdb.Definition,
 
 	} else {
 		var err error
-		result, err = docsbuilder.UpdateDocs(ctx, def, collectionGlob)
+		recordsReader := materializer.NewFileRecordsReader()
+		result, err = docsbuilder.UpdateDocs(ctx, def, collectionGlob, dirPath, recordsReader)
 		if err != nil {
 			return fmt.Errorf("failed to update docs: %w", err)
 		}

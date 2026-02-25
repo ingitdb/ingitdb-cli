@@ -12,6 +12,45 @@ import (
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
+type FuncViewWriter struct {
+	write func(content []byte) error
+}
+
+func NewFuncViewWriter(write func(content []byte) error) FuncViewWriter {
+	return FuncViewWriter{write: write}
+}
+
+func (w FuncViewWriter) WriteView(
+	ctx context.Context,
+	col *ingitdb.CollectionDef,
+	view *ingitdb.ViewDef,
+	records []ingitdb.RecordEntry,
+	outPath string,
+) (bool, error) {
+	_ = ctx
+	if view.Template == "" {
+		return false, fmt.Errorf("view template is required")
+	}
+	templatePath := filepath.Join(col.DirPath, view.Template)
+	tmpl, err := template.ParseFiles(templatePath)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse template %s: %w", templatePath, err)
+	}
+	data := viewTemplateData(view, records)
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return false, fmt.Errorf("failed to render template %s: %w", templatePath, err)
+	}
+	content := buf.Bytes()
+	if strings.HasSuffix(strings.ToLower(outPath), ".md") {
+		content = stripMarkdownComments(content)
+	}
+	if err := w.write(content); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // FileViewWriter renders a view template and writes it to a file.
 type FileViewWriter struct {
 	readFile  func(string) ([]byte, error)

@@ -21,6 +21,28 @@ type CollectionDef struct {
 	// Views are not part of the collection definition file,
 	// they are stored in the "views" subdirectory.
 	Views map[string]*ViewDef `yaml:"-" json:"-"`
+
+	Readme *CollectionReadmeDef `yaml:"readme,omitempty" json:"readme,omitempty"`
+}
+
+type CollectionReadmeDef struct {
+	HideColumns        bool     `yaml:"hide_columns,omitempty" json:"hide_columns,omitempty"`
+	HideSubcollections bool     `yaml:"hide_subcollections,omitempty" json:"hide_subcollections,omitempty"`
+	HideViews          bool     `yaml:"hide_views,omitempty" json:"hide_views,omitempty"`
+	HideTriggers       bool     `yaml:"hide_triggers,omitempty" json:"hide_triggers,omitempty"`
+	DataPreview        *ViewDef `yaml:"data_preview,omitempty" json:"data_preview,omitempty"`
+}
+
+func (r *CollectionReadmeDef) Validate() error {
+	if r.DataPreview != nil {
+		if r.DataPreview.Template == "" {
+			r.DataPreview.Template = "md-table"
+		}
+		if err := r.DataPreview.Validate(); err != nil {
+			return fmt.Errorf("invalid data_preview: %w", err)
+		}
+	}
+	return nil
 }
 
 func (v *CollectionDef) Validate() error {
@@ -69,5 +91,12 @@ func (v *CollectionDef) Validate() error {
 	if len(allErrors) > 0 {
 		return fmt.Errorf("%d errors: %w", len(allErrors), errors.Join(allErrors...))
 	}
+
+	if v.Readme != nil {
+		if err := v.Readme.Validate(); err != nil {
+			return fmt.Errorf("invalid readme: %w", err)
+		}
+	}
+
 	return nil
 }

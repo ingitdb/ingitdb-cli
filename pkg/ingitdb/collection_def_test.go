@@ -130,11 +130,20 @@ func TestCollectionDefValidate_Success(t *testing.T) {
 		Views: map[string]*ViewDef{
 			"readme": {ID: "readme", OrderBy: "title"},
 		},
+		Readme: &CollectionReadmeDef{
+			DataPreview: &ViewDef{
+				ID: "preview",
+			},
+		},
 	}
 
 	err := def.Validate()
 	if err != nil {
 		errMsg := err.Error()
 		t.Fatalf("expected no error, got %s", errMsg)
+	}
+
+	if def.Readme.DataPreview.Template != "md-table" {
+		t.Fatalf("expected DataPreview.Template to be defaulted to 'md-table'")
 	}
 }

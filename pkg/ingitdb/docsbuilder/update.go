@@ -8,10 +8,13 @@ import (
 	"strings"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/materializer"
 )
 
+type ViewRenderer func(ctx context.Context, col *ingitdb.CollectionDef, view *ingitdb.ViewDef) (string, error)
+
 // UpdateDocs resolves collections by dot-separated glob pattern and updates their README files
-func UpdateDocs(ctx context.Context, def *ingitdb.Definition, collectionGlob string) (*ingitdb.MaterializeResult, error) {
+func UpdateDocs(ctx context.Context, def *ingitdb.Definition, collectionGlob string, dbPath string, recordsReader ingitdb.RecordsReader) (*ingitdb.MaterializeResult, error) {
 	result := &ingitdb.MaterializeResult{}
 
 	targets := ResolveCollections(def.Collections, collectionGlob)
@@ -20,7 +23,7 @@ func UpdateDocs(ctx context.Context, def *ingitdb.Definition, collectionGlob str
 	}
 
 	for _, col := range targets {
-		changed, err := ProcessCollection(ctx, def, col)
+		changed, err := ProcessCollection(ctx, def, col, dbPath, recordsReader)
 		if err != nil {
 			result.Errors = append(result.Errors, fmt.Errorf("collection %s: %w", col.ID, err))
 			continue
@@ -35,8 +38,29 @@ func UpdateDocs(ctx context.Context, def *ingitdb.Definition, collectionGlob str
 	return result, nil
 }
 
-func ProcessCollection(ctx context.Context, def *ingitdb.Definition, col *ingitdb.CollectionDef) (bool, error) {
-	content, err := BuildCollectionReadme(col, def)
+func ProcessCollection(ctx context.Context, def *ingitdb.Definition, col *ingitdb.CollectionDef, dbPath string, recordsReader ingitdb.RecordsReader) (bool, error) {
+	renderer := func(ctx context.Context, col *ingitdb.CollectionDef, view *ingitdb.ViewDef) (string, error) {
+		var buf strings.Builder
+		writer := materializer.NewFuncViewWriter(func(content []byte) error {
+			buf.Write(content)
+			return nil
+		})
+		builder := materializer.SimpleViewBuilder{
+			DefReader:     nil, // Not needed as we pass the view down
+			RecordsReader: recordsReader,
+			Writer:        writer,
+		}
+		res, err := builder.BuildView(ctx, dbPath, col, def, view)
+		if err != nil {
+			return "", err
+		}
+		if len(res.Errors) > 0 {
+			return "", res.Errors[0]
+		}
+		return buf.String(), nil
+	}
+
+	content, err := BuildCollectionReadme(ctx, col, def, renderer)
 	if err != nil {
 		return false, err
 	}
@@ -79,9 +103,6 @@ func ResolveCollections(collections map[string]*ingitdb.CollectionDef, pattern s
 
 	var findCol func(curr map[string]*ingitdb.CollectionDef, parts []string) *ingitdb.CollectionDef
 	findCol = func(curr map[string]*ingitdb.CollectionDef, parts []string) *ingitdb.CollectionDef {
-		if len(parts) == 0 {
-			return nil
-		}
 		col, ok := curr[parts[0]]
 		if !ok {
 			return nil

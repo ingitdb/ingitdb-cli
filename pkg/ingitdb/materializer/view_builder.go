@@ -67,6 +67,49 @@ func (b SimpleViewBuilder) BuildViews(
 	return result, nil
 }
 
+func (b SimpleViewBuilder) BuildView(
+	ctx context.Context,
+	dbPath string,
+	col *ingitdb.CollectionDef,
+	def *ingitdb.Definition,
+	view *ingitdb.ViewDef,
+) (*ingitdb.MaterializeResult, error) {
+	_ = def
+	if b.RecordsReader == nil {
+		return nil, fmt.Errorf("records reader is required")
+	}
+	if b.Writer == nil {
+		return nil, fmt.Errorf("view writer is required")
+	}
+
+	result := &ingitdb.MaterializeResult{}
+
+	records, err := readAllRecords(ctx, b.RecordsReader, dbPath, col)
+	if err != nil {
+		return nil, err
+	}
+	records = filterColumns(records, view.Columns)
+	if err := orderRecords(records, view.OrderBy); err != nil {
+		return nil, err
+	}
+	if view.Top > 0 && len(records) > view.Top {
+		records = records[:view.Top]
+	}
+	outPath := resolveViewOutputPath(col, view)
+	written, err := b.Writer.WriteView(ctx, col, view, records, outPath)
+	if err != nil {
+		result.Errors = append(result.Errors, err)
+		return result, nil // Return immediately for single view errors instead of continuing
+	}
+	if written {
+		result.FilesWritten++
+	} else {
+		result.FilesUnchanged++
+	}
+
+	return result, nil
+}
+
 func readAllRecords(
 	ctx context.Context,
 	reader ingitdb.RecordsReader,

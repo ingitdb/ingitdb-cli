@@ -1,6 +1,7 @@
 package docsbuilder
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -9,7 +10,8 @@ import (
 )
 
 // BuildCollectionReadme generates the content of README.md for a collection
-func BuildCollectionReadme(col *ingitdb.CollectionDef, def *ingitdb.Definition) (string, error) {
+func BuildCollectionReadme(ctx context.Context, col *ingitdb.CollectionDef, def *ingitdb.Definition,
+	viewRenderer func(ctx context.Context, col *ingitdb.CollectionDef, view *ingitdb.ViewDef) (string, error)) (string, error) {
 	// A collection's README.md file includes the following auto-generated sections:
 	// - Collection name: Human-readable name of the collection.
 	// - Path to collection: Shown if it is a subcollection.
@@ -42,24 +44,26 @@ func BuildCollectionReadme(col *ingitdb.CollectionDef, def *ingitdb.Definition) 
 	// We'll skip path output here if it's too complex or we can deduce it from the generator caller.
 	// Let's check if the definition has a reverse lookup or if we can find it.
 
-	sb.WriteString("## Columns\n\n")
-	sb.WriteString("| Name | Type | Properties |\n")
-	sb.WriteString("|------|------|------------|\n")
+	if col.Readme == nil || !col.Readme.HideColumns {
+		sb.WriteString("## Columns\n\n")
+		sb.WriteString("| Name | Type | Properties |\n")
+		sb.WriteString("|------|------|------------|\n")
 
-	// Print columns in order
-	if len(col.ColumnsOrder) > 0 {
-		for _, colName := range col.ColumnsOrder {
-			if colDef, ok := col.Columns[colName]; ok {
+		// Print columns in order
+		if len(col.ColumnsOrder) > 0 {
+			for _, colName := range col.ColumnsOrder {
+				if colDef, ok := col.Columns[colName]; ok {
+					sb.WriteString(formatColumnRow(colName, colDef))
+				}
+			}
+		} else {
+			for colName, colDef := range col.Columns {
 				sb.WriteString(formatColumnRow(colName, colDef))
 			}
 		}
-	} else {
-		for colName, colDef := range col.Columns {
-			sb.WriteString(formatColumnRow(colName, colDef))
-		}
 	}
 
-	if len(col.SubCollections) > 0 {
+	if (col.Readme == nil || !col.Readme.HideSubcollections) && len(col.SubCollections) > 0 {
 		sb.WriteString("\n## Subcollections\n\n")
 		sb.WriteString("| Name | Subcollections |\n")
 		sb.WriteString("|------|----------------|\n")
@@ -74,13 +78,24 @@ func BuildCollectionReadme(col *ingitdb.CollectionDef, def *ingitdb.Definition) 
 		}
 	}
 
-	if len(col.Views) > 0 {
+	if (col.Readme == nil || !col.Readme.HideViews) && len(col.Views) > 0 {
 		sb.WriteString("\n## Views\n\n")
 		sb.WriteString("| Name | Columns |\n")
 		sb.WriteString("|------|---------|\n")
 		for viewID, viewDef := range col.Views {
 			fmt.Fprintf(&sb, "| %s | %d |\n", viewID, len(viewDef.Columns))
 		}
+	}
+
+	if col.Readme != nil && col.Readme.DataPreview != nil {
+		previewStr, err := viewRenderer(ctx, col, col.Readme.DataPreview)
+		if err != nil {
+			return "", fmt.Errorf("failed to render data preview: %w", err)
+		}
+		header := BuildViewHeader(col.Readme.DataPreview)
+		sb.WriteString("\n## Data preview\n\n")
+		sb.WriteString("*" + header + "*\n\n")
+		sb.WriteString(previewStr)
 	}
 
 	return sb.String(), nil
