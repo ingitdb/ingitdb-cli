@@ -6,15 +6,29 @@ type ViewDef struct {
 	ID      string            `yaml:"-"`
 	Titles  map[string]string `yaml:"titles,omitempty"`
 	OrderBy string            `yaml:"order_by,omitempty"`
-	Formats []string          `yaml:"formats,omitempty"`
-	Columns []string          `yaml:"columns,omitempty"`
+
+	// Formats TODO: Needs definition
+	Formats []string `yaml:"formats,omitempty"`
+
+	Columns []string `yaml:"columns,omitempty"`
+
 	// How many records to include; 0 means all
 	Top int `yaml:"top,omitempty"`
+
 	// Template path relative to the collection directory.
+	/*
+		Build in templates:
+		  - md-table - renders a Markdown table
+		  - md-list - renders a Markdown list
+		  - JSON - renders JSON
+		  - YAML - renders YAML
+	*/
 	Template string `yaml:"template,omitempty"`
+
 	// Output file name relative to the collection directory.
 	FileName string `yaml:"file_name,omitempty"`
-	// Template variable name for the records slice.
+
+	// RecordsVarName provides a custom Template variable name for the records slice. The default is "records".
 	RecordsVarName string `yaml:"records_var_name,omitempty"`
 }
 
