@@ -1,6 +1,6 @@
 ### 🔹 list` — list database objects
 
-[Source Code](../../cmd/ingitdb/commands/list.go)
+[Source Code](../../../cmd/ingitdb/commands/list.go)
 
 
 Top-level command with three subcommands. Shared flags on every subcommand:

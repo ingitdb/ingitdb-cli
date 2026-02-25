@@ -1,6 +1,6 @@
 ### 🔹 validate` — validate database schema and data
 
-[Source Code](../../cmd/ingitdb/commands/validate.go)
+[Source Code](../../../cmd/ingitdb/commands/validate.go)
 
 
 ```

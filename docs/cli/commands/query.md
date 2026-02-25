@@ -1,6 +1,6 @@
 ### ⚙️ query` — query records from a collection _(not yet implemented)_
 
-[Source Code](../../cmd/ingitdb/commands/query.go)
+[Source Code](../../../cmd/ingitdb/commands/query.go)
 
 
 ```

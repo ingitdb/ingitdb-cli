@@ -1,6 +1,6 @@
 ### 🔁 migrate` — migrate data between schema versions _(not yet implemented)_
 
-[Source Code](../../cmd/ingitdb/commands/migrate.go)
+[Source Code](../../../cmd/ingitdb/commands/migrate.go)
 
 
 ```

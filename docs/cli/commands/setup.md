@@ -1,6 +1,6 @@
 ### 🔹 setup` — initialise a new database directory _(not yet implemented)_
 
-[Source Code](../../cmd/ingitdb/commands/setup.go)
+[Source Code](../../../cmd/ingitdb/commands/setup.go)
 
 
 ```

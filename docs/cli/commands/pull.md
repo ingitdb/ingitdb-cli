@@ -1,6 +1,6 @@
 ### 🧾 pull` — pull latest changes, resolve conflicts, and rebuild views _(not yet implemented)_
 
-[Source Code](../../cmd/ingitdb/commands/pull.go)
+[Source Code](../../../cmd/ingitdb/commands/pull.go)
 
 
 ```

@@ -1,6 +1,6 @@
 ### 🔹 version` — print build information
 
-[Source Code](../../cmd/ingitdb/commands/version.go)
+[Source Code](../../../cmd/ingitdb/commands/version.go)
 
 
 ```

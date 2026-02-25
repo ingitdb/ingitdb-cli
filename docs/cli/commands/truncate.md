@@ -1,6 +1,6 @@
 ### ⚙️ truncate` — remove all records from a collection _(not yet implemented)_
 
-[Source Code](../../cmd/ingitdb/commands/truncate.go)
+[Source Code](../../../cmd/ingitdb/commands/truncate.go)
 
 
 ```

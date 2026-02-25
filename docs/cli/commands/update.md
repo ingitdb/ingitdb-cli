@@ -1,6 +1,6 @@
 ### 🔹 update record` — update fields of an existing record
 
-[Source Code](../../cmd/ingitdb/commands/update.go)
+[Source Code](../../../cmd/ingitdb/commands/update.go)
 
 
 ```

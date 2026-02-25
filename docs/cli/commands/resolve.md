@@ -1,6 +1,6 @@
 ### 🔹 resolve` — resolve merge conflicts in database files _(not yet implemented)_
 
-[Source Code](../../cmd/ingitdb/commands/resolve.go)
+[Source Code](../../../cmd/ingitdb/commands/resolve.go)
 
 
 ```

@@ -1,6 +1,6 @@
 ### 🧾 materialize` — build generated files from records _(not yet implemented)_
 
-[Source Code](../../cmd/ingitdb/commands/materialize.go)
+[Source Code](../../../cmd/ingitdb/commands/materialize.go)
 
 Top-level command with subcommands for materializing views and README files.
 

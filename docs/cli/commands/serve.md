@@ -1,6 +1,6 @@
 ### 🔹 serve` — start one or more servers _(not yet implemented)_
 
-[Source Code](../../cmd/ingitdb/commands/serve.go)
+[Source Code](../../../cmd/ingitdb/commands/serve.go)
 
 
 ```

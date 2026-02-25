@@ -1,6 +1,6 @@
 ### 🔹 create record` — create a new record
 
-[Source Code](../../cmd/ingitdb/commands/create.go)
+[Source Code](../../../cmd/ingitdb/commands/create.go)
 
 
 ```

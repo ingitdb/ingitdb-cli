@@ -1,7 +1,6 @@
 ### 🔹 read record` — read a single record
 
-[Source Code](../../cmd/ingitdb/commands/read.go)
-
+[Source Code](../../../cmd/ingitdb/commands/read.go)
 
 ```
 ingitdb read record --id=ID [--path=PATH] [--format=yaml|json]
@@ -38,7 +37,8 @@ export GITHUB_TOKEN=ghp_...
 ingitdb read record --github=myorg/private-db --id=users/alice
 ```
 
-See [GitHub Direct Access](features/github-direct-access.md) for more detail.
+See [GitHub Direct Access](../../features/github-direct-access.md) for more detail.
+
+See [Read Examples](read-examples.md) for more usage examples.
 
 ---
-

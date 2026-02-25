@@ -1,6 +1,6 @@
 ### 🔹 find` — search records by value _(not yet implemented)_
 
-[Source Code](../../cmd/ingitdb/commands/find.go)
+[Source Code](../../../cmd/ingitdb/commands/find.go)
 
 
 ```

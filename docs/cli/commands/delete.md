@@ -1,6 +1,6 @@
 ### 🔹 delete` — delete database objects
 
-[Source Code](../../cmd/ingitdb/commands/delete.go)
+[Source Code](../../../cmd/ingitdb/commands/delete.go)
 
 
 Top-level command with four subcommands. `delete record` is implemented; the rest are planned.

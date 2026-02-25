@@ -1,6 +1,6 @@
 ### 🔹 watch` — watch database for changes _(not yet implemented)_
 
-[Source Code](../../cmd/ingitdb/commands/watch.go)
+[Source Code](../../../cmd/ingitdb/commands/watch.go)
 
 
 ```
