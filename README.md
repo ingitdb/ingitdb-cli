@@ -227,32 +227,33 @@ languages:
   - required: en
 ```
 
-## 🛠️ Commands
+## 🛠️ [Commands](docs/cli/)
 
-| Command             | Status     | Description                                              |
-| ------------------- | :--------- | -------------------------------------------------------- |
-| `version`           | ✅ done    | Print build version, commit hash, and date               |
-| `validate`          | ✅ done    | Check every record against its collection schema         |
-| `read record`       | ✅ done    | Read a single record by ID (local or GitHub)             |
-| `create record`     | ✅ done    | Create a new record in a collection                      |
-| `update record`     | ✅ done    | Update fields of an existing record (local or GitHub)    |
-| `delete record`     | ✅ done    | Delete a single record by ID (local or GitHub)           |
-| `list collections`  | ✅ done    | List collection IDs (local or GitHub)                    |
-| `list view`         | 🟡 planned | List view definition                                     |
-| `list subscribers`  | 🟡 planned | List subscribers                                         |
-| `find`              | 🟡 planned | Search records by substring, regex, or exact value       |
-| `delete collection` | 🟡 planned | Remove a collection                                      |
-| `delete view`       | 🟡 planned | Remove view definition                                   |
-| `delete records`    | 🟡 planned | Remove records from a collection                         |
-| `truncate`          | 🟡 planned | Remove all records from a collection, keeping its schema |
-| `query`             | 🟡 planned | Query and format records from a collection               |
-| `materialize`       | 🟡 planned | Build materialized views into `$views/`                  |
-| `pull`              | 🟡 planned | Pull remote changes and rebuild views                    |
-| `watch`             | 🟡 planned | Stream record change events to stdout                    |
-| `serve`             | 🟡 planned | Start MCP, HTTP API, or file-watcher server              |
-| `resolve`           | 🟡 planned | Interactive TUI for resolving data-file merge conflicts  |
-| `setup`             | 🟡 planned | Initialise a new database directory                      |
-| `migrate`           | 🟡 planned | Migrate records between schema versions                  |
+| Command                                           | Status     | Description                                              |
+| ------------------------------------------------- | :--------- | -------------------------------------------------------- |
+| [`version`](docs/cli/commands/version.md)         | ✅ done    | Print build version, commit hash, and date               |
+| [`validate`](docs/cli/commands/validate.md)       | ✅ done    | Check every record against its collection schema         |
+| [`read record`](docs/cli/commands/read.md)        | ✅ done    | Read a single record by ID (local or GitHub)             |
+| [`create record`](docs/cli/commands/create.md)    | ✅ done    | Create a new record in a collection                      |
+| [`update record`](docs/cli/commands/update.md)    | ✅ done    | Update fields of an existing record (local or GitHub)    |
+| [`delete record`](docs/cli/commands/delete.md)    | ✅ done    | Delete a single record by ID (local or GitHub)           |
+| [`list collections`](docs/cli/commands/list.md)   | ✅ done    | List collection IDs (local or GitHub)                    |
+| `list view`                                       | 🟡 planned | List view definition                                     |
+| `list subscribers`                                | 🟡 planned | List subscribers                                         |
+| [`find`](docs/cli/commands/find.md)               | 🟡 planned | Search records by substring, regex, or exact value       |
+| `delete collection`                               | 🟡 planned | Remove a collection                                      |
+| `delete view`                                     | 🟡 planned | Remove view definition                                   |
+| `delete records`                                  | 🟡 planned | Remove records from a collection                         |
+| [`truncate`](docs/cli/commands/truncate.md)       | 🟡 planned | Remove all records from a collection, keeping its schema |
+| [`query`](docs/cli/commands/query.md)             | 🟡 planned | Query and format records from a collection               |
+| [`materialize`](docs/cli/commands/materialize.md) | 🟡 planned | Build materialized views into `$views/`                  |
+| [`pull`](docs/cli/commands/pull.md)               | 🟡 planned | Pull remote changes and rebuild views                    |
+| [`watch`](docs/cli/commands/watch.md)             | 🟡 planned | Stream record change events to stdout                    |
+| [`serve`](docs/cli/commands/serve.md)             | 🟡 planned | Start MCP, HTTP API, or file-watcher server              |
+| [`resolve`](docs/cli/commands/resolve.md)         | 🟡 planned | Interactive TUI for resolving data-file merge conflicts  |
+| [`setup`](docs/cli/commands/setup.md)             | 🟡 planned | Initialise a new database directory                      |
+| [`migrate`](docs/cli/commands/migrate.md)         | 🟡 planned | Migrate records between schema versions                  |
+| [`rebase`](docs/cli/commands/rebase.md)           | ✅ done    | Rebase on top of a base ref and resolve README conflicts |
 
 ### --id format
 
