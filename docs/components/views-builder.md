@@ -55,4 +55,4 @@ Output files for partition values that no longer exist in the data are deleted.
 
 ## 📂 README builder
 
-`README.md` files for collections are a built-in specialization of materialized views. See `docs/components/readme-builders/README.md`.
+`README.md` files for collections are a built-in specialization of materialized views. See `docs/components/readme-builders/collection.md`.

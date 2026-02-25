@@ -3,7 +3,7 @@
 Each collection directory contains an `.collection/definition.yaml` file that describes
 how records are stored and what columns (fields) they have. The file structure maps to the [`CollectionDef`](../../pkg/ingitdb/collection_def.go) type.
 
-See the [README Builder](../components/readme-builders/README.md) documentation for details on how a collection's `README.md` is automatically populated and updated.
+See the [Collection README Builder](../components/readme-builders/collection.md) documentation for details on how a collection's `README.md` is automatically populated and updated.
 
 ## 📂 Top-level fields
 

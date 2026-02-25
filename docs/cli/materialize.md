@@ -2,7 +2,6 @@
 
 [Source Code](../../cmd/ingitdb/commands/materialize.go)
 
-
 Top-level command with subcommands for materializing views and README files.
 
 #### 🔸 materialize collection`
@@ -11,7 +10,7 @@ Top-level command with subcommands for materializing views and README files.
 ingitdb materialize collection [--collection=ID] [--path=PATH]
 ```
 
-Renders the `README.md` file for a collection. If the generated content differs from the existing file, it is automatically updated. See [README Builder](components/readme-builders/README.md) for details on what is included in the generated README.
+Renders the `README.md` file for a collection. If the generated content differs from the existing file, it is automatically updated. See [Collection README Builder](../components/readme-builders/collection.md) for details on what is included in the generated README.
 
 | Flag              | Description                                                                                             |
 | ----------------- | ------------------------------------------------------------------------------------------------------- |
@@ -45,4 +44,3 @@ ingitdb materialize --path=/var/db/myapp
 ```
 
 ---
-
