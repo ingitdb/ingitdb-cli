@@ -24,6 +24,7 @@ func TestRebaseCommand(t *testing.T) {
 
 	// Create a stable initial commit on main
 	runGit(t, tempDir, "commit", "--allow-empty", "-m", "initial commit")
+	runGit(t, tempDir, "branch", "-m", "main")
 
 	// Create a collection README.md
 	readmePath := filepath.Join(tempDir, "docs", "demo-apps", "test", "README.md")
