@@ -20,7 +20,7 @@ func UpdateDocs(ctx context.Context, def *ingitdb.Definition, collectionGlob str
 	}
 
 	for _, col := range targets {
-		changed, err := processCollection(ctx, def, col)
+		changed, err := ProcessCollection(ctx, def, col)
 		if err != nil {
 			result.Errors = append(result.Errors, fmt.Errorf("collection %s: %w", col.ID, err))
 			continue
@@ -35,7 +35,7 @@ func UpdateDocs(ctx context.Context, def *ingitdb.Definition, collectionGlob str
 	return result, nil
 }
 
-func processCollection(ctx context.Context, def *ingitdb.Definition, col *ingitdb.CollectionDef) (bool, error) {
+func ProcessCollection(ctx context.Context, def *ingitdb.Definition, col *ingitdb.CollectionDef) (bool, error) {
 	content, err := BuildCollectionReadme(col, def)
 	if err != nil {
 		return false, err
@@ -120,4 +120,44 @@ func collectSub(col *ingitdb.CollectionDef, recursive bool) []*ingitdb.Collectio
 		}
 	}
 	return subs
+}
+
+// FindCollectionByDir recursively searches for a collection by its directory path
+func FindCollectionByDir(collections map[string]*ingitdb.CollectionDef, dir string) *ingitdb.CollectionDef {
+	for _, col := range collections {
+		if col.DirPath == dir {
+			return col
+		}
+		if found := FindCollectionByDir(col.SubCollections, dir); found != nil {
+			return found
+		}
+	}
+	return nil
+}
+
+// FindCollectionsForConflictingFiles takes a list of conflicted files and a map of allowed resolutions.
+// It returns a list of matched collections and a list of unresolved file paths.
+func FindCollectionsForConflictingFiles(def *ingitdb.Definition, wd string, conflictedFiles []string, resolveItems map[string]bool) (collectionsToUpdate []*ingitdb.CollectionDef, readmesToUpdate []string, unresolved []string) {
+	for _, f := range conflictedFiles {
+		if f == "" {
+			continue
+		}
+		base := strings.ToLower(filepath.Base(f))
+		if base == "readme.md" && resolveItems["readme"] {
+			readmesToUpdate = append(readmesToUpdate, f)
+		} else {
+			unresolved = append(unresolved, f)
+		}
+	}
+
+	for _, readmePath := range readmesToUpdate {
+		absPath := filepath.Join(wd, readmePath)
+		dir := filepath.Dir(absPath)
+		col := FindCollectionByDir(def.Collections, dir)
+		if col != nil {
+			collectionsToUpdate = append(collectionsToUpdate, col)
+		}
+	}
+
+	return collectionsToUpdate, readmesToUpdate, unresolved
 }

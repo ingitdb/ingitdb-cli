@@ -8,8 +8,6 @@
 | -------------- | --------------------------------- |
 | `--help`, `-h` | Print usage information and exit. |
 
-
-
 ## 🖥️ Commands Index
 
 - [version](version.md) — print build information
@@ -29,3 +27,4 @@
 - [delete](delete.md) — delete database objects
 - [truncate](truncate.md) — remove all records from a collection _(not yet implemented)_
 - [migrate](migrate.md) — migrate data between schema versions _(not yet implemented)_
+- [rebase](rebase.md) — rebase on top of a base ref and auto-resolve specific documentation conflicts
