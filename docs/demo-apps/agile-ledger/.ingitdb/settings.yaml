@@ -1,7 +1,3 @@
 default_namespace: agile
-
-rootCollections:
-  teams: teams
-
 languages:
   - required: en

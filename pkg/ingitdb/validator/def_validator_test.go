@@ -11,19 +11,22 @@ import (
 
 func TestReadDefinition(t *testing.T) {
 	for _, tt := range []struct {
-		name string
-		dir  string
-		err  string
+		name            string
+		dir             string
+		err             string
+		wantCollections int
 	}{
 		{
-			name: "missing_root_config_file",
-			dir:  ".",
-			err:  "failed to read root config file .ingitdb.yaml",
+			name:            "missing_root_config_file",
+			dir:             ".",
+			err:             "",
+			wantCollections: 0,
 		},
 		{
-			name: "repo_root",
-			dir:  "../../../",
-			err:  "",
+			name:            "repo_root",
+			dir:             "../../../",
+			err:             "",
+			wantCollections: -1, // any positive count is fine; only check no error
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -44,6 +47,9 @@ func TestReadDefinition(t *testing.T) {
 			}
 			if tt.err == "" && def == nil {
 				t.Fatalf("expected definition to be non-nil")
+			}
+			if tt.err == "" && len(def.Collections) != tt.wantCollections && tt.wantCollections >= 0 {
+				t.Fatalf("expected %d collections, got %d", tt.wantCollections, len(def.Collections))
 			}
 		})
 	}

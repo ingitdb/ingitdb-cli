@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"log"
@@ -12,24 +13,41 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const RootConfigFileName = ".ingitdb.yaml"
+// IngitDBDirName is the directory that holds all inGitDB configuration files.
+const IngitDBDirName = ".ingitdb"
+
+// RootCollectionsFileName is the file that maps collection IDs to local paths.
+// It is a flat YAML map with no wrapper key.
+const RootCollectionsFileName = "root-collections.yaml"
+
+// SettingsFileName is the file that holds per-database settings.
+const SettingsFileName = "settings.yaml"
 
 // NamespaceImportSuffix is the suffix used to identify namespace import keys.
 const NamespaceImportSuffix = ".*"
 
+// Language defines a supported language for this database.
 type Language struct {
 	Required string `yaml:"required,omitempty"`
 	Optional string `yaml:"optional,omitempty"`
 }
 
-type RootConfig struct {
+// Settings holds per-database settings stored in .ingitdb/settings.yaml.
+type Settings struct {
 	// DefaultNamespace is used as the collection ID prefix when this DB is
 	// opened directly (not imported via a namespace import). For example,
 	// if DefaultNamespace is "todo" and the DB has collection "tasks",
 	// it becomes "todo.tasks" when opened directly.
-	DefaultNamespace string            `yaml:"default_namespace,omitempty"`
-	RootCollections  map[string]string `yaml:"rootCollections,omitempty"`
-	Languages        []Language        `yaml:"languages,omitempty"`
+	DefaultNamespace string     `yaml:"default_namespace,omitempty"`
+	Languages        []Language `yaml:"languages,omitempty"`
+}
+
+// RootConfig holds the full configuration for an inGitDB database.
+// Settings is loaded from .ingitdb/settings.yaml.
+// RootCollections is loaded from .ingitdb/root-collections.yaml (flat YAML map).
+type RootConfig struct {
+	Settings
+	RootCollections map[string]string // loaded from root-collections.yaml; no yaml tag (loaded separately)
 }
 
 // IsNamespaceImport returns true if the key ends with ".*" suffix,
@@ -154,16 +172,16 @@ func resolvePath(baseDirPath, path string, userHomeDir func() (string, error)) (
 }
 
 // ResolveNamespaceImports resolves all namespace import keys (ending with ".*")
-// in rootCollections. For each such key, it reads the .ingitdb.yaml file from
-// the referenced directory and imports all its rootCollections with the
-// namespace prefix prepended.
+// in rootCollections. For each such key, it reads the
+// .ingitdb/root-collections.yaml file from the referenced directory and imports
+// all its entries with the namespace prefix prepended.
 //
-// baseDirPath is the directory containing the current .ingitdb.yaml file.
+// baseDirPath is the directory containing the current .ingitdb/ directory.
 //
 // Returns an error if:
 //   - The referenced directory does not exist
-//   - The referenced directory has no .ingitdb.yaml file
-//   - The referenced .ingitdb.yaml has no or empty rootCollections
+//   - The referenced directory has no .ingitdb/root-collections.yaml file
+//   - The referenced root-collections.yaml has no entries
 func (rc *RootConfig) ResolveNamespaceImports(baseDirPath string) error {
 	return rc.resolveNamespaceImports(baseDirPath, os.UserHomeDir, os.ReadFile, osStat)
 }
@@ -211,19 +229,19 @@ func (rc *RootConfig) resolveNamespaceImports(
 			return fmt.Errorf("namespace import path is not a directory for key %q, path=%q", key, path)
 		}
 
-		// Read .ingitdb.yaml from the referenced directory
-		configFilePath := filepath.Join(resolvedPath, RootConfigFileName)
-		data, err := readFile(configFilePath)
+		// Read .ingitdb/root-collections.yaml from the referenced directory
+		collectionsFilePath := filepath.Join(resolvedPath, IngitDBDirName, RootCollectionsFileName)
+		data, err := readFile(collectionsFilePath)
 		if err != nil {
-			return fmt.Errorf("failed to read %s for namespace import key %q, path=%q: %w", RootConfigFileName, key, path, err)
+			return fmt.Errorf("failed to read %s for namespace import key %q, path=%q: %w", RootCollectionsFileName, key, path, err)
 		}
 
-		var importedConfig RootConfig
-		if err = yaml.Unmarshal(data, &importedConfig); err != nil {
-			return fmt.Errorf("failed to parse %s for namespace import key %q, path=%q: %w", RootConfigFileName, key, path, err)
+		var importedCollections map[string]string
+		if err = yaml.Unmarshal(data, &importedCollections); err != nil {
+			return fmt.Errorf("failed to parse %s for namespace import key %q, path=%q: %w", RootCollectionsFileName, key, path, err)
 		}
 
-		if len(importedConfig.RootCollections) == 0 {
+		if len(importedCollections) == 0 {
 			return fmt.Errorf("namespace import has no rootCollections for key %q, path=%q", key, path)
 		}
 
@@ -231,7 +249,7 @@ func (rc *RootConfig) resolveNamespaceImports(
 		delete(rc.RootCollections, key)
 
 		// Import collections with prefix
-		for importedID, importedPath := range importedConfig.RootCollections {
+		for importedID, importedPath := range importedCollections {
 			newID := prefix + "." + importedID
 			// Make imported paths relative to the current config's base dir
 			newPath := filepath.Join(path, importedPath)
@@ -242,45 +260,102 @@ func (rc *RootConfig) resolveNamespaceImports(
 	return nil
 }
 
-func ReadRootConfigFromFile(dirPath string, o ingitdb.ReadOptions) (rootConfig RootConfig, err error) {
-	return readRootConfigFromFile(dirPath, o, os.OpenFile)
+// ReadSettingsFromFile reads .ingitdb/settings.yaml from dirPath.
+// If the file does not exist, returns zero Settings with no error.
+func ReadSettingsFromFile(dirPath string, o ingitdb.ReadOptions) (Settings, error) {
+	return readSettingsFromFile(dirPath, o, os.ReadFile)
 }
 
-func readRootConfigFromFile(dirPath string, o ingitdb.ReadOptions, openFile func(string, int, os.FileMode) (*os.File, error)) (rootConfig RootConfig, err error) {
+func readSettingsFromFile(dirPath string, _ ingitdb.ReadOptions, readFile func(string) ([]byte, error)) (Settings, error) {
+	if dirPath == "" {
+		dirPath = "."
+	}
+	filePath := filepath.Join(dirPath, IngitDBDirName, SettingsFileName)
+	data, err := readFile(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return Settings{}, nil
+		}
+		return Settings{}, fmt.Errorf("failed to read settings file: %w", err)
+	}
+	dec := yaml.NewDecoder(bytes.NewReader(data))
+	dec.KnownFields(true)
+	var s Settings
+	if decErr := dec.Decode(&s); decErr != nil {
+		return Settings{}, fmt.Errorf("failed to parse settings file: %w", decErr)
+	}
+	return s, nil
+}
+
+// ReadRootCollectionsFromFile reads .ingitdb/root-collections.yaml from dirPath.
+// If the file does not exist, returns nil map with no error.
+func ReadRootCollectionsFromFile(dirPath string, o ingitdb.ReadOptions) (map[string]string, error) {
+	return readRootCollectionsFromFile(dirPath, o, os.ReadFile)
+}
+
+func readRootCollectionsFromFile(dirPath string, _ ingitdb.ReadOptions, readFile func(string) ([]byte, error)) (map[string]string, error) {
+	if dirPath == "" {
+		dirPath = "."
+	}
+	filePath := filepath.Join(dirPath, IngitDBDirName, RootCollectionsFileName)
+	data, err := readFile(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to read root collections file: %w", err)
+	}
+	dec := yaml.NewDecoder(bytes.NewReader(data))
+	dec.KnownFields(true)
+	var m map[string]string
+	if decErr := dec.Decode(&m); decErr != nil {
+		return nil, fmt.Errorf("failed to parse root collections file: %w", decErr)
+	}
+	return m, nil
+}
+
+// ReadRootConfigFromFile reads both .ingitdb/settings.yaml and
+// .ingitdb/root-collections.yaml from dirPath, merges them into a RootConfig,
+// optionally validates, and resolves namespace imports.
+// Missing files are not errors; zero-values are used instead.
+func ReadRootConfigFromFile(dirPath string, o ingitdb.ReadOptions) (RootConfig, error) {
+	return readRootConfigFromFile(dirPath, o, os.ReadFile)
+}
+
+func readRootConfigFromFile(dirPath string, o ingitdb.ReadOptions, readFile func(string) ([]byte, error)) (rootConfig RootConfig, err error) {
 	defer func() {
 		r := recover()
 		if r != nil {
 			err = fmt.Errorf("panic: %v", r)
 		}
 	}()
-	if dirPath == "" {
-		dirPath = "."
-	}
-	filePath := filepath.Join(dirPath, RootConfigFileName)
 
-	var file *os.File
-	if file, err = openFile(filePath, os.O_RDONLY, 0666); err != nil {
-		err = fmt.Errorf("failed to open root config file: %w", err)
+	var settings Settings
+	settings, err = readSettingsFromFile(dirPath, o, readFile)
+	if err != nil {
 		return
 	}
 
-	decoder := yaml.NewDecoder(file)
-	decoder.KnownFields(true)
-
-	if err = decoder.Decode(&rootConfig); err != nil {
-		err = fmt.Errorf("failed to parse root config file: %w\nNote: Expected keys in .ingitdb.yaml include 'rootCollections'", err)
+	var rootCollections map[string]string
+	rootCollections, err = readRootCollectionsFromFile(dirPath, o, readFile)
+	if err != nil {
 		return
+	}
+
+	rootConfig = RootConfig{
+		Settings:        settings,
+		RootCollections: rootCollections,
 	}
 
 	if o.IsValidationRequired() {
 		if err = rootConfig.Validate(); err != nil {
 			return rootConfig, fmt.Errorf("content of root config is not valid: %w", err)
 		}
-		log.Println(".ingitdb.yaml is valid")
+		log.Printf("%s/%s and %s/%s are valid", IngitDBDirName, SettingsFileName, IngitDBDirName, RootCollectionsFileName)
 	}
 
 	// Resolve namespace imports after validation
-	if err = rootConfig.ResolveNamespaceImports(dirPath); err != nil {
+	if err = rootConfig.resolveNamespaceImports(dirPath, os.UserHomeDir, readFile, osStat); err != nil {
 		return rootConfig, fmt.Errorf("failed to resolve namespace imports: %w", err)
 	}
 

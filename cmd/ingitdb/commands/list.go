@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"sort"
 
 	"github.com/urfave/cli/v3"
@@ -101,21 +102,23 @@ func listCollectionsGitHub(ctx context.Context, githubValue, token string) error
 	if newReaderErr != nil {
 		return fmt.Errorf("failed to create github file reader: %w", newReaderErr)
 	}
-	rootConfigContent, found, readFileErr := fileReader.ReadFile(ctx, config.RootConfigFileName)
+	rootCollectionsPath := path.Join(config.IngitDBDirName, config.RootCollectionsFileName)
+	rootCollectionsContent, found, readFileErr := fileReader.ReadFile(ctx, rootCollectionsPath)
 	if readFileErr != nil {
-		return fmt.Errorf("failed to read .ingitdb.yaml: %w", readFileErr)
+		return fmt.Errorf("failed to read %s: %w", rootCollectionsPath, readFileErr)
 	}
 	if !found {
-		return fmt.Errorf("file not found: %s", config.RootConfigFileName)
+		return fmt.Errorf("file not found: %s", rootCollectionsPath)
 	}
-	var rootConfig config.RootConfig
-	unmarshalErr := yaml.Unmarshal(rootConfigContent, &rootConfig)
+	var rootCollections map[string]string
+	unmarshalErr := yaml.Unmarshal(rootCollectionsContent, &rootCollections)
 	if unmarshalErr != nil {
-		return fmt.Errorf("failed to parse .ingitdb.yaml: %w", unmarshalErr)
+		return fmt.Errorf("failed to parse %s: %w", rootCollectionsPath, unmarshalErr)
 	}
+	rootConfig := config.RootConfig{RootCollections: rootCollections}
 	validateErr := rootConfig.Validate()
 	if validateErr != nil {
-		return fmt.Errorf("invalid .ingitdb.yaml: %w", validateErr)
+		return fmt.Errorf("invalid %s: %w", rootCollectionsPath, validateErr)
 	}
 	ids := make([]string, 0)
 	for rootID := range rootConfig.RootCollections {

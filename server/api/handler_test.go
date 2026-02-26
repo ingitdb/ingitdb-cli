@@ -149,8 +149,7 @@ func (db *fakeDB) ExecuteQueryToRecordsetReader(_ context.Context, _ dal.Query, 
 
 // --- helper to build a test handler ---
 
-const rootConfigYAML = `rootCollections:
-  countries: data/countries
+const rootConfigYAML = `countries: data/countries
 `
 
 const countryColDefYAML = `record_file:
@@ -169,7 +168,7 @@ func newTestHandler() (*Handler, *fakeStore) {
 	h := &Handler{
 		newGitHubFileReader: func(cfg dalgo2ghingitdb.Config) (dalgo2ghingitdb.FileReader, error) {
 			return &fakeFileReader{files: map[string][]byte{
-				".ingitdb.yaml": []byte(rootConfigYAML),
+				".ingitdb/root-collections.yaml":            []byte(rootConfigYAML),
 				"data/countries/.collection/countries.yaml": []byte(countryColDefYAML),
 			}}, nil
 		},
@@ -658,7 +657,7 @@ func TestListCollections_RequiresAuth(t *testing.T) {
 func TestReadDefinitionFromGitHub_Success(t *testing.T) {
 	t.Parallel()
 	fr := &fakeFileReader{files: map[string][]byte{
-		".ingitdb.yaml": []byte(rootConfigYAML),
+		".ingitdb/root-collections.yaml":            []byte(rootConfigYAML),
 		"data/countries/.collection/countries.yaml": []byte(countryColDefYAML),
 	}}
 	def, err := readDefinitionFromGitHub(context.Background(), fr)

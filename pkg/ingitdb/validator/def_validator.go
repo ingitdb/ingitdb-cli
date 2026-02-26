@@ -27,7 +27,7 @@ func ReadDefinition(rootPath string, o ...ingitdb.ReadOption) (def *ingitdb.Defi
 	var rootConfig config.RootConfig
 	rootConfig, err = config.ReadRootConfigFromFile(rootPath, opts)
 	if err != nil {
-		err = fmt.Errorf("failed to read root config file %s: %v", config.RootConfigFileName, err)
+		err = fmt.Errorf("failed to read root config from %s: %v", config.IngitDBDirName, err)
 		return
 	}
 	def, err = readRootCollections(rootPath, rootConfig, opts)

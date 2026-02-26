@@ -354,17 +354,19 @@ func (h *Handler) authenticatedToken(w http.ResponseWriter, r *http.Request) (st
 
 // readDefinitionFromGitHub reads the inGitDB definition from a GitHub repository.
 func readDefinitionFromGitHub(ctx context.Context, fileReader dalgo2ghingitdb.FileReader) (*ingitdb.Definition, error) {
-	rootConfigContent, found, err := fileReader.ReadFile(ctx, config.RootConfigFileName)
+	rootCollectionsPath := path.Join(config.IngitDBDirName, config.RootCollectionsFileName)
+	rootConfigContent, found, err := fileReader.ReadFile(ctx, rootCollectionsPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read %s: %w", config.RootConfigFileName, err)
+		return nil, fmt.Errorf("failed to read %s: %w", rootCollectionsPath, err)
 	}
 	if !found {
-		return nil, fmt.Errorf("file not found: %s", config.RootConfigFileName)
+		return nil, fmt.Errorf("file not found: %s", rootCollectionsPath)
 	}
-	var rootConfig config.RootConfig
-	if err = yaml.Unmarshal(rootConfigContent, &rootConfig); err != nil {
-		return nil, fmt.Errorf("failed to parse %s: %w", config.RootConfigFileName, err)
+	var rootCollections map[string]string
+	if err = yaml.Unmarshal(rootConfigContent, &rootCollections); err != nil {
+		return nil, fmt.Errorf("failed to parse %s: %w", rootCollectionsPath, err)
 	}
+	rootConfig := config.RootConfig{RootCollections: rootCollections}
 	def := &ingitdb.Definition{Collections: make(map[string]*ingitdb.CollectionDef)}
 	for id, colPath := range rootConfig.RootCollections {
 		colDefPath := path.Join(colPath, ingitdb.SchemaDir, id+".yaml")

@@ -1,17 +1,25 @@
 # ⚙️ inGitDB Configuration
 
-# ⚙️ User config - `~/.ingitdb/.ingitdb-user.yaml`
+## ⚙️ User config — `~/.ingitdb/.ingitdb-user.yaml`
 
-List inGitDB often open by user – used to improve user experience in the interactive mode.
-This is not required as `ingitdb` CLI will autodetect repository config when started in a dir under Git repo.
+Lists inGitDB databases recently opened by the user — used to improve the experience in
+interactive mode. Not required; the `ingitdb` CLI auto-detects the repository config when
+started inside any directory under a Git repo.
 
-# ⚙️ Repository config
+## ⚙️ Repository config — `.ingitdb/` directory
 
-At the root of the repository you should have a `.ingitdb.yaml` file that defines:
+At the root of every inGitDB-enabled repository there is a `.ingitdb/` directory.
+All files inside it are optional — an empty directory (or no directory) represents a valid,
+empty inGitDB instance.
 
-- [root_collections](root-collections.md) (including [namespace imports](root-collections.md#namespace-imports) and [`default_namespace`](root-collections.md#default_namespace))
-- [languages](languages.md)
+| File                              | Purpose                                                                          |
+| --------------------------------- | -------------------------------------------------------------------------------- |
+| `.ingitdb/root-collections.yaml`  | [Root collections](root-collections.md) — flat map of collection IDs → paths, including [namespace imports](root-collections.md#namespace-imports) |
+| `.ingitdb/settings.yaml`          | Repository settings: [`default_namespace`](root-collections.md#default_namespace) and [languages](languages.md) |
+| `.ingitdb/README.md`              | Human-readable overview and stats (documentation only, no code impact)           |
+
+Full schema reference for all config files: [`docs/schema/root-config.md`](../schema/root-config.md)
 
 Each collection directory contains an `.collection/definition.yaml` file:
 
-- [collection definitions](../schema/README.md)
+- [Collection schema definitions](../schema/README.md)

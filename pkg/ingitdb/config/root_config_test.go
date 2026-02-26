@@ -157,21 +157,21 @@ func TestRootConfigValidate(t *testing.T) {
 		{
 			name: "valid_default_namespace",
 			rc: &RootConfig{
-				DefaultNamespace: "todo",
+				Settings: Settings{DefaultNamespace: "todo"},
 			},
 			err: "",
 		},
 		{
 			name: "valid_default_namespace_dotted",
 			rc: &RootConfig{
-				DefaultNamespace: "app.data",
+				Settings: Settings{DefaultNamespace: "app.data"},
 			},
 			err: "",
 		},
 		{
 			name: "invalid_default_namespace",
 			rc: &RootConfig{
-				DefaultNamespace: ".bad",
+				Settings: Settings{DefaultNamespace: ".bad"},
 			},
 			err: "invalid default_namespace",
 		},
@@ -281,10 +281,12 @@ func TestRootConfigValidate(t *testing.T) {
 			name: "valid_languages",
 			rc: &RootConfig{
 				RootCollections: map[string]string{"foo": "bar"},
-				Languages: []Language{
-					{Required: "en"},
-					{Required: "fr"},
-					{Optional: "es"},
+				Settings: Settings{
+					Languages: []Language{
+						{Required: "en"},
+						{Required: "fr"},
+						{Optional: "es"},
+					},
 				},
 			},
 			err: "",
@@ -293,8 +295,10 @@ func TestRootConfigValidate(t *testing.T) {
 			name: "invalid_languages_both_set",
 			rc: &RootConfig{
 				RootCollections: map[string]string{"foo": "bar"},
-				Languages: []Language{
-					{Required: "en", Optional: "es"},
+				Settings: Settings{
+					Languages: []Language{
+						{Required: "en", Optional: "es"},
+					},
 				},
 			},
 			err: "cannot have both required and optional fields",
@@ -303,8 +307,10 @@ func TestRootConfigValidate(t *testing.T) {
 			name: "invalid_languages_neither_set",
 			rc: &RootConfig{
 				RootCollections: map[string]string{"foo": "bar"},
-				Languages: []Language{
-					{},
+				Settings: Settings{
+					Languages: []Language{
+						{},
+					},
 				},
 			},
 			err: "must have either required or optional field",
@@ -313,9 +319,11 @@ func TestRootConfigValidate(t *testing.T) {
 			name: "invalid_languages_order",
 			rc: &RootConfig{
 				RootCollections: map[string]string{"foo": "bar"},
-				Languages: []Language{
-					{Optional: "en"},
-					{Required: "fr"},
+				Settings: Settings{
+					Languages: []Language{
+						{Optional: "en"},
+						{Required: "fr"},
+					},
 				},
 			},
 			err: "must be before optional languages",
@@ -324,8 +332,10 @@ func TestRootConfigValidate(t *testing.T) {
 			name: "invalid_languages_code_short",
 			rc: &RootConfig{
 				RootCollections: map[string]string{"foo": "bar"},
-				Languages: []Language{
-					{Required: "a"},
+				Settings: Settings{
+					Languages: []Language{
+						{Required: "a"},
+					},
 				},
 			},
 			err: "too short",
@@ -334,8 +344,10 @@ func TestRootConfigValidate(t *testing.T) {
 			name: "invalid_languages_code_chars",
 			rc: &RootConfig{
 				RootCollections: map[string]string{"foo": "bar"},
-				Languages: []Language{
-					{Required: "en$US"},
+				Settings: Settings{
+					Languages: []Language{
+						{Required: "en$US"},
+					},
 				},
 			},
 			err: "contains invalid characters",
@@ -363,6 +375,19 @@ func TestRootConfigValidate(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// writeIngitDBFile writes content to a file within the .ingitdb sub-directory
+// of dir, creating .ingitdb/ if needed.
+func writeIngitDBFile(t *testing.T, dir, filename string, content []byte) {
+	t.Helper()
+	ingitDir := filepath.Join(dir, IngitDBDirName)
+	if err := os.MkdirAll(ingitDir, 0755); err != nil {
+		t.Fatalf("create %s dir: %v", IngitDBDirName, err)
+	}
+	if err := os.WriteFile(filepath.Join(ingitDir, filename), content, 0644); err != nil {
+		t.Fatalf("write %s: %v", filename, err)
 	}
 }
 
@@ -409,10 +434,8 @@ func TestResolveNamespaceImports(t *testing.T) {
 		if err := os.MkdirAll(subDir, 0755); err != nil {
 			t.Fatal(err)
 		}
-		content := []byte("rootCollections:\n  teams: teams\n  sprints: sprints\n")
-		if err := os.WriteFile(filepath.Join(subDir, RootConfigFileName), content, 0644); err != nil {
-			t.Fatal(err)
-		}
+		// Write flat root-collections.yaml in sub/.ingitdb/
+		writeIngitDBFile(t, subDir, RootCollectionsFileName, []byte("teams: teams\nsprints: sprints\n"))
 
 		rc := &RootConfig{RootCollections: map[string]string{
 			"agile.*": "sub",
@@ -489,7 +512,7 @@ func TestResolveNamespaceImports(t *testing.T) {
 		if err := os.MkdirAll(subDir, 0755); err != nil {
 			t.Fatal(err)
 		}
-		// No .ingitdb.yaml in subDir
+		// No .ingitdb/root-collections.yaml in subDir
 
 		rc := &RootConfig{RootCollections: map[string]string{
 			"agile.*": "sub",
@@ -512,10 +535,8 @@ func TestResolveNamespaceImports(t *testing.T) {
 		if err := os.MkdirAll(subDir, 0755); err != nil {
 			t.Fatal(err)
 		}
-		content := []byte("languages:\n  - required: en\n")
-		if err := os.WriteFile(filepath.Join(subDir, RootConfigFileName), content, 0644); err != nil {
-			t.Fatal(err)
-		}
+		// Write an empty flat map
+		writeIngitDBFile(t, subDir, RootCollectionsFileName, []byte("{}\n"))
 
 		rc := &RootConfig{RootCollections: map[string]string{
 			"agile.*": "sub",
@@ -538,10 +559,7 @@ func TestResolveNamespaceImports(t *testing.T) {
 		if err := os.MkdirAll(subDir, 0755); err != nil {
 			t.Fatal(err)
 		}
-		content := []byte("{{invalid yaml")
-		if err := os.WriteFile(filepath.Join(subDir, RootConfigFileName), content, 0644); err != nil {
-			t.Fatal(err)
-		}
+		writeIngitDBFile(t, subDir, RootCollectionsFileName, []byte("{{invalid yaml"))
 
 		rc := &RootConfig{RootCollections: map[string]string{
 			"agile.*": "sub",
@@ -586,10 +604,7 @@ func TestResolveNamespaceImports(t *testing.T) {
 		if err := os.MkdirAll(absSubDir, 0755); err != nil {
 			t.Fatal(err)
 		}
-		content := []byte("rootCollections:\n  items: items\n")
-		if err := os.WriteFile(filepath.Join(absSubDir, RootConfigFileName), content, 0644); err != nil {
-			t.Fatal(err)
-		}
+		writeIngitDBFile(t, absSubDir, RootCollectionsFileName, []byte("items: items\n"))
 
 		rc := &RootConfig{RootCollections: map[string]string{
 			"ns.*": absSubDir,
@@ -615,10 +630,7 @@ func TestResolveNamespaceImports(t *testing.T) {
 		if err := os.MkdirAll(homeSubDir, 0755); err != nil {
 			t.Fatal(err)
 		}
-		content := []byte("rootCollections:\n  records: records\n")
-		if err := os.WriteFile(filepath.Join(homeSubDir, RootConfigFileName), content, 0644); err != nil {
-			t.Fatal(err)
-		}
+		writeIngitDBFile(t, homeSubDir, RootCollectionsFileName, []byte("records: records\n"))
 
 		fakeHome := func() (string, error) {
 			return dir, nil
@@ -648,10 +660,7 @@ func TestResolveNamespaceImports(t *testing.T) {
 		if err := os.MkdirAll(subDir, 0755); err != nil {
 			t.Fatal(err)
 		}
-		content := []byte("rootCollections:\n  teams: teams\n")
-		if err := os.WriteFile(filepath.Join(subDir, RootConfigFileName), content, 0644); err != nil {
-			t.Fatal(err)
-		}
+		writeIngitDBFile(t, subDir, RootCollectionsFileName, []byte("teams: teams\n"))
 
 		rc := &RootConfig{RootCollections: map[string]string{
 			"companies": "companies-path",
@@ -682,6 +691,125 @@ func TestResolveNamespaceImports(t *testing.T) {
 	})
 }
 
+func TestReadSettingsFromFile(t *testing.T) {
+	t.Parallel()
+
+	t.Run("missing_file_returns_zero_value", func(t *testing.T) {
+		t.Parallel()
+		dir := t.TempDir()
+		s, err := ReadSettingsFromFile(dir, ingitdb.NewReadOptions())
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		if s.DefaultNamespace != "" {
+			t.Fatalf("expected empty DefaultNamespace, got %q", s.DefaultNamespace)
+		}
+		if len(s.Languages) != 0 {
+			t.Fatalf("expected no languages, got %d", len(s.Languages))
+		}
+	})
+
+	t.Run("valid_settings", func(t *testing.T) {
+		t.Parallel()
+		dir := t.TempDir()
+		writeIngitDBFile(t, dir, SettingsFileName, []byte("default_namespace: myapp\nlanguages:\n  - required: en\n  - optional: fr\n"))
+		s, err := ReadSettingsFromFile(dir, ingitdb.NewReadOptions())
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if s.DefaultNamespace != "myapp" {
+			t.Fatalf("expected default_namespace 'myapp', got %q", s.DefaultNamespace)
+		}
+		if len(s.Languages) != 2 {
+			t.Fatalf("expected 2 languages, got %d", len(s.Languages))
+		}
+	})
+
+	t.Run("unknown_field_returns_error", func(t *testing.T) {
+		t.Parallel()
+		dir := t.TempDir()
+		writeIngitDBFile(t, dir, SettingsFileName, []byte("unknown_field: value\n"))
+		_, err := ReadSettingsFromFile(dir, ingitdb.NewReadOptions())
+		if err == nil {
+			t.Fatal("expected error for unknown field, got nil")
+		}
+		if !strings.Contains(err.Error(), "failed to parse settings file") {
+			t.Fatalf("expected 'failed to parse settings file' error, got %q", err.Error())
+		}
+	})
+
+	t.Run("empty_dir_path_treated_as_dot", func(t *testing.T) {
+		t.Parallel()
+		// With "" dirPath, should not error (no .ingitdb/settings.yaml at ".")
+		s, err := ReadSettingsFromFile("", ingitdb.NewReadOptions())
+		if err != nil {
+			t.Fatalf("expected no error for empty dirPath, got %v", err)
+		}
+		// zero-value expected
+		if s.DefaultNamespace != "" {
+			t.Fatalf("expected empty DefaultNamespace, got %q", s.DefaultNamespace)
+		}
+	})
+}
+
+func TestReadRootCollectionsFromFile(t *testing.T) {
+	t.Parallel()
+
+	t.Run("missing_file_returns_nil_map", func(t *testing.T) {
+		t.Parallel()
+		dir := t.TempDir()
+		m, err := ReadRootCollectionsFromFile(dir, ingitdb.NewReadOptions())
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		if m != nil {
+			t.Fatalf("expected nil map, got %v", m)
+		}
+	})
+
+	t.Run("valid_flat_map", func(t *testing.T) {
+		t.Parallel()
+		dir := t.TempDir()
+		writeIngitDBFile(t, dir, RootCollectionsFileName, []byte("companies: test-ingitdb/companies\ntodo: docs/todo\n"))
+		m, err := ReadRootCollectionsFromFile(dir, ingitdb.NewReadOptions())
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(m) != 2 {
+			t.Fatalf("expected 2 entries, got %d", len(m))
+		}
+		if m["companies"] != "test-ingitdb/companies" {
+			t.Errorf("unexpected companies path: %q", m["companies"])
+		}
+		if m["todo"] != "docs/todo" {
+			t.Errorf("unexpected todo path: %q", m["todo"])
+		}
+	})
+
+	t.Run("invalid_yaml_returns_error", func(t *testing.T) {
+		t.Parallel()
+		dir := t.TempDir()
+		writeIngitDBFile(t, dir, RootCollectionsFileName, []byte("{{invalid"))
+		_, err := ReadRootCollectionsFromFile(dir, ingitdb.NewReadOptions())
+		if err == nil {
+			t.Fatal("expected error for invalid YAML, got nil")
+		}
+		if !strings.Contains(err.Error(), "failed to parse root collections file") {
+			t.Fatalf("expected 'failed to parse root collections file' error, got %q", err.Error())
+		}
+	})
+
+	t.Run("empty_dir_path_treated_as_dot", func(t *testing.T) {
+		t.Parallel()
+		m, err := ReadRootCollectionsFromFile("", ingitdb.NewReadOptions())
+		if err != nil {
+			t.Fatalf("expected no error for empty dirPath, got %v", err)
+		}
+		// Likely nil since no .ingitdb/root-collections.yaml at "."
+		_ = m
+	})
+}
+
 func TestReadRootConfigFromFile(t *testing.T) {
 	t.Parallel()
 
@@ -695,33 +823,44 @@ func TestReadRootConfigFromFile(t *testing.T) {
 		verify        func(t *testing.T, rc RootConfig)
 	}{
 		{
-			name:          "missing_file",
+			name:          "missing_files_returns_zero_value",
 			options:       ingitdb.NewReadOptions(),
-			expectedError: "failed to open root config file",
+			expectedError: "",
+			verify: func(t *testing.T, rc RootConfig) {
+				if rc.DefaultNamespace != "" {
+					t.Errorf("expected empty DefaultNamespace, got %q", rc.DefaultNamespace)
+				}
+				if rc.RootCollections != nil {
+					t.Errorf("expected nil RootCollections, got %v", rc.RootCollections)
+				}
+			},
 		},
 		{
-			name:          "empty_dir_path",
+			name:          "empty_dir_path_returns_zero_value",
 			options:       ingitdb.NewReadOptions(),
 			dirPath:       "",
 			useDirPath:    true,
-			expectedError: "failed to open root config file",
+			expectedError: "",
+			verify: func(t *testing.T, rc RootConfig) {
+				if rc.DefaultNamespace != "" {
+					t.Errorf("expected empty DefaultNamespace, got %q", rc.DefaultNamespace)
+				}
+			},
 		},
 		{
-			name: "unknown_field",
+			name: "unknown_field_in_settings",
 			setup: func(dir string) error {
-				filePath := filepath.Join(dir, RootConfigFileName)
-				content := []byte("unknown: value\n")
-				return os.WriteFile(filePath, content, 0666)
+				writeIngitDBFile(t, dir, SettingsFileName, []byte("unknown: value\n"))
+				return nil
 			},
 			options:       ingitdb.NewReadOptions(),
-			expectedError: "failed to parse root config file",
+			expectedError: "failed to parse settings file",
 		},
 		{
 			name: "invalid_content_with_validation",
 			setup: func(dir string) error {
-				filePath := filepath.Join(dir, RootConfigFileName)
-				content := []byte("rootCollections:\n  \"\": \"path\"\n")
-				return os.WriteFile(filePath, content, 0666)
+				writeIngitDBFile(t, dir, RootCollectionsFileName, []byte("\"\": \"path\"\n"))
+				return nil
 			},
 			options:       ingitdb.NewReadOptions(ingitdb.Validate()),
 			expectedError: "content of root config is not valid",
@@ -729,9 +868,8 @@ func TestReadRootConfigFromFile(t *testing.T) {
 		{
 			name: "valid_content_with_validation",
 			setup: func(dir string) error {
-				filePath := filepath.Join(dir, RootConfigFileName)
-				content := []byte("rootCollections:\n  countries: \"geo/countries\"\n")
-				return os.WriteFile(filePath, content, 0666)
+				writeIngitDBFile(t, dir, RootCollectionsFileName, []byte("countries: \"geo/countries\"\n"))
+				return nil
 			},
 			options:       ingitdb.NewReadOptions(ingitdb.Validate()),
 			expectedError: "",
@@ -739,9 +877,9 @@ func TestReadRootConfigFromFile(t *testing.T) {
 		{
 			name: "default_namespace_parsed",
 			setup: func(dir string) error {
-				filePath := filepath.Join(dir, RootConfigFileName)
-				content := []byte("default_namespace: myapp\nrootCollections:\n  users: users\n")
-				return os.WriteFile(filePath, content, 0666)
+				writeIngitDBFile(t, dir, SettingsFileName, []byte("default_namespace: myapp\n"))
+				writeIngitDBFile(t, dir, RootCollectionsFileName, []byte("users: users\n"))
+				return nil
 			},
 			options:       ingitdb.NewReadOptions(ingitdb.Validate()),
 			expectedError: "",
@@ -754,13 +892,8 @@ func TestReadRootConfigFromFile(t *testing.T) {
 		{
 			name: "valid_languages_yaml",
 			setup: func(dir string) error {
-				filePath := filepath.Join(dir, RootConfigFileName)
-				content := []byte(`
-languages:
-  - required: en
-  - optional: fr
-`)
-				return os.WriteFile(filePath, content, 0666)
+				writeIngitDBFile(t, dir, SettingsFileName, []byte("languages:\n  - required: en\n  - optional: fr\n"))
+				return nil
 			},
 			options:       ingitdb.NewReadOptions(ingitdb.Validate()),
 			expectedError: "",
@@ -779,19 +912,16 @@ languages:
 		{
 			name: "namespace_import_integration",
 			setup: func(dir string) error {
-				// Create the main config with a namespace import
-				mainContent := []byte("rootCollections:\n  agile.*: sub\n")
-				if err := os.WriteFile(filepath.Join(dir, RootConfigFileName), mainContent, 0666); err != nil {
-					return err
-				}
+				// Main DB: root-collections.yaml references sub dir via namespace import
+				writeIngitDBFile(t, dir, RootCollectionsFileName, []byte("agile.*: sub\n"))
 
-				// Create the sub directory with its own config
+				// Sub directory with its own .ingitdb/root-collections.yaml
 				subDir := filepath.Join(dir, "sub")
 				if err := os.MkdirAll(subDir, 0755); err != nil {
 					return err
 				}
-				subContent := []byte("rootCollections:\n  teams: teams\n  sprints: sprints\n")
-				return os.WriteFile(filepath.Join(subDir, RootConfigFileName), subContent, 0644)
+				writeIngitDBFile(t, subDir, RootCollectionsFileName, []byte("teams: teams\nsprints: sprints\n"))
+				return nil
 			},
 			options:       ingitdb.NewReadOptions(),
 			expectedError: "",
@@ -814,8 +944,8 @@ languages:
 		{
 			name: "namespace_import_dir_not_found",
 			setup: func(dir string) error {
-				content := []byte("rootCollections:\n  agile.*: nonexistent\n")
-				return os.WriteFile(filepath.Join(dir, RootConfigFileName), content, 0666)
+				writeIngitDBFile(t, dir, RootCollectionsFileName, []byte("agile.*: nonexistent\n"))
+				return nil
 			},
 			options:       ingitdb.NewReadOptions(),
 			expectedError: "failed to resolve namespace imports",
@@ -823,16 +953,13 @@ languages:
 		{
 			name: "namespace_import_with_validation",
 			setup: func(dir string) error {
-				mainContent := []byte("rootCollections:\n  agile.*: sub\n")
-				if err := os.WriteFile(filepath.Join(dir, RootConfigFileName), mainContent, 0666); err != nil {
-					return err
-				}
+				writeIngitDBFile(t, dir, RootCollectionsFileName, []byte("agile.*: sub\n"))
 				subDir := filepath.Join(dir, "sub")
 				if err := os.MkdirAll(subDir, 0755); err != nil {
 					return err
 				}
-				subContent := []byte("rootCollections:\n  teams: teams\n")
-				return os.WriteFile(filepath.Join(subDir, RootConfigFileName), subContent, 0644)
+				writeIngitDBFile(t, subDir, RootCollectionsFileName, []byte("teams: teams\n"))
+				return nil
 			},
 			options:       ingitdb.NewReadOptions(ingitdb.Validate()),
 			expectedError: "",
@@ -889,11 +1016,11 @@ languages:
 func TestReadRootConfigFromFile_PanicRecovery(t *testing.T) {
 	t.Parallel()
 
-	openFile := func(string, int, os.FileMode) (*os.File, error) {
+	readFile := func(string) ([]byte, error) {
 		panic("boom")
 	}
 
-	_, err := readRootConfigFromFile("irrelevant", ingitdb.NewReadOptions(), openFile)
+	_, err := readRootConfigFromFile("irrelevant", ingitdb.NewReadOptions(), readFile)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}

@@ -163,7 +163,7 @@ func TestListCollectionsGitHub_WithMock(t *testing.T) {
 
 	reader := &fakeFileReader{
 		files: map[string][]byte{
-			".ingitdb.yaml": []byte("rootCollections:\n  countries: test-ingitdb/countries\n  todo.tags: docs/demo-apps/todo/tags\n"),
+			".ingitdb/root-collections.yaml": []byte("countries: test-ingitdb/countries\ntodo.tags: docs/demo-apps/todo/tags\n"),
 		},
 	}
 	mockFactory := NewMockGitHubFileReaderFactory(ctrl)
@@ -233,7 +233,7 @@ func TestListCollectionsGitHub_InvalidYAML(t *testing.T) {
 
 	reader := &fakeFileReader{
 		files: map[string][]byte{
-			".ingitdb.yaml": []byte("invalid yaml: ["),
+			".ingitdb/root-collections.yaml": []byte("invalid yaml: ["),
 		},
 	}
 	mockFactory := NewMockGitHubFileReaderFactory(ctrl)
@@ -256,7 +256,7 @@ func TestListCollectionsGitHub_InvalidConfig(t *testing.T) {
 
 	reader := &fakeFileReader{
 		files: map[string][]byte{
-			".ingitdb.yaml": []byte("rootCollections:\n  \"\": some/path\n"),
+			".ingitdb/root-collections.yaml": []byte("\"\": some/path\n"),
 		},
 	}
 	mockFactory := NewMockGitHubFileReaderFactory(ctrl)

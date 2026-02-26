@@ -22,9 +22,13 @@ func TestCRUDRecord_UpdatesTagsReadme(t *testing.T) {
 	if err := copyDir(srcTagsDir, dstTagsDir); err != nil {
 		t.Fatalf("copy tags dir: %v", err)
 	}
-	rootConfig := []byte("rootCollections:\n  todo.tags: docs/demo-apps/todo/tags\n")
-	if err := os.WriteFile(filepath.Join(tmpDir, ".ingitdb.yaml"), rootConfig, 0o644); err != nil {
-		t.Fatalf("write root config: %v", err)
+	ingitDBDir := filepath.Join(tmpDir, ".ingitdb")
+	if err := os.MkdirAll(ingitDBDir, 0755); err != nil {
+		t.Fatalf("create .ingitdb dir: %v", err)
+	}
+	rootCollections := []byte("todo.tags: docs/demo-apps/todo/tags\n")
+	if err := os.WriteFile(filepath.Join(ingitDBDir, "root-collections.yaml"), rootCollections, 0o644); err != nil {
+		t.Fatalf("write root collections: %v", err)
 	}
 
 	homeDir := func() (string, error) { return "/tmp/home", nil }

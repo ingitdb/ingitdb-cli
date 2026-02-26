@@ -160,8 +160,19 @@ func TestMain_VersionCmd(t *testing.T) {
 }
 
 func TestMain_ReadDefinitionError(t *testing.T) {
+	// Create a temp dir with a root-collections.yaml that points to a
+	// nonexistent collection directory, so ReadDefinition returns an error.
+	tmpDir := t.TempDir()
+	ingitDBDir := tmpDir + "/.ingitdb"
+	if err := os.MkdirAll(ingitDBDir, 0755); err != nil {
+		t.Fatalf("create .ingitdb dir: %v", err)
+	}
+	if err := os.WriteFile(ingitDBDir+"/root-collections.yaml", []byte("foo: nonexistent-col\n"), 0644); err != nil {
+		t.Fatalf("write root-collections.yaml: %v", err)
+	}
+
 	args := os.Args
-	os.Args = []string{"ingitdb", "validate", "--path=" + t.TempDir()}
+	os.Args = []string{"ingitdb", "validate", "--path=" + tmpDir}
 	t.Cleanup(func() {
 		os.Args = args
 	})
@@ -435,7 +446,18 @@ func TestRun_GetWdError(t *testing.T) {
 }
 
 func TestMain_Fatal(t *testing.T) {
-	// Test that main's fatal function writes to stderr and calls exit
+	// Test that main's fatal function writes to stderr and calls exit.
+	// Create a temp dir with a root-collections.yaml that points to a
+	// nonexistent collection directory, so ReadDefinition returns an error.
+	tmpDir := t.TempDir()
+	ingitDBDir := tmpDir + "/.ingitdb"
+	if mkErr := os.MkdirAll(ingitDBDir, 0755); mkErr != nil {
+		t.Fatalf("create .ingitdb dir: %v", mkErr)
+	}
+	if writeErr := os.WriteFile(ingitDBDir+"/root-collections.yaml", []byte("foo: nonexistent-col\n"), 0644); writeErr != nil {
+		t.Fatalf("write root-collections.yaml: %v", writeErr)
+	}
+
 	oldExit := exit
 	exitCalled := false
 	var exitCode int
@@ -458,8 +480,7 @@ func TestMain_Fatal(t *testing.T) {
 	})
 
 	args := os.Args
-	// Use an invalid path that doesn't exist to trigger error
-	os.Args = []string{"ingitdb", "validate", "--path=" + t.TempDir()}
+	os.Args = []string{"ingitdb", "validate", "--path=" + tmpDir}
 	t.Cleanup(func() {
 		os.Args = args
 	})

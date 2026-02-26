@@ -70,22 +70,39 @@ func readRemoteDefinitionForID(ctx context.Context, spec githubRepoSpec, id stri
 }
 
 func readRemoteDefinitionForIDWithReader(ctx context.Context, id string, fileReader dalgo2ghingitdb.FileReader) (*ingitdb.Definition, string, string, error) {
-	rootConfigPath := config.RootConfigFileName
-	rootConfigContent, found, err := fileReader.ReadFile(ctx, rootConfigPath)
+	rootCollectionsPath := path.Join(config.IngitDBDirName, config.RootCollectionsFileName)
+	rootCollectionsContent, found, err := fileReader.ReadFile(ctx, rootCollectionsPath)
 	if err != nil {
 		return nil, "", "", err
 	}
 	if !found {
-		return nil, "", "", fmt.Errorf("file not found: %s", rootConfigPath)
+		return nil, "", "", fmt.Errorf("file not found: %s", rootCollectionsPath)
 	}
-	var rootConfig config.RootConfig
-	err = yaml.Unmarshal(rootConfigContent, &rootConfig)
+	var rootCollections map[string]string
+	err = yaml.Unmarshal(rootCollectionsContent, &rootCollections)
 	if err != nil {
-		return nil, "", "", fmt.Errorf("failed to parse %s: %w", rootConfigPath, err)
+		return nil, "", "", fmt.Errorf("failed to parse %s: %w", rootCollectionsPath, err)
+	}
+
+	settingsPath := path.Join(config.IngitDBDirName, config.SettingsFileName)
+	settingsContent, settingsFound, settingsErr := fileReader.ReadFile(ctx, settingsPath)
+	if settingsErr != nil {
+		return nil, "", "", settingsErr
+	}
+	var settings config.Settings
+	if settingsFound {
+		if parseErr := yaml.Unmarshal(settingsContent, &settings); parseErr != nil {
+			return nil, "", "", fmt.Errorf("failed to parse %s: %w", settingsPath, parseErr)
+		}
+	}
+
+	rootConfig := config.RootConfig{
+		Settings:        settings,
+		RootCollections: rootCollections,
 	}
 	err = rootConfig.Validate()
 	if err != nil {
-		return nil, "", "", fmt.Errorf("invalid %s: %w", rootConfigPath, err)
+		return nil, "", "", fmt.Errorf("invalid %s: %w", rootCollectionsPath, err)
 	}
 	collectionID, recordKey, collectionPath, err := resolveRemoteCollectionPath(rootConfig.RootCollections, id)
 	if err != nil {
@@ -139,24 +156,26 @@ func resolveRemoteCollectionPath(rootCollections map[string]string, id string) (
 	return collectionID, recordKey, collectionPath, nil
 }
 
-// listCollectionsFromFileReader reads the root config and lists all collections from a FileReader.
+// listCollectionsFromFileReader reads the root collections and lists all collections from a FileReader.
 func listCollectionsFromFileReader(fileReader dalgo2ghingitdb.FileReader) ([]string, error) {
 	ctx := context.Background()
-	rootConfigContent, found, readErr := fileReader.ReadFile(ctx, config.RootConfigFileName)
+	rootCollectionsPath := path.Join(config.IngitDBDirName, config.RootCollectionsFileName)
+	rootCollectionsContent, found, readErr := fileReader.ReadFile(ctx, rootCollectionsPath)
 	if readErr != nil {
-		return nil, fmt.Errorf("failed to read .ingitdb.yaml: %w", readErr)
+		return nil, fmt.Errorf("failed to read %s: %w", rootCollectionsPath, readErr)
 	}
 	if !found {
-		return nil, fmt.Errorf("file not found: %s", config.RootConfigFileName)
+		return nil, fmt.Errorf("file not found: %s", rootCollectionsPath)
 	}
-	var rootConfig config.RootConfig
-	unmarshalErr := yaml.Unmarshal(rootConfigContent, &rootConfig)
+	var rootCollections map[string]string
+	unmarshalErr := yaml.Unmarshal(rootCollectionsContent, &rootCollections)
 	if unmarshalErr != nil {
-		return nil, fmt.Errorf("failed to parse .ingitdb.yaml: %w", unmarshalErr)
+		return nil, fmt.Errorf("failed to parse %s: %w", rootCollectionsPath, unmarshalErr)
 	}
+	rootConfig := config.RootConfig{RootCollections: rootCollections}
 	validateErr := rootConfig.Validate()
 	if validateErr != nil {
-		return nil, fmt.Errorf("invalid .ingitdb.yaml: %w", validateErr)
+		return nil, fmt.Errorf("invalid %s: %w", rootCollectionsPath, validateErr)
 	}
 	var ids []string
 	for rootID := range rootConfig.RootCollections {

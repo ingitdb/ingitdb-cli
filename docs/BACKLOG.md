@@ -44,7 +44,7 @@ Tasks within each phase are ordered by dependency — implement them top to bott
   - Missing required fields
   - Type mismatches (e.g. string field contains a number)
   - String values exceeding `max_length`
-  - `map[locale]string` fields missing values for required languages (from `.ingitdb.yaml`)
+  - `map[locale]string` fields missing values for required languages (from `.ingitdb/settings.yaml`)
   - `foreign_key` values that do not match any record ID in the referenced collection
 - Each error includes: collection ID, record file path, field name, violation description
 - All violations collected before exiting — does not stop at the first error
@@ -91,7 +91,7 @@ Tasks within each phase are ordered by dependency — implement them top to bott
 **Acceptance criteria:**
 
 - `ingitdb validate --path=PATH --from-commit=SHA1 --to-commit=SHA2` validates only changed records and rebuilds only affected views
-- Schema config files (`.ingitdb.yaml`, `.definition.yaml`) are always fully re-validated regardless of the commit range
+- Schema config files (`.ingitdb/root-collections.yaml`, `.ingitdb/settings.yaml`, `.definition.yaml`) are always fully re-validated regardless of the commit range
 - `--from-commit` without `--to-commit` defaults to HEAD as the "to" commit
 - If `git diff` fails (not a git repo, bad SHA, git not installed), error is reported clearly and process exits with code 2 (infrastructure error, distinct from validation failure)
 

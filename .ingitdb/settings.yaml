@@ -1,11 +1,3 @@
-# You can link a specific collection or a directory with collections
-rootCollections:
-  companies: test-ingitdb/companies
-  # Namespace import: imports all root collections from another .ingitdb.yaml
-  # with the key prefix (e.g., todo.* imports todo.statuses, todo.tags, todo.tasks)
-  todo.*: docs/demo-apps/todo
-  agile.*: docs/demo-apps/agile-ledger
-
 # `languages` list supported languages should preferably use `ISO 639-1`
 #  or alternatively `IERF BCP 47` (`RFC 5646` / `RFC 4647`).
 #

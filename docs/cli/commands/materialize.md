@@ -28,7 +28,7 @@ ingitdb materialize views [--path=PATH] [--views=VIEW1,VIEW2,...]
 | `--path=PATH`  | Path to the database directory. Defaults to the current working directory.                        |
 | `--views=LIST` | Comma-separated list of view names to materialize. Without this flag, all views are materialized. |
 
-Output is written into the `$views/` directory defined in `.ingitdb.yaml`.
+Output is written into the `$views/` directory defined in the collection's view definition.
 
 **Examples:**
 

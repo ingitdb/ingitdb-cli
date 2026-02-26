@@ -10,7 +10,9 @@ A database is a directory tree inside a Git repository:
 
 ```
 <db-root>/
-├── .ingitdb.yaml                          # DB-level config (collections, languages)
+├── .ingitdb/                              # DB-level config
+│   ├── root-collections.yaml             #   collection ID → path map
+│   └── settings.yaml                     #   default_namespace, languages
 └── <group>/
     └── <collection>/
         ├── .collection/
@@ -24,13 +26,19 @@ A database is a directory tree inside a Git repository:
                 └── <partition>.md         # Materialized view output files
 ```
 
-**`.ingitdb.yaml`** — DB-level config: maps collection keys to filesystem paths and declares supported languages.
+**`.ingitdb/root-collections.yaml`** — DB-level config: flat map of collection IDs to
+filesystem paths. **`.ingitdb/settings.yaml`** — optional settings: `default_namespace`
+and supported languages.
 
 ```yaml
-rootCollections:
-  todo.tags: docs/demo-apps/todo/tags
-  todo.tasks: docs/demo-apps/todo/tasks
-  countries: geo/countries
+# .ingitdb/root-collections.yaml
+companies: test-ingitdb/companies
+todo.*: docs/demo-apps/todo
+agile.*: docs/demo-apps/agile-ledger
+```
+
+```yaml
+# .ingitdb/settings.yaml
 languages:
   - required: en
   - required: fr
@@ -76,7 +84,7 @@ CLI (cmd/ingitdb)
     │       │
     │       ├── validate [--path] [--from-commit] [--to-commit]
     │       │       └── validator.ReadDefinition()
-    │       │               ├── config.ReadRootConfigFromFile()     reads .ingitdb.yaml
+    │       │               ├── config.ReadRootConfigFromFile()     reads .ingitdb/root-collections.yaml
     │       │               ├── readCollectionDef() × N             reads .definition.yaml per collection
     │       │               └── colDef.Validate()                   validates schema structure
     │       │               └── [TODO] DataValidator                walks $records/, validates records against schema
@@ -105,7 +113,7 @@ The **Scanner** (see `docs/components/scanner.md`) orchestrates the full pipelin
 | Package                 | Responsibility                                                                                                                                                                    |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pkg/ingitdb`           | Domain types only: `Definition`, `CollectionDef`, `ColumnDef`, `ViewDef`, etc. No I/O.                                                                                            |
-| `pkg/ingitdb/config`    | Reads `.ingitdb.yaml` (root config) and `~/.ingitdb/.ingitdb-user.yaml` (user config).                                                                                            |
+| `pkg/ingitdb/config`    | Reads `.ingitdb/root-collections.yaml` and `.ingitdb/settings.yaml` (root config) and `~/.ingitdb/.ingitdb-user.yaml` (user config).                                              |
 | `pkg/ingitdb/validator` | Reads and validates collection schemas. Entry point: `ReadDefinition()`.                                                                                                          |
 | `pkg/dalgo2ingitdb`     | DALgo integration: implements `dal.DB`, read-only and read-write transactions.                                                                                                    |
 | `cmd/ingitdb/commands`  | One file per CLI command. Each exports a single `*cli.Command` constructor. Subcommands are unexported functions named after the subcommand (parent-prefixed on name collisions). |

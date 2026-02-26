@@ -29,29 +29,34 @@ func TestDefinitionReader_ReadDefinition(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		setupFn func(t *testing.T) string
-		opts    []ingitdb.ReadOption
-		wantErr string
+		name            string
+		setupFn         func(t *testing.T) string
+		opts            []ingitdb.ReadOption
+		wantErr         string
+		wantCollections int
 	}{
 		{
 			name: "missing_root_config",
 			setupFn: func(t *testing.T) string {
 				return t.TempDir()
 			},
-			opts:    nil,
-			wantErr: "failed to read root config file .ingitdb.yaml",
+			opts:            nil,
+			wantErr:         "",
+			wantCollections: 0,
 		},
 		{
 			name: "valid_definition",
 			setupFn: func(t *testing.T) string {
 				root := t.TempDir()
-				// Create .ingitdb.yaml
-				rootConfigPath := filepath.Join(root, ".ingitdb.yaml")
-				rootConfigContent := `rootCollections:
-  test: test-ingitdb
-`
-				err := os.WriteFile(rootConfigPath, []byte(rootConfigContent), 0644)
+				// Create .ingitdb/root-collections.yaml
+				ingitDBDir := filepath.Join(root, ".ingitdb")
+				err := os.MkdirAll(ingitDBDir, 0755)
+				if err != nil {
+					t.Fatalf("setup: create .ingitdb dir: %v", err)
+				}
+				rootConfigPath := filepath.Join(ingitDBDir, "root-collections.yaml")
+				rootConfigContent := "test: test-ingitdb\n"
+				err = os.WriteFile(rootConfigPath, []byte(rootConfigContent), 0644)
 				if err != nil {
 					t.Fatalf("setup: write root config: %v", err)
 				}
@@ -84,18 +89,22 @@ columns:
 				return root
 			},
 			opts:    []ingitdb.ReadOption{ingitdb.Validate()},
-			wantErr: "",
+			wantErr:         "",
+			wantCollections: 1,
 		},
 		{
 			name: "invalid_yaml_in_collection",
 			setupFn: func(t *testing.T) string {
 				root := t.TempDir()
-				// Create .ingitdb.yaml
-				rootConfigPath := filepath.Join(root, ".ingitdb.yaml")
-				rootConfigContent := `rootCollections:
-  bad: bad-collection
-`
-				err := os.WriteFile(rootConfigPath, []byte(rootConfigContent), 0644)
+				// Create .ingitdb/root-collections.yaml
+				ingitDBDir := filepath.Join(root, ".ingitdb")
+				err := os.MkdirAll(ingitDBDir, 0755)
+				if err != nil {
+					t.Fatalf("setup: create .ingitdb dir: %v", err)
+				}
+				rootConfigPath := filepath.Join(ingitDBDir, "root-collections.yaml")
+				rootConfigContent := "bad: bad-collection\n"
+				err = os.WriteFile(rootConfigPath, []byte(rootConfigContent), 0644)
 				if err != nil {
 					t.Fatalf("setup: write root config: %v", err)
 				}
@@ -124,12 +133,15 @@ columns:
 			name: "validation_enabled_with_invalid_schema",
 			setupFn: func(t *testing.T) string {
 				root := t.TempDir()
-				// Create .ingitdb.yaml
-				rootConfigPath := filepath.Join(root, ".ingitdb.yaml")
-				rootConfigContent := `rootCollections:
-  invalid: invalid-schema
-`
-				err := os.WriteFile(rootConfigPath, []byte(rootConfigContent), 0644)
+				// Create .ingitdb/root-collections.yaml
+				ingitDBDir := filepath.Join(root, ".ingitdb")
+				err := os.MkdirAll(ingitDBDir, 0755)
+				if err != nil {
+					t.Fatalf("setup: create .ingitdb dir: %v", err)
+				}
+				rootConfigPath := filepath.Join(ingitDBDir, "root-collections.yaml")
+				rootConfigContent := "invalid: invalid-schema\n"
+				err = os.WriteFile(rootConfigPath, []byte(rootConfigContent), 0644)
 				if err != nil {
 					t.Fatalf("setup: write root config: %v", err)
 				}
@@ -183,8 +195,8 @@ columns:
 			if def == nil {
 				t.Fatal("ReadDefinition() returned nil definition with no error")
 			}
-			if def.Collections == nil {
-				t.Error("ReadDefinition() returned definition with nil Collections map")
+			if len(def.Collections) != tc.wantCollections {
+				t.Errorf("ReadDefinition() got %d collections, want %d", len(def.Collections), tc.wantCollections)
 			}
 		})
 	}
@@ -197,12 +209,15 @@ func TestDefinitionReader_ReadDefinition_WithoutValidation(t *testing.T) {
 
 	root := t.TempDir()
 
-	// Create .ingitdb.yaml
-	rootConfigPath := filepath.Join(root, ".ingitdb.yaml")
-	rootConfigContent := `rootCollections:
-  users: data/users
-`
-	err := os.WriteFile(rootConfigPath, []byte(rootConfigContent), 0644)
+	// Create .ingitdb/root-collections.yaml
+	ingitDBDir := filepath.Join(root, ".ingitdb")
+	err := os.MkdirAll(ingitDBDir, 0755)
+	if err != nil {
+		t.Fatalf("setup: create .ingitdb dir: %v", err)
+	}
+	rootConfigPath := filepath.Join(ingitDBDir, "root-collections.yaml")
+	rootConfigContent := "users: data/users\n"
+	err = os.WriteFile(rootConfigPath, []byte(rootConfigContent), 0644)
 	if err != nil {
 		t.Fatalf("setup: write root config: %v", err)
 	}

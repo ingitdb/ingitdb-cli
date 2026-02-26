@@ -11,7 +11,7 @@ trade-off for your project, read on — and consider contributing.
 ### 📂 User docs
 
 - [CLI](cli/README.md) — command reference: flags, subcommands, exit codes
-- [Configuration](configuration/README.md) — `.ingitdb.yaml` and collection config files
+- [Configuration](configuration/README.md) — `.ingitdb/` directory and collection config files
 - [Features](features/README.md) — what inGitDB can do (and what is coming)
 
 ### 📂 Developer docs
@@ -40,7 +40,7 @@ A one-line description of each document, grouped by purpose.
 | Document                                                 | What it covers                                                          |
 | -------------------------------------------------------- | ----------------------------------------------------------------------- |
 | [CLI](cli/README.md)                                            | Every subcommand, flag, and exit code for the `ingitdb` binary          |
-| [Configuration](configuration/README.md)                 | Root DB config (`.ingitdb.yaml`) and per-collection schema files        |
+| [Configuration](configuration/README.md)                 | Root DB config (`.ingitdb/`) and per-collection schema files            |
 | [Features](features/README.md)                           | Full feature list with status (WIP / pending) and links to detail pages |
 | [GitHub Direct Access](features/github-direct-access.md) | Read and write records in remote GitHub repositories without cloning    |
 
@@ -70,7 +70,7 @@ A one-line description of each document, grouped by purpose.
 | Command       | Subcommands                            | Status                                    | Description                                                                                  |
 | ------------- | -------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------- |
 | `version`     | —                                      | implemented                               | Print build version, commit hash, and date                                                   |
-| `validate`    | —                                      | implemented                               | Check schema and data against `.ingitdb.yaml`                                                |
+| `validate`    | —                                      | implemented                               | Check schema and data against `.ingitdb/root-collections.yaml`                               |
 | `read`        | `record`                               | implemented                               | Read a single record by ID (local or GitHub)                                                 |
 | `create`      | `record`                               | implemented                               | Create a new record (local or GitHub)                                                        |
 | `update`      | `record`                               | implemented                               | Update fields of an existing record (local or GitHub)                                        |
@@ -84,7 +84,7 @@ A one-line description of each document, grouped by purpose.
 | `watch`       | —                                      | planned                                   | Stream change events to stdout as records are added, updated, or deleted                     |
 | `serve`       | —                                      | planned                                   | Start MCP server, HTTP API server, or file watcher (flags: `--mcp`, `--http`, `--watcher`)   |
 | `resolve`     | —                                      | planned                                   | Interactive TUI for resolving merge conflicts in data files                                  |
-| `setup`       | —                                      | planned                                   | Initialise a new database directory with a starter `.ingitdb.yaml`                           |
+| `setup`       | —                                      | planned                                   | Initialise a new database directory with a starter `.ingitdb/` config                        |
 | `migrate`     | —                                      | planned                                   | Migrate records between schema versions                                                      |
 
 See [cli/README.md](cli/README.md) for the full flag reference.

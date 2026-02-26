@@ -2,8 +2,8 @@
 
 inGitDB can read and write records stored in any GitHub repository without requiring a local
 clone. A single flag — `--github=owner/repo` — replaces `--path` and routes all file I/O
-through the GitHub REST API. The database definition (`.ingitdb.yaml`) is resolved from the
-remote repository automatically.
+through the GitHub REST API. The database definition (`.ingitdb/root-collections.yaml`) is
+resolved from the remote repository automatically.
 
 ## 📂 Use cases
 
@@ -154,9 +154,9 @@ ingitdb list collections --github=owner/repo[@ref] [--token=TOKEN]
 | `--github` | yes | Repository as `owner/repo[@ref]`. |
 | `--token` | no | GitHub token; falls back to `GITHUB_TOKEN` env var. |
 
-The command reads `.ingitdb.yaml` from the repository root and prints each configured collection ID
-on its own line. `rootCollections` entries are explicit (one ID → one directory), so listing does
-not require extra GitHub directory listing calls and returns faster.
+The command reads `.ingitdb/root-collections.yaml` from the repository root and prints each
+configured collection ID on its own line. Collection entries are explicit (one ID → one
+directory), so listing does not require extra GitHub directory-listing calls and returns faster.
 
 **Example:**
 
@@ -176,10 +176,10 @@ todo.tasks
 
 ## 📂 Write operations
 
-Each write command reads the `.ingitdb.yaml` configuration and the target collection's schema
-from the remote repository, then calls the GitHub Contents API to create, update, or delete the
-record file. Every successful write lands as a single commit on the target branch (the `@ref`
-specified in `--github`, or the repository's default branch).
+Each write command reads the `.ingitdb/root-collections.yaml` configuration and the target
+collection's schema from the remote repository, then calls the GitHub Contents API to create,
+update, or delete the record file. Every successful write lands as a single commit on the
+target branch (the `@ref` specified in `--github`, or the repository's default branch).
 
 ### 🔹 create record`
 
@@ -275,7 +275,7 @@ sequenceDiagram
     participant GH as GitHub REST API
     participant Repo as GitHub Repository
 
-    CLI->>GH: GET /repos/owner/repo/contents/.ingitdb.yaml
+    CLI->>GH: GET /repos/owner/repo/contents/.ingitdb/root-collections.yaml
     GH-->>CLI: YAML configuration
     CLI->>GH: GET /repos/owner/repo/contents/<collection-def-path>
     GH-->>CLI: Collection schema
@@ -306,7 +306,7 @@ fetch + record read/write). Budget accordingly for scripts that loop over many r
 When the rate limit is exceeded the CLI returns an error:
 
 ```
-error: github api rate limit exceeded while reading ".ingitdb.yaml": ...
+error: github api rate limit exceeded while reading ".ingitdb/root-collections.yaml": ...
 ```
 
 Supply a token to raise the limit from 60 to 5,000 requests per hour.
