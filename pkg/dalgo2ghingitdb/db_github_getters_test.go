@@ -121,7 +121,7 @@ func TestNewGitHubDBWithDef_NilDefinition(t *testing.T) {
 func TestGitHubDB_Get(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
-		path:    "docs/demo-apps/todo/tags/active.yaml",
+		path:    "demo-dbs/todo/tags/active.yaml",
 		content: "title: Active\n",
 	}}
 	server := newGitHubContentsServer(t, fixtures)
@@ -131,7 +131,7 @@ func TestGitHubDB_Get(t *testing.T) {
 		Collections: map[string]*ingitdb.CollectionDef{
 			"todo.tags": {
 				ID:      "todo.tags",
-				DirPath: "docs/demo-apps/todo/tags",
+				DirPath: "demo-dbs/todo/tags",
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "{key}.yaml",
 					Format:     "yaml",

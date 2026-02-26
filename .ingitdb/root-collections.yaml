@@ -1,5 +1,9 @@
-companies: test-ingitdb/companies
+# Root collections
+
+companies: demo-dbs/test-db/companies
+countries: demo-dbs/test-db/countries
+
 # Namespace import: imports all root collections from another .ingitdb/root-collections.yaml
 # with the key prefix (e.g., todo.* imports todo.statuses, todo.tags, todo.tasks)
-todo.*: docs/demo-apps/todo
-agile.*: docs/demo-apps/agile-ledger
+todo.*: demo-dbs/todo
+agile.*: demo-dbs/agile-ledger

@@ -24,7 +24,7 @@ type githubFileFixture struct {
 func TestGitHubDB_GetSingleRecord(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
-		path:    "docs/demo-apps/todo/tags/active.yaml",
+		path:    "demo-dbs/todo/tags/active.yaml",
 		content: "title: Active\n",
 	}}
 	server := newGitHubContentsServer(t, fixtures)
@@ -34,7 +34,7 @@ func TestGitHubDB_GetSingleRecord(t *testing.T) {
 		Collections: map[string]*ingitdb.CollectionDef{
 			"todo.tags": {
 				ID:      "todo.tags",
-				DirPath: "docs/demo-apps/todo/tags",
+				DirPath: "demo-dbs/todo/tags",
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "{key}.yaml",
 					Format:     "yaml",
@@ -73,7 +73,7 @@ func TestGitHubDB_GetSingleRecord(t *testing.T) {
 func TestGitHubDB_GetMapOfIDRecords(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
-		path:    "docs/demo-apps/todo/tags/tags.json",
+		path:    "demo-dbs/todo/tags/tags.json",
 		content: `{"active": {"titles": {"en": "Active", "ru": "Активно"}}}`,
 	}}
 	server := newGitHubContentsServer(t, fixtures)
@@ -83,7 +83,7 @@ func TestGitHubDB_GetMapOfIDRecords(t *testing.T) {
 		Collections: map[string]*ingitdb.CollectionDef{
 			"todo.tags": {
 				ID:      "todo.tags",
-				DirPath: "docs/demo-apps/todo/tags",
+				DirPath: "demo-dbs/todo/tags",
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",
@@ -128,7 +128,7 @@ func TestGitHubDB_GetNotFound(t *testing.T) {
 		Collections: map[string]*ingitdb.CollectionDef{
 			"todo.tags": {
 				ID:      "todo.tags",
-				DirPath: "docs/demo-apps/todo/tags",
+				DirPath: "demo-dbs/todo/tags",
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "{key}.yaml",
 					Format:     "yaml",
@@ -163,7 +163,7 @@ func TestGitHubDB_GetNotFound(t *testing.T) {
 func TestGitHubDB_SetSingleRecord(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
-		path:    "docs/demo-apps/todo/tags/active.yaml",
+		path:    "demo-dbs/todo/tags/active.yaml",
 		content: "title: Active\n",
 	}}
 	server := newGitHubContentsServer(t, fixtures)
@@ -173,7 +173,7 @@ func TestGitHubDB_SetSingleRecord(t *testing.T) {
 		Collections: map[string]*ingitdb.CollectionDef{
 			"todo.tags": {
 				ID:      "todo.tags",
-				DirPath: "docs/demo-apps/todo/tags",
+				DirPath: "demo-dbs/todo/tags",
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "{key}.yaml",
 					Format:     "yaml",
@@ -213,7 +213,7 @@ func TestGitHubDB_InsertSingleRecord(t *testing.T) {
 		Collections: map[string]*ingitdb.CollectionDef{
 			"todo.tags": {
 				ID:      "todo.tags",
-				DirPath: "docs/demo-apps/todo/tags",
+				DirPath: "demo-dbs/todo/tags",
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "{key}.yaml",
 					Format:     "yaml",
@@ -246,7 +246,7 @@ func TestGitHubDB_InsertSingleRecord(t *testing.T) {
 func TestGitHubDB_InsertSingleRecord_AlreadyExists(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
-		path:    "docs/demo-apps/todo/tags/active.yaml",
+		path:    "demo-dbs/todo/tags/active.yaml",
 		content: "title: Active\n",
 	}}
 	server := newGitHubContentsServer(t, fixtures)
@@ -256,7 +256,7 @@ func TestGitHubDB_InsertSingleRecord_AlreadyExists(t *testing.T) {
 		Collections: map[string]*ingitdb.CollectionDef{
 			"todo.tags": {
 				ID:      "todo.tags",
-				DirPath: "docs/demo-apps/todo/tags",
+				DirPath: "demo-dbs/todo/tags",
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "{key}.yaml",
 					Format:     "yaml",
@@ -289,7 +289,7 @@ func TestGitHubDB_InsertSingleRecord_AlreadyExists(t *testing.T) {
 func TestGitHubDB_DeleteSingleRecord(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
-		path:    "docs/demo-apps/todo/tags/active.yaml",
+		path:    "demo-dbs/todo/tags/active.yaml",
 		content: "title: Active\n",
 	}}
 	server := newGitHubContentsServer(t, fixtures)
@@ -299,7 +299,7 @@ func TestGitHubDB_DeleteSingleRecord(t *testing.T) {
 		Collections: map[string]*ingitdb.CollectionDef{
 			"todo.tags": {
 				ID:      "todo.tags",
-				DirPath: "docs/demo-apps/todo/tags",
+				DirPath: "demo-dbs/todo/tags",
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "{key}.yaml",
 					Format:     "yaml",
@@ -337,7 +337,7 @@ func TestGitHubDB_DeleteSingleRecord_NotFound(t *testing.T) {
 		Collections: map[string]*ingitdb.CollectionDef{
 			"todo.tags": {
 				ID:      "todo.tags",
-				DirPath: "docs/demo-apps/todo/tags",
+				DirPath: "demo-dbs/todo/tags",
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "{key}.yaml",
 					Format:     "yaml",
@@ -368,7 +368,7 @@ func TestGitHubDB_DeleteSingleRecord_NotFound(t *testing.T) {
 func TestGitHubDB_ListDirectory(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
-		path:     "docs/demo-apps/todo/tags",
+		path:     "demo-dbs/todo/tags",
 		isDir:    true,
 		dirItems: []string{"active.yaml", "archived.yaml"},
 	}}
@@ -382,7 +382,7 @@ func TestGitHubDB_ListDirectory(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	entries, err := reader.ListDirectory(ctx, "docs/demo-apps/todo/tags")
+	entries, err := reader.ListDirectory(ctx, "demo-dbs/todo/tags")
 	if err != nil {
 		t.Fatalf("ListDirectory: %v", err)
 	}

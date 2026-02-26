@@ -279,7 +279,7 @@ func TestReadonlyTx_ResolveCollection_NoRecordFile(t *testing.T) {
 func TestReadonlyTx_GetMapOfIDRecords_RecordNotInMap(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
-		path:    "docs/demo-apps/todo/tags/tags.json",
+		path:    "demo-dbs/todo/tags/tags.json",
 		content: `{"active": {"title": "Active"}}`,
 	}}
 	server := newGitHubContentsServer(t, fixtures)
@@ -289,7 +289,7 @@ func TestReadonlyTx_GetMapOfIDRecords_RecordNotInMap(t *testing.T) {
 		Collections: map[string]*ingitdb.CollectionDef{
 			"todo.tags": {
 				ID:      "todo.tags",
-				DirPath: "docs/demo-apps/todo/tags",
+				DirPath: "demo-dbs/todo/tags",
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",

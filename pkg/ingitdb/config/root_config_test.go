@@ -225,7 +225,7 @@ func TestRootConfigValidate(t *testing.T) {
 			name: "valid_namespace_import",
 			rc: &RootConfig{
 				RootCollections: map[string]string{
-					"agile.*": "docs/demo-apps/agile-ledger",
+					"agile.*": "demo-dbs/agile-ledger",
 				},
 			},
 			err: "",
@@ -271,8 +271,8 @@ func TestRootConfigValidate(t *testing.T) {
 			name: "valid_mixed_namespace_and_regular",
 			rc: &RootConfig{
 				RootCollections: map[string]string{
-					"companies": "test-ingitdb/companies",
-					"agile.*":   "docs/demo-apps/agile-ledger",
+					"companies": "demo-dbs/test-db/companies",
+					"agile.*":   "demo-dbs/agile-ledger",
 				},
 			},
 			err: "",
@@ -770,7 +770,7 @@ func TestReadRootCollectionsFromFile(t *testing.T) {
 	t.Run("valid_flat_map", func(t *testing.T) {
 		t.Parallel()
 		dir := t.TempDir()
-		writeIngitDBFile(t, dir, RootCollectionsFileName, []byte("companies: test-ingitdb/companies\ntodo: docs/todo\n"))
+		writeIngitDBFile(t, dir, RootCollectionsFileName, []byte("companies: demo-dbs/test-db/companies\ntodo: docs/todo\n"))
 		m, err := ReadRootCollectionsFromFile(dir, ingitdb.NewReadOptions())
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -778,7 +778,7 @@ func TestReadRootCollectionsFromFile(t *testing.T) {
 		if len(m) != 2 {
 			t.Fatalf("expected 2 entries, got %d", len(m))
 		}
-		if m["companies"] != "test-ingitdb/companies" {
+		if m["companies"] != "demo-dbs/test-db/companies" {
 			t.Errorf("unexpected companies path: %q", m["companies"])
 		}
 		if m["todo"] != "docs/todo" {

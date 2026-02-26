@@ -32,9 +32,9 @@ and supported languages.
 
 ```yaml
 # .ingitdb/root-collections.yaml
-companies: test-ingitdb/companies
-todo.*: docs/demo-apps/todo
-agile.*: docs/demo-apps/agile-ledger
+companies: demo-dbs/test-db/companies
+todo.*: demo-dbs/todo
+agile.*: demo-dbs/agile-ledger
 ```
 
 ```yaml

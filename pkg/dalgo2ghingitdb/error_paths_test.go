@@ -318,7 +318,7 @@ func TestReadwriteTx_InsertMapOfIDRecords_NewFile(t *testing.T) {
 		Collections: map[string]*ingitdb.CollectionDef{
 			"todo.tags": {
 				ID:      "todo.tags",
-				DirPath: "docs/demo-apps/todo/tags",
+				DirPath: "demo-dbs/todo/tags",
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",

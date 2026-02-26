@@ -71,7 +71,7 @@ func TestParseGitHubRepoSpec(t *testing.T) {
 func TestResolveRemoteCollectionPath(t *testing.T) {
 	rootCollections := map[string]string{
 		"countries": "test-ingitdb/countries",
-		"todo.tags": "docs/demo-apps/todo/tags",
+		"todo.tags": "demo-dbs/todo/tags",
 	}
 	collectionID, recordKey, collectionPath, err := resolveRemoteCollectionPath(rootCollections, "todo.tags/active")
 	if err != nil {
@@ -83,15 +83,15 @@ func TestResolveRemoteCollectionPath(t *testing.T) {
 	if recordKey != "active" {
 		t.Fatalf("expected recordKey active, got %s", recordKey)
 	}
-	if collectionPath != "docs/demo-apps/todo/tags" {
-		t.Fatalf("expected collectionPath docs/demo-apps/todo/tags, got %s", collectionPath)
+	if collectionPath != "demo-dbs/todo/tags" {
+		t.Fatalf("expected collectionPath demo-dbs/todo/tags, got %s", collectionPath)
 	}
 }
 
 func TestReadRemoteDefinitionForIDWithReader(t *testing.T) {
 	reader := fakeFileReader{files: map[string][]byte{
-		".ingitdb/root-collections.yaml":                      []byte("todo.tags: docs/demo-apps/todo/tags\n"),
-		"docs/demo-apps/todo/tags/.collection/todo.tags.yaml": []byte("record_file:\n  name: tags.json\n  type: map[string]map[string]any\n  format: json\ncolumns:\n  title:\n    type: string\n"),
+		".ingitdb/root-collections.yaml":                []byte("todo.tags: demo-dbs/todo/tags\n"),
+		"demo-dbs/todo/tags/.collection/todo.tags.yaml": []byte("record_file:\n  name: tags.json\n  type: map[string]map[string]any\n  format: json\ncolumns:\n  title:\n    type: string\n"),
 	}}
 	def, collectionID, recordKey, err := readRemoteDefinitionForIDWithReader(context.Background(), "todo.tags/active", reader)
 	if err != nil {
@@ -108,7 +108,7 @@ func TestReadRemoteDefinitionForIDWithReader(t *testing.T) {
 		t.Fatal("expected collection in definition")
 		return
 	}
-	if colDef.DirPath != "docs/demo-apps/todo/tags" {
+	if colDef.DirPath != "demo-dbs/todo/tags" {
 		t.Fatalf("unexpected DirPath: %s", colDef.DirPath)
 	}
 }
@@ -212,7 +212,7 @@ func TestNewGitHubConfig(t *testing.T) {
 func TestListCollections_GitHub(t *testing.T) {
 	reader := fakeFileReader{
 		files: map[string][]byte{
-			".ingitdb/root-collections.yaml": []byte("countries: test-ingitdb/countries\ntodo.tags: docs/demo-apps/todo/tags\n"),
+			".ingitdb/root-collections.yaml": []byte("countries: test-ingitdb/countries\ntodo.tags: demo-dbs/todo/tags\n"),
 		},
 	}
 	collections, err := listCollectionsFromFileReader(&reader)
@@ -253,7 +253,7 @@ func TestReadRemoteDefinitionForIDWithReader_InvalidRootConfig(t *testing.T) {
 func TestReadRemoteDefinitionForIDWithReader_CollectionDefNotFound(t *testing.T) {
 
 	reader := fakeFileReader{files: map[string][]byte{
-		".ingitdb/root-collections.yaml": []byte("todo.tags: docs/demo-apps/todo/tags\n"),
+		".ingitdb/root-collections.yaml": []byte("todo.tags: demo-dbs/todo/tags\n"),
 	}}
 	_, _, _, err := readRemoteDefinitionForIDWithReader(context.Background(), "todo.tags/active", reader)
 	if err == nil {
@@ -264,8 +264,8 @@ func TestReadRemoteDefinitionForIDWithReader_CollectionDefNotFound(t *testing.T)
 func TestReadRemoteDefinitionForIDWithReader_InvalidCollectionDef(t *testing.T) {
 
 	reader := fakeFileReader{files: map[string][]byte{
-		".ingitdb/root-collections.yaml":                      []byte("todo.tags: docs/demo-apps/todo/tags\n"),
-		"docs/demo-apps/todo/tags/.collection/todo.tags.yaml": []byte("invalid yaml: ["),
+		".ingitdb/root-collections.yaml":                []byte("todo.tags: demo-dbs/todo/tags\n"),
+		"demo-dbs/todo/tags/.collection/todo.tags.yaml": []byte("invalid yaml: ["),
 	}}
 	_, _, _, err := readRemoteDefinitionForIDWithReader(context.Background(), "todo.tags/active", reader)
 	if err == nil {
@@ -276,7 +276,7 @@ func TestReadRemoteDefinitionForIDWithReader_InvalidCollectionDef(t *testing.T) 
 func TestReadRemoteDefinitionForIDWithReader_UnresolvedID(t *testing.T) {
 
 	reader := fakeFileReader{files: map[string][]byte{
-		".ingitdb/root-collections.yaml": []byte("todo.tags: docs/demo-apps/todo/tags\n"),
+		".ingitdb/root-collections.yaml": []byte("todo.tags: demo-dbs/todo/tags\n"),
 	}}
 	_, _, _, err := readRemoteDefinitionForIDWithReader(context.Background(), "unknown.collection/active", reader)
 	if err == nil {
@@ -418,7 +418,7 @@ func TestReadRecord_GitHub_DBOpenError(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockReader := &fakeFileReader{files: map[string][]byte{
-		".ingitdb/root-collections.yaml":                      []byte("test.items: test-ingitdb/items\n"),
+		".ingitdb/root-collections.yaml":                 []byte("test.items: test-ingitdb/items\n"),
 		"test-ingitdb/items/.collection/test.items.yaml": []byte("record_file:\n  name: items.json\n  type: map[string]map[string]any\n  format: json\ncolumns:\n  name:\n    type: string\n"),
 	}}
 	mockReaderFactory := NewMockGitHubFileReaderFactory(ctrl)
@@ -457,8 +457,8 @@ func TestReadRemoteDefinitionForID_WithMock(t *testing.T) {
 	defer ctrl.Finish()
 
 	reader := fakeFileReader{files: map[string][]byte{
-		".ingitdb/root-collections.yaml":                      []byte("todo.tags: docs/demo-apps/todo/tags\n"),
-		"docs/demo-apps/todo/tags/.collection/todo.tags.yaml": []byte("record_file:\n  name: tags.json\n  type: map[string]map[string]any\n  format: json\ncolumns:\n  title:\n    type: string\n"),
+		".ingitdb/root-collections.yaml":                []byte("todo.tags: demo-dbs/todo/tags\n"),
+		"demo-dbs/todo/tags/.collection/todo.tags.yaml": []byte("record_file:\n  name: tags.json\n  type: map[string]map[string]any\n  format: json\ncolumns:\n  title:\n    type: string\n"),
 	}}
 	mockFactory := NewMockGitHubFileReaderFactory(ctrl)
 	mockFactory.EXPECT().NewGitHubFileReader(gomock.Any()).Return(reader, nil)

@@ -163,7 +163,7 @@ func TestListCollectionsGitHub_WithMock(t *testing.T) {
 
 	reader := &fakeFileReader{
 		files: map[string][]byte{
-			".ingitdb/root-collections.yaml": []byte("countries: test-ingitdb/countries\ntodo.tags: docs/demo-apps/todo/tags\n"),
+			".ingitdb/root-collections.yaml": []byte("countries: test-ingitdb/countries\ntodo.tags: demo-dbs/todo/tags\n"),
 		},
 	}
 	mockFactory := NewMockGitHubFileReaderFactory(ctrl)

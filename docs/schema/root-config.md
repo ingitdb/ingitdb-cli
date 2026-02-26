@@ -33,12 +33,12 @@ A **flat YAML map** — no wrapper key, no nesting.
 # .ingitdb/root-collections.yaml
 
 # Plain collection entry
-companies: test-ingitdb/companies
+companies: demo-dbs/test-db/companies
 
 # Namespace import (.*  suffix) — imports all collections from the sub-directory,
 # prefixing each imported ID with the key before ".*"
-todo.*: docs/demo-apps/todo
-agile.*: docs/demo-apps/agile-ledger
+todo.*: demo-dbs/todo
+agile.*: demo-dbs/agile-ledger
 ```
 
 ### Collection ID rules
@@ -71,11 +71,11 @@ collection it finds, prepending the key prefix (minus `.*`).
 
 ```yaml
 # This repo's .ingitdb/root-collections.yaml
-todo.*: docs/demo-apps/todo
+todo.*: demo-dbs/todo
 ```
 
 ```yaml
-# docs/demo-apps/todo/.ingitdb/root-collections.yaml
+# demo-dbs/todo/.ingitdb/root-collections.yaml
 statuses: statuses
 tags: tags
 tasks: tasks
@@ -84,9 +84,9 @@ tasks: tasks
 **Effective result:**
 
 ```yaml
-todo.statuses: docs/demo-apps/todo/statuses
-todo.tags:     docs/demo-apps/todo/tags
-todo.tasks:    docs/demo-apps/todo/tasks
+todo.statuses: demo-dbs/todo/statuses
+todo.tags:     demo-dbs/todo/tags
+todo.tasks:    demo-dbs/todo/tasks
 ```
 
 #### Error conditions
@@ -195,10 +195,10 @@ Recommended sections:
 | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
 | [`.ingitdb/root-collections.yaml`](../../.ingitdb/root-collections.yaml)                                   | This repo — namespace imports in action      |
 | [`.ingitdb/settings.yaml`](../../.ingitdb/settings.yaml)                                                   | This repo — multi-language setup             |
-| [`docs/demo-apps/todo/.ingitdb/root-collections.yaml`](../../docs/demo-apps/todo/.ingitdb/root-collections.yaml) | Simple flat map, three collections     |
-| [`docs/demo-apps/todo/.ingitdb/settings.yaml`](../../docs/demo-apps/todo/.ingitdb/settings.yaml)           | `default_namespace: todo`                    |
-| [`docs/demo-apps/agile-ledger/.ingitdb/root-collections.yaml`](../../docs/demo-apps/agile-ledger/.ingitdb/root-collections.yaml) | Single collection |
-| [`docs/demo-apps/agile-ledger/.ingitdb/settings.yaml`](../../docs/demo-apps/agile-ledger/.ingitdb/settings.yaml) | `default_namespace` + one required language |
+| [`demo-dbs/todo/.ingitdb/root-collections.yaml`](../../demo-dbs/todo/.ingitdb/root-collections.yaml) | Simple flat map, three collections     |
+| [`demo-dbs/todo/.ingitdb/settings.yaml`](../../demo-dbs/todo/.ingitdb/settings.yaml)           | `default_namespace: todo`                    |
+| [`demo-dbs/agile-ledger/.ingitdb/root-collections.yaml`](../../demo-dbs/agile-ledger/.ingitdb/root-collections.yaml) | Single collection |
+| [`demo-dbs/agile-ledger/.ingitdb/settings.yaml`](../../demo-dbs/agile-ledger/.ingitdb/settings.yaml) | `default_namespace` + one required language |
 
 ---
 

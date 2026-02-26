@@ -1,0 +1,18 @@
+titles:
+  en: Countries
+record_file:
+  name: "{key}/{key}.yaml"
+  type: "map[string]any"
+  format: yaml
+columns:
+  titles:
+    type: "map[string]string"
+    required: true
+  population:
+    type: number
+  area_km2:
+    type: number
+  currency:
+    type: string
+  flag:
+    type: string

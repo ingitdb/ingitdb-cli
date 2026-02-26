@@ -17,8 +17,8 @@ import (
 func TestCRUDRecord_UpdatesTagsReadme(t *testing.T) {
 	repoRoot := findRepoRoot(t)
 	tmpDir := t.TempDir()
-	dstTagsDir := filepath.Join(tmpDir, "docs", "demo-apps", "todo", "tags")
-	srcTagsDir := filepath.Join(repoRoot, "docs", "demo-apps", "todo", "tags")
+	dstTagsDir := filepath.Join(tmpDir, "docs", "demo-dbs", "todo", "tags")
+	srcTagsDir := filepath.Join(repoRoot, "docs", "demo-dbs", "todo", "tags")
 	if err := copyDir(srcTagsDir, dstTagsDir); err != nil {
 		t.Fatalf("copy tags dir: %v", err)
 	}
@@ -26,7 +26,7 @@ func TestCRUDRecord_UpdatesTagsReadme(t *testing.T) {
 	if err := os.MkdirAll(ingitDBDir, 0755); err != nil {
 		t.Fatalf("create .ingitdb dir: %v", err)
 	}
-	rootCollections := []byte("todo.tags: docs/demo-apps/todo/tags\n")
+	rootCollections := []byte("todo.tags: demo-dbs/todo/tags\n")
 	if err := os.WriteFile(filepath.Join(ingitDBDir, "root-collections.yaml"), rootCollections, 0o644); err != nil {
 		t.Fatalf("write root collections: %v", err)
 	}
