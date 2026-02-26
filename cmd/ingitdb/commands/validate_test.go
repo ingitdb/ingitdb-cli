@@ -478,9 +478,9 @@ func TestValidate_CompletionMessage(t *testing.T) {
 
 	// Check that completion messages appear for all collections with counts
 	expectedMessages := map[string]bool{
-		"5 records are valid for collection: users":     false,
-		"10 records are valid for collection: products":  false,
-		"3 records are valid for collection: customers": false,
+		"All 5 records are valid for collection: users":     false,
+		"All 10 records are valid for collection: products":  false,
+		"All 3 records are valid for collection: customers": false,
 	}
 
 	for _, msg := range logMessages {

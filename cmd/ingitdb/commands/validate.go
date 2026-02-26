@@ -120,7 +120,7 @@ func Validate(
 				// Log completion message for each collection
 				for collectionKey := range def.Collections {
 					count := result.GetRecordCount(collectionKey)
-					logf(fmt.Sprintf("%d records are valid for collection: %s", count, collectionKey))
+					logf(fmt.Sprintf("All %d records are valid for collection: %s", count, collectionKey))
 				}
 			}
 			return nil
