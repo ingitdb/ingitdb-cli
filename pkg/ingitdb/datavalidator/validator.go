@@ -17,17 +17,21 @@ type simpleValidator struct{}
 
 // Validate performs basic validation of records against their collection schemas.
 // Returns a ValidationResult with any errors found.
-func (sv *simpleValidator) Validate(ctx context.Context, dbPath string, def *ingitdb.Definition) (*ingitdb.ValidationResult, error) {
+func (sv *simpleValidator) Validate(_ context.Context, dbPath string, def *ingitdb.Definition) (*ingitdb.ValidationResult, error) {
 	result := &ingitdb.ValidationResult{}
 
 	// Count records for each collection
 	for collectionKey := range def.Collections {
-		count, err := countRecords(dbPath, collectionKey)
+		total, err := countRecords(dbPath, collectionKey)
 		if err != nil {
 			// Don't fail validation on count error, just set 0
-			count = 0
+			total = 0
 		}
-		result.SetRecordCount(collectionKey, count)
+		// For now, assume all records passed (total == passed)
+		// The validator will be enhanced to track actual failures
+		result.SetRecordCounts(collectionKey, total, total)
+		// Also set the legacy record count for backward compatibility
+		result.SetRecordCount(collectionKey, total)
 	}
 
 	// For now, we just return an empty result (no errors).
@@ -57,4 +61,3 @@ func countRecords(dbPath string, collectionKey string) (int, error) {
 
 	return count, nil
 }
-

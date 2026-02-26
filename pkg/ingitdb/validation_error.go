@@ -36,9 +36,11 @@ func (v ValidationError) Error() string {
 
 // ValidationResult aggregates findings; mutex-protected for goroutine safety.
 type ValidationResult struct {
-	mu            sync.Mutex
-	errors        []ValidationError
-	recordCounts  map[string]int // collection -> record count
+	mu                 sync.Mutex
+	errors             []ValidationError
+	recordCounts       map[string]int // collection -> record count (deprecated, use recordPassedCounts)
+	recordPassedCounts map[string]int // collection -> records passed count
+	recordTotalCounts  map[string]int // collection -> total records count
 }
 
 // Append adds a finding to the result.
@@ -102,4 +104,27 @@ func (r *ValidationResult) GetRecordCount(collectionID string) int {
 	count := r.recordCounts[collectionID]
 	r.mu.Unlock()
 	return count
+}
+
+// SetRecordCounts sets the passed and total record counts for a collection.
+func (r *ValidationResult) SetRecordCounts(collectionID string, passed, total int) {
+	r.mu.Lock()
+	if r.recordPassedCounts == nil {
+		r.recordPassedCounts = make(map[string]int)
+	}
+	if r.recordTotalCounts == nil {
+		r.recordTotalCounts = make(map[string]int)
+	}
+	r.recordPassedCounts[collectionID] = passed
+	r.recordTotalCounts[collectionID] = total
+	r.mu.Unlock()
+}
+
+// GetRecordCounts returns the passed and total record counts for a collection.
+func (r *ValidationResult) GetRecordCounts(collectionID string) (passed, total int) {
+	r.mu.Lock()
+	passed = r.recordPassedCounts[collectionID]
+	total = r.recordTotalCounts[collectionID]
+	r.mu.Unlock()
+	return passed, total
 }

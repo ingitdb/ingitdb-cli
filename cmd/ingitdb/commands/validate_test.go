@@ -454,9 +454,9 @@ func TestValidate_CompletionMessage(t *testing.T) {
 	dataVal := &mockDataValidator{
 		result: func() *ingitdb.ValidationResult {
 			r := &ingitdb.ValidationResult{}
-			r.SetRecordCount("users", 5)
-			r.SetRecordCount("products", 10)
-			r.SetRecordCount("customers", 3)
+			r.SetRecordCounts("users", 5, 5)
+			r.SetRecordCounts("products", 10, 10)
+			r.SetRecordCounts("customers", 3, 3)
 			return r
 		}(),
 	}
@@ -479,8 +479,68 @@ func TestValidate_CompletionMessage(t *testing.T) {
 	// Check that completion messages appear for all collections with counts
 	expectedMessages := map[string]bool{
 		"All 5 records are valid for collection: users":     false,
-		"All 10 records are valid for collection: products":  false,
+		"All 10 records are valid for collection: products": false,
 		"All 3 records are valid for collection: customers": false,
+	}
+
+	for _, msg := range logMessages {
+		if _, exists := expectedMessages[msg]; exists {
+			expectedMessages[msg] = true
+		}
+	}
+
+	for msg, found := range expectedMessages {
+		if !found {
+			t.Errorf("expected log message: %q", msg)
+		}
+	}
+}
+
+func TestValidate_CompletionMessagePartialFailure(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return &ingitdb.Definition{
+			Collections: map[string]*ingitdb.CollectionDef{
+				"users":    {},
+				"products": {},
+			},
+		}, nil
+	}
+	dataVal := &mockDataValidator{
+		result: func() *ingitdb.ValidationResult {
+			r := &ingitdb.ValidationResult{}
+			// users: all 5 passed
+			r.SetRecordCounts("users", 5, 5)
+			// products: 3 passed out of 15
+			r.SetRecordCounts("products", 3, 15)
+			return r
+		}(),
+	}
+
+	logMessages := []string{}
+	logf := func(args ...any) {
+		for _, arg := range args {
+			if str, ok := arg.(string); ok {
+				logMessages = append(logMessages, str)
+			}
+		}
+	}
+
+	cmd := Validate(homeDir, getWd, readDef, dataVal, nil, logf)
+	err := runCLICommand(cmd, "--path="+dir)
+	if err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+
+	// Check that completion messages appear for all collections with correct format
+	expectedMessages := map[string]bool{
+		"All 5 records are valid for collection: users":          false,
+		"3 out of 15 records are valid for collection: products": false,
 	}
 
 	for _, msg := range logMessages {

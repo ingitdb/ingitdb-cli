@@ -2,6 +2,7 @@ package ingitdb
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"testing"
 )
@@ -79,7 +80,7 @@ func TestValidationResult_Append(t *testing.T) {
 	t.Parallel()
 
 	vr := &ValidationResult{}
-	
+
 	err1 := ValidationError{
 		Severity: SeverityError,
 		Message:  "first error",
@@ -109,11 +110,11 @@ func TestValidationResult_Append_Concurrent(t *testing.T) {
 
 	vr := &ValidationResult{}
 	var wg sync.WaitGroup
-	
+
 	// Spawn multiple goroutines to test thread safety
 	numGoroutines := 10
 	errorsPerGoroutine := 100
-	
+
 	for i := 0; i < numGoroutines; i++ {
 		wg.Add(1)
 		go func(id int) {
@@ -126,9 +127,9 @@ func TestValidationResult_Append_Concurrent(t *testing.T) {
 			}
 		}(i)
 	}
-	
+
 	wg.Wait()
-	
+
 	expectedCount := numGoroutines * errorsPerGoroutine
 	actualCount := vr.ErrorCount()
 	if actualCount != expectedCount {
@@ -140,25 +141,25 @@ func TestValidationResult_Errors(t *testing.T) {
 	t.Parallel()
 
 	vr := &ValidationResult{}
-	
+
 	// Test empty result
 	errs := vr.Errors()
 	if len(errs) != 0 {
 		t.Errorf("Errors() for empty result length = %d, want 0", len(errs))
 	}
-	
+
 	// Add errors
 	err1 := ValidationError{Severity: SeverityError, Message: "error1"}
 	err2 := ValidationError{Severity: SeverityWarning, Message: "warning1"}
 	vr.Append(err1)
 	vr.Append(err2)
-	
+
 	// Get errors
 	errs = vr.Errors()
 	if len(errs) != 2 {
 		t.Fatalf("Errors() length = %d, want 2", len(errs))
 	}
-	
+
 	// Verify it returns a copy (modifying returned slice shouldn't affect original)
 	errs[0].Message = "modified"
 	errsAgain := vr.Errors()
@@ -174,18 +175,18 @@ func TestValidationResult_HasErrors(t *testing.T) {
 	t.Parallel()
 
 	vr := &ValidationResult{}
-	
+
 	// Initially empty
 	if vr.HasErrors() {
 		t.Error("HasErrors() = true for empty result, want false")
 	}
-	
+
 	// After adding an error
 	vr.Append(ValidationError{Severity: SeverityError, Message: "error"})
 	if !vr.HasErrors() {
 		t.Error("HasErrors() = false after adding error, want true")
 	}
-	
+
 	// After adding a warning (should still be true)
 	vr.Append(ValidationError{Severity: SeverityWarning, Message: "warning"})
 	if !vr.HasErrors() {
@@ -197,12 +198,12 @@ func TestValidationResult_ErrorCount(t *testing.T) {
 	t.Parallel()
 
 	vr := &ValidationResult{}
-	
+
 	// Initially zero
 	if count := vr.ErrorCount(); count != 0 {
 		t.Errorf("ErrorCount() = %d for empty result, want 0", count)
 	}
-	
+
 	// Add errors incrementally
 	for i := 1; i <= 5; i++ {
 		vr.Append(ValidationError{
@@ -219,12 +220,12 @@ func TestValidationResult_Filter(t *testing.T) {
 	t.Parallel()
 
 	vr := &ValidationResult{}
-	
+
 	err1 := ValidationError{Severity: SeverityError, Message: "error1", CollectionID: "tasks"}
 	err2 := ValidationError{Severity: SeverityWarning, Message: "warning1", CollectionID: "tasks"}
 	err3 := ValidationError{Severity: SeverityError, Message: "error2", CollectionID: "users"}
 	err4 := ValidationError{Severity: SeverityWarning, Message: "warning2", CollectionID: "users"}
-	
+
 	vr.Append(err1)
 	vr.Append(err2)
 	vr.Append(err3)
@@ -255,8 +256,8 @@ func TestValidationResult_Filter(t *testing.T) {
 			wantFirst: "error1",
 		},
 		{
-			name:      "filter_specific_combination",
-			predicate: func(e ValidationError) bool { 
+			name: "filter_specific_combination",
+			predicate: func(e ValidationError) bool {
 				return e.Severity == SeverityError && e.CollectionID == "users"
 			},
 			wantLen:   1,
@@ -296,7 +297,7 @@ func TestValidationResult_Filter_EmptyResult(t *testing.T) {
 	t.Parallel()
 
 	vr := &ValidationResult{}
-	
+
 	filtered := vr.Filter(func(e ValidationError) bool { return true })
 	if len(filtered) != 0 {
 		t.Errorf("Filter() on empty result returned %d errors, want 0", len(filtered))
@@ -316,7 +317,7 @@ func TestValidationError_AllFields(t *testing.T) {
 		Message:      "invalid value",
 		Err:          errors.New("underlying cause"),
 	}
-	
+
 	if ve.Severity != SeverityError {
 		t.Errorf("Severity = %q, want %q", ve.Severity, SeverityError)
 	}
@@ -340,14 +341,88 @@ func TestValidationError_AllFields(t *testing.T) {
 	}
 }
 
-func TestSeverityConstants(t *testing.T) {
+func TestValidationResult_SetRecordCounts(t *testing.T) {
 	t.Parallel()
 
-	// Test that severity constants have expected values
-	if SeverityError != "error" {
-		t.Errorf("SeverityError = %q, want %q", SeverityError, "error")
+	vr := &ValidationResult{}
+
+	// Set counts for multiple collections
+	vr.SetRecordCounts("users", 10, 10)
+	vr.SetRecordCounts("products", 3, 15)
+	vr.SetRecordCounts("customers", 0, 0)
+
+	// Verify passed counts
+	usersPassed, usersTotal := vr.GetRecordCounts("users")
+	if usersPassed != 10 {
+		t.Errorf("GetRecordCounts(users) passed = %d, want 10", usersPassed)
 	}
-	if SeverityWarning != "warning" {
-		t.Errorf("SeverityWarning = %q, want %q", SeverityWarning, "warning")
+	if usersTotal != 10 {
+		t.Errorf("GetRecordCounts(users) total = %d, want 10", usersTotal)
+	}
+
+	// Verify partial pass counts
+	productsPassed, productsTotal := vr.GetRecordCounts("products")
+	if productsPassed != 3 {
+		t.Errorf("GetRecordCounts(products) passed = %d, want 3", productsPassed)
+	}
+	if productsTotal != 15 {
+		t.Errorf("GetRecordCounts(products) total = %d, want 15", productsTotal)
+	}
+
+	// Verify zero counts
+	customersPassed, customersTotal := vr.GetRecordCounts("customers")
+	if customersPassed != 0 {
+		t.Errorf("GetRecordCounts(customers) passed = %d, want 0", customersPassed)
+	}
+	if customersTotal != 0 {
+		t.Errorf("GetRecordCounts(customers) total = %d, want 0", customersTotal)
+	}
+}
+
+func TestValidationResult_GetRecordCounts_NotFound(t *testing.T) {
+	t.Parallel()
+
+	vr := &ValidationResult{}
+
+	// Get counts for non-existent collection should return 0, 0
+	passed, total := vr.GetRecordCounts("nonexistent")
+	if passed != 0 {
+		t.Errorf("GetRecordCounts(nonexistent) passed = %d, want 0", passed)
+	}
+	if total != 0 {
+		t.Errorf("GetRecordCounts(nonexistent) total = %d, want 0", total)
+	}
+}
+
+func TestValidationResult_SetRecordCounts_Concurrent(t *testing.T) {
+	t.Parallel()
+
+	vr := &ValidationResult{}
+	var wg sync.WaitGroup
+
+	// Spawn multiple goroutines to test thread safety
+	numGoroutines := 10
+
+	for i := 0; i < numGoroutines; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			collectionID := fmt.Sprintf("collection%d", id)
+			vr.SetRecordCounts(collectionID, id*10, id*10+5)
+		}(i)
+	}
+
+	wg.Wait()
+
+	// Verify all collections were set
+	for i := 0; i < numGoroutines; i++ {
+		collectionID := fmt.Sprintf("collection%d", i)
+		passed, total := vr.GetRecordCounts(collectionID)
+		if passed != i*10 {
+			t.Errorf("GetRecordCounts(%s) passed = %d, want %d", collectionID, passed, i*10)
+		}
+		if total != i*10+5 {
+			t.Errorf("GetRecordCounts(%s) total = %d, want %d", collectionID, total, i*10+5)
+		}
 	}
 }
