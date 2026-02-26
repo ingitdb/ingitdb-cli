@@ -452,7 +452,13 @@ func TestValidate_CompletionMessage(t *testing.T) {
 		}, nil
 	}
 	dataVal := &mockDataValidator{
-		result: &ingitdb.ValidationResult{},
+		result: func() *ingitdb.ValidationResult {
+			r := &ingitdb.ValidationResult{}
+			r.SetRecordCount("users", 5)
+			r.SetRecordCount("products", 10)
+			r.SetRecordCount("customers", 3)
+			return r
+		}(),
 	}
 
 	logMessages := []string{}
@@ -470,11 +476,11 @@ func TestValidate_CompletionMessage(t *testing.T) {
 		t.Fatalf("Validate: %v", err)
 	}
 
-	// Check that completion messages appear for all collections
+	// Check that completion messages appear for all collections with counts
 	expectedMessages := map[string]bool{
-		"All records are valid for collection: users":     false,
-		"All records are valid for collection: products":  false,
-		"All records are valid for collection: customers": false,
+		"5 records are valid for collection: users":     false,
+		"10 records are valid for collection: products":  false,
+		"3 records are valid for collection: customers": false,
 	}
 
 	for _, msg := range logMessages {

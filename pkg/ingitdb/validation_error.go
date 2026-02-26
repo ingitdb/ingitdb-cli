@@ -36,8 +36,9 @@ func (v ValidationError) Error() string {
 
 // ValidationResult aggregates findings; mutex-protected for goroutine safety.
 type ValidationResult struct {
-	mu     sync.Mutex
-	errors []ValidationError
+	mu            sync.Mutex
+	errors        []ValidationError
+	recordCounts  map[string]int // collection -> record count
 }
 
 // Append adds a finding to the result.
@@ -83,4 +84,22 @@ func (r *ValidationResult) Filter(fn func(ValidationError) bool) []ValidationErr
 		}
 	}
 	return out
+}
+
+// SetRecordCount sets the number of records validated for a collection.
+func (r *ValidationResult) SetRecordCount(collectionID string, count int) {
+	r.mu.Lock()
+	if r.recordCounts == nil {
+		r.recordCounts = make(map[string]int)
+	}
+	r.recordCounts[collectionID] = count
+	r.mu.Unlock()
+}
+
+// GetRecordCount returns the number of records validated for a collection.
+func (r *ValidationResult) GetRecordCount(collectionID string) int {
+	r.mu.Lock()
+	count := r.recordCounts[collectionID]
+	r.mu.Unlock()
+	return count
 }
