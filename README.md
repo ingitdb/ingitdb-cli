@@ -115,11 +115,17 @@ Pre-built binaries for all platforms are available on the [GitHub Releases](http
 # Build the CLI
 go build -o ingitdb ./cmd/ingitdb
 
-# Validate a database directory (defaults to current working directory)
+# Validate a database directory (schema + records)
 ingitdb validate
 
 # Validate a specific path
 ingitdb validate --path=/path/to/your/db
+
+# Validate only collection definitions
+ingitdb validate --only=definition
+
+# Validate only records (skip schema validation)
+ingitdb validate --only=records
 
 # Validate only records changed between two commits (fast CI mode)
 ingitdb validate --from-commit=abc1234 --to-commit=def5678
