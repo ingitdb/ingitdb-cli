@@ -12,6 +12,7 @@ import (
 	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/commands"
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2fsingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/datavalidator"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/validator"
 )
 
@@ -50,7 +51,7 @@ func run(
 		ErrWriter: os.Stderr,
 		Commands: []*cli.Command{
 			commands.Version(version, commit, date),
-			commands.Validate(homeDir, getWd, readDefinition, nil, nil, logf),
+			commands.Validate(homeDir, getWd, readDefinition, datavalidator.NewValidator(), nil, logf),
 			commands.Query(),
 			commands.Materialize(homeDir, getWd, readDefinition, nil, logf),
 			commands.Pull(),

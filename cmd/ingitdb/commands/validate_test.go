@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
@@ -12,9 +13,11 @@ import (
 type mockDataValidator struct {
 	result *ingitdb.ValidationResult
 	err    error
+	called bool
 }
 
 func (m *mockDataValidator) Validate(_ context.Context, _ string, _ *ingitdb.Definition) (*ingitdb.ValidationResult, error) {
+	m.called = true
 	return m.result, m.err
 }
 
@@ -346,5 +349,209 @@ func TestExpandHome_Error(t *testing.T) {
 	}
 	if got != "" {
 		t.Fatalf("expected empty result, got %s", got)
+	}
+}
+
+func TestValidate_OnlyInvalid(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return &ingitdb.Definition{}, nil
+	}
+	logf := func(...any) {}
+
+	cmd := Validate(homeDir, getWd, readDef, nil, nil, logf)
+	err := runCLICommand(cmd, "--path="+dir, "--only=invalid")
+	if err == nil {
+		t.Fatal("expected error for invalid --only value")
+	}
+	if !strings.Contains(err.Error(), "invalid --only value") {
+		t.Errorf("expected 'invalid --only value' in error, got: %v", err)
+	}
+}
+
+func TestValidate_OnlyDefinition(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return &ingitdb.Definition{}, nil
+	}
+	dataVal := &mockDataValidator{
+		result: &ingitdb.ValidationResult{},
+	}
+
+	logf := func(...any) {}
+
+	cmd := Validate(homeDir, getWd, readDef, dataVal, nil, logf)
+	err := runCLICommand(cmd, "--path="+dir, "--only=definition")
+	if err != nil {
+		t.Fatalf("Validate with --only=definition: %v", err)
+	}
+	if dataVal.called {
+		t.Fatal("expected DataValidator.Validate not to be called with --only=definition")
+	}
+}
+
+func TestValidate_OnlyRecords(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+
+	readDefCalls := 0
+	readDef := func(_ string, opts ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		readDefCalls++
+		// Check if validation option was passed - should not be when --only=records
+		if len(opts) > 0 {
+			t.Errorf("expected no validation option passed, got %d options", len(opts))
+		}
+		return &ingitdb.Definition{
+			Collections: map[string]*ingitdb.CollectionDef{
+				"users": {},
+			},
+		}, nil
+	}
+	dataVal := &mockDataValidator{
+		result: &ingitdb.ValidationResult{},
+	}
+
+	logf := func(...any) {}
+
+	cmd := Validate(homeDir, getWd, readDef, dataVal, nil, logf)
+	err := runCLICommand(cmd, "--path="+dir, "--only=records")
+	if err != nil {
+		t.Fatalf("Validate with --only=records: %v", err)
+	}
+	if readDefCalls != 1 {
+		t.Errorf("expected readDefinition to be called once, got %d calls", readDefCalls)
+	}
+}
+
+func TestValidate_CompletionMessage(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return &ingitdb.Definition{
+			Collections: map[string]*ingitdb.CollectionDef{
+				"users":     {},
+				"products":  {},
+				"customers": {},
+			},
+		}, nil
+	}
+	dataVal := &mockDataValidator{
+		result: &ingitdb.ValidationResult{},
+	}
+
+	logMessages := []string{}
+	logf := func(args ...any) {
+		for _, arg := range args {
+			if str, ok := arg.(string); ok {
+				logMessages = append(logMessages, str)
+			}
+		}
+	}
+
+	cmd := Validate(homeDir, getWd, readDef, dataVal, nil, logf)
+	err := runCLICommand(cmd, "--path="+dir)
+	if err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+
+	// Check that completion messages appear for all collections
+	expectedMessages := map[string]bool{
+		"All records are valid for collection: users":     false,
+		"All records are valid for collection: products":  false,
+		"All records are valid for collection: customers": false,
+	}
+
+	for _, msg := range logMessages {
+		if _, exists := expectedMessages[msg]; exists {
+			expectedMessages[msg] = true
+		}
+	}
+
+	for msg, found := range expectedMessages {
+		if !found {
+			t.Errorf("expected log message: %q", msg)
+		}
+	}
+}
+
+func TestValidate_OnlyRecordsSkipsDefinitionValidation(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+
+	// Track if validation option was passed
+	validateOptionPassed := false
+	readDef := func(_ string, opts ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		// When --only=records, no validation option should be passed
+		if len(opts) > 0 {
+			validateOptionPassed = true
+		}
+		return &ingitdb.Definition{
+			Collections: map[string]*ingitdb.CollectionDef{
+				"test": {},
+			},
+		}, nil
+	}
+	dataVal := &mockDataValidator{
+		result: &ingitdb.ValidationResult{},
+	}
+	logf := func(...any) {}
+
+	cmd := Validate(homeDir, getWd, readDef, dataVal, nil, logf)
+	err := runCLICommand(cmd, "--path="+dir, "--only=records")
+	if err != nil {
+		t.Fatalf("Validate with --only=records: %v", err)
+	}
+	if validateOptionPassed {
+		t.Fatal("expected validation option not to be passed with --only=records")
+	}
+}
+
+func TestValidate_OnlyDefinitionSkipsRecordValidation(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return &ingitdb.Definition{
+			Collections: map[string]*ingitdb.CollectionDef{
+				"test": {},
+			},
+		}, nil
+	}
+
+	dataVal := &mockDataValidator{
+		result: &ingitdb.ValidationResult{},
+	}
+
+	logf := func(...any) {}
+
+	cmd := Validate(homeDir, getWd, readDef, dataVal, nil, logf)
+	err := runCLICommand(cmd, "--path="+dir, "--only=definition")
+	if err != nil {
+		t.Fatalf("Validate with --only=definition: %v", err)
+	}
+	if dataVal.called {
+		t.Fatal("expected DataValidator.Validate not to be called with --only=definition")
 	}
 }

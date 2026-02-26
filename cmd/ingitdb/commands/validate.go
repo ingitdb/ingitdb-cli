@@ -37,6 +37,10 @@ func Validate(
 				Name:  "to-commit",
 				Usage: "validate only records up to this commit",
 			},
+			&cli.StringFlag{
+				Name:  "only",
+				Usage: `validate only "definition" or "records" (default: both)`,
+			},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			dirPath := cmd.String("path")
@@ -53,6 +57,12 @@ func Validate(
 			}
 			dirPath = expanded
 			logf("inGitDB db path: ", dirPath)
+
+			// Validate --only flag
+			onlyVal := cmd.String("only")
+			if onlyVal != "" && onlyVal != "definition" && onlyVal != "records" {
+				return fmt.Errorf("invalid --only value: %q (must be \"definition\", \"records\", or empty)", onlyVal)
+			}
 
 			fromCommit := cmd.String("from-commit")
 			toCommit := cmd.String("to-commit")
@@ -76,12 +86,29 @@ func Validate(
 				return nil
 			}
 
-			validateOpt := ingitdb.Validate()
-			def, err := readDefinition(dirPath, validateOpt)
-			if err != nil {
-				return fmt.Errorf("inGitDB database validation failed: %w", err)
+			// Determine which validations to perform
+			shouldValidateDef := onlyVal != "records"
+			shouldValidateRecords := onlyVal != "definition"
+
+			// Read definition (with validation if needed)
+			var def *ingitdb.Definition
+			if shouldValidateDef {
+				validateOpt := ingitdb.Validate()
+				defRes, defErr := readDefinition(dirPath, validateOpt)
+				if defErr != nil {
+					return fmt.Errorf("inGitDB database validation failed: %w", defErr)
+				}
+				def = defRes
+			} else {
+				defRes, defErr := readDefinition(dirPath)
+				if defErr != nil {
+					return fmt.Errorf("inGitDB database validation failed: %w", defErr)
+				}
+				def = defRes
 			}
-			if dataVal != nil {
+
+			// Validate records if needed
+			if shouldValidateRecords && dataVal != nil {
 				result, valErr := dataVal.Validate(ctx, dirPath, def)
 				if valErr != nil {
 					return fmt.Errorf("data validation failed: %w", valErr)
@@ -89,6 +116,10 @@ func Validate(
 				if result.HasErrors() {
 					errCount := result.ErrorCount()
 					return fmt.Errorf("data validation found %d error(s)", errCount)
+				}
+				// Log completion message for each collection
+				for collectionKey := range def.Collections {
+					logf(fmt.Sprintf("All records are valid for collection: %s", collectionKey))
 				}
 			}
 			return nil
