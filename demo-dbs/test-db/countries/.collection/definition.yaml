@@ -6,7 +6,7 @@ record_file:
   format: yaml
 columns:
   titles:
-    type: "map[string]string"
+    type: "map[locale]string"
     required: true
   population:
     type: number
