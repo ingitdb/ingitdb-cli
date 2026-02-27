@@ -133,6 +133,12 @@ When a collection has `default_view` configured, the auto-generated `README.md` 
 
 ---
 
+## 📂 Examples
+
+- **Countries** — a minimal default view using all defaults. See [definition](../../demo-dbs/test-db/countries/.collection/definition.yaml) and expected output: `$ingitdb/countries/countries.tsv`
+
+---
+
 ## 📂 See also
 
 - [`default_view` field reference → collection.md](../schema/collection.md#-default_view)

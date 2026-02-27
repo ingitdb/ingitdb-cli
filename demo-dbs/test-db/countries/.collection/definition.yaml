@@ -16,3 +16,4 @@ columns:
     type: string
   flag:
     type: string
+default_view: {}
