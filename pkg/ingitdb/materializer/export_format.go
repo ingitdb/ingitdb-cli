@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
@@ -12,9 +13,13 @@ import (
 )
 
 // defaultViewFormatExtension returns the file extension for a given format string.
-// Empty string or "tsv" -> "tsv", "csv" -> "csv", etc.
+// Empty string or unknown -> "ingr", "tsv" -> "tsv", "ingr" -> "ingr", "csv" -> "csv", etc.
 func defaultViewFormatExtension(format string) string {
 	switch strings.ToLower(format) {
+	case "tsv":
+		return "tsv"
+	case "ingr":
+		return "ingr"
 	case "csv":
 		return "csv"
 	case "json":
@@ -23,8 +28,8 @@ func defaultViewFormatExtension(format string) string {
 		return "jsonl"
 	case "yaml":
 		return "yaml"
-	default: // "", "tsv", unknown
-		return "tsv"
+	default: // "", unknown
+		return "ingr"
 	}
 }
 
@@ -39,9 +44,11 @@ func formatBatchFileName(base, ext string, batchNum, totalBatches int) string {
 }
 
 // formatExportBatch serializes a batch of records into the given format.
-// format must already be lowercased (or empty for tsv default).
+// format must already be lowercased (or empty for ingr default).
 func formatExportBatch(format string, headers []string, records []ingitdb.RecordEntry) ([]byte, error) {
 	switch format {
+	case "tsv":
+		return formatTSV(headers, records)
 	case "csv":
 		return formatCSV(headers, records)
 	case "json":
@@ -50,8 +57,8 @@ func formatExportBatch(format string, headers []string, records []ingitdb.Record
 		return formatJSONL(headers, records)
 	case "yaml":
 		return formatYAML(headers, records)
-	default: // "", "tsv"
-		return formatTSV(headers, records)
+	default: // "", "ingr"
+		return formatINGR(headers, records)
 	}
 }
 
@@ -73,6 +80,29 @@ func formatTSV(headers []string, records []ingitdb.RecordEntry) ([]byte, error) 
 			buf.WriteString(escapeTSV(val))
 		}
 		buf.WriteByte('\n')
+	}
+	return buf.Bytes(), nil
+}
+
+// formatINGR serializes records in INGR format: N lines per record (one field per line),
+// no header row, no delimiters. N equals len(headers). Schema must be defined externally.
+// Each field value is JSON-encoded: strings are quoted, numbers and booleans are bare,
+// null/missing fields are written as "null".
+func formatINGR(headers []string, records []ingitdb.RecordEntry) ([]byte, error) {
+	var buf bytes.Buffer
+	for _, rec := range records {
+		for _, h := range headers {
+			var val any
+			if rec.Data != nil {
+				val = rec.Data[h]
+			}
+			b, err := json.Marshal(val)
+			if err != nil {
+				return nil, fmt.Errorf("ingr: failed to marshal field %q: %w", h, err)
+			}
+			buf.Write(b)
+			buf.WriteByte('\n')
+		}
 	}
 	return buf.Bytes(), nil
 }
@@ -152,16 +182,26 @@ func recordsToMaps(headers []string, records []ingitdb.RecordEntry) []map[string
 }
 
 // determineColumns returns the ordered list of column names to export.
-// It uses view.Columns if non-empty, otherwise col.ColumnsOrder.
+// Priority:
+//  1. view.Columns if non-empty (used as-is, in the order specified)
+//  2. col.ColumnsOrder if non-empty
+//  3. keys of col.Columns sorted alphabetically
+//
 // "id" is always prepended if it is not already at index 0.
 func determineColumns(col *ingitdb.CollectionDef, view *ingitdb.ViewDef) []string {
 	var cols []string
 	if len(view.Columns) > 0 {
 		cols = make([]string, len(view.Columns))
 		copy(cols, view.Columns)
-	} else {
+	} else if len(col.ColumnsOrder) > 0 {
 		cols = make([]string, len(col.ColumnsOrder))
 		copy(cols, col.ColumnsOrder)
+	} else {
+		cols = make([]string, 0, len(col.Columns))
+		for k := range col.Columns {
+			cols = append(cols, k)
+		}
+		sort.Strings(cols)
 	}
 
 	// Ensure "id" is at index 0

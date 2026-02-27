@@ -11,7 +11,7 @@
 - **Deterministic** — fixed structure, zero ambiguity.
 - **Diff-friendly** — one field per line, stable ordering.
 - **Streamable** — readable line-by-line.
-- **No escaping rules** — raw text only.
+- **JSON-typed** — each value is a single-line JSON expression.
 
 ---
 
@@ -22,7 +22,7 @@ An `.ingr` file is a sequence of records.
 Each record:
 
 - Contains a **fixed number of lines (N)**.
-- Each line represents **one field**.
+- Each line represents **one field value**, encoded as JSON.
 - Records follow each other immediately.
 - No delimiters are required if N is known.
 
@@ -39,21 +39,39 @@ Repeat until EOF
 
 The number of fields per record **must be defined externally** (schema, CLI flag, metadata, or convention).
 
-Example: `N = 3`
+### 3.2 Value Encoding
 
-John
-Doe
+Each field value is encoded as a **compact single-line JSON expression**:
+
+| Go/source type | INGR line |
+|----------------|-----------|
+| string         | `"hello world"` |
+| integer        | `123` |
+| float          | `3.14` |
+| boolean        | `true` / `false` |
+| null / missing | `null` |
+| object         | `{"key1":"value1","key2":2}` |
+| array          | `[1,2,3]` |
+
+JSON objects and arrays must be written without embedded newlines (compact form).
+
+### 3.3 Example (`N = 3`, fields: `first_name`, `last_name`, `age`)
+
+```
+"John"
+"Doe"
 35
-Jane
-Smith
+"Jane"
+"Smith"
 29
+```
 
 Parsed as:
 
-| Record | Field 1 | Field 2 | Field 3 |
-|--------|---------|---------|---------|
-| 1      | John    | Doe     | 35      |
-| 2      | Jane    | Smith   | 29      |
+| Record | first_name | last_name | age |
+|--------|------------|-----------|-----|
+| 1      | John       | Doe       | 35  |
+| 2      | Jane       | Smith     | 29  |
 
 ---
 
@@ -62,11 +80,11 @@ Parsed as:
 1. Encoding: UTF-8.
 2. Line separator: LF (`\n`).
 3. Each field occupies exactly one line.
-4. Empty line is a valid field value.
-5. Total number of lines must be divisible by `N`.
-6. No header row.
-7. No inline delimiters.
-8. No escaping or quoting rules.
+4. Each line must be a valid JSON expression (string, number, boolean, null, object, or array).
+5. JSON objects and arrays must not contain embedded newlines.
+6. Total number of lines must be divisible by `N`.
+7. No header row.
+8. No inline delimiters.
 
 ---
 
@@ -91,22 +109,24 @@ Keeping schema external ensures:
 
 ---
 
-## 6. Example With Empty Field
+## 6. Example With Null Field
 
 `N = 3`
 
-John
-Doe
+```
+"John"
+"Doe"
 35
-Jane
-
+"Jane"
+null
 29
+```
 
 Second record:
 
-- Field 1 = Jane
-- Field 2 = "" (empty)
-- Field 3 = 29
+- Field 1 = `"Jane"`
+- Field 2 = `null` (missing or explicitly null)
+- Field 3 = `29`
 
 ---
 
@@ -117,6 +137,7 @@ A valid `.ingr` file must:
 - Not contain partial records.
 - Not contain trailing extra lines.
 - Maintain strict line ordering.
+- Have every line be a valid single-line JSON expression.
 
 Validation condition:
 
@@ -127,11 +148,11 @@ Validation condition:
 ## 8. Why `.ingr` Works Well in Git
 
 - One field per line → clean diffs.
-- No JSON punctuation (`{}`, `,`, quotes).
-- No CSV escaping issues.
+- JSON encoding is compact and unambiguous.
+- Strings with special characters (tabs, newlines) are safely JSON-escaped.
 - Stable structure.
 - Easier merge conflict resolution.
-- Works naturally with line-based tools (grep, sed, awk).
+- Works naturally with line-based tools (grep, jq, awk).
 
 ---
 
@@ -139,14 +160,13 @@ Validation condition:
 
 Good for:
 
-- Structured flat data with predictable schema
+- Structured flat or nested data with predictable schema
 - Git-tracked datasets
 - CLI-driven workflows
 - Deterministic record storage
 
 Not ideal for:
 
-- Nested structures
 - Variable field counts
 - Binary data
 
@@ -157,7 +177,7 @@ Not ideal for:
 `.ingr` is a deterministic, fixed-line record format:
 
 - `N` lines per record
+- Each line is a JSON-encoded value
 - No delimiters
-- No escaping
 - Schema defined externally
 - Optimised for simplicity and Git friendliness

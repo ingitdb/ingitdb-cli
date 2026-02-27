@@ -36,7 +36,7 @@ func TestFileViewWriter_RenderAndWrite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("WriteView: %v", err)
 	}
-	if !written {
+	if written == WriteOutcomeUnchanged {
 		t.Fatalf("expected file to be written")
 	}
 	content, err := os.ReadFile(outPath)
@@ -75,7 +75,7 @@ func TestFileViewWriter_Unchanged(t *testing.T) {
 	if err != nil {
 		t.Fatalf("WriteView: %v", err)
 	}
-	if written {
+	if written != WriteOutcomeUnchanged {
 		t.Fatalf("expected unchanged output")
 	}
 }

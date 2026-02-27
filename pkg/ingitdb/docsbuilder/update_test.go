@@ -381,8 +381,8 @@ func TestUpdateDocs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if res.FilesWritten != 2 {
-		t.Errorf("expected 2 files written, got %d", res.FilesWritten)
+	if res.FilesUpdated != 2 {
+		t.Errorf("expected 2 files written, got %d", res.FilesUpdated)
 	}
 
 	// Test unchanged
@@ -399,8 +399,8 @@ func TestUpdateDocs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error for empty glob: %v", err)
 	}
-	if res.FilesWritten != 0 && res.FilesUnchanged != 0 {
-		t.Errorf("expected no files processed, got written: %d, unchanged: %d", res.FilesWritten, res.FilesUnchanged)
+	if res.FilesUpdated != 0 && res.FilesUnchanged != 0 {
+		t.Errorf("expected no files processed, got updated: %d, unchanged: %d", res.FilesUpdated, res.FilesUnchanged)
 	}
 
 	// Test failure logic execution loop continuation

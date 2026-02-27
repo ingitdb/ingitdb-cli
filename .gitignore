@@ -18,6 +18,9 @@ out/
 # Test binary, built with `go test -c`
 *.test
 
+# Test artifacts from integration tests
+cmd/ingitdb/commands/$ingitdb/
+
 # Output of the go coverage tool, specifically when used with LiteIDE
 profile.cov
 *.out

@@ -104,7 +104,7 @@ func TestDocsUpdate(t *testing.T) {
 
 		foundLog := false
 		for _, logMsg := range fakeLogs {
-			if strings.Contains(logMsg, "0 written, 1 unchanged") {
+			if strings.Contains(logMsg, "0 updated, 1 unchanged") {
 				foundLog = true
 				break
 			}

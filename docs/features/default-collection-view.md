@@ -4,17 +4,26 @@ The **default view** feature generates flat export files for every collection th
 
 ## 📂 Output location
 
-All export files are written to a dedicated `$ingitdb/` directory at the **repository root**, mirroring the collection directory tree:
+The output destination depends on the type of view being materialised:
+
+| View type | Output path |
+| --------- | ----------- |
+| **Default view** (`default_view` block) | `{repo_root}/$ingitdb/{collection_path}/{collection_id}.ingr` |
+| **Template-rendered view** (e.g. `README.md`) | Written directly into the collection directory alongside source records |
+| **Other named export view** | `{repo_root}/$ingitdb/{collection_path}/{view_file}` |
+
+Default and named export views are written to a dedicated `$ingitdb/` directory at the **repository
+root**, mirroring the collection directory tree:
 
 ```
 {repo_root}/
   $ingitdb/
     {collection_path}/
-      {collection_id}.tsv            ← single file (all records fit in one batch)
-      {collection_id}-000001.tsv     ← paginated (batch number injected when > 1 batch needed)
-      {collection_id}-000002.tsv
+      {collection_id}.ingr           ← single file (all records fit in one batch)
+      {collection_id}-000001.ingr    ← paginated (batch number injected when > 1 batch needed)
+      {collection_id}-000002.ingr
     {collection_path}/{sub_collection}/
-      {sub_collection_id}.tsv
+      {sub_collection_id}.ingr
 ```
 
 Example for a repo with a `todos` top-level collection and a `tags` sub-collection:
@@ -22,12 +31,13 @@ Example for a repo with a `todos` top-level collection and a `tags` sub-collecti
 ```
 $ingitdb/
   todos/
-    todos.tsv
+    todos.ingr
   todos/tags/
-    tags.tsv
+    tags.ingr
 ```
 
-The `$ingitdb/` directory **is committed** to the repository so that web apps can load data directly from raw file URLs (e.g., GitHub raw content, Gitea, self-hosted Git servers).
+The `$ingitdb/` directory **is committed** to the repository so that web apps can load data directly
+from raw file URLs (e.g., GitHub raw content, Gitea, self-hosted Git servers).
 
 ### Why a separate root directory?
 
@@ -42,7 +52,9 @@ Keeping generated artefacts in `$ingitdb/` (rather than a `$views/` subfolder in
 
 The `default_view` is not a special case in the materialiser. After the collection definition is loaded, the inline `default_view` block is **injected into the collection's views map** under the reserved ID `default_view` with its `IsDefault` flag set to `true`. From that point it is validated and executed exactly like any other view defined in `.collection/views/`.
 
-The only special behaviour is **output routing**: because `IsDefault` is `true`, the materialiser writes the output files to `{repo_root}/$ingitdb/{collection_path}/` instead of the usual `{collection_path}/$views/`.
+Output paths follow the routing rules described in [Output location](#-output-location): default and
+named export views land in `{repo_root}/$ingitdb/{collection_path}/`, while template-rendered views
+(e.g. `README.md`) are written directly into the collection directory.
 
 At most one view per collection may have `IsDefault = true`. The validator enforces this constraint.
 
@@ -56,7 +68,7 @@ The `default_view` field in `.collection/definition.yaml` accepts an inline [Vie
 default_view:
   top: 0                    # 0 = all records (default)
   order_by: id asc          # sort order (default: record id ascending)
-  format: tsv               # tsv (default), csv, json, jsonl, yaml
+  format: ingr              # ingr (default), tsv, csv, json, jsonl, yaml
   max_batch_size: 0         # 0 = single file; N > 0 = max N records per file
   file_name: "${collection_id}"   # base file name without extension (default: collection ID)
   columns:                  # optional: omit to include all columns
@@ -65,7 +77,7 @@ default_view:
     - status
 ```
 
-All fields are optional. A minimal configuration that exports all records as TSV:
+All fields are optional. A minimal configuration that exports all records in the default INGR format:
 
 ```yaml
 default_view: {}
@@ -91,8 +103,8 @@ The batch number is **only injected when more than one batch is required**. If a
 
 | Scenario | Example output |
 | --- | --- |
-| `max_batch_size: 0` or all records ≤ `max_batch_size` | `todos.tsv` |
-| Records span multiple batches | `todos-000001.tsv`, `todos-000002.tsv`, … |
+| `max_batch_size: 0` or all records ≤ `max_batch_size` | `todos.ingr` |
+| Records span multiple batches | `todos-000001.ingr`, `todos-000002.ingr`, … |
 
 ---
 
@@ -100,16 +112,16 @@ The batch number is **only injected when more than one batch is required**. If a
 
 | Format  | Extension | Notes |
 | ------- | --------- | ----- |
-| `tsv`   | `.tsv`    | **Default.** Tab-separated values. Row 1 = column headers. Minimal overhead — one record per line gives the smallest possible git diffs. |
+| `ingr`  | `.ingr`   | **Default.** Compact fixed-line record format — one field per line, no header, no delimiters. Optimised for Git diffs. See [INGR spec](../file-formats/ingr.md). |
+| `tsv`   | `.tsv`    | Tab-separated values. Row 1 = column headers. One record per line. |
 | `csv`   | `.csv`    | Comma-separated values (RFC 4180). Row 1 = column headers. Values containing commas or double-quotes are quoted. |
 | `json`  | `.json`   | JSON array of objects `[{…}, …]`. |
 | `jsonl` | `.jsonl`  | Newline-delimited JSON — one JSON object per line. |
 | `yaml`  | `.yaml`   | YAML sequence of mappings. |
 
-**TSV is the recommended default** because:
-- Column names appear only once (header row), unlike JSONL where every row repeats all keys.
-- Tab characters in real-world text values are extremely rare.
-- Each record maps to exactly one line — a single-row data change produces a single-line git diff even across millions of rows.
+**INGR is the default format** because it produces the smallest, most readable Git diffs: each field
+occupies exactly one line, so a change to a single field appears as a single-line diff regardless of
+record size. TSV remains available when a header row or spreadsheet compatibility is needed.
 
 ### TSV escaping
 
@@ -123,7 +135,13 @@ The batch number is **only injected when more than one batch is required**. If a
 
 ## 📂 Column ordering
 
-When no explicit `columns` list is given, the export uses `columns_order` from `definition.yaml`. The record `id` is always the first column.
+Column order is resolved in priority order:
+
+1. **`columns`** in the view definition — used as-is, in the order specified.
+2. **`columns_order`** in `definition.yaml` — used when `columns` is absent.
+3. **All columns from `definition.yaml`** sorted alphabetically — used when neither `columns` nor `columns_order` is defined.
+
+The record `id` is always the first column.
 
 ---
 
@@ -135,7 +153,51 @@ When a collection has `default_view` configured, the auto-generated `README.md` 
 
 ## 📂 Examples
 
-- **Countries** — a minimal default view using all defaults. See [definition](../../demo-dbs/test-db/countries/.collection/definition.yaml) and expected output: `$ingitdb/countries/countries.tsv`
+- **Countries** — a minimal default view using all defaults. See [definition](../../demo-dbs/test-db/countries/.collection/definition.yaml) and expected output: `$ingitdb/countries/countries.ingr`
+
+---
+
+## 📂 CLI output
+
+Running `ingitdb materialize` prints one progress line **for every view processed** (whether created,
+updated, or unchanged) followed by a single summary line.
+
+### Per-view progress line
+
+```
+Materializing view {collection}/{view}... N records saved to {path-relative-to-repo-root}
+```
+
+Examples:
+
+```
+Materializing view todos/default_view... 42 records saved to $ingitdb/todos/todos.ingr
+Materializing view todos/README.md... 42 records saved to todos/.collection/README.md
+Materializing view countries/default_view... 5 records saved to $ingitdb/countries/countries.ingr
+```
+
+### Summary line
+
+After all views are processed, a single summary is printed:
+
+```
+materialized views: N created, N updated, N deleted, N unchanged
+```
+
+Example:
+
+```shell
+$ ingitdb materialize
+Materializing view todos/default_view... 42 records saved to $ingitdb/todos/todos.ingr
+Materializing view countries/default_view... 5 records saved to $ingitdb/countries/countries.ingr
+materialized views: 0 created, 1 updated, 0 deleted, 1 unchanged
+```
+
+### Validation output
+
+Schema validation runs automatically before materialisation, but **validation messages are
+suppressed** during `materialize` — you will not see "Definition of collection '…' is valid"
+lines in normal operation. Validation errors that block materialisation are still reported.
 
 ---
 

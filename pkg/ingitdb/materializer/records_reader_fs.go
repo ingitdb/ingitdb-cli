@@ -56,10 +56,12 @@ func (r FileRecordsReader) ReadRecords(
 			return fmt.Errorf("failed to parse records file %s: %w", path, err)
 		}
 		for key, data := range records {
+			d := dalgo2ingitdb.ApplyLocaleToRead(data, col.Columns)
+			d["id"] = key
 			entry := ingitdb.RecordEntry{
 				Key:      key,
 				FilePath: path,
-				Data:     dalgo2ingitdb.ApplyLocaleToRead(data, col.Columns),
+				Data:     d,
 			}
 			if err := yield(entry); err != nil {
 				return err
@@ -67,7 +69,7 @@ func (r FileRecordsReader) ReadRecords(
 		}
 		return nil
 	case ingitdb.SingleRecord:
-		patternPath, prefix, suffix, err := recordPatternForKey(fileName, col.DirPath)
+		patternPath, extractKey, err := recordPatternForKey(fileName, col.DirPath)
 		if err != nil {
 			return err
 		}
@@ -84,12 +86,16 @@ func (r FileRecordsReader) ReadRecords(
 			if err != nil {
 				return fmt.Errorf("failed to parse record %s: %w", filePath, err)
 			}
-			base := filepath.Base(filePath)
-			key := strings.TrimSuffix(strings.TrimPrefix(base, prefix), suffix)
+			key := extractKey(filePath)
+			if strings.HasPrefix(key, ".") {
+				continue // skip hidden directories like .collection
+			}
+			d := dalgo2ingitdb.ApplyLocaleToRead(data, col.Columns)
+			d["id"] = key
 			entry := ingitdb.RecordEntry{
 				Key:      key,
 				FilePath: filePath,
-				Data:     dalgo2ingitdb.ApplyLocaleToRead(data, col.Columns),
+				Data:     d,
 			}
 			if err := yield(entry); err != nil {
 				return err
@@ -101,14 +107,39 @@ func (r FileRecordsReader) ReadRecords(
 	}
 }
 
-func recordPatternForKey(name, dirPath string) (string, string, string, error) {
+func recordPatternForKey(name, dirPath string) (patternPath string, extractKey func(string) string, err error) {
 	const placeholder = "{key}"
-	idx := strings.Index(name, placeholder)
-	if idx < 0 {
-		return "", "", "", fmt.Errorf("record file name %q must include {key}", name)
+	if !strings.Contains(name, placeholder) {
+		return "", nil, fmt.Errorf("record file name %q must include {key}", name)
 	}
-	prefix := name[:idx]
-	suffix := name[idx+len(placeholder):]
-	pattern := filepath.Join(dirPath, prefix+"*"+suffix)
-	return pattern, prefix, suffix, nil
+	// Replace ALL {key} placeholders with * for globbing.
+	globName := strings.ReplaceAll(name, placeholder, "*")
+	patternPath = filepath.Join(dirPath, globName)
+
+	// Build the key extractor based on the position of the first {key}.
+	idx := strings.Index(name, placeholder)
+	prefix := filepath.ToSlash(name[:idx])
+	rest := name[idx+len(placeholder):]
+	// Key segment ends at the first "/" in rest (or at the end if no slash).
+	endIdx := strings.IndexByte(rest, '/')
+	var keySuffix string
+	if endIdx < 0 {
+		keySuffix = rest
+	} else {
+		keySuffix = rest[:endIdx]
+	}
+
+	extractKey = func(filePath string) string {
+		rel, relErr := filepath.Rel(dirPath, filePath)
+		if relErr != nil {
+			return filepath.Base(filePath)
+		}
+		rel = filepath.ToSlash(rel)
+		s := strings.TrimPrefix(rel, prefix)
+		if slashIdx := strings.IndexByte(s, '/'); slashIdx >= 0 {
+			return strings.TrimSuffix(s[:slashIdx], keySuffix)
+		}
+		return strings.TrimSuffix(s, keySuffix)
+	}
+	return patternPath, extractKey, nil
 }

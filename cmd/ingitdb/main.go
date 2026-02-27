@@ -12,6 +12,7 @@ import (
 	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/commands"
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2fsingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/materializer"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/datavalidator"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/validator"
 )
@@ -53,7 +54,7 @@ func run(
 			commands.Version(version, commit, date),
 			commands.Validate(homeDir, getWd, readDefinition, datavalidator.NewValidator(), nil, logf),
 			commands.Query(),
-			commands.Materialize(homeDir, getWd, readDefinition, nil, logf),
+			commands.Materialize(homeDir, getWd, readDefinition, materializer.NewViewBuilder(materializer.NewFileRecordsReader(), func(f string, a ...any) { logf(fmt.Sprintf(f, a...)) }), logf),
 			commands.Pull(),
 			commands.Setup(),
 			commands.Resolve(),

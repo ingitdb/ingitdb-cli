@@ -18,6 +18,7 @@ type SimpleViewBuilder struct {
 	DefReader     ViewDefReader
 	RecordsReader ingitdb.RecordsReader
 	Writer        ViewWriter
+	Logf          func(format string, args ...any)
 }
 
 func (b SimpleViewBuilder) BuildViews(
@@ -41,6 +42,13 @@ func (b SimpleViewBuilder) BuildViews(
 	if err != nil {
 		return nil, err
 	}
+	// Inject the inline default_view from the collection definition.
+	if col.DefaultView != nil {
+		dv := *col.DefaultView
+		dv.ID = ingitdb.DefaultViewID
+		dv.IsDefault = true
+		views[ingitdb.DefaultViewID] = &dv
+	}
 	result := &ingitdb.MaterializeResult{}
 	for _, view := range views {
 		records, err := readAllRecords(ctx, b.RecordsReader, dbPath, col)
@@ -50,8 +58,9 @@ func (b SimpleViewBuilder) BuildViews(
 
 		if view.IsDefault {
 			// Handle default view export
-			written, unchanged, errs := buildDefaultView(dbPath, col, view, records)
-			result.FilesWritten += written
+			created, updated, unchanged, errs := buildDefaultView(dbPath, repoRoot, col, view, records, b.Logf)
+			result.FilesCreated += created
+			result.FilesUpdated += updated
 			result.FilesUnchanged += unchanged
 			result.Errors = append(result.Errors, errs...)
 			continue
@@ -65,15 +74,22 @@ func (b SimpleViewBuilder) BuildViews(
 			records = records[:view.Top]
 		}
 		outPath := resolveViewOutputPath(col, view, dbPath, repoRoot)
-		written, err := b.Writer.WriteView(ctx, col, view, records, outPath)
+		outcome, err := b.Writer.WriteView(ctx, col, view, records, outPath)
 		if err != nil {
 			result.Errors = append(result.Errors, err)
 			continue
 		}
-		if written {
-			result.FilesWritten++
-		} else {
+		switch outcome {
+		case WriteOutcomeCreated:
+			result.FilesCreated++
+		case WriteOutcomeUpdated:
+			result.FilesUpdated++
+		default:
 			result.FilesUnchanged++
+		}
+		if b.Logf != nil {
+			b.Logf("Materializing view %s/%s... %d records saved to %s",
+				col.ID, view.ID, len(records), displayRelPath(repoRoot, outPath))
 		}
 	}
 	return result, nil
@@ -104,8 +120,9 @@ func (b SimpleViewBuilder) BuildView(
 
 	if view.IsDefault {
 		// Handle default view export
-		written, unchanged, errs := buildDefaultView(dbPath, col, view, records)
-		result.FilesWritten += written
+		created, updated, unchanged, errs := buildDefaultView(dbPath, repoRoot, col, view, records, b.Logf)
+		result.FilesCreated += created
+		result.FilesUpdated += updated
 		result.FilesUnchanged += unchanged
 		result.Errors = append(result.Errors, errs...)
 		return result, nil
@@ -119,15 +136,22 @@ func (b SimpleViewBuilder) BuildView(
 		records = records[:view.Top]
 	}
 	outPath := resolveViewOutputPath(col, view, dbPath, repoRoot)
-	written, err := b.Writer.WriteView(ctx, col, view, records, outPath)
+	outcome, err := b.Writer.WriteView(ctx, col, view, records, outPath)
 	if err != nil {
 		result.Errors = append(result.Errors, err)
-		return result, nil // Return immediately for single view errors instead of continuing
+		return result, nil
 	}
-	if written {
-		result.FilesWritten++
-	} else {
+	switch outcome {
+	case WriteOutcomeCreated:
+		result.FilesCreated++
+	case WriteOutcomeUpdated:
+		result.FilesUpdated++
+	default:
 		result.FilesUnchanged++
+	}
+	if b.Logf != nil {
+		b.Logf("Materializing view %s/%s... %d records saved to %s",
+			col.ID, view.ID, len(records), displayRelPath(repoRoot, outPath))
 	}
 
 	return result, nil
@@ -176,7 +200,7 @@ func filterColumns(records []ingitdb.RecordEntry, cols []string) []ingitdb.Recor
 	return filtered
 }
 
-func buildDefaultView(dbPath string, col *ingitdb.CollectionDef, view *ingitdb.ViewDef, records []ingitdb.RecordEntry) (written, unchanged int, errs []error) {
+func buildDefaultView(dbPath string, repoRoot string, col *ingitdb.CollectionDef, view *ingitdb.ViewDef, records []ingitdb.RecordEntry, logf func(string, ...any)) (created, updated, unchanged int, errs []error) {
 	columns := determineColumns(col, view)
 	format := strings.ToLower(view.Format)
 	ext := defaultViewFormatExtension(format)
@@ -185,7 +209,10 @@ func buildDefaultView(dbPath string, col *ingitdb.CollectionDef, view *ingitdb.V
 		base = col.ID
 	}
 
-	relPath, _ := filepath.Rel(dbPath, col.DirPath)
+	outputRoot := repoRoot
+	if outputRoot == "" {
+		outputRoot = dbPath
+	}
 
 	// Determine batches
 	totalBatches := 1
@@ -214,7 +241,8 @@ func buildDefaultView(dbPath string, col *ingitdb.CollectionDef, view *ingitdb.V
 		}
 
 		fileName := formatBatchFileName(base, ext, batchNum, totalBatches)
-		outPath := filepath.Join(dbPath, ingitdb.IngitdbDir, relPath, fileName)
+		relColPath, _ := filepath.Rel(outputRoot, col.DirPath)
+		outPath := filepath.Join(outputRoot, ingitdb.IngitdbDir, relColPath, fileName)
 
 		if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
 			errs = append(errs, fmt.Errorf("mkdir for %s: %w", outPath, err))
@@ -224,6 +252,10 @@ func buildDefaultView(dbPath string, col *ingitdb.CollectionDef, view *ingitdb.V
 		existing, readErr := os.ReadFile(outPath)
 		if readErr == nil && bytes.Equal(existing, content) {
 			unchanged++
+			if logf != nil {
+				logf("Materializing view %s/%s... %d records saved to %s",
+					col.ID, view.ID, len(batchRecords), displayRelPath(repoRoot, outPath))
+			}
 			continue
 		}
 
@@ -231,31 +263,60 @@ func buildDefaultView(dbPath string, col *ingitdb.CollectionDef, view *ingitdb.V
 			errs = append(errs, fmt.Errorf("write %s: %w", outPath, err))
 			continue
 		}
-		written++
+		if readErr == nil {
+			updated++
+		} else {
+			created++
+		}
+		if logf != nil {
+			logf("Materializing view %s/%s... %d records saved to %s",
+				col.ID, view.ID, len(batchRecords), displayRelPath(repoRoot, outPath))
+		}
 	}
 	return
 }
 
 func resolveViewOutputPath(col *ingitdb.CollectionDef, view *ingitdb.ViewDef, dbPath, repoRoot string) string {
+	relPath, _ := filepath.Rel(dbPath, col.DirPath)
 	if view.IsDefault {
-		// Compute relative path from dbPath to col.DirPath
-		relPath, _ := filepath.Rel(dbPath, col.DirPath)
 		base := view.FileName
 		if base == "" {
 			base = col.ID
 		}
-		ext := defaultViewFormatExtension(view.Format)
+		ext := defaultViewFormatExtension(strings.ToLower(view.Format))
 		return filepath.Join(repoRoot, ingitdb.IngitdbDir, relPath, base+"."+ext)
 	}
-
+	// Template-rendered views (e.g. README.md) live in the collection directory itself.
+	if view.Template != "" {
+		if view.FileName != "" {
+			return filepath.Join(col.DirPath, view.FileName)
+		}
+		name := view.ID
+		if name == "" {
+			name = "view"
+		}
+		return filepath.Join(col.DirPath, name+".md")
+	}
+	// Data-export views go to $ingitdb/
 	if view.FileName != "" {
-		return filepath.Join(col.DirPath, view.FileName)
+		return filepath.Join(repoRoot, ingitdb.IngitdbDir, relPath, view.FileName)
 	}
 	name := view.ID
 	if name == "" {
 		name = "view"
 	}
-	return filepath.Join(col.DirPath, "$views", name+".md")
+	ext := defaultViewFormatExtension(strings.ToLower(view.Format))
+	return filepath.Join(repoRoot, ingitdb.IngitdbDir, relPath, name+"."+ext)
+}
+
+// displayRelPath returns outPath relative to repoRoot for display, or outPath if unavailable.
+func displayRelPath(repoRoot, outPath string) string {
+	if repoRoot != "" {
+		if rel, err := filepath.Rel(repoRoot, outPath); err == nil {
+			return rel
+		}
+	}
+	return outPath
 }
 
 func orderRecords(records []ingitdb.RecordEntry, orderBy string) error {

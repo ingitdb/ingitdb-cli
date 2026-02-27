@@ -26,29 +26,29 @@ func (w FuncViewWriter) WriteView(
 	view *ingitdb.ViewDef,
 	records []ingitdb.RecordEntry,
 	outPath string,
-) (bool, error) {
+) (WriteOutcome, error) {
 	_ = ctx
 	if view.Template == "" {
-		return false, fmt.Errorf("view template is required")
+		return WriteOutcomeUnchanged, fmt.Errorf("view template is required")
 	}
 	templatePath := filepath.Join(col.DirPath, view.Template)
 	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
-		return false, fmt.Errorf("failed to parse template %s: %w", templatePath, err)
+		return WriteOutcomeUnchanged, fmt.Errorf("failed to parse template %s: %w", templatePath, err)
 	}
 	data := viewTemplateData(view, records)
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, data); err != nil {
-		return false, fmt.Errorf("failed to render template %s: %w", templatePath, err)
+		return WriteOutcomeUnchanged, fmt.Errorf("failed to render template %s: %w", templatePath, err)
 	}
 	content := buf.Bytes()
 	if strings.HasSuffix(strings.ToLower(outPath), ".md") {
 		content = stripMarkdownComments(content)
 	}
 	if err := w.write(content); err != nil {
-		return false, err
+		return WriteOutcomeUnchanged, err
 	}
-	return true, nil
+	return WriteOutcomeCreated, nil
 }
 
 // FileViewWriter renders a view template and writes it to a file.
@@ -72,37 +72,41 @@ func (w FileViewWriter) WriteView(
 	view *ingitdb.ViewDef,
 	records []ingitdb.RecordEntry,
 	outPath string,
-) (bool, error) {
+) (WriteOutcome, error) {
 	_ = ctx
 	if view.Template == "" {
-		return false, fmt.Errorf("view template is required")
+		return WriteOutcomeUnchanged, fmt.Errorf("view template is required")
 	}
 	templatePath := filepath.Join(col.DirPath, view.Template)
 	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
-		return false, fmt.Errorf("failed to parse template %s: %w", templatePath, err)
+		return WriteOutcomeUnchanged, fmt.Errorf("failed to parse template %s: %w", templatePath, err)
 	}
 	data := viewTemplateData(view, records)
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, data); err != nil {
-		return false, fmt.Errorf("failed to render template %s: %w", templatePath, err)
+		return WriteOutcomeUnchanged, fmt.Errorf("failed to render template %s: %w", templatePath, err)
 	}
 	content := buf.Bytes()
 	if strings.HasSuffix(strings.ToLower(outPath), ".md") {
 		content = stripMarkdownComments(content)
 	}
-	if existing, err := w.readFile(outPath); err == nil {
+	existing, readErr := w.readFile(outPath)
+	if readErr == nil {
 		if bytes.Equal(existing, content) {
-			return false, nil
+			return WriteOutcomeUnchanged, nil
 		}
 	}
 	if err := w.mkdirAll(filepath.Dir(outPath), 0o755); err != nil {
-		return false, fmt.Errorf("failed to create directory for %s: %w", outPath, err)
+		return WriteOutcomeUnchanged, fmt.Errorf("failed to create directory for %s: %w", outPath, err)
 	}
 	if err := w.writeFile(outPath, content, 0o644); err != nil {
-		return false, fmt.Errorf("failed to write view output %s: %w", outPath, err)
+		return WriteOutcomeUnchanged, fmt.Errorf("failed to write view output %s: %w", outPath, err)
 	}
-	return true, nil
+	if readErr == nil {
+		return WriteOutcomeUpdated, nil
+	}
+	return WriteOutcomeCreated, nil
 }
 
 func viewTemplateData(view *ingitdb.ViewDef, records []ingitdb.RecordEntry) map[string]any {

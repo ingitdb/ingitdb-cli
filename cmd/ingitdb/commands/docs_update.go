@@ -120,7 +120,7 @@ func runDocsUpdate(ctx context.Context, dirPath string, def *ingitdb.Definition,
 				continue
 			}
 			if changed {
-				result.FilesWritten++
+				result.FilesUpdated++
 			} else {
 				result.FilesUnchanged++
 			}
@@ -146,7 +146,7 @@ func runDocsUpdate(ctx context.Context, dirPath string, def *ingitdb.Definition,
 		}
 	}
 
-	logf(fmt.Sprintf("docs update completed: %d written, %d unchanged", result.FilesWritten, result.FilesUnchanged))
+	logf(fmt.Sprintf("docs update completed: %d updated, %d unchanged", result.FilesUpdated, result.FilesUnchanged))
 	if len(result.Errors) > 0 {
 		for _, err := range result.Errors {
 			logf(fmt.Sprintf("error: %v", err))

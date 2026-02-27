@@ -18,7 +18,7 @@ func TestDefaultViewFormatExtension(t *testing.T) {
 		format string
 		want   string
 	}{
-		{"", "tsv"},
+		{"", "ingr"},
 		{"tsv", "tsv"},
 		{"TSV", "tsv"},
 		{"csv", "csv"},
@@ -29,8 +29,10 @@ func TestDefaultViewFormatExtension(t *testing.T) {
 		{"JSONL", "jsonl"},
 		{"yaml", "yaml"},
 		{"YAML", "yaml"},
-		{"unknown", "tsv"},
-		{"txt", "tsv"},
+		{"ingr", "ingr"},
+		{"INGR", "ingr"},
+		{"unknown", "ingr"},
+		{"txt", "ingr"},
 	}
 
 	for _, tt := range tests {
@@ -392,6 +394,78 @@ func TestFormatExportBatch_EmptyRecords(t *testing.T) {
 				t.Errorf("CSV validation failed for format %s: %s", tt.format, string(got))
 			}
 		})
+	}
+}
+
+func TestFormatExportBatch_INGR(t *testing.T) {
+	t.Parallel()
+
+	headers := []string{"id", "name", "age"}
+	records := []ingitdb.RecordEntry{
+		{Key: "1", Data: map[string]any{"id": "1", "name": "Alice", "age": 30}},
+		{Key: "2", Data: map[string]any{"id": "2", "name": "Bob", "age": 25}},
+	}
+
+	got, err := formatExportBatch("ingr", headers, records)
+	if err != nil {
+		t.Fatalf("formatExportBatch: %v", err)
+	}
+
+	// INGR: 3 fields per record, no header, 6 lines total; strings are JSON-quoted
+	want := `"1"` + "\n" + `"Alice"` + "\n" + `30` + "\n" + `"2"` + "\n" + `"Bob"` + "\n" + `25` + "\n"
+	if string(got) != want {
+		t.Errorf("formatExportBatch(ingr) = %q, want %q", string(got), want)
+	}
+}
+
+func TestFormatINGR_EmptyRecords(t *testing.T) {
+	t.Parallel()
+
+	got, err := formatExportBatch("ingr", []string{"id", "name"}, []ingitdb.RecordEntry{})
+	if err != nil {
+		t.Fatalf("formatExportBatch: %v", err)
+	}
+	if len(got) != 0 {
+		t.Errorf("expected empty output, got %q", string(got))
+	}
+}
+
+func TestFormatINGR_NilAndMissingFields(t *testing.T) {
+	t.Parallel()
+
+	headers := []string{"id", "name", "age"}
+	records := []ingitdb.RecordEntry{
+		{Key: "1", Data: map[string]any{"id": "1", "name": nil}}, // missing age, nil name
+	}
+
+	got, err := formatExportBatch("ingr", headers, records)
+	if err != nil {
+		t.Fatalf("formatExportBatch: %v", err)
+	}
+
+	// nil name → JSON null, missing age → JSON null
+	want := "\"1\"\nnull\nnull\n"
+	if string(got) != want {
+		t.Errorf("formatExportBatch(ingr) = %q, want %q", string(got), want)
+	}
+}
+
+func TestFormatINGR_DefaultFormatIsINGR(t *testing.T) {
+	t.Parallel()
+
+	headers := []string{"id"}
+	records := []ingitdb.RecordEntry{
+		{Key: "1", Data: map[string]any{"id": "hello"}},
+	}
+
+	// empty format string should use INGR (the default)
+	got, err := formatExportBatch("", headers, records)
+	if err != nil {
+		t.Fatalf("formatExportBatch: %v", err)
+	}
+	want := "\"hello\"\n"
+	if string(got) != want {
+		t.Errorf("default format output = %q, want %q", string(got), want)
 	}
 }
 
@@ -1043,6 +1117,28 @@ func TestDetermineColumns_EmptyCollectionColumnsOrder(t *testing.T) {
 
 	got := determineColumns(col, view)
 	expected := []string{"id"}
+
+	if !slicesEqual(got, expected) {
+		t.Errorf("determineColumns() = %v, want %v", got, expected)
+	}
+}
+
+func TestDetermineColumns_FallbackToColumnsSortedByName(t *testing.T) {
+	t.Parallel()
+
+	col := &ingitdb.CollectionDef{
+		ID: "col1",
+		Columns: map[string]*ingitdb.ColumnDef{
+			"zebra":      {Type: "string"},
+			"apple":      {Type: "string"},
+			"mango":      {Type: "number"},
+		},
+		// ColumnsOrder intentionally empty — should fall back to sorted Columns keys
+	}
+	view := &ingitdb.ViewDef{}
+
+	got := determineColumns(col, view)
+	expected := []string{"id", "apple", "mango", "zebra"}
 
 	if !slicesEqual(got, expected) {
 		t.Errorf("determineColumns() = %v, want %v", got, expected)

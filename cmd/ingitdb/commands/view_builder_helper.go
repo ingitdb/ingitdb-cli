@@ -18,5 +18,5 @@ func viewBuilderForCollection(colDef *ingitdb.CollectionDef) (materializer.ViewB
 		return nil, nil
 	}
 	// Use the filesystem reader for template-based views like README builders.
-	return materializer.NewViewBuilder(materializer.NewFileRecordsReader()), nil
+	return materializer.NewViewBuilder(materializer.NewFileRecordsReader(), nil), nil
 }

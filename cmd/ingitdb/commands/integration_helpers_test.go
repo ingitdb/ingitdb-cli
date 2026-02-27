@@ -13,7 +13,7 @@ func findRepoRoot(t *testing.T) string {
 		t.Fatalf("getwd: %v", err)
 	}
 	for i := 0; i < 6; i++ {
-		if _, statErr := os.Stat(filepath.Join(dir, "test-ingitdb")); statErr == nil {
+		if _, statErr := os.Stat(filepath.Join(dir, "demo-dbs", "test-db")); statErr == nil {
 			return dir
 		}
 		dir = filepath.Dir(dir)

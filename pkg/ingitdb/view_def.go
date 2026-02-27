@@ -51,6 +51,7 @@ func (v *ViewDef) Validate() error {
 	if v.Format != "" {
 		// Validate format is one of the allowed values (case-insensitive)
 		validFormats := map[string]bool{
+			"ingr":  true,
 			"tsv":   true,
 			"csv":   true,
 			"json":  true,
@@ -59,7 +60,7 @@ func (v *ViewDef) Validate() error {
 		}
 		formatLower := strings.ToLower(v.Format)
 		if !validFormats[formatLower] {
-			return fmt.Errorf("invalid 'format' value: %s, must be one of: tsv, csv, json, jsonl, yaml", v.Format)
+			return fmt.Errorf("invalid 'format' value: %s, must be one of: ingr, tsv, csv, json, jsonl, yaml", v.Format)
 		}
 	}
 

@@ -31,6 +31,13 @@ Example:
 - Top 10 most populous cities in the world and their official language
 - Top 10 French-speaking cities
 
+## 📂 Output location
+
+All three view types — collection-level, record-level, and root-level — are materialized to the
+`$ingitdb/` directory at the repository root, mirroring the collection directory tree. This applies
+to both the inline `default_view` and any named views defined in `.collection/views/`. There is no
+`$views/` subfolder inside individual collection directories.
+
 ---
 
 ## 📂 See also

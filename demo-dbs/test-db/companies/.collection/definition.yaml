@@ -10,3 +10,4 @@ columns:
     required: true
   industry:
     type: string
+default_view: {}

@@ -40,6 +40,11 @@ func TestViewDefValidate_Format(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name:    "valid_ingr",
+			format:  "ingr",
+			wantErr: false,
+		},
+		{
 			name:    "valid_tsv",
 			format:  "tsv",
 			wantErr: false,

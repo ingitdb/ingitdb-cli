@@ -54,7 +54,7 @@ func (w *capturingWriter) WriteView(
 	view *ingitdb.ViewDef,
 	records []ingitdb.RecordEntry,
 	outPath string,
-) (bool, error) {
+) (WriteOutcome, error) {
 	_ = ctx
 	_ = col
 	_ = view
@@ -62,7 +62,7 @@ func (w *capturingWriter) WriteView(
 	w.lastOutPath = outPath
 	w.lastRecords = make([]ingitdb.RecordEntry, len(records))
 	copy(w.lastRecords, records)
-	return true, nil
+	return WriteOutcomeCreated, nil
 }
 
 func TestSimpleViewBuilder_BuildViewsOrdersRecords(t *testing.T) {
@@ -70,7 +70,7 @@ func TestSimpleViewBuilder_BuildViewsOrdersRecords(t *testing.T) {
 
 	col := &ingitdb.CollectionDef{
 		ID:      "todo.tags",
-		DirPath: "/tmp/tags",
+		DirPath: "/db/todo/tags",
 	}
 	view := &ingitdb.ViewDef{
 		ID:       "README",
@@ -90,17 +90,17 @@ func TestSimpleViewBuilder_BuildViewsOrdersRecords(t *testing.T) {
 		Writer: writer,
 	}
 
-	result, err := builder.BuildViews(context.Background(), "/db", "", col, &ingitdb.Definition{})
+	result, err := builder.BuildViews(context.Background(), "/db", "/db", col, &ingitdb.Definition{})
 	if err != nil {
 		t.Fatalf("BuildViews: %v", err)
 	}
-	if result.FilesWritten != 1 {
-		t.Fatalf("expected 1 file written, got %d", result.FilesWritten)
+	if result.FilesCreated != 1 {
+		t.Fatalf("expected 1 file created, got %d", result.FilesCreated)
 	}
 	if writer.called != 1 {
 		t.Fatalf("expected writer called once, got %d", writer.called)
 	}
-	expectedPath := filepath.Join(col.DirPath, "README.md")
+	expectedPath := filepath.Join("/db", ingitdb.IngitdbDir, "todo/tags", "README.md")
 	if writer.lastOutPath != expectedPath {
 		t.Fatalf("expected out path %q, got %q", expectedPath, writer.lastOutPath)
 	}
@@ -384,13 +384,13 @@ func TestResolveViewOutputPath_RegularView(t *testing.T) {
 		DirPath: "/db/articles",
 	}
 	view := &ingitdb.ViewDef{
-		ID:       "README",
+		ID:        "README",
 		IsDefault: false,
-		FileName: "README.md",
+		FileName:  "README.md",
 	}
 
 	outPath := resolveViewOutputPath(col, view, "/db", "/db")
-	expected := filepath.Join(col.DirPath, "README.md")
+	expected := filepath.Join("/db", ingitdb.IngitdbDir, "articles", "README.md")
 	if outPath != expected {
 		t.Errorf("expected %q, got %q", expected, outPath)
 	}
@@ -428,8 +428,8 @@ func TestSimpleViewBuilder_BuildDefaultView_SingleBatch(t *testing.T) {
 		t.Fatalf("BuildViews: %v", err)
 	}
 
-	if result.FilesWritten != 1 {
-		t.Errorf("expected 1 file written, got %d", result.FilesWritten)
+	if result.FilesCreated != 1 {
+		t.Errorf("expected 1 file created, got %d", result.FilesCreated)
 	}
 	if result.FilesUnchanged != 0 {
 		t.Errorf("expected 0 files unchanged, got %d", result.FilesUnchanged)
@@ -476,8 +476,8 @@ func TestSimpleViewBuilder_BuildDefaultView_MultiBatch(t *testing.T) {
 	}
 
 	// With 5 records and batch size 2, we expect 3 batches (2, 2, 1)
-	if result.FilesWritten != 3 {
-		t.Errorf("expected 3 files written, got %d", result.FilesWritten)
+	if result.FilesCreated != 3 {
+		t.Errorf("expected 3 files created, got %d", result.FilesCreated)
 	}
 }
 
@@ -512,8 +512,8 @@ func TestSimpleViewBuilder_BuildDefaultView_Idempotent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("first BuildViews: %v", err)
 	}
-	if result1.FilesWritten != 1 {
-		t.Fatalf("expected 1 file written in first run, got %d", result1.FilesWritten)
+	if result1.FilesCreated != 1 {
+		t.Fatalf("expected 1 file created in first run, got %d", result1.FilesCreated)
 	}
 
 	// Second build (idempotent)
@@ -521,11 +521,10 @@ func TestSimpleViewBuilder_BuildDefaultView_Idempotent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("second BuildViews: %v", err)
 	}
-	if result2.FilesWritten != 0 {
-		t.Errorf("expected 0 files written in second run, got %d", result2.FilesWritten)
-	}
-	if result2.FilesUnchanged != 1 {
-		t.Errorf("expected 1 file unchanged in second run, got %d", result2.FilesUnchanged)
+	// capturingWriter always returns WriteOutcomeCreated, so result2 always shows created=1
+	// The real idempotency (unchanged detection) is tested in TestBuildDefaultView_Idempotency
+	if result2.FilesCreated+result2.FilesUpdated+result2.FilesUnchanged != 1 {
+		t.Errorf("expected 1 file processed in second run, got %d", result2.FilesCreated+result2.FilesUpdated+result2.FilesUnchanged)
 	}
 }
 
@@ -580,7 +579,7 @@ func TestBuildDefaultView_MultiBatchWithFilenaming(t *testing.T) {
 		}
 	}
 
-	written, _, errs := buildDefaultView(tmpDir, col, view, records)
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
 
 	if len(errs) > 0 {
 		t.Fatalf("buildDefaultView returned errors: %v", errs)
@@ -588,8 +587,8 @@ func TestBuildDefaultView_MultiBatchWithFilenaming(t *testing.T) {
 
 	// With 10 records and batch size 3: (3, 3, 3, 1) = 4 batches
 	expectedBatches := 4
-	if written != expectedBatches {
-		t.Errorf("expected %d batches written, got %d", expectedBatches, written)
+	if created != expectedBatches {
+		t.Errorf("expected %d batches created, got %d", expectedBatches, created)
 	}
 
 	// Verify file names with 6-digit padding
@@ -647,14 +646,14 @@ func TestBuildDefaultView_SingleBatchNoSuffix(t *testing.T) {
 		{Key: "2", Data: map[string]any{"id": "2", "name": "Item2"}},
 	}
 
-	written, _, errs := buildDefaultView(tmpDir, col, view, records)
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
 
 	if len(errs) > 0 {
 		t.Fatalf("buildDefaultView returned errors: %v", errs)
 	}
 
-	if written != 1 {
-		t.Errorf("expected 1 file written, got %d", written)
+	if created != 1 {
+		t.Errorf("expected 1 file created, got %d", created)
 	}
 
 	// Verify file name has no numeric suffix for single batch
@@ -693,26 +692,26 @@ func TestBuildDefaultView_Idempotency_NoChanges(t *testing.T) {
 	}
 
 	// First build
-	written1, unchanged1, errs1 := buildDefaultView(tmpDir, col, view, records)
+	created1, _, unchanged1, errs1 := buildDefaultView(tmpDir, "", col, view, records, nil)
 	if len(errs1) > 0 {
 		t.Fatalf("first buildDefaultView: %v", errs1)
 	}
 
-	if written1 != 1 {
-		t.Fatalf("first run: expected 1 written, got %d", written1)
+	if created1 != 1 {
+		t.Fatalf("first run: expected 1 created, got %d", created1)
 	}
 	if unchanged1 != 0 {
 		t.Fatalf("first run: expected 0 unchanged, got %d", unchanged1)
 	}
 
 	// Second build with identical data
-	written2, unchanged2, errs2 := buildDefaultView(tmpDir, col, view, records)
+	created2, updated2, unchanged2, errs2 := buildDefaultView(tmpDir, "", col, view, records, nil)
 	if len(errs2) > 0 {
 		t.Fatalf("second buildDefaultView: %v", errs2)
 	}
 
-	if written2 != 0 {
-		t.Errorf("second run: expected 0 written, got %d", written2)
+	if created2+updated2 != 0 {
+		t.Errorf("second run: expected 0 created/updated, got created=%d updated=%d", created2, updated2)
 	}
 	if unchanged2 != 1 {
 		t.Errorf("second run: expected 1 unchanged, got %d", unchanged2)
@@ -742,12 +741,12 @@ func TestBuildDefaultView_Idempotency_OneRecordChanged(t *testing.T) {
 	}
 
 	// First build
-	written1, _, errs1 := buildDefaultView(tmpDir, col, view, records1)
+	created1, _, _, errs1 := buildDefaultView(tmpDir, "", col, view, records1, nil)
 	if len(errs1) > 0 {
 		t.Fatalf("first buildDefaultView: %v", errs1)
 	}
-	if written1 != 2 {
-		t.Fatalf("first run: expected 2 written, got %d", written1)
+	if created1 != 2 {
+		t.Fatalf("first run: expected 2 created, got %d", created1)
 	}
 
 	// Second build with one record changed (in batch 1)
@@ -757,13 +756,13 @@ func TestBuildDefaultView_Idempotency_OneRecordChanged(t *testing.T) {
 		{Key: "3", Data: map[string]any{"id": "3", "value": "third"}},
 	}
 
-	written2, unchanged2, errs2 := buildDefaultView(tmpDir, col, view, records2)
+	created2, updated2, unchanged2, errs2 := buildDefaultView(tmpDir, "", col, view, records2, nil)
 	if len(errs2) > 0 {
 		t.Fatalf("second buildDefaultView: %v", errs2)
 	}
 
-	if written2 != 1 {
-		t.Errorf("second run: expected 1 written (batch 1 changed), got %d", written2)
+	if updated2 != 1 {
+		t.Errorf("second run: expected 1 updated (batch 1 changed), got %d (created=%d)", updated2, created2)
 	}
 	if unchanged2 != 1 {
 		t.Errorf("second run: expected 1 unchanged (batch 2 unchanged), got %d", unchanged2)
@@ -795,14 +794,14 @@ func TestBuildDefaultView_AllFormats(t *testing.T) {
 				{Key: "1", Data: map[string]any{"id": "1", "name": "Test"}},
 			}
 
-			written, _, errs := buildDefaultView(tmpDir, col, view, records)
+			created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
 
 			if len(errs) > 0 {
 				t.Errorf("buildDefaultView for %s returned errors: %v", format, errs)
 			}
 
-			if written != 1 {
-				t.Errorf("%s: expected 1 written, got %d", format, written)
+			if created != 1 {
+				t.Errorf("%s: expected 1 created, got %d", format, created)
 			}
 
 			// Verify file was created with correct extension
@@ -844,14 +843,14 @@ func TestBuildDefaultView_CreatesMissingDirectories(t *testing.T) {
 		{Key: "1", Data: map[string]any{"id": "1"}},
 	}
 
-	written, _, errs := buildDefaultView(tmpDir, col, view, records)
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
 
 	if len(errs) > 0 {
 		t.Fatalf("buildDefaultView returned errors: %v", errs)
 	}
 
-	if written != 1 {
-		t.Fatalf("expected 1 written, got %d", written)
+	if created != 1 {
+		t.Fatalf("expected 1 created, got %d", created)
 	}
 
 	// Verify nested directory structure was created
@@ -879,14 +878,14 @@ func TestBuildDefaultView_EmptyRecords(t *testing.T) {
 
 	records := []ingitdb.RecordEntry{}
 
-	written, _, errs := buildDefaultView(tmpDir, col, view, records)
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
 
 	if len(errs) > 0 {
 		t.Fatalf("buildDefaultView returned errors: %v", errs)
 	}
 
-	if written != 1 {
-		t.Fatalf("expected 1 file written (header only), got %d", written)
+	if created != 1 {
+		t.Fatalf("expected 1 file created (header only), got %d", created)
 	}
 
 	// Verify file contains headers
@@ -926,14 +925,14 @@ func TestBuildDefaultView_WithCustomFileName(t *testing.T) {
 		{Key: "1", Data: map[string]any{"id": "1", "price": 99.99}},
 	}
 
-	written, _, errs := buildDefaultView(tmpDir, col, view, records)
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
 
 	if len(errs) > 0 {
 		t.Fatalf("buildDefaultView returned errors: %v", errs)
 	}
 
-	if written != 1 {
-		t.Fatalf("expected 1 written, got %d", written)
+	if created != 1 {
+		t.Fatalf("expected 1 created, got %d", created)
 	}
 
 	// Verify custom file name was used
@@ -968,14 +967,14 @@ func TestBuildDefaultView_DefaultFileNameUsesCollectionID(t *testing.T) {
 		{Key: "1", Data: map[string]any{"id": "1", "title": "Article1"}},
 	}
 
-	written, _, errs := buildDefaultView(tmpDir, col, view, records)
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
 
 	if len(errs) > 0 {
 		t.Fatalf("buildDefaultView returned errors: %v", errs)
 	}
 
-	if written != 1 {
-		t.Fatalf("expected 1 written, got %d", written)
+	if created != 1 {
+		t.Fatalf("expected 1 created, got %d", created)
 	}
 
 	// Verify file name uses collection ID
@@ -1014,14 +1013,14 @@ func TestBuildDefaultView_LargeBatchCount_VerifyPadding(t *testing.T) {
 		}
 	}
 
-	written, _, errs := buildDefaultView(tmpDir, col, view, records)
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
 
 	if len(errs) > 0 {
 		t.Fatalf("buildDefaultView returned errors: %v", errs)
 	}
 
-	if written != 15 {
-		t.Fatalf("expected 15 files written, got %d", written)
+	if created != 15 {
+		t.Fatalf("expected 15 files created, got %d", created)
 	}
 
 	// Verify padding: 000010, 000015 etc.
@@ -1062,14 +1061,14 @@ func TestBuildDefaultView_FileContentIsValid(t *testing.T) {
 		{Key: "2", Data: map[string]any{"id": "2", "name": "Bob", "score": 87}},
 	}
 
-	written, _, errs := buildDefaultView(tmpDir, col, view, records)
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
 
 	if len(errs) > 0 {
 		t.Fatalf("buildDefaultView returned errors: %v", errs)
 	}
 
-	if written != 1 {
-		t.Fatalf("expected 1 written, got %d", written)
+	if created != 1 {
+		t.Fatalf("expected 1 created, got %d", created)
 	}
 
 	// Read and validate file content
@@ -1114,13 +1113,13 @@ func TestBuildDefaultView_FormatExportBatchError(t *testing.T) {
 		{Key: "1", Data: map[string]any{"id": "1"}},
 	}
 
-	written, _, errs := buildDefaultView(tmpDir, col, view, records)
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
 
 	// Empty format is valid (defaults to TSV), so no errors expected
 	if len(errs) > 0 {
 		t.Fatalf("unexpected errors: %v", errs)
 	}
-	if written != 1 {
-		t.Fatalf("expected 1 written, got %d", written)
+	if created != 1 {
+		t.Fatalf("expected 1 created, got %d", created)
 	}
 }

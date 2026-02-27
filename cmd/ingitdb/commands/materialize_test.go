@@ -77,7 +77,8 @@ func TestMaterialize_Success(t *testing.T) {
 	}
 	viewBuilder := &mockViewBuilder{
 		result: &ingitdb.MaterializeResult{
-			FilesWritten:   2,
+			FilesCreated:   1,
+			FilesUpdated:   1,
 			FilesUnchanged: 1,
 		},
 	}

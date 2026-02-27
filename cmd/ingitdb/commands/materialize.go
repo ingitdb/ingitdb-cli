@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/urfave/cli/v3"
 
@@ -48,7 +49,10 @@ func Materialize(
 			if err != nil {
 				return err
 			}
-			dirPath = expanded
+			dirPath, err = filepath.Abs(expanded)
+			if err != nil {
+				return fmt.Errorf("failed to resolve absolute path: %w", err)
+			}
 			logf("inGitDB db path: ", dirPath)
 
 			repoRoot, err := gitrepo.FindRepoRoot(dirPath)
@@ -57,8 +61,7 @@ func Materialize(
 				repoRoot = ""
 			}
 
-			validateOpt := ingitdb.Validate()
-			def, err := readDefinition(dirPath, validateOpt)
+			def, err := readDefinition(dirPath)
 			if err != nil {
 				return fmt.Errorf("failed to read database definition: %w", err)
 			}
@@ -68,11 +71,14 @@ func Materialize(
 				if buildErr != nil {
 					return fmt.Errorf("failed to materialize views for collection %s: %w", col.ID, buildErr)
 				}
-				totalResult.FilesWritten += result.FilesWritten
+				totalResult.FilesCreated += result.FilesCreated
+				totalResult.FilesUpdated += result.FilesUpdated
 				totalResult.FilesUnchanged += result.FilesUnchanged
+				totalResult.FilesDeleted += result.FilesDeleted
 				totalResult.Errors = append(totalResult.Errors, result.Errors...)
 			}
-			logf(fmt.Sprintf("materialized views: %d written, %d unchanged", totalResult.FilesWritten, totalResult.FilesUnchanged))
+			logf(fmt.Sprintf("materialized views: %d created, %d updated, %d deleted, %d unchanged",
+				totalResult.FilesCreated, totalResult.FilesUpdated, totalResult.FilesDeleted, totalResult.FilesUnchanged))
 			return nil
 		},
 	}

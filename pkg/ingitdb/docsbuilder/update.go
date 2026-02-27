@@ -30,7 +30,7 @@ func UpdateDocs(ctx context.Context, def *ingitdb.Definition, collectionGlob str
 			continue
 		}
 		if changed {
-			result.FilesWritten++
+			result.FilesUpdated++
 		} else {
 			result.FilesUnchanged++
 		}

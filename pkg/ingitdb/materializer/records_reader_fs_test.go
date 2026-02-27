@@ -3,7 +3,6 @@ package materializer
 import (
 	"context"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
@@ -28,36 +27,57 @@ func TestRecordPatternForKey(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name       string
-		fileName   string
-		dirPath    string
-		wantErr    bool
-		wantPrefix string
-		wantSuffix string
+		name              string
+		fileName          string
+		dirPath           string
+		wantErr           bool
+		wantPatternPath   string
+		samplePaths       map[string]string // filePath -> expectedKey
 	}{
 		{
-			name:       "simple pattern",
-			fileName:   "{key}.json",
-			dirPath:    "/data/tags",
-			wantErr:    false,
-			wantPrefix: "",
-			wantSuffix: ".json",
+			name:            "simple pattern",
+			fileName:        "{key}.json",
+			dirPath:         "/data/tags",
+			wantErr:         false,
+			wantPatternPath: "/data/tags/*.json",
+			samplePaths: map[string]string{
+				"/data/tags/tag1.json": "tag1",
+				"/data/tags/tag2.json": "tag2",
+			},
 		},
 		{
-			name:       "pattern with prefix",
-			fileName:   "record-{key}.yaml",
-			dirPath:    "/data/items",
-			wantErr:    false,
-			wantPrefix: "record-",
-			wantSuffix: ".yaml",
+			name:            "pattern with prefix",
+			fileName:        "record-{key}.yaml",
+			dirPath:         "/data/items",
+			wantErr:         false,
+			wantPatternPath: "/data/items/record-*.yaml",
+			samplePaths: map[string]string{
+				"/data/items/record-item1.yaml": "item1",
+				"/data/items/record-item2.yaml": "item2",
+			},
 		},
 		{
-			name:       "pattern with suffix",
-			fileName:   "{key}-data.json",
-			dirPath:    "/data/users",
-			wantErr:    false,
-			wantPrefix: "",
-			wantSuffix: "-data.json",
+			name:            "pattern with suffix",
+			fileName:        "{key}-data.json",
+			dirPath:         "/data/users",
+			wantErr:         false,
+			wantPatternPath: "/data/users/*-data.json",
+			samplePaths: map[string]string{
+				"/data/users/user1-data.json": "user1",
+				"/data/users/user2-data.json": "user2",
+			},
+		},
+		{
+			name:            "sub-directory pattern",
+			fileName:        "{key}/{key}.yaml",
+			dirPath:         "/data/countries",
+			wantErr:         false,
+			wantPatternPath: "/data/countries/*/*.yaml",
+			samplePaths: map[string]string{
+				"/data/countries/us/us.yaml":   "us",
+				"/data/countries/uk/uk.yaml":   "uk",
+				"/data/countries/fr/fr.yaml":   "fr",
+			},
 		},
 		{
 			name:     "no placeholder",
@@ -69,7 +89,7 @@ func TestRecordPatternForKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pattern, prefix, suffix, err := recordPatternForKey(tt.fileName, tt.dirPath)
+			pattern, extractKey, err := recordPatternForKey(tt.fileName, tt.dirPath)
 			if tt.wantErr {
 				if err == nil {
 					t.Error("expected error but got nil")
@@ -79,15 +99,14 @@ func TestRecordPatternForKey(t *testing.T) {
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
-			if prefix != tt.wantPrefix {
-				t.Errorf("prefix = %q, want %q", prefix, tt.wantPrefix)
+			if pattern != tt.wantPatternPath {
+				t.Errorf("pattern = %q, want %q", pattern, tt.wantPatternPath)
 			}
-			if suffix != tt.wantSuffix {
-				t.Errorf("suffix = %q, want %q", suffix, tt.wantSuffix)
-			}
-			expectedPattern := filepath.Join(tt.dirPath, tt.wantPrefix+"*"+tt.wantSuffix)
-			if pattern != expectedPattern {
-				t.Errorf("pattern = %q, want %q", pattern, expectedPattern)
+			for filePath, expectedKey := range tt.samplePaths {
+				key := extractKey(filePath)
+				if key != expectedKey {
+					t.Errorf("extractKey(%q) = %q, want %q", filePath, key, expectedKey)
+				}
 			}
 		})
 	}

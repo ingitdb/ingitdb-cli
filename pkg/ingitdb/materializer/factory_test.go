@@ -21,7 +21,7 @@ func (noopRecordsReader) ReadRecords(
 func TestNewViewBuilder_WiresDefaults(t *testing.T) {
 	t.Parallel()
 
-	builder := NewViewBuilder(noopRecordsReader{})
+	builder := NewViewBuilder(noopRecordsReader{}, nil)
 	if builder.DefReader == nil {
 		t.Fatalf("expected default view def reader")
 	}

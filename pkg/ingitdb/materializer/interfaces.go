@@ -24,6 +24,15 @@ type ViewRenderer interface {
 	) (map[string][]byte, error) // key = format string ("md", "json")
 }
 
+// WriteOutcome describes the result of a single view file write.
+type WriteOutcome int
+
+const (
+	WriteOutcomeUnchanged WriteOutcome = iota
+	WriteOutcomeCreated
+	WriteOutcomeUpdated
+)
+
 // ViewWriter renders a view and writes content to the file system.
 // Separate from ViewBuilder so tests can capture output without I/O.
 type ViewWriter interface {
@@ -33,7 +42,7 @@ type ViewWriter interface {
 		view *ingitdb.ViewDef,
 		records []ingitdb.RecordEntry,
 		outPath string,
-	) (bool, error)
+	) (WriteOutcome, error)
 }
 
 // ViewBuilder orchestrates full materialisation of all views for one collection.

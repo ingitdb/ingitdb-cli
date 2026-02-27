@@ -126,13 +126,13 @@ func (w errorWriter) WriteView(
 	view *ingitdb.ViewDef,
 	records []ingitdb.RecordEntry,
 	outPath string,
-) (bool, error) {
+) (WriteOutcome, error) {
 	_ = ctx
 	_ = col
 	_ = view
 	_ = records
 	_ = outPath
-	return false, w.err
+	return WriteOutcomeUnchanged, w.err
 }
 
 func TestSimpleViewBuilder_BuildViews_WriterError(t *testing.T) {
@@ -155,8 +155,8 @@ func TestSimpleViewBuilder_BuildViews_WriterError(t *testing.T) {
 	if !errors.Is(result.Errors[0], writerErr) {
 		t.Errorf("expected error to be writer error, got: %v", result.Errors[0])
 	}
-	if result.FilesWritten != 0 {
-		t.Errorf("expected 0 files written, got %d", result.FilesWritten)
+	if result.FilesCreated+result.FilesUpdated != 0 {
+		t.Errorf("expected 0 files created or updated, got created=%d updated=%d", result.FilesCreated, result.FilesUpdated)
 	}
 	if result.FilesUnchanged != 0 {
 		t.Errorf("expected 0 files unchanged, got %d", result.FilesUnchanged)
@@ -177,8 +177,8 @@ func TestSimpleViewBuilder_BuildViews_WriterReportsUnchanged(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BuildViews: %v", err)
 	}
-	if result.FilesWritten != 0 {
-		t.Errorf("expected 0 files written, got %d", result.FilesWritten)
+	if result.FilesCreated+result.FilesUpdated != 0 {
+		t.Errorf("expected 0 files created or updated, got created=%d updated=%d", result.FilesCreated, result.FilesUpdated)
 	}
 	if result.FilesUnchanged != 1 {
 		t.Errorf("expected 1 file unchanged, got %d", result.FilesUnchanged)
@@ -193,23 +193,23 @@ func (w *unchangedWriter) WriteView(
 	view *ingitdb.ViewDef,
 	records []ingitdb.RecordEntry,
 	outPath string,
-) (bool, error) {
+) (WriteOutcome, error) {
 	_ = ctx
 	_ = col
 	_ = view
 	_ = records
 	_ = outPath
-	return false, nil
+	return WriteOutcomeUnchanged, nil
 }
 
 func TestResolveViewOutputPath_WithFileName(t *testing.T) {
 	t.Parallel()
 
-	col := &ingitdb.CollectionDef{DirPath: "/tmp/collection"}
+	col := &ingitdb.CollectionDef{DirPath: "/db/collection"}
 	view := &ingitdb.ViewDef{ID: "test", FileName: "custom.md"}
 
 	outPath := resolveViewOutputPath(col, view, "/db", "/db")
-	expected := filepath.Join(col.DirPath, "custom.md")
+	expected := filepath.Join("/db", ingitdb.IngitdbDir, "collection", "custom.md")
 	if outPath != expected {
 		t.Errorf("expected %q, got %q", expected, outPath)
 	}
@@ -218,11 +218,11 @@ func TestResolveViewOutputPath_WithFileName(t *testing.T) {
 func TestResolveViewOutputPath_WithoutFileNameWithID(t *testing.T) {
 	t.Parallel()
 
-	col := &ingitdb.CollectionDef{DirPath: "/tmp/collection"}
+	col := &ingitdb.CollectionDef{DirPath: "/db/collection"}
 	view := &ingitdb.ViewDef{ID: "myview", FileName: ""}
 
 	outPath := resolveViewOutputPath(col, view, "/db", "/db")
-	expected := filepath.Join(col.DirPath, "$views", "myview.md")
+	expected := filepath.Join("/db", ingitdb.IngitdbDir, "collection", "myview.ingr")
 	if outPath != expected {
 		t.Errorf("expected %q, got %q", expected, outPath)
 	}
@@ -231,11 +231,11 @@ func TestResolveViewOutputPath_WithoutFileNameWithID(t *testing.T) {
 func TestResolveViewOutputPath_WithoutFileNameWithoutID(t *testing.T) {
 	t.Parallel()
 
-	col := &ingitdb.CollectionDef{DirPath: "/tmp/collection"}
+	col := &ingitdb.CollectionDef{DirPath: "/db/collection"}
 	view := &ingitdb.ViewDef{ID: "", FileName: ""}
 
 	outPath := resolveViewOutputPath(col, view, "/db", "/db")
-	expected := filepath.Join(col.DirPath, "$views", "view.md")
+	expected := filepath.Join("/db", ingitdb.IngitdbDir, "collection", "view.ingr")
 	if outPath != expected {
 		t.Errorf("expected %q, got %q", expected, outPath)
 	}

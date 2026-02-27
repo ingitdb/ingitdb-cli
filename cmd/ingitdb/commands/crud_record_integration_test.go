@@ -17,8 +17,8 @@ import (
 func TestCRUDRecord_UpdatesTagsReadme(t *testing.T) {
 	repoRoot := findRepoRoot(t)
 	tmpDir := t.TempDir()
-	dstTagsDir := filepath.Join(tmpDir, "docs", "demo-dbs", "todo", "tags")
-	srcTagsDir := filepath.Join(repoRoot, "docs", "demo-dbs", "todo", "tags")
+	dstTagsDir := filepath.Join(tmpDir, "demo-dbs", "todo", "tags")
+	srcTagsDir := filepath.Join(repoRoot, "demo-dbs", "todo", "tags")
 	if err := copyDir(srcTagsDir, dstTagsDir); err != nil {
 		t.Fatalf("copy tags dir: %v", err)
 	}
