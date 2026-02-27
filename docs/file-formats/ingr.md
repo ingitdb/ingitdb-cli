@@ -41,20 +41,19 @@ Each record:
 The first line of every `.ingr` file is a metadata header:
 
 ```
-# {collection}/{view}: $ID, col2, col3, ...
+# {recordset_name}: $ID, col2, col3, ...
 ```
 
 - Starts with `# ` (hash + space).
-- **Recordset name** — `{collection}/{view}` identifies the collection and view that produced the file (e.g. `countries/default_view`).
+- **Recordset name** — an arbitrary identifier for the dataset (e.g. `people`, `orders/2024`). Its meaning is defined by the producer.
 - Followed by `: ` (colon + space).
 - **Column list** — comma-separated column names, separated by `, ` (comma + space) for readability. Parsers may trim surrounding whitespace from each name.
 - **`$ID`** is the reserved name for the record key (always the first column).
-- All other column names are the field names from the collection schema.
 
 Example:
 
 ```
-# countries/default_view: $ID, currency, flag, population, titles
+# people: $ID, name, age
 ```
 
 ### 3.2 Fixed Field Count
@@ -80,7 +79,7 @@ JSON objects and arrays must be written without embedded newlines (compact form)
 ### 3.4 Example (fields: `$ID`, `name`, `age`)
 
 ```
-# people/default_view: $ID, name, age
+# people: $ID, name, age
 "john"
 "John Doe"
 35
@@ -115,7 +114,7 @@ Parsed as:
 Header + 2 records, `N = 3`:
 
 ```
-# people/default_view: $ID, name, age
+# people: $ID, name, age
 "john"
 "John Doe"
 35
