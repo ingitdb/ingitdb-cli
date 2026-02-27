@@ -170,7 +170,7 @@ func TestFormatExportBatch_TSV(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got, err := formatExportBatch("tsv", "", tt.headers, tt.records)
+			got, err := formatExportBatch("tsv", "", false, tt.headers, tt.records)
 			if err != nil {
 				t.Fatalf("formatExportBatch: %v", err)
 			}
@@ -253,7 +253,7 @@ func TestFormatExportBatch_CSV(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got, err := formatExportBatch("csv", "", tt.headers, tt.records)
+			got, err := formatExportBatch("csv", "", false, tt.headers, tt.records)
 			if err != nil {
 				t.Fatalf("formatExportBatch: %v", err)
 			}
@@ -273,7 +273,7 @@ func TestFormatExportBatch_JSON(t *testing.T) {
 		{Key: "2", Data: map[string]any{"id": "2", "name": "Bob", "age": 25}},
 	}
 
-	got, err := formatExportBatch("json", "", headers, records)
+	got, err := formatExportBatch("json", "", false, headers, records)
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
@@ -303,7 +303,7 @@ func TestFormatExportBatch_JSONL(t *testing.T) {
 		{Key: "2", Data: map[string]any{"id": "2", "name": "Bob"}},
 	}
 
-	got, err := formatExportBatch("jsonl", "", headers, records)
+	got, err := formatExportBatch("jsonl", "", false, headers, records)
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
@@ -334,7 +334,7 @@ func TestFormatExportBatch_YAML(t *testing.T) {
 		{Key: "1", Data: map[string]any{"id": "1", "name": "Alice"}},
 	}
 
-	got, err := formatExportBatch("yaml", "", headers, records)
+	got, err := formatExportBatch("yaml", "", false, headers, records)
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
@@ -387,7 +387,7 @@ func TestFormatExportBatch_EmptyRecords(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.format, func(t *testing.T) {
 			t.Parallel()
-			got, err := formatExportBatch(tt.format, "test/view", headers, records)
+			got, err := formatExportBatch(tt.format, "test/view", false, headers, records)
 			if err != nil {
 				t.Fatalf("formatExportBatch: %v", err)
 			}
@@ -407,17 +407,16 @@ func TestFormatExportBatch_INGR(t *testing.T) {
 		{Key: "2", Data: map[string]any{"id": "2", "name": "Bob", "age": 25}},
 	}
 
-	got, err := formatExportBatch("ingr", "test/view", headers, records)
+	got, err := formatExportBatch("ingr", "test/view", false, headers, records)
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
 
-	// INGR: header line + 3 fields per record, 2 records; strings are JSON-quoted; two-line footer, no trailing newline
+	// INGR: header line + 3 fields per record, 2 records; strings are JSON-quoted; count footer only (no hash), no trailing newline
 	want := "# https://INGR.io | test/view: $ID, name, age\n" +
 		`"1"` + "\n" + `"Alice"` + "\n" + `30` + "\n" +
 		`"2"` + "\n" + `"Bob"` + "\n" + `25` + "\n" +
-		"# 2 records\n" +
-		"# sha256:276293121f7c648b084568906391b4cb7db45cdcfc7a7fafb388208c31ad2798"
+		"# 2 records"
 	if string(got) != want {
 		t.Errorf("formatExportBatch(ingr) = %q, want %q", string(got), want)
 	}
@@ -426,12 +425,12 @@ func TestFormatExportBatch_INGR(t *testing.T) {
 func TestFormatINGR_EmptyRecords(t *testing.T) {
 	t.Parallel()
 
-	got, err := formatExportBatch("ingr", "test/view", []string{"id", "name"}, []ingitdb.RecordEntry{})
+	got, err := formatExportBatch("ingr", "test/view", false, []string{"id", "name"}, []ingitdb.RecordEntry{})
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
-	// empty records: header, count footer with newline, hash footer without trailing newline
-	want := "# https://INGR.io | test/view: $ID, name\n# 0 records\n# sha256:499c55a83396f57126d57d90c48340a0c8b76140f9a02909aa0a1e9d49e4468b"
+	// empty records: header + count footer only (no hash), no trailing newline
+	want := "# https://INGR.io | test/view: $ID, name\n# 0 records"
 	if string(got) != want {
 		t.Errorf("expected only header for empty records, got %q", string(got))
 	}
@@ -445,13 +444,13 @@ func TestFormatINGR_NilAndMissingFields(t *testing.T) {
 		{Key: "1", Data: map[string]any{"id": "1", "name": nil}}, // missing age, nil name
 	}
 
-	got, err := formatExportBatch("ingr", "test/view", headers, records)
+	got, err := formatExportBatch("ingr", "test/view", false, headers, records)
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
 
-	// nil name → JSON null, missing age → JSON null; two-line footer, no trailing newline
-	want := "# https://INGR.io | test/view: $ID, name, age\n\"1\"\nnull\nnull\n# 1 record\n# sha256:1b997cbd72128eabc9e2a31980a59cf765e7c796fb9962011a2c28c09a603756"
+	// nil name → JSON null, missing age → JSON null; count footer only (no hash), no trailing newline
+	want := "# https://INGR.io | test/view: $ID, name, age\n\"1\"\nnull\nnull\n# 1 record"
 	if string(got) != want {
 		t.Errorf("formatExportBatch(ingr) = %q, want %q", string(got), want)
 	}
@@ -466,11 +465,11 @@ func TestFormatINGR_DefaultFormatIsINGR(t *testing.T) {
 	}
 
 	// empty format string should use INGR (the default)
-	got, err := formatExportBatch("", "test/view", headers, records)
+	got, err := formatExportBatch("", "test/view", false, headers, records)
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
-	want := "# https://INGR.io | test/view: $ID\n\"hello\"\n# 1 record\n# sha256:a5b477ff854f39ea915edc3534679a57bfbee598184235de668818afb8ca8de4"
+	want := "# https://INGR.io | test/view: $ID\n\"hello\"\n# 1 record"
 	if string(got) != want {
 		t.Errorf("default format output = %q, want %q", string(got), want)
 	}
@@ -484,7 +483,7 @@ func TestFormatINGR_HashCoversHeaderAndRecordsAndCountLine(t *testing.T) {
 		{Key: "a", Data: map[string]any{"id": "a", "name": "Alice"}},
 	}
 
-	got, err := formatExportBatch("ingr", "test/view", headers, records)
+	got, err := formatExportBatch("ingr", "test/view", true, headers, records)
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
@@ -508,6 +507,36 @@ func TestFormatINGR_HashCoversHeaderAndRecordsAndCountLine(t *testing.T) {
 	}
 
 	// Sanity: file must not end with a newline
+	if strings.HasSuffix(output, "\n") {
+		t.Errorf("file must not end with a newline")
+	}
+}
+
+func TestFormatINGR_HashOmittedWhenDisabled(t *testing.T) {
+	t.Parallel()
+
+	headers := []string{"id", "name"}
+	records := []ingitdb.RecordEntry{
+		{Key: "a", Data: map[string]any{"id": "a", "name": "Alice"}},
+	}
+
+	got, err := formatExportBatch("ingr", "test/view", false, headers, records)
+	if err != nil {
+		t.Fatalf("formatExportBatch: %v", err)
+	}
+	output := string(got)
+
+	// Last line must NOT be a hash line
+	lines := strings.Split(output, "\n")
+	lastLine := lines[len(lines)-1]
+	if strings.HasPrefix(lastLine, "# sha256:") {
+		t.Errorf("hash line present when includeHash=false: %q", lastLine)
+	}
+	// Count line must be the last line
+	if !strings.HasPrefix(lastLine, "# ") || !strings.Contains(lastLine, "record") {
+		t.Errorf("expected count line as last line, got: %q", lastLine)
+	}
+	// No trailing newline
 	if strings.HasSuffix(output, "\n") {
 		t.Errorf("file must not end with a newline")
 	}
@@ -537,7 +566,7 @@ func TestFormatINGR_HeaderPrefix(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			got, err := formatExportBatch("ingr", "ns/view", tc.headers, tc.records)
+			got, err := formatExportBatch("ingr", "ns/view", false, tc.headers, tc.records)
 			if err != nil {
 				t.Fatalf("formatExportBatch: %v", err)
 			}
@@ -558,7 +587,7 @@ func TestFormatINGR_IDAlwaysFirst(t *testing.T) {
 	// Test that when id is provided first it appears as $ID first in the header line.
 	headers = []string{"id", "name", "age"}
 	records := []ingitdb.RecordEntry{}
-	got, err := formatExportBatch("ingr", "t/v", headers, records)
+	got, err := formatExportBatch("ingr", "t/v", false, headers, records)
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
@@ -705,7 +734,7 @@ func TestFormatExportBatch_EmptyColumnsSlice(t *testing.T) {
 		{Key: "1", Data: map[string]any{"id": "1", "name": "Alice"}},
 	}
 
-	got, err := formatExportBatch("tsv", "", headers, records)
+	got, err := formatExportBatch("tsv", "", false, headers, records)
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
@@ -746,7 +775,7 @@ func TestFormatExportBatch_RecordsWithNilData(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.format, func(t *testing.T) {
 			t.Parallel()
-			got, err := formatExportBatch(tt.format, "test/view", headers, records)
+			got, err := formatExportBatch(tt.format, "test/view", false, headers, records)
 			if err != nil {
 				t.Fatalf("formatExportBatch: %v", err)
 			}
@@ -789,7 +818,7 @@ func TestFormatExportBatch_UnicodeCharacters(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.format, func(t *testing.T) {
 			t.Parallel()
-			got, err := formatExportBatch(tt.format, "test/view", headers, records)
+			got, err := formatExportBatch(tt.format, "test/view", false, headers, records)
 			if err != nil {
 				t.Fatalf("formatExportBatch: %v", err)
 			}
@@ -809,7 +838,7 @@ func TestFormatExportBatch_VeryLongLines(t *testing.T) {
 		{Key: "1", Data: map[string]any{"id": "1", "longtext": longString}},
 	}
 
-	got, err := formatExportBatch("tsv", "", headers, records)
+	got, err := formatExportBatch("tsv", "", false, headers, records)
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
@@ -887,7 +916,7 @@ func TestFormatTSV_TabSeparationAndNoTrailingNewline(t *testing.T) {
 		{Key: "2", Data: map[string]any{"id": "2", "name": "Bob", "value": 200}},
 	}
 
-	got, err := formatExportBatch("tsv", "", headers, records)
+	got, err := formatExportBatch("tsv", "", false, headers, records)
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
@@ -924,7 +953,7 @@ func TestFormatCSV_CRLF_LineEndings(t *testing.T) {
 		{Key: "1", Data: map[string]any{"id": "1", "description": "Line 1\r\nLine 2"}},
 	}
 
-	got, err := formatExportBatch("csv", "", headers, records)
+	got, err := formatExportBatch("csv", "", false, headers, records)
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
@@ -955,7 +984,7 @@ func TestFormatCSV_EmptyStringVsNil(t *testing.T) {
 		{Key: "3", Data: map[string]any{"id": "3"}}, // Missing field
 	}
 
-	got, err := formatExportBatch("csv", "", headers, records)
+	got, err := formatExportBatch("csv", "", false, headers, records)
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
@@ -994,7 +1023,7 @@ func TestFormatCSV_SingleAndDoubleQuoteCombinations(t *testing.T) {
 		{Key: "3", Data: map[string]any{"id": "3", "text": `"Quoted" and 'apostrophe'`}},
 	}
 
-	got, err := formatExportBatch("csv", "", headers, records)
+	got, err := formatExportBatch("csv", "", false, headers, records)
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
@@ -1030,7 +1059,7 @@ func TestFormatCSV_NumbersAndBooleans(t *testing.T) {
 		{Key: "3", Data: map[string]any{"id": "3", "count": 3.14159, "enabled": nil}},
 	}
 
-	got, err := formatExportBatch("csv", "", headers, records)
+	got, err := formatExportBatch("csv", "", false, headers, records)
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
@@ -1073,7 +1102,7 @@ func TestFormatJSONL_EachLineIsValidJSON(t *testing.T) {
 		{Key: "3", Data: map[string]any{"id": "3", "name": "Charlie"}},
 	}
 
-	got, err := formatExportBatch("jsonl", "", headers, records)
+	got, err := formatExportBatch("jsonl", "", false, headers, records)
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
@@ -1103,7 +1132,7 @@ func TestFormatJSONL_WithSpecialCharactersAndUnicode(t *testing.T) {
 		{Key: "2", Data: map[string]any{"id": "2", "text": "日本語テスト"}},
 	}
 
-	got, err := formatExportBatch("jsonl", "", headers, records)
+	got, err := formatExportBatch("jsonl", "", false, headers, records)
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}

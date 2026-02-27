@@ -40,6 +40,9 @@ type ViewDef struct {
 	Format       string `yaml:"format,omitempty"`
 	MaxBatchSize int    `yaml:"max_batch_size,omitempty"`
 	IsDefault    bool   `yaml:"-" json:"-"`
+
+	// IncludeHash controls whether a sha256 hash line is appended to INGR footer.
+	IncludeHash bool `yaml:"include_hash,omitempty"`
 }
 
 // Validate checks the view definition for consistency.

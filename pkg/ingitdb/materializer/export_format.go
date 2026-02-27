@@ -47,7 +47,8 @@ func formatBatchFileName(base, ext string, batchNum, totalBatches int) string {
 // formatExportBatch serializes a batch of records into the given format.
 // format must already be lowercased (or empty for ingr default).
 // viewName is used only by INGR to generate the metadata header line.
-func formatExportBatch(format string, viewName string, headers []string, records []ingitdb.RecordEntry) ([]byte, error) {
+// includeHash is used only by INGR to optionally append a sha256 footer line.
+func formatExportBatch(format string, viewName string, includeHash bool, headers []string, records []ingitdb.RecordEntry) ([]byte, error) {
 	switch format {
 	case "tsv":
 		return formatTSV(headers, records)
@@ -60,7 +61,7 @@ func formatExportBatch(format string, viewName string, headers []string, records
 	case "yaml":
 		return formatYAML(headers, records)
 	default: // "", "ingr"
-		return formatINGR(viewName, headers, records)
+		return formatINGR(viewName, includeHash, headers, records)
 	}
 }
 
@@ -90,10 +91,10 @@ func formatTSV(headers []string, records []ingitdb.RecordEntry) ([]byte, error) 
 // The first line is a metadata header: "# https://INGR.io | {viewName}: $ID, col2, col3, ..."
 // where "id" is represented as "$ID". Subsequent lines are N lines per record
 // (one JSON-encoded field value per line). N equals len(headers).
-// The file ends with two footer lines:
-//   - "# {N} records\n"  (record count, with newline)
-//   - "# sha256:{hex}"   (sha256 of all content above, no trailing newline)
-func formatINGR(viewName string, headers []string, records []ingitdb.RecordEntry) ([]byte, error) {
+// The footer always starts with "# {N} records\n" (the record count line, with newline).
+// If includeHash is true, a second footer line "# sha256:{hex}" is appended (no trailing newline);
+// otherwise the count line itself is the last line, also without a trailing newline.
+func formatINGR(viewName string, includeHash bool, headers []string, records []ingitdb.RecordEntry) ([]byte, error) {
 	var buf bytes.Buffer
 	// Write metadata header line
 	buf.WriteString("# https://INGR.io | ")
@@ -124,16 +125,19 @@ func formatINGR(viewName string, headers []string, records []ingitdb.RecordEntry
 			buf.WriteByte('\n')
 		}
 	}
-	// Write record count line (with newline)
+	// Write record count line — with newline only if hash line follows, otherwise no trailing newline
 	n := len(records)
 	if n == 1 {
-		buf.WriteString("# 1 record\n")
+		buf.WriteString("# 1 record")
 	} else {
-		fmt.Fprintf(&buf, "# %d records\n", n)
+		fmt.Fprintf(&buf, "# %d records", n)
 	}
-	// Compute sha256 of all content so far, append hash line without trailing newline
-	sum := sha256.Sum256(buf.Bytes())
-	fmt.Fprintf(&buf, "# sha256:%x", sum)
+	if includeHash {
+		buf.WriteByte('\n')
+		// Compute sha256 of all content so far (header + records + count line with \n)
+		sum := sha256.Sum256(buf.Bytes())
+		fmt.Fprintf(&buf, "# sha256:%x", sum)
+	}
 	return buf.Bytes(), nil
 }
 

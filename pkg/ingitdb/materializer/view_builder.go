@@ -234,7 +234,7 @@ func buildDefaultView(dbPath string, repoRoot string, col *ingitdb.CollectionDef
 			batchRecords = records[start:end]
 		}
 
-		content, err := formatExportBatch(format, col.ID+"/"+view.ID, columns, batchRecords)
+		content, err := formatExportBatch(format, col.ID+"/"+view.ID, view.IncludeHash, columns, batchRecords)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("batch %d: %w", batchNum, err))
 			continue

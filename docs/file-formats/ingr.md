@@ -97,11 +97,11 @@ Parsed as:
 | john | John Doe   | 35  |
 | jane | Jane Smith | 29  |
 
-### 3.5 Footer Lines
+### 3.5 Footer
 
-The footer consists of exactly two lines at the end of every `.ingr` file:
+The footer starts immediately after the last record. It consists of one **required** line followed by any number of **optional** comment lines:
 
-**Line 1 — record count** (with trailing newline):
+**Required — record count** (always the first footer line, with trailing newline unless it is the very last line of the file):
 
 ```
 # 1 record
@@ -112,18 +112,21 @@ or
 ```
 
 - Uses `record` (singular) for exactly 1, `records` (plural) for all other counts (including 0).
+- Must be the first line after the records.
 
-**Line 2 — content hash** (no trailing newline):
+**Optional — additional footer lines** (each starting with `#`):
+
+Any number of `#`-prefixed lines may follow. Their content and meaning are agreed upon between producer and consumer. Example:
 
 ```
 # sha256:{hex}
 ```
 
-- `sha256` is the hash algorithm name.
-- `{hex}` is the lowercase hex-encoded SHA-256 digest of all file content **above** this line (header + records + count line including its `\n`).
-- No newline character after this line.
+- When present, `sha256` names the hash algorithm and `{hex}` is the lowercase hex-encoded SHA-256 digest of all file content above this line (header + records + count line including its `\n`).
 
-The space after `#` in both footer lines is preserved but optional for parsers.
+The last line of the file (whether the count line or the last optional line) has **no trailing newline**.
+
+The space after `#` is preserved but optional for parsers.
 
 ---
 
@@ -134,10 +137,10 @@ The space after `#` in both footer lines is preserved but optional for parsers.
 3. Line 1 is the metadata header; it must match the format above.
 4. Each field value line must be a valid single-line JSON expression.
 5. JSON objects and arrays must not contain embedded newlines.
-6. `(total_lines - 3) % N == 0` (subtract 1 for header + 1 for count line + 1 for hash line).
-7. Second-to-last line is the count footer; it must match `# {N} records` or `# 1 record`.
-8. Last line is the hash footer; it must match `# sha256:{hex}`.
-9. No newline after the hash line.
+6. `(total_lines - 1 - footer_lines) % N == 0` where `footer_lines ≥ 1`.
+7. First footer line must match `# {N} records` or `# 1 record`.
+8. All subsequent footer lines must start with `#`.
+9. No newline after the last line of the file.
 10. No inline delimiters between records.
 
 ---
@@ -171,16 +174,15 @@ Second record:
 A valid `.ingr` file must:
 
 - Have line 1 be a well-formed header.
-- Have the last line be a well-formed footer matching the actual record count.
+- Have the first footer line match `# {N} records` or `# 1 record` with the actual record count.
 - Not contain partial records between header and footer.
 - Have every value line be a valid single-line JSON expression.
-- Have the hash line match the SHA-256 of all preceding content.
-- Have no trailing newline after the hash line.
+- Have no trailing newline after the last line.
 
 Validation condition:
 
 ```
-(total_lines - 3) % N == 0
+(total_lines - 1 - footer_lines) % N == 0   // footer_lines ≥ 1
 ```
 
 ---
@@ -216,10 +218,10 @@ Not ideal for:
 
 `.ingr` is a self-describing, deterministic, fixed-line record format:
 
-- Line 1: `# https://INGR.io {recordset_name}: $ID, col2, col3, ...`
-- Lines 2…(end-2): `N` JSON-encoded values per record, one value per line
-- Second-to-last line: `# {N} records\n`
-- Last line: `# sha256:{hex}` — no trailing newline
+- Line 1: `# https://INGR.io | {recordset_name}: $ID, col2, col3, ...`
+- Lines 2…(end-N): `N` JSON-encoded values per record, one value per line
+- First footer line: `# {N} records` (required, with `\n` unless last line)
+- Additional footer lines: optional `#`-prefixed lines (e.g. `# sha256:{hex}`)
+- Last line has no trailing newline
 - No record delimiters
-- Content integrity verifiable via the SHA-256 footer
 - Optimised for simplicity and Git friendliness
