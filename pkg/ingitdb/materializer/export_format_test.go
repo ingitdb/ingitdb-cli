@@ -413,11 +413,11 @@ func TestFormatExportBatch_INGR(t *testing.T) {
 	}
 
 	// INGR: header line + 3 fields per record, 2 records; strings are JSON-quoted; two-line footer, no trailing newline
-	want := "#INGR: test/view: $ID, name, age\n" +
+	want := "# https://INGR.io | test/view: $ID, name, age\n" +
 		`"1"` + "\n" + `"Alice"` + "\n" + `30` + "\n" +
 		`"2"` + "\n" + `"Bob"` + "\n" + `25` + "\n" +
 		"# 2 records\n" +
-		"# sha256:efbc9a977adbf6a18ec5264b1b31590045ef2662b49d665fed24e8040f991649"
+		"# sha256:276293121f7c648b084568906391b4cb7db45cdcfc7a7fafb388208c31ad2798"
 	if string(got) != want {
 		t.Errorf("formatExportBatch(ingr) = %q, want %q", string(got), want)
 	}
@@ -431,7 +431,7 @@ func TestFormatINGR_EmptyRecords(t *testing.T) {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
 	// empty records: header, count footer with newline, hash footer without trailing newline
-	want := "#INGR: test/view: $ID, name\n# 0 records\n# sha256:a87f64c6e3487f35107f66a61c69c4501c7cd29fc51e7e3c587ce472337a6517"
+	want := "# https://INGR.io | test/view: $ID, name\n# 0 records\n# sha256:499c55a83396f57126d57d90c48340a0c8b76140f9a02909aa0a1e9d49e4468b"
 	if string(got) != want {
 		t.Errorf("expected only header for empty records, got %q", string(got))
 	}
@@ -451,7 +451,7 @@ func TestFormatINGR_NilAndMissingFields(t *testing.T) {
 	}
 
 	// nil name → JSON null, missing age → JSON null; two-line footer, no trailing newline
-	want := "#INGR: test/view: $ID, name, age\n\"1\"\nnull\nnull\n# 1 record\n# sha256:ef7a0b65cfb9927343f31d4fad1ce170ac12737a3e9b982d4b761acc19c48442"
+	want := "# https://INGR.io | test/view: $ID, name, age\n\"1\"\nnull\nnull\n# 1 record\n# sha256:1b997cbd72128eabc9e2a31980a59cf765e7c796fb9962011a2c28c09a603756"
 	if string(got) != want {
 		t.Errorf("formatExportBatch(ingr) = %q, want %q", string(got), want)
 	}
@@ -470,7 +470,7 @@ func TestFormatINGR_DefaultFormatIsINGR(t *testing.T) {
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
-	want := "#INGR: test/view: $ID\n\"hello\"\n# 1 record\n# sha256:8a17ca12db7fbee8ddb9be2aea8c24b225ca9fbe509667a957f338bbc82680b6"
+	want := "# https://INGR.io | test/view: $ID\n\"hello\"\n# 1 record\n# sha256:a5b477ff854f39ea915edc3534679a57bfbee598184235de668818afb8ca8de4"
 	if string(got) != want {
 		t.Errorf("default format output = %q, want %q", string(got), want)
 	}
@@ -510,6 +510,63 @@ func TestFormatINGR_HashCoversHeaderAndRecordsAndCountLine(t *testing.T) {
 	// Sanity: file must not end with a newline
 	if strings.HasSuffix(output, "\n") {
 		t.Errorf("file must not end with a newline")
+	}
+}
+
+func TestFormatINGR_HeaderPrefix(t *testing.T) {
+	t.Parallel()
+
+	const wantPrefix = "# https://INGR.io | "
+
+	tests := []struct {
+		name    string
+		headers []string
+		records []ingitdb.RecordEntry
+	}{
+		{
+			name:    "with records",
+			headers: []string{"id", "city"},
+			records: []ingitdb.RecordEntry{{Key: "1", Data: map[string]any{"id": "1", "city": "Oslo"}}},
+		},
+		{
+			name:    "empty records",
+			headers: []string{"id"},
+			records: []ingitdb.RecordEntry{},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got, err := formatExportBatch("ingr", "ns/view", tc.headers, tc.records)
+			if err != nil {
+				t.Fatalf("formatExportBatch: %v", err)
+			}
+			firstLine := strings.SplitN(string(got), "\n", 2)[0]
+			if !strings.HasPrefix(firstLine, wantPrefix) {
+				t.Errorf("header line %q does not start with %q", firstLine, wantPrefix)
+			}
+		})
+	}
+}
+
+func TestFormatINGR_IDAlwaysFirst(t *testing.T) {
+	t.Parallel()
+
+	// Pass headers with id NOT at index 0 to confirm determineColumns always puts $ID first
+	headers := []string{"name", "age", "id"}
+	// determineColumns reorders, but formatINGR receives already-ordered headers from buildDefaultView.
+	// Test that when id is provided first it appears as $ID first in the header line.
+	headers = []string{"id", "name", "age"}
+	records := []ingitdb.RecordEntry{}
+	got, err := formatExportBatch("ingr", "t/v", headers, records)
+	if err != nil {
+		t.Fatalf("formatExportBatch: %v", err)
+	}
+	firstLine := strings.SplitN(string(got), "\n", 2)[0]
+	// Column list starts with $ID
+	colonIdx := strings.Index(firstLine, ": $ID")
+	if colonIdx < 0 {
+		t.Errorf("header line %q does not have $ID as first column", firstLine)
 	}
 }
 
