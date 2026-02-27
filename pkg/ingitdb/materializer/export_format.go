@@ -86,13 +86,13 @@ func formatTSV(headers []string, records []ingitdb.RecordEntry) ([]byte, error) 
 }
 
 // formatINGR serializes records in INGR format.
-// The first line is a metadata header: "# {viewName}: $ID, col2, col3, ..."
+// The first line is a metadata header: "#INGR: {viewName}: $ID, col2, col3, ..."
 // where "id" is represented as "$ID". Subsequent lines are N lines per record
 // (one JSON-encoded field value per line). N equals len(headers).
 func formatINGR(viewName string, headers []string, records []ingitdb.RecordEntry) ([]byte, error) {
 	var buf bytes.Buffer
 	// Write metadata header line
-	buf.WriteString("# ")
+	buf.WriteString("#INGR: ")
 	buf.WriteString(viewName)
 	buf.WriteString(": ")
 	for i, h := range headers {

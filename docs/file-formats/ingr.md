@@ -41,10 +41,10 @@ Each record:
 The first line of every `.ingr` file is a metadata header:
 
 ```
-# {recordset_name}: $ID, col2, col3, ...
+#INGR: {recordset_name}: $ID, col2, col3, ...
 ```
 
-- Starts with `# ` (hash + space).
+- Starts with `#INGR: ` (literal prefix).
 - **Recordset name** — an arbitrary identifier for the dataset (e.g. `people`, `orders/2024`). Its meaning is defined by the producer.
 - Followed by `: ` (colon + space).
 - **Column list** — comma-separated column names, separated by `, ` (comma + space) for readability. Parsers may trim surrounding whitespace from each name.
@@ -53,7 +53,7 @@ The first line of every `.ingr` file is a metadata header:
 Example:
 
 ```
-# people: $ID, name, age
+#INGR: people: $ID, name, age
 ```
 
 ### 3.2 Fixed Field Count
@@ -79,7 +79,7 @@ JSON objects and arrays must be written without embedded newlines (compact form)
 ### 3.4 Example (fields: `$ID`, `name`, `age`)
 
 ```
-# people: $ID, name, age
+#INGR: people: $ID, name, age
 "john"
 "John Doe"
 35
@@ -132,7 +132,7 @@ or
 Header + 2 records + footer, `N = 3`:
 
 ```
-# people: $ID, name, age
+#INGR: people: $ID, name, age
 "john"
 "John Doe"
 35
@@ -199,7 +199,7 @@ Not ideal for:
 
 `.ingr` is a self-describing, deterministic, fixed-line record format:
 
-- Line 1: `# {recordset_name}: $ID, col2, col3, ...`
+- Line 1: `#INGR: {recordset_name}: $ID, col2, col3, ...`
 - Lines 2…(end-1): `N` JSON-encoded values per record, one value per line
 - Last line: `# {N} records` or `# 1 record` — no trailing newline
 - No record delimiters
