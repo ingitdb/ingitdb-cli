@@ -416,7 +416,7 @@ func TestFormatExportBatch_INGR(t *testing.T) {
 	want := "# https://INGR.io | test/view: $ID, name, age\n" +
 		`"1"` + "\n" + `"Alice"` + "\n" + `30` + "\n" +
 		`"2"` + "\n" + `"Bob"` + "\n" + `25` + "\n" +
-		"# 2 records"
+		"# 2 records\n"
 	if string(got) != want {
 		t.Errorf("formatExportBatch(ingr) = %q, want %q", string(got), want)
 	}
@@ -430,7 +430,7 @@ func TestFormatINGR_EmptyRecords(t *testing.T) {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
 	// empty records: header + count footer only (no hash), no trailing newline
-	want := "# https://INGR.io | test/view: $ID, name\n# 0 records"
+	want := "# https://INGR.io | test/view: $ID, name\n# 0 records\n"
 	if string(got) != want {
 		t.Errorf("expected only header for empty records, got %q", string(got))
 	}
@@ -450,7 +450,7 @@ func TestFormatINGR_NilAndMissingFields(t *testing.T) {
 	}
 
 	// nil name → JSON null, missing age → JSON null; count footer only (no hash), no trailing newline
-	want := "# https://INGR.io | test/view: $ID, name, age\n\"1\"\nnull\nnull\n# 1 record"
+	want := "# https://INGR.io | test/view: $ID, name, age\n\"1\"\nnull\nnull\n# 1 record\n"
 	if string(got) != want {
 		t.Errorf("formatExportBatch(ingr) = %q, want %q", string(got), want)
 	}
@@ -469,7 +469,7 @@ func TestFormatINGR_DefaultFormatIsINGR(t *testing.T) {
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
-	want := "# https://INGR.io | test/view: $ID\n\"hello\"\n# 1 record"
+	want := "# https://INGR.io | test/view: $ID\n\"hello\"\n# 1 record\n"
 	if string(got) != want {
 		t.Errorf("default format output = %q, want %q", string(got), want)
 	}
@@ -526,19 +526,16 @@ func TestFormatINGR_HashOmittedWhenDisabled(t *testing.T) {
 	}
 	output := string(got)
 
-	// Last line must NOT be a hash line
-	lines := strings.Split(output, "\n")
+	// Last non-empty line must NOT be a hash line
+	trimmed := strings.TrimRight(output, "\n")
+	lines := strings.Split(trimmed, "\n")
 	lastLine := lines[len(lines)-1]
 	if strings.HasPrefix(lastLine, "# sha256:") {
 		t.Errorf("hash line present when includeHash=false: %q", lastLine)
 	}
-	// Count line must be the last line
+	// Count line must be the last non-empty line (with trailing newline)
 	if !strings.HasPrefix(lastLine, "# ") || !strings.Contains(lastLine, "record") {
-		t.Errorf("expected count line as last line, got: %q", lastLine)
-	}
-	// No trailing newline
-	if strings.HasSuffix(output, "\n") {
-		t.Errorf("file must not end with a newline")
+		t.Errorf("expected count line as last non-empty line, got: %q", lastLine)
 	}
 }
 

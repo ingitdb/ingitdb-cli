@@ -125,15 +125,14 @@ func formatINGR(viewName string, includeHash bool, headers []string, records []i
 			buf.WriteByte('\n')
 		}
 	}
-	// Write record count line — with newline only if hash line follows, otherwise no trailing newline
+	// Write record count line — always with trailing newline
 	n := len(records)
 	if n == 1 {
-		buf.WriteString("# 1 record")
+		buf.WriteString("# 1 record\n")
 	} else {
-		fmt.Fprintf(&buf, "# %d records", n)
+		fmt.Fprintf(&buf, "# %d records\n", n)
 	}
 	if includeHash {
-		buf.WriteByte('\n')
 		// Compute sha256 of all content so far (header + records + count line with \n)
 		sum := sha256.Sum256(buf.Bytes())
 		fmt.Fprintf(&buf, "# sha256:%x", sum)

@@ -101,7 +101,7 @@ Parsed as:
 
 The footer starts immediately after the last record. It consists of one **required** line followed by any number of **optional** comment lines:
 
-**Required — record count** (always the first footer line, with trailing newline unless it is the very last line of the file):
+**Required — record count** (always the first footer line; the trailing newline is optional but recommended):
 
 ```
 # 1 record
@@ -113,6 +113,7 @@ or
 
 - Uses `record` (singular) for exactly 1, `records` (plural) for all other counts (including 0).
 - Must be the first line after the records.
+- Parsers should accept the count line with or without a trailing newline.
 
 **Optional — additional footer lines** (each starting with `#`):
 
@@ -124,7 +125,7 @@ Any number of `#`-prefixed lines may follow. Their content and meaning are agree
 
 - When present, `sha256` names the hash algorithm and `{hex}` is the lowercase hex-encoded SHA-256 digest of all file content above this line (header + records + count line including its `\n`).
 
-The last line of the file (whether the count line or the last optional line) has **no trailing newline**.
+The last line of the file (whether the count line or the last optional line) has **no trailing newline**. When the count line is the last line, producers may include a trailing newline — parsers must accept both.
 
 The space after `#` is preserved but optional for parsers.
 
