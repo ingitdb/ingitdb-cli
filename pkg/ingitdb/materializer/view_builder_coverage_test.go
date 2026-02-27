@@ -208,7 +208,7 @@ func TestResolveViewOutputPath_WithFileName(t *testing.T) {
 	col := &ingitdb.CollectionDef{DirPath: "/tmp/collection"}
 	view := &ingitdb.ViewDef{ID: "test", FileName: "custom.md"}
 
-	outPath := resolveViewOutputPath(col, view)
+	outPath := resolveViewOutputPath(col, view, "/db", "/db")
 	expected := filepath.Join(col.DirPath, "custom.md")
 	if outPath != expected {
 		t.Errorf("expected %q, got %q", expected, outPath)
@@ -221,7 +221,7 @@ func TestResolveViewOutputPath_WithoutFileNameWithID(t *testing.T) {
 	col := &ingitdb.CollectionDef{DirPath: "/tmp/collection"}
 	view := &ingitdb.ViewDef{ID: "myview", FileName: ""}
 
-	outPath := resolveViewOutputPath(col, view)
+	outPath := resolveViewOutputPath(col, view, "/db", "/db")
 	expected := filepath.Join(col.DirPath, "$views", "myview.md")
 	if outPath != expected {
 		t.Errorf("expected %q, got %q", expected, outPath)
@@ -234,7 +234,7 @@ func TestResolveViewOutputPath_WithoutFileNameWithoutID(t *testing.T) {
 	col := &ingitdb.CollectionDef{DirPath: "/tmp/collection"}
 	view := &ingitdb.ViewDef{ID: "", FileName: ""}
 
-	outPath := resolveViewOutputPath(col, view)
+	outPath := resolveViewOutputPath(col, view, "/db", "/db")
 	expected := filepath.Join(col.DirPath, "$views", "view.md")
 	if outPath != expected {
 		t.Errorf("expected %q, got %q", expected, outPath)

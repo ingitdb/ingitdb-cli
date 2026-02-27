@@ -4,6 +4,7 @@ import (
 	"context"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
@@ -322,5 +323,228 @@ func TestCompareValues(t *testing.T) {
 				t.Errorf("compareValues(%v, %v) = %d, want %d", tt.left, tt.right, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestResolveViewOutputPath_DefaultView(t *testing.T) {
+	t.Parallel()
+
+	col := &ingitdb.CollectionDef{
+		ID:      "articles",
+		DirPath: "/db/articles",
+	}
+	view := &ingitdb.ViewDef{
+		ID:        ingitdb.DefaultViewID,
+		IsDefault: true,
+		Format:    "csv",
+		FileName:  "export",
+	}
+
+	outPath := resolveViewOutputPath(col, view, "/db", "/db")
+	// Expected: /db/$ingitdb/articles/export.csv
+	if !strings.Contains(outPath, "$ingitdb") {
+		t.Errorf("expected $ingitdb in path, got %q", outPath)
+	}
+	if !strings.HasSuffix(outPath, "export.csv") {
+		t.Errorf("expected path to end with export.csv, got %q", outPath)
+	}
+}
+
+func TestResolveViewOutputPath_DefaultViewNoFileName(t *testing.T) {
+	t.Parallel()
+
+	col := &ingitdb.CollectionDef{
+		ID:      "articles",
+		DirPath: "/db/articles",
+	}
+	view := &ingitdb.ViewDef{
+		ID:        ingitdb.DefaultViewID,
+		IsDefault: true,
+		Format:    "json",
+	}
+
+	outPath := resolveViewOutputPath(col, view, "/db", "/db")
+	// Expected: /db/$ingitdb/articles/articles.json (uses col.ID)
+	if !strings.Contains(outPath, "$ingitdb") {
+		t.Errorf("expected $ingitdb in path, got %q", outPath)
+	}
+	if !strings.HasSuffix(outPath, "articles.json") {
+		t.Errorf("expected path to end with articles.json, got %q", outPath)
+	}
+}
+
+func TestResolveViewOutputPath_RegularView(t *testing.T) {
+	t.Parallel()
+
+	col := &ingitdb.CollectionDef{
+		ID:      "articles",
+		DirPath: "/db/articles",
+	}
+	view := &ingitdb.ViewDef{
+		ID:       "README",
+		IsDefault: false,
+		FileName: "README.md",
+	}
+
+	outPath := resolveViewOutputPath(col, view, "/db", "/db")
+	expected := filepath.Join(col.DirPath, "README.md")
+	if outPath != expected {
+		t.Errorf("expected %q, got %q", expected, outPath)
+	}
+}
+
+func TestSimpleViewBuilder_BuildDefaultView_SingleBatch(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	col := &ingitdb.CollectionDef{
+		ID:           "products",
+		DirPath:      filepath.Join(tmpDir, "products"),
+		ColumnsOrder: []string{"id", "name", "price"},
+	}
+	view := &ingitdb.ViewDef{
+		ID:        ingitdb.DefaultViewID,
+		IsDefault: true,
+		Format:    "tsv",
+	}
+
+	records := []ingitdb.RecordEntry{
+		{Key: "1", Data: map[string]any{"id": "1", "name": "Widget", "price": 9.99}},
+		{Key: "2", Data: map[string]any{"id": "2", "name": "Gadget", "price": 19.99}},
+	}
+
+	writer := &capturingWriter{}
+	builder := SimpleViewBuilder{
+		DefReader: fakeViewDefReader{views: map[string]*ingitdb.ViewDef{ingitdb.DefaultViewID: view}},
+		RecordsReader: fakeRecordsReader{records: records},
+		Writer:        writer,
+	}
+
+	result, err := builder.BuildViews(context.Background(), tmpDir, col, &ingitdb.Definition{})
+	if err != nil {
+		t.Fatalf("BuildViews: %v", err)
+	}
+
+	if result.FilesWritten != 1 {
+		t.Errorf("expected 1 file written, got %d", result.FilesWritten)
+	}
+	if result.FilesUnchanged != 0 {
+		t.Errorf("expected 0 files unchanged, got %d", result.FilesUnchanged)
+	}
+	if len(result.Errors) > 0 {
+		t.Errorf("expected no errors, got %v", result.Errors)
+	}
+}
+
+func TestSimpleViewBuilder_BuildDefaultView_MultiBatch(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	col := &ingitdb.CollectionDef{
+		ID:           "items",
+		DirPath:      filepath.Join(tmpDir, "items"),
+		ColumnsOrder: []string{"id", "value"},
+	}
+	view := &ingitdb.ViewDef{
+		ID:           ingitdb.DefaultViewID,
+		IsDefault:    true,
+		Format:       "json",
+		MaxBatchSize: 2,
+	}
+
+	records := make([]ingitdb.RecordEntry, 5)
+	for i := 1; i <= 5; i++ {
+		records[i-1] = ingitdb.RecordEntry{
+			Key:  string(rune(i + 48)),
+			Data: map[string]any{"id": string(rune(i + 48)), "value": i * 10},
+		}
+	}
+
+	writer := &capturingWriter{}
+	builder := SimpleViewBuilder{
+		DefReader: fakeViewDefReader{views: map[string]*ingitdb.ViewDef{ingitdb.DefaultViewID: view}},
+		RecordsReader: fakeRecordsReader{records: records},
+		Writer:        writer,
+	}
+
+	result, err := builder.BuildViews(context.Background(), tmpDir, col, &ingitdb.Definition{})
+	if err != nil {
+		t.Fatalf("BuildViews: %v", err)
+	}
+
+	// With 5 records and batch size 2, we expect 3 batches (2, 2, 1)
+	if result.FilesWritten != 3 {
+		t.Errorf("expected 3 files written, got %d", result.FilesWritten)
+	}
+}
+
+func TestSimpleViewBuilder_BuildDefaultView_Idempotent(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	col := &ingitdb.CollectionDef{
+		ID:           "data",
+		DirPath:      filepath.Join(tmpDir, "data"),
+		ColumnsOrder: []string{"id", "name"},
+	}
+	view := &ingitdb.ViewDef{
+		ID:        ingitdb.DefaultViewID,
+		IsDefault: true,
+		Format:    "csv",
+	}
+
+	records := []ingitdb.RecordEntry{
+		{Key: "1", Data: map[string]any{"id": "1", "name": "Alice"}},
+	}
+
+	writer := &capturingWriter{}
+	builder := SimpleViewBuilder{
+		DefReader: fakeViewDefReader{views: map[string]*ingitdb.ViewDef{ingitdb.DefaultViewID: view}},
+		RecordsReader: fakeRecordsReader{records: records},
+		Writer:        writer,
+	}
+
+	// First build
+	result1, err := builder.BuildViews(context.Background(), tmpDir, col, &ingitdb.Definition{})
+	if err != nil {
+		t.Fatalf("first BuildViews: %v", err)
+	}
+	if result1.FilesWritten != 1 {
+		t.Fatalf("expected 1 file written in first run, got %d", result1.FilesWritten)
+	}
+
+	// Second build (idempotent)
+	result2, err := builder.BuildViews(context.Background(), tmpDir, col, &ingitdb.Definition{})
+	if err != nil {
+		t.Fatalf("second BuildViews: %v", err)
+	}
+	if result2.FilesWritten != 0 {
+		t.Errorf("expected 0 files written in second run, got %d", result2.FilesWritten)
+	}
+	if result2.FilesUnchanged != 1 {
+		t.Errorf("expected 1 file unchanged in second run, got %d", result2.FilesUnchanged)
+	}
+}
+
+func TestResolveViewOutputPath_WithSubcollection(t *testing.T) {
+	t.Parallel()
+
+	col := &ingitdb.CollectionDef{
+		ID:      "tags",
+		DirPath: "/db/todo/.collection/subcollections/tags",
+	}
+	view := &ingitdb.ViewDef{
+		ID:        ingitdb.DefaultViewID,
+		IsDefault: true,
+		Format:    "tsv",
+	}
+
+	outPath := resolveViewOutputPath(col, view, "/db", "/db")
+	// Expected to contain the subcollection path structure
+	if !strings.Contains(outPath, "$ingitdb") {
+		t.Errorf("expected $ingitdb in path, got %q", outPath)
+	}
+	if !strings.HasSuffix(outPath, "tags.tsv") {
+		t.Errorf("expected path to end with tags.tsv, got %q", outPath)
 	}
 }

@@ -119,6 +119,15 @@ func readCollectionDef(rootPath, relPath, parentPath, id string, subPath []strin
 		return
 	}
 
+	if colDef.DefaultView != nil {
+		colDef.DefaultView.ID = ingitdb.DefaultViewID
+		colDef.DefaultView.IsDefault = true
+		if colDef.Views == nil {
+			colDef.Views = make(map[string]*ingitdb.ViewDef)
+		}
+		colDef.Views[ingitdb.DefaultViewID] = colDef.DefaultView
+	}
+
 	return
 }
 

@@ -1,6 +1,7 @@
 package materializer
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -45,6 +46,16 @@ func (b SimpleViewBuilder) BuildViews(
 		if err != nil {
 			return nil, err
 		}
+
+		if view.IsDefault {
+			// Handle default view export
+			written, unchanged, errs := buildDefaultView(dbPath, col, view, records)
+			result.FilesWritten += written
+			result.FilesUnchanged += unchanged
+			result.Errors = append(result.Errors, errs...)
+			continue
+		}
+
 		records = filterColumns(records, view.Columns)
 		if err := orderRecords(records, view.OrderBy); err != nil {
 			return nil, err
@@ -52,7 +63,7 @@ func (b SimpleViewBuilder) BuildViews(
 		if view.Top > 0 && len(records) > view.Top {
 			records = records[:view.Top]
 		}
-		outPath := resolveViewOutputPath(col, view)
+		outPath := resolveViewOutputPath(col, view, dbPath, dbPath)
 		written, err := b.Writer.WriteView(ctx, col, view, records, outPath)
 		if err != nil {
 			result.Errors = append(result.Errors, err)
@@ -88,6 +99,16 @@ func (b SimpleViewBuilder) BuildView(
 	if err != nil {
 		return nil, err
 	}
+
+	if view.IsDefault {
+		// Handle default view export
+		written, unchanged, errs := buildDefaultView(dbPath, col, view, records)
+		result.FilesWritten += written
+		result.FilesUnchanged += unchanged
+		result.Errors = append(result.Errors, errs...)
+		return result, nil
+	}
+
 	records = filterColumns(records, view.Columns)
 	if err := orderRecords(records, view.OrderBy); err != nil {
 		return nil, err
@@ -95,7 +116,7 @@ func (b SimpleViewBuilder) BuildView(
 	if view.Top > 0 && len(records) > view.Top {
 		records = records[:view.Top]
 	}
-	outPath := resolveViewOutputPath(col, view)
+	outPath := resolveViewOutputPath(col, view, dbPath, dbPath)
 	written, err := b.Writer.WriteView(ctx, col, view, records, outPath)
 	if err != nil {
 		result.Errors = append(result.Errors, err)
@@ -153,7 +174,78 @@ func filterColumns(records []ingitdb.RecordEntry, cols []string) []ingitdb.Recor
 	return filtered
 }
 
-func resolveViewOutputPath(col *ingitdb.CollectionDef, view *ingitdb.ViewDef) string {
+func buildDefaultView(dbPath string, col *ingitdb.CollectionDef, view *ingitdb.ViewDef, records []ingitdb.RecordEntry) (written, unchanged int, errs []error) {
+	columns := determineColumns(col, view)
+	format := strings.ToLower(view.Format)
+	ext := defaultViewFormatExtension(format)
+	base := view.FileName
+	if base == "" {
+		base = col.ID
+	}
+
+	relPath, _ := filepath.Rel(dbPath, col.DirPath)
+
+	// Determine batches
+	totalBatches := 1
+	batchSize := view.MaxBatchSize
+	if batchSize > 0 && len(records) > batchSize {
+		totalBatches = (len(records) + batchSize - 1) / batchSize
+	}
+
+	for batchNum := 1; batchNum <= totalBatches; batchNum++ {
+		var batchRecords []ingitdb.RecordEntry
+		if totalBatches == 1 {
+			batchRecords = records
+		} else {
+			start := (batchNum - 1) * batchSize
+			end := start + batchSize
+			if end > len(records) {
+				end = len(records)
+			}
+			batchRecords = records[start:end]
+		}
+
+		content, err := formatExportBatch(format, columns, batchRecords)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("batch %d: %w", batchNum, err))
+			continue
+		}
+
+		fileName := formatBatchFileName(base, ext, batchNum, totalBatches)
+		outPath := filepath.Join(dbPath, ingitdb.IngitdbDir, relPath, fileName)
+
+		if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
+			errs = append(errs, fmt.Errorf("mkdir for %s: %w", outPath, err))
+			continue
+		}
+
+		existing, readErr := os.ReadFile(outPath)
+		if readErr == nil && bytes.Equal(existing, content) {
+			unchanged++
+			continue
+		}
+
+		if err := os.WriteFile(outPath, content, 0o644); err != nil {
+			errs = append(errs, fmt.Errorf("write %s: %w", outPath, err))
+			continue
+		}
+		written++
+	}
+	return
+}
+
+func resolveViewOutputPath(col *ingitdb.CollectionDef, view *ingitdb.ViewDef, dbPath, repoRoot string) string {
+	if view.IsDefault {
+		// Compute relative path from dbPath to col.DirPath
+		relPath, _ := filepath.Rel(dbPath, col.DirPath)
+		base := view.FileName
+		if base == "" {
+			base = col.ID
+		}
+		ext := defaultViewFormatExtension(view.Format)
+		return filepath.Join(repoRoot, ingitdb.IngitdbDir, relPath, base+"."+ext)
+	}
+
 	if view.FileName != "" {
 		return filepath.Join(col.DirPath, view.FileName)
 	}
