@@ -45,7 +45,8 @@ func formatBatchFileName(base, ext string, batchNum, totalBatches int) string {
 
 // formatExportBatch serializes a batch of records into the given format.
 // format must already be lowercased (or empty for ingr default).
-func formatExportBatch(format string, headers []string, records []ingitdb.RecordEntry) ([]byte, error) {
+// viewName is used only by INGR to generate the metadata header line.
+func formatExportBatch(format string, viewName string, headers []string, records []ingitdb.RecordEntry) ([]byte, error) {
 	switch format {
 	case "tsv":
 		return formatTSV(headers, records)
@@ -58,7 +59,7 @@ func formatExportBatch(format string, headers []string, records []ingitdb.Record
 	case "yaml":
 		return formatYAML(headers, records)
 	default: // "", "ingr"
-		return formatINGR(headers, records)
+		return formatINGR(viewName, headers, records)
 	}
 }
 
@@ -84,12 +85,27 @@ func formatTSV(headers []string, records []ingitdb.RecordEntry) ([]byte, error) 
 	return buf.Bytes(), nil
 }
 
-// formatINGR serializes records in INGR format: N lines per record (one field per line),
-// no header row, no delimiters. N equals len(headers). Schema must be defined externally.
-// Each field value is JSON-encoded: strings are quoted, numbers and booleans are bare,
-// null/missing fields are written as "null".
-func formatINGR(headers []string, records []ingitdb.RecordEntry) ([]byte, error) {
+// formatINGR serializes records in INGR format.
+// The first line is a metadata header: "# {viewName}: $ID, col2, col3, ..."
+// where "id" is represented as "$ID". Subsequent lines are N lines per record
+// (one JSON-encoded field value per line). N equals len(headers).
+func formatINGR(viewName string, headers []string, records []ingitdb.RecordEntry) ([]byte, error) {
 	var buf bytes.Buffer
+	// Write metadata header line
+	buf.WriteString("# ")
+	buf.WriteString(viewName)
+	buf.WriteString(": ")
+	for i, h := range headers {
+		if i > 0 {
+			buf.WriteString(", ")
+		}
+		if h == "id" {
+			buf.WriteString("$ID")
+		} else {
+			buf.WriteString(h)
+		}
+	}
+	buf.WriteByte('\n')
 	for _, rec := range records {
 		for _, h := range headers {
 			var val any

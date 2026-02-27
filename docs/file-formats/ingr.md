@@ -12,34 +12,56 @@
 - **Diff-friendly** — one field per line, stable ordering.
 - **Streamable** — readable line-by-line.
 - **JSON-typed** — each value is a single-line JSON expression.
+- **Self-describing** — first line carries the recordset name and column list.
 
 ---
 
 ## 2. Core Concept
 
-An `.ingr` file is a sequence of records.
+An `.ingr` file begins with a **metadata header line** followed by a sequence of records.
 
 Each record:
 
-- Contains a **fixed number of lines (N)**.
+- Contains a **fixed number of lines (N)**, where N equals the number of columns declared in the header.
 - Each line represents **one field value**, encoded as JSON.
-- Records follow each other immediately.
-- No delimiters are required if N is known.
+- Records follow each other immediately with no delimiters.
 
 **Parser rule:**
 
-Read `N` lines → 1 record  
-Repeat until EOF
+1. Read line 1 → parse header to get column list (length = N).
+2. Read `N` lines → 1 record.
+3. Repeat until EOF.
 
 ---
 
 ## 3. Structure
 
-### 3.1 Fixed Field Count
+### 3.1 Header Line
 
-The number of fields per record **must be defined externally** (schema, CLI flag, metadata, or convention).
+The first line of every `.ingr` file is a metadata header:
 
-### 3.2 Value Encoding
+```
+# {collection}/{view}: $ID, col2, col3, ...
+```
+
+- Starts with `# ` (hash + space).
+- **Recordset name** — `{collection}/{view}` identifies the collection and view that produced the file (e.g. `countries/default_view`).
+- Followed by `: ` (colon + space).
+- **Column list** — comma-separated column names, separated by `, ` (comma + space) for readability. Parsers may trim surrounding whitespace from each name.
+- **`$ID`** is the reserved name for the record key (always the first column).
+- All other column names are the field names from the collection schema.
+
+Example:
+
+```
+# countries/default_view: $ID, currency, flag, population, titles
+```
+
+### 3.2 Fixed Field Count
+
+The number of fields per record **N** is determined by the number of columns in the header (including `$ID`).
+
+### 3.3 Value Encoding
 
 Each field value is encoded as a **compact single-line JSON expression**:
 
@@ -55,23 +77,24 @@ Each field value is encoded as a **compact single-line JSON expression**:
 
 JSON objects and arrays must be written without embedded newlines (compact form).
 
-### 3.3 Example (`N = 3`, fields: `first_name`, `last_name`, `age`)
+### 3.4 Example (fields: `$ID`, `name`, `age`)
 
 ```
-"John"
-"Doe"
+# people/default_view: $ID, name, age
+"john"
+"John Doe"
 35
-"Jane"
-"Smith"
+"jane"
+"Jane Smith"
 29
 ```
 
 Parsed as:
 
-| Record | first_name | last_name | age |
-|--------|------------|-----------|-----|
-| 1      | John       | Doe       | 35  |
-| 2      | Jane       | Smith     | 29  |
+| $ID  | name       | age |
+|------|------------|-----|
+| john | John Doe   | 35  |
+| jane | Jane Smith | 29  |
 
 ---
 
@@ -79,105 +102,85 @@ Parsed as:
 
 1. Encoding: UTF-8.
 2. Line separator: LF (`\n`).
-3. Each field occupies exactly one line.
-4. Each line must be a valid JSON expression (string, number, boolean, null, object, or array).
+3. Line 1 is the metadata header; it must match the format above.
+4. Each subsequent field line must be a valid single-line JSON expression.
 5. JSON objects and arrays must not contain embedded newlines.
-6. Total number of lines must be divisible by `N`.
-7. No header row.
-8. No inline delimiters.
+6. `(total_lines - 1) % N == 0` (header accounts for the -1).
+7. No inline delimiters between records.
 
 ---
 
-## 5. Optional Schema Declaration (Recommended)
+## 5. Example With Null Field
 
-Schema should be declared outside the file.
-
-Example:
-
-fields = 3
-field_order = [first_name, last_name, age]
-
-Or via CLI:
-
-ingitdb import –fields 3 file.ingr
-
-Keeping schema external ensures:
-
-- Stable diffs
-- No metadata noise
-- Cleaner records
-
----
-
-## 6. Example With Null Field
-
-`N = 3`
+Header + 2 records, `N = 3`:
 
 ```
-"John"
-"Doe"
+# people/default_view: $ID, name, age
+"john"
+"John Doe"
 35
-"Jane"
+"jane"
 null
 29
 ```
 
 Second record:
 
-- Field 1 = `"Jane"`
-- Field 2 = `null` (missing or explicitly null)
-- Field 3 = `29`
+- `$ID` = `"jane"`
+- `name` = `null` (missing or explicitly null)
+- `age` = `29`
 
 ---
 
-## 7. Validation
+## 6. Validation
 
 A valid `.ingr` file must:
 
-- Not contain partial records.
+- Have line 1 be a well-formed header.
+- Not contain partial records after the header.
 - Not contain trailing extra lines.
-- Maintain strict line ordering.
-- Have every line be a valid single-line JSON expression.
+- Have every value line be a valid single-line JSON expression.
 
 Validation condition:
 
-(total_lines % N) == 0
+```
+(total_lines - 1) % N == 0
+```
 
 ---
 
-## 8. Why `.ingr` Works Well in Git
+## 7. Why `.ingr` Works Well in Git
 
-- One field per line → clean diffs.
+- One field per line → clean, minimal diffs.
 - JSON encoding is compact and unambiguous.
 - Strings with special characters (tabs, newlines) are safely JSON-escaped.
-- Stable structure.
+- Stable, deterministic structure.
 - Easier merge conflict resolution.
 - Works naturally with line-based tools (grep, jq, awk).
 
 ---
 
-## 9. Suitable Use Cases
+## 8. Suitable Use Cases
 
 Good for:
 
-- Structured flat or nested data with predictable schema
-- Git-tracked datasets
-- CLI-driven workflows
-- Deterministic record storage
+- Structured flat or nested data with predictable schema.
+- Git-tracked datasets.
+- CLI-driven workflows.
+- Deterministic record storage.
 
 Not ideal for:
 
-- Variable field counts
-- Binary data
+- Variable field counts.
+- Binary data.
 
 ---
 
-## 10. Summary
+## 9. Summary
 
-`.ingr` is a deterministic, fixed-line record format:
+`.ingr` is a self-describing, deterministic, fixed-line record format:
 
-- `N` lines per record
-- Each line is a JSON-encoded value
-- No delimiters
-- Schema defined externally
+- Line 1: `# {collection}/{view}: $ID, col2, col3, ...`
+- Lines 2+: `N` JSON-encoded values per record, one value per line
+- No record delimiters
 - Optimised for simplicity and Git friendliness
