@@ -1,7 +1,8 @@
-# INGR File Format Specification
+# INGR File Format Specification - v1-RC
 
-**Extension:** `.ingr`  
-**Purpose:** Compact, deterministic, self-describing, Git-friendly fixed-line record format.
+- **Extension:**: `.ingr`
+- **Version:** `1.0.0-RC`
+- **Purpose:** Compact, deterministic, self-describing, Git-friendly fixed-line record format.
 
 ---
 
