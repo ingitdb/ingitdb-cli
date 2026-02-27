@@ -147,3 +147,107 @@ func TestCollectionDefValidate_Success(t *testing.T) {
 		t.Fatalf("expected DataPreview.Template to be defaulted to 'md-table'")
 	}
 }
+
+func TestCollectionDefValidate_DefaultView(t *testing.T) {
+	t.Parallel()
+
+	columns := map[string]*ColumnDef{
+		"name": {Type: "string"},
+	}
+	recordFile := &RecordFileDef{
+		Format:     "JSON",
+		Name:       "{key}.json",
+		RecordType: SingleRecord,
+	}
+
+	tests := []struct {
+		name        string
+		defaultView *ViewDef
+		wantErr     bool
+		errMsg      string
+	}{
+		{
+			name:        "valid_default_view",
+			defaultView: &ViewDef{},
+			wantErr:     false,
+		},
+		{
+			name: "invalid_default_view_format",
+			defaultView: &ViewDef{
+				Format: "invalid",
+			},
+			wantErr: true,
+			errMsg:  "invalid default_view",
+		},
+		{
+			name: "invalid_default_view_batch_size",
+			defaultView: &ViewDef{
+				MaxBatchSize: -5,
+			},
+			wantErr: true,
+			errMsg:  "invalid default_view",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			def := &CollectionDef{
+				ID:          "test_id",
+				Columns:     columns,
+				RecordFile:  recordFile,
+				DefaultView: tt.defaultView,
+			}
+
+			err := def.Validate()
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("got error %v, want error %v", err, tt.wantErr)
+			}
+
+			if tt.wantErr && !strings.Contains(err.Error(), tt.errMsg) {
+				t.Fatalf("expected error to contain %q, got %q", tt.errMsg, err.Error())
+			}
+
+			// If no error, verify DefaultView.ID was set
+			if !tt.wantErr && tt.defaultView != nil {
+				if def.DefaultView.ID != "default_view" {
+					t.Fatalf("expected DefaultView.ID to be 'default_view', got %q", def.DefaultView.ID)
+				}
+			}
+		})
+	}
+}
+
+func TestCollectionDefValidate_MultipleIsDefault(t *testing.T) {
+	t.Parallel()
+
+	columns := map[string]*ColumnDef{
+		"name": {Type: "string"},
+	}
+	recordFile := &RecordFileDef{
+		Format:     "JSON",
+		Name:       "{key}.json",
+		RecordType: SingleRecord,
+	}
+
+	def := &CollectionDef{
+		ID:         "test_id",
+		Columns:    columns,
+		RecordFile: recordFile,
+		Views: map[string]*ViewDef{
+			"view1": {ID: "view1", IsDefault: true},
+			"view2": {ID: "view2", IsDefault: true},
+		},
+	}
+
+	err := def.Validate()
+	if err == nil {
+		t.Fatal("expected error for multiple views with IsDefault set, got nil")
+	}
+
+	if !strings.Contains(err.Error(), "multiple views with IsDefault set") {
+		t.Fatalf("expected error to contain 'multiple views with IsDefault set', got %q", err.Error())
+	}
+}

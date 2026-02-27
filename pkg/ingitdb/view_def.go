@@ -1,6 +1,9 @@
 package ingitdb
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type ViewDef struct {
 	ID      string            `yaml:"-"`
@@ -33,6 +36,10 @@ type ViewDef struct {
 
 	// RecordsVarName provides a custom Template variable name for the records slice. The default is "records".
 	RecordsVarName string `yaml:"records_var_name,omitempty"`
+
+	Format       string `yaml:"format,omitempty"`
+	MaxBatchSize int    `yaml:"max_batch_size,omitempty"`
+	IsDefault    bool   `yaml:"-" json:"-"`
 }
 
 // Validate checks the view definition for consistency.
@@ -40,5 +47,25 @@ func (v *ViewDef) Validate() error {
 	if v.ID == "" {
 		return fmt.Errorf("missing 'id' in view definition")
 	}
+
+	if v.Format != "" {
+		// Validate format is one of the allowed values (case-insensitive)
+		validFormats := map[string]bool{
+			"tsv":   true,
+			"csv":   true,
+			"json":  true,
+			"jsonl": true,
+			"yaml":  true,
+		}
+		formatLower := strings.ToLower(v.Format)
+		if !validFormats[formatLower] {
+			return fmt.Errorf("invalid 'format' value: %s, must be one of: tsv, csv, json, jsonl, yaml", v.Format)
+		}
+	}
+
+	if v.MaxBatchSize < 0 {
+		return fmt.Errorf("'max_batch_size' must be >= 0, got %d", v.MaxBatchSize)
+	}
+
 	return nil
 }

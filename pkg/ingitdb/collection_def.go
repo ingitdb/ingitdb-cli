@@ -13,7 +13,7 @@ type CollectionDef struct {
 	DataDir      string                `yaml:"data_dir,omitempty"`
 	Columns      map[string]*ColumnDef `yaml:"columns"`
 	ColumnsOrder []string              `yaml:"columns_order,omitempty"`
-	DefaultView  string                `yaml:"default_view,omitempty"`
+	DefaultView  *ViewDef              `yaml:"default_view,omitempty"`
 	// SubCollections are not part of the collection definition file,
 	// they are stored in the "subcollections" subdirectory as directories,
 	// each containing their own .collection/definition.yaml.
@@ -88,6 +88,26 @@ func (v *CollectionDef) Validate() error {
 			}
 		}
 	}
+
+	// Validate DefaultView if present
+	if v.DefaultView != nil {
+		v.DefaultView.ID = "default_view"
+		if err := v.DefaultView.Validate(); err != nil {
+			allErrors = append(allErrors, fmt.Errorf("invalid default_view: %w", err))
+		}
+	}
+
+	// Check for multiple views with IsDefault == true
+	defaultCount := 0
+	for _, viewDef := range v.Views {
+		if viewDef.IsDefault {
+			defaultCount++
+		}
+	}
+	if defaultCount > 1 {
+		allErrors = append(allErrors, fmt.Errorf("multiple views with IsDefault set"))
+	}
+
 	if len(allErrors) > 0 {
 		return fmt.Errorf("%d errors: %w", len(allErrors), errors.Join(allErrors...))
 	}
