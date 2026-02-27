@@ -23,6 +23,7 @@ type SimpleViewBuilder struct {
 func (b SimpleViewBuilder) BuildViews(
 	ctx context.Context,
 	dbPath string,
+	repoRoot string,
 	col *ingitdb.CollectionDef,
 	def *ingitdb.Definition,
 ) (*ingitdb.MaterializeResult, error) {
@@ -63,7 +64,7 @@ func (b SimpleViewBuilder) BuildViews(
 		if view.Top > 0 && len(records) > view.Top {
 			records = records[:view.Top]
 		}
-		outPath := resolveViewOutputPath(col, view, dbPath, dbPath)
+		outPath := resolveViewOutputPath(col, view, dbPath, repoRoot)
 		written, err := b.Writer.WriteView(ctx, col, view, records, outPath)
 		if err != nil {
 			result.Errors = append(result.Errors, err)
@@ -81,6 +82,7 @@ func (b SimpleViewBuilder) BuildViews(
 func (b SimpleViewBuilder) BuildView(
 	ctx context.Context,
 	dbPath string,
+	repoRoot string,
 	col *ingitdb.CollectionDef,
 	def *ingitdb.Definition,
 	view *ingitdb.ViewDef,
@@ -116,7 +118,7 @@ func (b SimpleViewBuilder) BuildView(
 	if view.Top > 0 && len(records) > view.Top {
 		records = records[:view.Top]
 	}
-	outPath := resolveViewOutputPath(col, view, dbPath, dbPath)
+	outPath := resolveViewOutputPath(col, view, dbPath, repoRoot)
 	written, err := b.Writer.WriteView(ctx, col, view, records, outPath)
 	if err != nil {
 		result.Errors = append(result.Errors, err)

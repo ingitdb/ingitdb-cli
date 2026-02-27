@@ -13,7 +13,7 @@ type mockViewBuilder struct {
 	err    error
 }
 
-func (m *mockViewBuilder) BuildViews(_ context.Context, _ string, _ *ingitdb.CollectionDef, _ *ingitdb.Definition) (*ingitdb.MaterializeResult, error) {
+func (m *mockViewBuilder) BuildViews(_ context.Context, _ string, _ string, _ *ingitdb.CollectionDef, _ *ingitdb.Definition) (*ingitdb.MaterializeResult, error) {
 	return m.result, m.err
 }
 

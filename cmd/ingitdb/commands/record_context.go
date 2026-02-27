@@ -9,6 +9,7 @@ import (
 
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/gitrepo"
 )
 
 // recordContext holds the resolved state needed to operate on a single record.
@@ -99,7 +100,12 @@ func buildLocalViews(ctx context.Context, rctx recordContext) error {
 	if builder == nil {
 		return nil
 	}
-	_, buildErr := builder.BuildViews(ctx, rctx.dirPath, rctx.colDef, rctx.def)
+	repoRoot, err := gitrepo.FindRepoRoot(rctx.dirPath)
+	if err != nil {
+		// Log warning but continue
+		repoRoot = ""
+	}
+	_, buildErr := builder.BuildViews(ctx, rctx.dirPath, repoRoot, rctx.colDef, rctx.def)
 	if buildErr != nil {
 		return fmt.Errorf("failed to materialize views for collection %s: %w", rctx.colDef.ID, buildErr)
 	}

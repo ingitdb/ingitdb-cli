@@ -41,6 +41,7 @@ type ViewBuilder interface {
 	BuildViews(
 		ctx context.Context,
 		dbPath string,
+		repoRoot string,
 		col *ingitdb.CollectionDef,
 		def *ingitdb.Definition,
 	) (*ingitdb.MaterializeResult, error)

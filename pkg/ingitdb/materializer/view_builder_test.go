@@ -87,7 +87,7 @@ func TestSimpleViewBuilder_BuildViewsOrdersRecords(t *testing.T) {
 		Writer: writer,
 	}
 
-	result, err := builder.BuildViews(context.Background(), "/db", col, &ingitdb.Definition{})
+	result, err := builder.BuildViews(context.Background(), "/db", "", col, &ingitdb.Definition{})
 	if err != nil {
 		t.Fatalf("BuildViews: %v", err)
 	}
@@ -125,7 +125,7 @@ func TestSimpleViewBuilder_MissingDependencies(t *testing.T) {
 	t.Parallel()
 
 	builder := SimpleViewBuilder{}
-	_, err := builder.BuildViews(context.Background(), "/db", &ingitdb.CollectionDef{}, &ingitdb.Definition{})
+	_, err := builder.BuildViews(context.Background(), "/db", "", &ingitdb.CollectionDef{}, &ingitdb.Definition{})
 	if err == nil {
 		t.Fatalf("expected error for missing dependencies")
 	}
@@ -420,7 +420,7 @@ func TestSimpleViewBuilder_BuildDefaultView_SingleBatch(t *testing.T) {
 		Writer:        writer,
 	}
 
-	result, err := builder.BuildViews(context.Background(), tmpDir, col, &ingitdb.Definition{})
+	result, err := builder.BuildViews(context.Background(), tmpDir, "", col, &ingitdb.Definition{})
 	if err != nil {
 		t.Fatalf("BuildViews: %v", err)
 	}
@@ -467,7 +467,7 @@ func TestSimpleViewBuilder_BuildDefaultView_MultiBatch(t *testing.T) {
 		Writer:        writer,
 	}
 
-	result, err := builder.BuildViews(context.Background(), tmpDir, col, &ingitdb.Definition{})
+	result, err := builder.BuildViews(context.Background(), tmpDir, "", col, &ingitdb.Definition{})
 	if err != nil {
 		t.Fatalf("BuildViews: %v", err)
 	}
@@ -505,7 +505,7 @@ func TestSimpleViewBuilder_BuildDefaultView_Idempotent(t *testing.T) {
 	}
 
 	// First build
-	result1, err := builder.BuildViews(context.Background(), tmpDir, col, &ingitdb.Definition{})
+	result1, err := builder.BuildViews(context.Background(), tmpDir, "", col, &ingitdb.Definition{})
 	if err != nil {
 		t.Fatalf("first BuildViews: %v", err)
 	}
@@ -514,7 +514,7 @@ func TestSimpleViewBuilder_BuildDefaultView_Idempotent(t *testing.T) {
 	}
 
 	// Second build (idempotent)
-	result2, err := builder.BuildViews(context.Background(), tmpDir, col, &ingitdb.Definition{})
+	result2, err := builder.BuildViews(context.Background(), tmpDir, "", col, &ingitdb.Definition{})
 	if err != nil {
 		t.Fatalf("second BuildViews: %v", err)
 	}

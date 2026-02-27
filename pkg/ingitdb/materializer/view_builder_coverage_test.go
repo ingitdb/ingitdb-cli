@@ -20,7 +20,7 @@ func TestSimpleViewBuilder_BuildViews_MissingDefReader(t *testing.T) {
 		RecordsReader: fakeRecordsReader{},
 		Writer:        &capturingWriter{},
 	}
-	_, err := builder.BuildViews(context.Background(), "/db", &ingitdb.CollectionDef{}, &ingitdb.Definition{})
+	_, err := builder.BuildViews(context.Background(), "/db", "", &ingitdb.CollectionDef{}, &ingitdb.Definition{})
 	if err == nil {
 		t.Fatal("expected error for missing DefReader")
 	}
@@ -34,7 +34,7 @@ func TestSimpleViewBuilder_BuildViews_MissingRecordsReader(t *testing.T) {
 		RecordsReader: nil,
 		Writer:        &capturingWriter{},
 	}
-	_, err := builder.BuildViews(context.Background(), "/db", &ingitdb.CollectionDef{}, &ingitdb.Definition{})
+	_, err := builder.BuildViews(context.Background(), "/db", "", &ingitdb.CollectionDef{}, &ingitdb.Definition{})
 	if err == nil {
 		t.Fatal("expected error for missing RecordsReader")
 	}
@@ -48,7 +48,7 @@ func TestSimpleViewBuilder_BuildViews_MissingWriter(t *testing.T) {
 		RecordsReader: fakeRecordsReader{},
 		Writer:        nil,
 	}
-	_, err := builder.BuildViews(context.Background(), "/db", &ingitdb.CollectionDef{}, &ingitdb.Definition{})
+	_, err := builder.BuildViews(context.Background(), "/db", "", &ingitdb.CollectionDef{}, &ingitdb.Definition{})
 	if err == nil {
 		t.Fatal("expected error for missing Writer")
 	}
@@ -71,7 +71,7 @@ func TestSimpleViewBuilder_BuildViews_DefReaderError(t *testing.T) {
 		RecordsReader: fakeRecordsReader{},
 		Writer:        &capturingWriter{},
 	}
-	_, err := builder.BuildViews(context.Background(), "/db", &ingitdb.CollectionDef{}, &ingitdb.Definition{})
+	_, err := builder.BuildViews(context.Background(), "/db", "", &ingitdb.CollectionDef{}, &ingitdb.Definition{})
 	if err == nil {
 		t.Fatal("expected error from DefReader")
 	}
@@ -107,7 +107,7 @@ func TestSimpleViewBuilder_BuildViews_RecordsReaderError(t *testing.T) {
 		RecordsReader: errorRecordsReader{err: readerErr},
 		Writer:        &capturingWriter{},
 	}
-	_, err := builder.BuildViews(context.Background(), "/db", &ingitdb.CollectionDef{}, &ingitdb.Definition{})
+	_, err := builder.BuildViews(context.Background(), "/db", "", &ingitdb.CollectionDef{}, &ingitdb.Definition{})
 	if err == nil {
 		t.Fatal("expected error from RecordsReader")
 	}
@@ -145,7 +145,7 @@ func TestSimpleViewBuilder_BuildViews_WriterError(t *testing.T) {
 		RecordsReader: fakeRecordsReader{},
 		Writer:        errorWriter{err: writerErr},
 	}
-	result, err := builder.BuildViews(context.Background(), "/db", &ingitdb.CollectionDef{}, &ingitdb.Definition{})
+	result, err := builder.BuildViews(context.Background(), "/db", "", &ingitdb.CollectionDef{}, &ingitdb.Definition{})
 	if err != nil {
 		t.Fatalf("BuildViews should not return error on write failure: %v", err)
 	}
@@ -173,7 +173,7 @@ func TestSimpleViewBuilder_BuildViews_WriterReportsUnchanged(t *testing.T) {
 		RecordsReader: fakeRecordsReader{},
 		Writer:        writer,
 	}
-	result, err := builder.BuildViews(context.Background(), "/db", &ingitdb.CollectionDef{}, &ingitdb.Definition{})
+	result, err := builder.BuildViews(context.Background(), "/db", "", &ingitdb.CollectionDef{}, &ingitdb.Definition{})
 	if err != nil {
 		t.Fatalf("BuildViews: %v", err)
 	}

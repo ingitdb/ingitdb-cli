@@ -7,6 +7,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/gitrepo"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/materializer"
 )
 
@@ -50,6 +51,12 @@ func Materialize(
 			dirPath = expanded
 			logf("inGitDB db path: ", dirPath)
 
+			repoRoot, err := gitrepo.FindRepoRoot(dirPath)
+			if err != nil {
+				logf(fmt.Sprintf("Could not find git repository root for default view export: %v", err))
+				repoRoot = ""
+			}
+
 			validateOpt := ingitdb.Validate()
 			def, err := readDefinition(dirPath, validateOpt)
 			if err != nil {
@@ -57,7 +64,7 @@ func Materialize(
 			}
 			var totalResult ingitdb.MaterializeResult
 			for _, col := range def.Collections {
-				result, buildErr := viewBuilder.BuildViews(ctx, dirPath, col, def)
+				result, buildErr := viewBuilder.BuildViews(ctx, dirPath, repoRoot, col, def)
 				if buildErr != nil {
 					return fmt.Errorf("failed to materialize views for collection %s: %w", col.ID, buildErr)
 				}

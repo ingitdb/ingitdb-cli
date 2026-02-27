@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/gitrepo"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/materializer"
 )
 
@@ -39,6 +40,11 @@ func UpdateDocs(ctx context.Context, def *ingitdb.Definition, collectionGlob str
 }
 
 func ProcessCollection(ctx context.Context, def *ingitdb.Definition, col *ingitdb.CollectionDef, dbPath string, recordsReader ingitdb.RecordsReader) (bool, error) {
+	repoRoot, err := gitrepo.FindRepoRoot(dbPath)
+	if err != nil {
+		repoRoot = ""
+	}
+
 	renderer := func(ctx context.Context, col *ingitdb.CollectionDef, view *ingitdb.ViewDef) (string, error) {
 		var buf strings.Builder
 		writer := materializer.NewFuncViewWriter(func(content []byte) error {
@@ -50,7 +56,7 @@ func ProcessCollection(ctx context.Context, def *ingitdb.Definition, col *ingitd
 			RecordsReader: recordsReader,
 			Writer:        writer,
 		}
-		res, err := builder.BuildView(ctx, dbPath, col, def, view)
+		res, err := builder.BuildView(ctx, dbPath, repoRoot, col, def, view)
 		if err != nil {
 			return "", err
 		}
