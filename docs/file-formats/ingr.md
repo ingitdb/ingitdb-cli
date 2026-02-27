@@ -41,19 +41,21 @@ Each record:
 The first line of every `.ingr` file is a metadata header:
 
 ```
-# https://INGR.io {recordset_name}: $ID, col2, col3, ...
+# https://INGR.io | {recordset_name}: $ID, col2, col3, ...
 ```
 
 - Starts with `# https://INGR.io | ` (spaces after `#` and around `|` are optional for parsers).
-- **Recordset name** — an arbitrary identifier for the dataset (e.g. `people`, `orders/2024`). Its meaning is defined by the producer.
+- **Recordset name** — an arbitrary identifier for the dataset (e.g. `people`, `orders/2024`). Its meaning is defined by
+  the producer.
 - Followed by `: ` (colon + space).
-- **Column list** — comma-separated column names, separated by `, ` (comma + space) for readability. Parsers may trim surrounding whitespace from each name.
+- **Column list** — comma-separated column names, separated by `, ` (comma + space) for readability. Parsers may trim
+  surrounding whitespace from each name.
 - **`$ID`** is the reserved name for the record key (always the first column).
 
 Example:
 
 ```
-# https://INGR.io people: $ID, name, age
+# https://INGR.io | people: $ID, name, age
 ```
 
 ### 3.2 Fixed Field Count
@@ -64,15 +66,15 @@ The number of fields per record **N** is determined by the number of columns in 
 
 Each field value is encoded as a **compact single-line JSON expression**:
 
-| Go/source type | INGR line |
-|----------------|-----------|
-| string         | `"hello world"` |
-| integer        | `123` |
-| float          | `3.14` |
-| boolean        | `true` / `false` |
-| null / missing | `null` |
+| Go/source type | INGR line                    |
+|----------------|------------------------------|
+| string         | `"hello world"`              |
+| integer        | `123`                        |
+| float          | `3.14`                       |
+| boolean        | `true` / `false`             |
+| null / missing | `null`                       |
 | object         | `{"key1":"value1","key2":2}` |
-| array          | `[1,2,3]` |
+| array          | `[1,2,3]`                    |
 
 JSON objects and arrays must be written without embedded newlines (compact form).
 
@@ -99,14 +101,17 @@ Parsed as:
 
 ### 3.5 Footer
 
-The footer starts immediately after the last record. It consists of one **required** line followed by any number of **optional** comment lines:
+The footer starts immediately after the last record. It consists of one **required** line followed by any number of *
+*optional** comment lines:
 
 **Required — record count** (always the first footer line; the trailing newline is optional but recommended):
 
 ```
 # 1 record
 ```
+
 or
+
 ```
 # {N} records
 ```
@@ -117,15 +122,18 @@ or
 
 **Optional — additional footer lines** (each starting with `#`):
 
-Any number of `#`-prefixed lines may follow. Their content and meaning are agreed upon between producer and consumer. Example:
+Any number of `#`-prefixed lines may follow. Their content and meaning are agreed upon between producer and consumer.
+Example:
 
 ```
 # sha256:{hex}
 ```
 
-- When present, `sha256` names the hash algorithm and `{hex}` is the lowercase hex-encoded SHA-256 digest of all file content above this line (header + records + count line including its `\n`).
+- When present, `sha256` names the hash algorithm and `{hex}` is the lowercase hex-encoded SHA-256 digest of all file
+  content above this line (header + records + count line including its `\n`).
 
-The last line of the file (whether the count line or the last optional line) has **no trailing newline**. When the count line is the last line, producers may include a trailing newline — parsers must accept both.
+The last line of the file (whether the count line or the last optional line) has **no trailing newline**. When the count
+line is the last line, producers may include a trailing newline — parsers must accept both.
 
 The space after `#` is preserved but optional for parsers.
 
@@ -223,6 +231,5 @@ Not ideal for:
 - Lines 2…(end-N): `N` JSON-encoded values per record, one value per line
 - First footer line: `# {N} records` (required, with `\n` unless last line)
 - Additional footer lines: optional `#`-prefixed lines (e.g. `# sha256:{hex}`)
-- Last line has no trailing newline
 - No record delimiters
 - Optimised for simplicity and Git friendliness
