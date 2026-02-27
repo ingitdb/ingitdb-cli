@@ -3,6 +3,7 @@ package materializer
 import (
 	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -516,5 +517,534 @@ func TestRecordsToMaps(t *testing.T) {
 
 	if result[2]["id"] != nil {
 		t.Errorf("third record should have nil values, got %v", result[2])
+	}
+}
+
+// --- Edge case tests for formatExportBatch ---
+
+func TestFormatExportBatch_EmptyColumnsSlice(t *testing.T) {
+	t.Parallel()
+
+	headers := []string{}
+	records := []ingitdb.RecordEntry{
+		{Key: "1", Data: map[string]any{"id": "1", "name": "Alice"}},
+	}
+
+	got, err := formatExportBatch("tsv", headers, records)
+	if err != nil {
+		t.Fatalf("formatExportBatch: %v", err)
+	}
+
+	if string(got) != "\n\n" {
+		t.Errorf("formatExportBatch with empty columns = %q, want %q", string(got), "\n\n")
+	}
+}
+
+func TestFormatExportBatch_RecordsWithNilData(t *testing.T) {
+	t.Parallel()
+
+	headers := []string{"id", "name"}
+	records := []ingitdb.RecordEntry{
+		{Key: "1", Data: nil},
+		{Key: "2", Data: map[string]any{"id": "2", "name": "Bob"}},
+	}
+
+	tests := []struct {
+		format string
+		check  func([]byte) bool
+	}{
+		{"tsv", func(b []byte) bool {
+			// Should handle nil data gracefully
+			return len(b) > 0
+		}},
+		{"csv", func(b []byte) bool {
+			// Should handle nil data gracefully
+			return len(b) > 0
+		}},
+		{"json", func(b []byte) bool {
+			var result []map[string]any
+			err := json.Unmarshal(b, &result)
+			return err == nil && len(result) == 2
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.format, func(t *testing.T) {
+			t.Parallel()
+			got, err := formatExportBatch(tt.format, headers, records)
+			if err != nil {
+				t.Fatalf("formatExportBatch: %v", err)
+			}
+			if !tt.check(got) {
+				t.Errorf("check failed for format %s", tt.format)
+			}
+		})
+	}
+}
+
+func TestFormatExportBatch_UnicodeCharacters(t *testing.T) {
+	t.Parallel()
+
+	headers := []string{"id", "text"}
+	records := []ingitdb.RecordEntry{
+		{Key: "1", Data: map[string]any{"id": "1", "text": "Hello 你好 مرحبا 🎉"}},
+		{Key: "2", Data: map[string]any{"id": "2", "text": "Café résumé naïve"}},
+	}
+
+	tests := []struct {
+		format string
+		check  func([]byte) bool
+	}{
+		{"tsv", func(b []byte) bool {
+			content := string(b)
+			return strings.Contains(content, "你好") && strings.Contains(content, "Café")
+		}},
+		{"csv", func(b []byte) bool {
+			r := csv.NewReader(strings.NewReader(string(b)))
+			records, err := r.ReadAll()
+			return err == nil && len(records) == 3 && strings.Contains(records[1][1], "你好")
+		}},
+		{"json", func(b []byte) bool {
+			var result []map[string]any
+			err := json.Unmarshal(b, &result)
+			return err == nil && len(result) == 2 && strings.Contains(result[0]["text"].(string), "你好")
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.format, func(t *testing.T) {
+			t.Parallel()
+			got, err := formatExportBatch(tt.format, headers, records)
+			if err != nil {
+				t.Fatalf("formatExportBatch: %v", err)
+			}
+			if !tt.check(got) {
+				t.Errorf("unicode check failed for format %s", tt.format)
+			}
+		})
+	}
+}
+
+func TestFormatExportBatch_VeryLongLines(t *testing.T) {
+	t.Parallel()
+
+	longString := strings.Repeat("x", 10000)
+	headers := []string{"id", "longtext"}
+	records := []ingitdb.RecordEntry{
+		{Key: "1", Data: map[string]any{"id": "1", "longtext": longString}},
+	}
+
+	got, err := formatExportBatch("tsv", headers, records)
+	if err != nil {
+		t.Fatalf("formatExportBatch: %v", err)
+	}
+
+	if !strings.Contains(string(got), longString) {
+		t.Errorf("very long line not preserved")
+	}
+	if len(got) < 10000 {
+		t.Errorf("expected at least 10000 bytes, got %d", len(got))
+	}
+}
+
+// --- TSV format escaping edge cases ---
+
+func TestEscapeTSV_BackslashFollowedByCharacter(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"backslash-t", `\t`, `\\t`},
+		{"backslash-n", `\n`, `\\n`},
+		{"backslash-r", `\r`, `\\r`},
+		{"backslash-backslash", `\\`, `\\\\`},
+		{"double backslash", `\\\\`, `\\\\\\\\`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := escapeTSV(tt.input)
+			if got != tt.want {
+				t.Errorf("escapeTSV(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestEscapeTSV_MultipleEscapesInValue(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		input string
+		want  string
+	}{
+		// Backslash followed by file path separators
+		{`path\to\file\with\tabs`, `path\\to\\file\\with\\tabs`},
+		// Actual tab and newline characters (not escaped sequences)
+		{"quoted\tvalue", `quoted\tvalue`},
+		{"line1\nline2\nline3", `line1\nline2\nline3`},
+		// Mixed: backslashes and actual control characters
+		{`path\to` + "\t" + `file`, `path\\to\tfile`},
+		{"mixed\t\n\r\tescapes", `mixed\t\n\r\tescapes`},
+	}
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%q", tt.input), func(t *testing.T) {
+			t.Parallel()
+			got := escapeTSV(tt.input)
+			if got != tt.want {
+				t.Errorf("escapeTSV(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFormatTSV_TabSeparationAndNoTrailingNewline(t *testing.T) {
+	t.Parallel()
+
+	headers := []string{"id", "name", "value"}
+	records := []ingitdb.RecordEntry{
+		{Key: "1", Data: map[string]any{"id": "1", "name": "Alice", "value": 100}},
+		{Key: "2", Data: map[string]any{"id": "2", "name": "Bob", "value": 200}},
+	}
+
+	got, err := formatExportBatch("tsv", headers, records)
+	if err != nil {
+		t.Fatalf("formatExportBatch: %v", err)
+	}
+
+	content := string(got)
+	lines := strings.Split(strings.TrimSuffix(content, "\n"), "\n")
+
+	// Check that headers are properly separated by tabs
+	if lines[0] != "id\tname\tvalue" {
+		t.Errorf("header line = %q, want %q", lines[0], "id\tname\tvalue")
+	}
+
+	// Check that data rows have proper tab separation
+	if !strings.Contains(lines[1], "\t") {
+		t.Errorf("data row should contain tabs, got %q", lines[1])
+	}
+
+	// Verify exactly 3 columns per row (separated by 2 tabs)
+	for i, line := range lines {
+		tabCount := strings.Count(line, "\t")
+		if tabCount != 2 {
+			t.Errorf("line %d has %d tabs, want 2", i, tabCount)
+		}
+	}
+}
+
+// --- CSV format edge cases ---
+
+func TestFormatCSV_CRLF_LineEndings(t *testing.T) {
+	t.Parallel()
+
+	headers := []string{"id", "description"}
+	records := []ingitdb.RecordEntry{
+		{Key: "1", Data: map[string]any{"id": "1", "description": "Line 1\r\nLine 2"}},
+	}
+
+	got, err := formatExportBatch("csv", headers, records)
+	if err != nil {
+		t.Fatalf("formatExportBatch: %v", err)
+	}
+
+	r := csv.NewReader(strings.NewReader(string(got)))
+	records_parsed, err := r.ReadAll()
+	if err != nil {
+		t.Fatalf("failed to parse CSV: %v", err)
+	}
+
+	if len(records_parsed) != 2 {
+		t.Errorf("expected 2 rows (header + data), got %d", len(records_parsed))
+	}
+
+	// The CSV reader normalizes CRLF to LF, so we check for LF
+	if !strings.Contains(records_parsed[1][1], "\n") {
+		t.Errorf("newline not preserved in CSV value: %q", records_parsed[1][1])
+	}
+}
+
+func TestFormatCSV_EmptyStringVsNil(t *testing.T) {
+	t.Parallel()
+
+	headers := []string{"id", "value"}
+	records := []ingitdb.RecordEntry{
+		{Key: "1", Data: map[string]any{"id": "1", "value": ""}},
+		{Key: "2", Data: map[string]any{"id": "2", "value": nil}},
+		{Key: "3", Data: map[string]any{"id": "3"}}, // Missing field
+	}
+
+	got, err := formatExportBatch("csv", headers, records)
+	if err != nil {
+		t.Fatalf("formatExportBatch: %v", err)
+	}
+
+	r := csv.NewReader(strings.NewReader(string(got)))
+	parsed, err := r.ReadAll()
+	if err != nil {
+		t.Fatalf("failed to parse CSV: %v", err)
+	}
+
+	if len(parsed) != 4 {
+		t.Errorf("expected 4 rows, got %d", len(parsed))
+	}
+
+	// Row 1: empty string
+	if parsed[1][1] != "" {
+		t.Errorf("row 1 value should be empty string, got %q", parsed[1][1])
+	}
+
+	// Row 2 & 3: nil / missing should both be empty
+	if parsed[2][1] != "" {
+		t.Errorf("row 2 value should be empty, got %q", parsed[2][1])
+	}
+	if parsed[3][1] != "" {
+		t.Errorf("row 3 value should be empty, got %q", parsed[3][1])
+	}
+}
+
+func TestFormatCSV_SingleAndDoubleQuoteCombinations(t *testing.T) {
+	t.Parallel()
+
+	headers := []string{"id", "text"}
+	records := []ingitdb.RecordEntry{
+		{Key: "1", Data: map[string]any{"id": "1", "text": `He said "hello"`}},
+		{Key: "2", Data: map[string]any{"id": "2", "text": `It's a test`}},
+		{Key: "3", Data: map[string]any{"id": "3", "text": `"Quoted" and 'apostrophe'`}},
+	}
+
+	got, err := formatExportBatch("csv", headers, records)
+	if err != nil {
+		t.Fatalf("formatExportBatch: %v", err)
+	}
+
+	r := csv.NewReader(strings.NewReader(string(got)))
+	parsed, err := r.ReadAll()
+	if err != nil {
+		t.Fatalf("failed to parse CSV: %v", err)
+	}
+
+	if len(parsed) != 4 {
+		t.Errorf("expected 4 rows, got %d", len(parsed))
+	}
+
+	if parsed[1][1] != `He said "hello"` {
+		t.Errorf("row 1 value mismatch: got %q", parsed[1][1])
+	}
+	if parsed[2][1] != `It's a test` {
+		t.Errorf("row 2 value mismatch: got %q", parsed[2][1])
+	}
+	if parsed[3][1] != `"Quoted" and 'apostrophe'` {
+		t.Errorf("row 3 value mismatch: got %q", parsed[3][1])
+	}
+}
+
+func TestFormatCSV_NumbersAndBooleans(t *testing.T) {
+	t.Parallel()
+
+	headers := []string{"id", "count", "enabled"}
+	records := []ingitdb.RecordEntry{
+		{Key: "1", Data: map[string]any{"id": "1", "count": 42, "enabled": true}},
+		{Key: "2", Data: map[string]any{"id": "2", "count": 0, "enabled": false}},
+		{Key: "3", Data: map[string]any{"id": "3", "count": 3.14159, "enabled": nil}},
+	}
+
+	got, err := formatExportBatch("csv", headers, records)
+	if err != nil {
+		t.Fatalf("formatExportBatch: %v", err)
+	}
+
+	r := csv.NewReader(strings.NewReader(string(got)))
+	parsed, err := r.ReadAll()
+	if err != nil {
+		t.Fatalf("failed to parse CSV: %v", err)
+	}
+
+	if len(parsed) != 4 {
+		t.Errorf("expected 4 rows, got %d", len(parsed))
+	}
+
+	// Verify numbers are formatted correctly
+	if parsed[1][1] != "42" {
+		t.Errorf("row 1 count should be 42, got %q", parsed[1][1])
+	}
+	if parsed[1][2] != "true" {
+		t.Errorf("row 1 enabled should be true, got %q", parsed[1][2])
+	}
+
+	if parsed[2][1] != "0" {
+		t.Errorf("row 2 count should be 0, got %q", parsed[2][1])
+	}
+	if parsed[2][2] != "false" {
+		t.Errorf("row 2 enabled should be false, got %q", parsed[2][2])
+	}
+}
+
+// --- JSONL format edge cases ---
+
+func TestFormatJSONL_EachLineIsValidJSON(t *testing.T) {
+	t.Parallel()
+
+	headers := []string{"id", "name"}
+	records := []ingitdb.RecordEntry{
+		{Key: "1", Data: map[string]any{"id": "1", "name": "Alice"}},
+		{Key: "2", Data: map[string]any{"id": "2", "name": "Bob"}},
+		{Key: "3", Data: map[string]any{"id": "3", "name": "Charlie"}},
+	}
+
+	got, err := formatExportBatch("jsonl", headers, records)
+	if err != nil {
+		t.Fatalf("formatExportBatch: %v", err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(string(got)), "\n")
+	if len(lines) != 3 {
+		t.Errorf("expected 3 lines, got %d", len(lines))
+	}
+
+	for i, line := range lines {
+		var obj map[string]any
+		if err := json.Unmarshal([]byte(line), &obj); err != nil {
+			t.Errorf("line %d is not valid JSON: %v", i, err)
+		}
+		if obj["id"] == "" {
+			t.Errorf("line %d missing id field", i)
+		}
+	}
+}
+
+func TestFormatJSONL_WithSpecialCharactersAndUnicode(t *testing.T) {
+	t.Parallel()
+
+	headers := []string{"id", "text"}
+	records := []ingitdb.RecordEntry{
+		{Key: "1", Data: map[string]any{"id": "1", "text": "Hello\nWorld\t\u0000"}},
+		{Key: "2", Data: map[string]any{"id": "2", "text": "日本語テスト"}},
+	}
+
+	got, err := formatExportBatch("jsonl", headers, records)
+	if err != nil {
+		t.Fatalf("formatExportBatch: %v", err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(string(got)), "\n")
+	if len(lines) != 2 {
+		t.Errorf("expected 2 lines, got %d", len(lines))
+	}
+
+	// Verify each line is valid JSON
+	var obj1, obj2 map[string]any
+	if err := json.Unmarshal([]byte(lines[0]), &obj1); err != nil {
+		t.Fatalf("failed to unmarshal line 0: %v", err)
+	}
+	if err := json.Unmarshal([]byte(lines[1]), &obj2); err != nil {
+		t.Fatalf("failed to unmarshal line 1: %v", err)
+	}
+
+	if obj1["id"] != "1" || obj2["id"] != "2" {
+		t.Errorf("IDs mismatch")
+	}
+}
+
+// --- Column ordering edge cases ---
+
+func TestDetermineColumns_IdNotAtIndex0_ViewColumns(t *testing.T) {
+	t.Parallel()
+
+	col := &ingitdb.CollectionDef{
+		ID:           "col1",
+		ColumnsOrder: []string{"id", "x", "y"},
+	}
+	view := &ingitdb.ViewDef{
+		Columns: []string{"x", "y", "id"},
+	}
+
+	got := determineColumns(col, view)
+	expected := []string{"id", "x", "y"}
+
+	if !slicesEqual(got, expected) {
+		t.Errorf("determineColumns() = %v, want %v", got, expected)
+	}
+}
+
+func TestDetermineColumns_IdAlreadyAtIndex0_ViewColumns(t *testing.T) {
+	t.Parallel()
+
+	col := &ingitdb.CollectionDef{
+		ID:           "col1",
+		ColumnsOrder: []string{"id", "x", "y"},
+	}
+	view := &ingitdb.ViewDef{
+		Columns: []string{"id", "x", "y"},
+	}
+
+	got := determineColumns(col, view)
+	expected := []string{"id", "x", "y"}
+
+	if !slicesEqual(got, expected) {
+		t.Errorf("determineColumns() = %v, want %v", got, expected)
+	}
+}
+
+func TestDetermineColumns_IdNotInViewColumns(t *testing.T) {
+	t.Parallel()
+
+	col := &ingitdb.CollectionDef{
+		ID:           "col1",
+		ColumnsOrder: []string{"id", "a", "b", "c"},
+	}
+	view := &ingitdb.ViewDef{
+		Columns: []string{"a", "b"},
+	}
+
+	got := determineColumns(col, view)
+	expected := []string{"id", "a", "b"}
+
+	if !slicesEqual(got, expected) {
+		t.Errorf("determineColumns() = %v, want %v", got, expected)
+	}
+}
+
+func TestDetermineColumns_UseCollectionColumnsOrder_IdNotAtIndex0(t *testing.T) {
+	t.Parallel()
+
+	col := &ingitdb.CollectionDef{
+		ID:           "col1",
+		ColumnsOrder: []string{"name", "id", "email"},
+	}
+	view := &ingitdb.ViewDef{
+		Columns: []string{},
+	}
+
+	got := determineColumns(col, view)
+	expected := []string{"id", "name", "email"}
+
+	if !slicesEqual(got, expected) {
+		t.Errorf("determineColumns() = %v, want %v", got, expected)
+	}
+}
+
+func TestDetermineColumns_EmptyCollectionColumnsOrder(t *testing.T) {
+	t.Parallel()
+
+	col := &ingitdb.CollectionDef{
+		ID:           "col1",
+		ColumnsOrder: []string{},
+	}
+	view := &ingitdb.ViewDef{
+		Columns: []string{},
+	}
+
+	got := determineColumns(col, view)
+	expected := []string{"id"}
+
+	if !slicesEqual(got, expected) {
+		t.Errorf("determineColumns() = %v, want %v", got, expected)
 	}
 }

@@ -20,6 +20,8 @@ Views support string substitution in names using `{field}` placeholders (e.g., `
 | `template`         | `string`            | Path to a custom view template, relative to the collection directory.                             |
 | `file_name`        | `string`            | The desired file name for the view output, relative to the collection directory.                  |
 | `records_var_name` | `string`            | Template variable name acting as the handler for the target slice sequence.                       |
+| `format`           | `string`            | Export file format (tsv, csv, json, jsonl, yaml). Used when the view is a `default_view`. Default: tsv. |
+| `max_batch_size`   | `int`               | Max records per output file. `0` = all records in single file (default).                          |
 
 ## 📂 Field references in view partitions
 
@@ -28,3 +30,5 @@ When defining names using `{field}` blocks (for example, `.collection/views/stat
 ## 📂 Further Reading
 
 - [Views Builder Component Document](../components/views-builder.md)
+
+**Note:** The `IsDefault` flag is runtime-only (not serialized). It is set when a collection has an inline `default_view` block.

@@ -106,7 +106,10 @@ columns_order:                  # display order (subset or all columns)
   - status
   - priority
 
-default_view: by_status         # optional: name of the default materialized view
+default_view:                 # optional: inline ViewDef for web export
+  format: tsv                 # tsv (default), csv, json, jsonl, yaml
+  max_batch_size: 0           # 0 = single file
+  order_by: id asc
 ```
 
 #### Column types
