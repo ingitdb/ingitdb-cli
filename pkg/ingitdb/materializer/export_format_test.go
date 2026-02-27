@@ -578,11 +578,8 @@ func TestFormatINGR_HeaderPrefix(t *testing.T) {
 func TestFormatINGR_IDAlwaysFirst(t *testing.T) {
 	t.Parallel()
 
-	// Pass headers with id NOT at index 0 to confirm determineColumns always puts $ID first
-	headers := []string{"name", "age", "id"}
-	// determineColumns reorders, but formatINGR receives already-ordered headers from buildDefaultView.
-	// Test that when id is provided first it appears as $ID first in the header line.
-	headers = []string{"id", "name", "age"}
+	// formatINGR receives already-ordered headers; verify id appears as $ID first in the header line.
+	headers := []string{"id", "name", "age"}
 	records := []ingitdb.RecordEntry{}
 	got, err := formatExportBatch("ingr", "t/v", false, headers, records)
 	if err != nil {
