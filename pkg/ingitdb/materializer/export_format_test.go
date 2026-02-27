@@ -411,10 +411,11 @@ func TestFormatExportBatch_INGR(t *testing.T) {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
 
-	// INGR: header line + 3 fields per record, 2 records; strings are JSON-quoted
+	// INGR: header line + 3 fields per record, 2 records; strings are JSON-quoted; footer without trailing newline
 	want := "# test/view: $ID, name, age\n" +
 		`"1"` + "\n" + `"Alice"` + "\n" + `30` + "\n" +
-		`"2"` + "\n" + `"Bob"` + "\n" + `25` + "\n"
+		`"2"` + "\n" + `"Bob"` + "\n" + `25` + "\n" +
+		"# 2 records"
 	if string(got) != want {
 		t.Errorf("formatExportBatch(ingr) = %q, want %q", string(got), want)
 	}
@@ -427,8 +428,8 @@ func TestFormatINGR_EmptyRecords(t *testing.T) {
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
-	// empty records: only the header line should be present
-	want := "# test/view: $ID, name\n"
+	// empty records: only header and footer
+	want := "# test/view: $ID, name\n# 0 records"
 	if string(got) != want {
 		t.Errorf("expected only header for empty records, got %q", string(got))
 	}
@@ -447,8 +448,8 @@ func TestFormatINGR_NilAndMissingFields(t *testing.T) {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
 
-	// nil name → JSON null, missing age → JSON null; header precedes records
-	want := "# test/view: $ID, name, age\n\"1\"\nnull\nnull\n"
+	// nil name → JSON null, missing age → JSON null; header precedes records, footer at end
+	want := "# test/view: $ID, name, age\n\"1\"\nnull\nnull\n# 1 record"
 	if string(got) != want {
 		t.Errorf("formatExportBatch(ingr) = %q, want %q", string(got), want)
 	}
@@ -467,7 +468,7 @@ func TestFormatINGR_DefaultFormatIsINGR(t *testing.T) {
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
-	want := "# test/view: $ID\n\"hello\"\n"
+	want := "# test/view: $ID\n\"hello\"\n# 1 record"
 	if string(got) != want {
 		t.Errorf("default format output = %q, want %q", string(got), want)
 	}

@@ -120,6 +120,13 @@ func formatINGR(viewName string, headers []string, records []ingitdb.RecordEntry
 			buf.WriteByte('\n')
 		}
 	}
+	// Write footer line without trailing newline
+	n := len(records)
+	if n == 1 {
+		buf.WriteString("# 1 record")
+	} else {
+		fmt.Fprintf(&buf, "# %d records", n)
+	}
 	return buf.Bytes(), nil
 }
 

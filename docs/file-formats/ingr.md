@@ -86,6 +86,7 @@ JSON objects and arrays must be written without embedded newlines (compact form)
 "jane"
 "Jane Smith"
 29
+# 2 records
 ```
 
 Parsed as:
@@ -95,6 +96,21 @@ Parsed as:
 | john | John Doe   | 35  |
 | jane | Jane Smith | 29  |
 
+### 3.5 Footer Line
+
+The last line of every `.ingr` file is a record count footer **with no trailing newline**:
+
+```
+# 1 record
+```
+or
+```
+# {N} records
+```
+
+- Uses `record` (singular) for exactly 1, `records` (plural) for all other counts (including 0).
+- No newline character after this line.
+
 ---
 
 ## 4. Rules
@@ -102,16 +118,18 @@ Parsed as:
 1. Encoding: UTF-8.
 2. Line separator: LF (`\n`).
 3. Line 1 is the metadata header; it must match the format above.
-4. Each subsequent field line must be a valid single-line JSON expression.
+4. Each field value line must be a valid single-line JSON expression.
 5. JSON objects and arrays must not contain embedded newlines.
-6. `(total_lines - 1) % N == 0` (header accounts for the -1).
-7. No inline delimiters between records.
+6. `(total_lines - 2) % N == 0` (subtract 1 for header + 1 for footer).
+7. Last line is the footer; it must match `# {N} records` or `# 1 record`.
+8. No newline after the footer line.
+9. No inline delimiters between records.
 
 ---
 
 ## 5. Example With Null Field
 
-Header + 2 records, `N = 3`:
+Header + 2 records + footer, `N = 3`:
 
 ```
 # people: $ID, name, age
@@ -121,6 +139,7 @@ Header + 2 records, `N = 3`:
 "jane"
 null
 29
+# 2 records
 ```
 
 Second record:
@@ -136,14 +155,15 @@ Second record:
 A valid `.ingr` file must:
 
 - Have line 1 be a well-formed header.
-- Not contain partial records after the header.
-- Not contain trailing extra lines.
+- Have the last line be a well-formed footer matching the actual record count.
+- Not contain partial records between header and footer.
 - Have every value line be a valid single-line JSON expression.
+- Have no trailing newline after the footer.
 
 Validation condition:
 
 ```
-(total_lines - 1) % N == 0
+(total_lines - 2) % N == 0
 ```
 
 ---
@@ -179,7 +199,8 @@ Not ideal for:
 
 `.ingr` is a self-describing, deterministic, fixed-line record format:
 
-- Line 1: `# {collection}/{view}: $ID, col2, col3, ...`
-- Lines 2+: `N` JSON-encoded values per record, one value per line
+- Line 1: `# {recordset_name}: $ID, col2, col3, ...`
+- Lines 2…(end-1): `N` JSON-encoded values per record, one value per line
+- Last line: `# {N} records` or `# 1 record` — no trailing newline
 - No record delimiters
 - Optimised for simplicity and Git friendliness
