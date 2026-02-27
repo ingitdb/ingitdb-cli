@@ -30,3 +30,10 @@ Example:
 
 - Top 10 most populous cities in the world and their official language
 - Top 10 French-speaking cities
+
+---
+
+## 📂 See also
+
+- [Default Collection View](default-collection-view.md) — a specialised collection-level view declared inline in `definition.yaml` and exported to `$ingitdb/` for direct web-app consumption with a single HTTP request.
+- [View definition schema](../schema/view.md)

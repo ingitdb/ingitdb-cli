@@ -15,7 +15,7 @@ See the [Collection README Builder](../components/readme-builders/collection.md)
 | `readme`        | [`CollectionReadmeDef`](../../pkg/ingitdb/collection_def.go) | README.md generation configuration (optional)   |
 | `columns`       | `map[string]`[`ColumnDef`](../../pkg/ingitdb/column_def.go)  | Column (field) definitions                      |
 | `columns_order` | `[]string`                                                   | Display order for columns                       |
-| `default_view`  | `string`                                                     | Default view name (optional)                    |
+| `default_view`  | [`*ViewDef` (inline)](../features/default-collection-view.md) | Inline default web export view — exported to `$ingitdb/` for web-app consumption (optional) |
 
 ---
 
@@ -214,6 +214,31 @@ Data written to the file:
 
 This keeps the on-disk representation clean and avoids redundant storage of the
 same value in two places.
+
+---
+
+## 📂 `default_view`
+
+The `default_view` field is an **inline [`ViewDef`](view.md)** that configures how the collection is exported as a flat file into the repository's `$ingitdb/` directory. It is designed for web applications that need to load the full (or top-N) dataset in a single request rather than fetching one record at a time.
+
+The inline definition is the key distinction from named views stored in `.collection/views/`: it lives directly in `definition.yaml` so that a web app only needs to know the collection's path to find its data — no additional discovery step required.
+
+At load time the CLI injects the `default_view` into the collection's views map under the reserved ID `default_view` and processes it alongside all other views during `ingitdb materialize`.
+
+```yaml
+default_view:
+  top: 0                       # 0 = all records (default)
+  order_by: id asc             # sort order; default: id ascending
+  format: tsv                  # tsv (default), csv, json, jsonl, yaml
+  max_batch_size: 0            # 0 = single file; N splits into N-record files
+  file_name: "${collection_id}" # base name without extension; default: collection ID
+  columns:                     # optional: omit to export all columns
+    - id
+    - title
+```
+
+Output is written to `{repo_root}/$ingitdb/{collection_path}/{file_name}.{ext}`.
+See [Default Collection View](../features/default-collection-view.md) for the full specification including file naming, pagination, and format details.
 
 ---
 

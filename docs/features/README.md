@@ -4,6 +4,7 @@
 | --------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [Validator](validator.md)                                 | WIP         | Validates schema & data; rebuilds materialized views in the same pass                                                                              |
 | [Materialized Views](materialized-views.md)               | WIP         | Generate a precomputed output dataset from multiple source files using defined filters, joins, and transformation logic for fast reuse and access. |
+| [Default Collection View](default-collection-view.md)     | planned     | Inline `default_view` on a collection that exports all (or top-N) records to `$ingitdb/` as TSV/CSV/JSON/JSONL/YAML for direct web-app consumption |
 | [Transactions](transactions.md)                           | WIP         | Read-only and read-write transactions via the DALgo abstraction layer                                                                              |
 | [GitHub Direct Access](github-direct-access.md)           | implemented | Read and write records in any GitHub repository without cloning, using the GitHub REST API                                                         |
 | [Merge Conflict Resolution](merge-conflict-resolution.md) | pending     | Auto-resolves conflicts in generated files; interactive TUI for source data file conflicts                                                         |

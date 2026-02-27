@@ -43,6 +43,7 @@ A one-line description of each document, grouped by purpose.
 | [Configuration](configuration/README.md)                 | Root DB config (`.ingitdb/`) and per-collection schema files            |
 | [Features](features/README.md)                           | Full feature list with status (WIP / pending) and links to detail pages |
 | [GitHub Direct Access](features/github-direct-access.md) | Read and write records in remote GitHub repositories without cloning    |
+| [Default Collection View](features/default-collection-view.md) | Export collection records to `$ingitdb/` flat files for web-app consumption |
 
 ### 📂 Developer docs
 
@@ -79,7 +80,7 @@ A one-line description of each document, grouped by purpose.
 | `find`        | —                                      | planned                                   | Search records by `--substr`, `--re`, or `--exact`; scope with `--in`, `--fields`, `--limit` |
 | `truncate`    | —                                      | planned                                   | Remove all records from a collection while keeping its schema                                |
 | `query`       | —                                      | planned                                   | Query and format records from a collection                                                   |
-| `materialize` | —                                      | planned                                   | Build materialized views into `$views/`                                                      |
+| `materialize` | —                                      | planned                                   | Build materialized views into `$views/` and default collection views into `$ingitdb/`        |
 | `pull`        | —                                      | planned                                   | Pull remote changes, auto-resolve generated-file conflicts, rebuild views                    |
 | `watch`       | —                                      | planned                                   | Stream change events to stdout as records are added, updated, or deleted                     |
 | `serve`       | —                                      | planned                                   | Start MCP server, HTTP API server, or file watcher (flags: `--mcp`, `--http`, `--watcher`)   |
