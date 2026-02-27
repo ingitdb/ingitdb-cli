@@ -1,6 +1,7 @@
 package materializer
 
 import (
+	"crypto/sha256"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -411,11 +412,12 @@ func TestFormatExportBatch_INGR(t *testing.T) {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
 
-	// INGR: header line + 3 fields per record, 2 records; strings are JSON-quoted; footer without trailing newline
+	// INGR: header line + 3 fields per record, 2 records; strings are JSON-quoted; two-line footer, no trailing newline
 	want := "#INGR: test/view: $ID, name, age\n" +
 		`"1"` + "\n" + `"Alice"` + "\n" + `30` + "\n" +
 		`"2"` + "\n" + `"Bob"` + "\n" + `25` + "\n" +
-		"# 2 records"
+		"# 2 records\n" +
+		"# sha256:efbc9a977adbf6a18ec5264b1b31590045ef2662b49d665fed24e8040f991649"
 	if string(got) != want {
 		t.Errorf("formatExportBatch(ingr) = %q, want %q", string(got), want)
 	}
@@ -428,8 +430,8 @@ func TestFormatINGR_EmptyRecords(t *testing.T) {
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
-	// empty records: only header and footer
-	want := "#INGR: test/view: $ID, name\n# 0 records"
+	// empty records: header, count footer with newline, hash footer without trailing newline
+	want := "#INGR: test/view: $ID, name\n# 0 records\n# sha256:a87f64c6e3487f35107f66a61c69c4501c7cd29fc51e7e3c587ce472337a6517"
 	if string(got) != want {
 		t.Errorf("expected only header for empty records, got %q", string(got))
 	}
@@ -448,8 +450,8 @@ func TestFormatINGR_NilAndMissingFields(t *testing.T) {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
 
-	// nil name → JSON null, missing age → JSON null; header precedes records, footer at end
-	want := "#INGR: test/view: $ID, name, age\n\"1\"\nnull\nnull\n# 1 record"
+	// nil name → JSON null, missing age → JSON null; two-line footer, no trailing newline
+	want := "#INGR: test/view: $ID, name, age\n\"1\"\nnull\nnull\n# 1 record\n# sha256:ef7a0b65cfb9927343f31d4fad1ce170ac12737a3e9b982d4b761acc19c48442"
 	if string(got) != want {
 		t.Errorf("formatExportBatch(ingr) = %q, want %q", string(got), want)
 	}
@@ -468,9 +470,46 @@ func TestFormatINGR_DefaultFormatIsINGR(t *testing.T) {
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
-	want := "#INGR: test/view: $ID\n\"hello\"\n# 1 record"
+	want := "#INGR: test/view: $ID\n\"hello\"\n# 1 record\n# sha256:8a17ca12db7fbee8ddb9be2aea8c24b225ca9fbe509667a957f338bbc82680b6"
 	if string(got) != want {
 		t.Errorf("default format output = %q, want %q", string(got), want)
+	}
+}
+
+func TestFormatINGR_HashCoversHeaderAndRecordsAndCountLine(t *testing.T) {
+	t.Parallel()
+
+	headers := []string{"id", "name"}
+	records := []ingitdb.RecordEntry{
+		{Key: "a", Data: map[string]any{"id": "a", "name": "Alice"}},
+	}
+
+	got, err := formatExportBatch("ingr", "test/view", headers, records)
+	if err != nil {
+		t.Fatalf("formatExportBatch: %v", err)
+	}
+	output := string(got)
+
+	// Split into lines; last line must be the hash line
+	lines := strings.Split(output, "\n")
+	hashLine := lines[len(lines)-1]
+	if !strings.HasPrefix(hashLine, "# sha256:") {
+		t.Fatalf("last line is not a hash line: %q", hashLine)
+	}
+	gotHash := strings.TrimPrefix(hashLine, "# sha256:")
+
+	// The hash must cover everything before the hash line (including the trailing \n of the count line)
+	body := strings.TrimSuffix(output, hashLine)
+	sum := sha256.Sum256([]byte(body))
+	wantHash := fmt.Sprintf("%x", sum)
+
+	if gotHash != wantHash {
+		t.Errorf("hash mismatch: got %q, want %q", gotHash, wantHash)
+	}
+
+	// Sanity: file must not end with a newline
+	if strings.HasSuffix(output, "\n") {
+		t.Errorf("file must not end with a newline")
 	}
 }
 

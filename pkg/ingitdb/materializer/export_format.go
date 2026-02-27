@@ -2,6 +2,7 @@ package materializer
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -89,6 +90,9 @@ func formatTSV(headers []string, records []ingitdb.RecordEntry) ([]byte, error) 
 // The first line is a metadata header: "#INGR: {viewName}: $ID, col2, col3, ..."
 // where "id" is represented as "$ID". Subsequent lines are N lines per record
 // (one JSON-encoded field value per line). N equals len(headers).
+// The file ends with two footer lines:
+//   - "# {N} records\n"  (record count, with newline)
+//   - "# sha256:{hex}"   (sha256 of all content above, no trailing newline)
 func formatINGR(viewName string, headers []string, records []ingitdb.RecordEntry) ([]byte, error) {
 	var buf bytes.Buffer
 	// Write metadata header line
@@ -120,13 +124,16 @@ func formatINGR(viewName string, headers []string, records []ingitdb.RecordEntry
 			buf.WriteByte('\n')
 		}
 	}
-	// Write footer line without trailing newline
+	// Write record count line (with newline)
 	n := len(records)
 	if n == 1 {
-		buf.WriteString("# 1 record")
+		buf.WriteString("# 1 record\n")
 	} else {
-		fmt.Fprintf(&buf, "# %d records", n)
+		fmt.Fprintf(&buf, "# %d records\n", n)
 	}
+	// Compute sha256 of all content so far, append hash line without trailing newline
+	sum := sha256.Sum256(buf.Bytes())
+	fmt.Fprintf(&buf, "# sha256:%x", sum)
 	return buf.Bytes(), nil
 }
 

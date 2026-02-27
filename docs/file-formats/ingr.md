@@ -87,6 +87,7 @@ JSON objects and arrays must be written without embedded newlines (compact form)
 "Jane Smith"
 29
 # 2 records
+# sha256:3a7bd3e2360a3d80...
 ```
 
 Parsed as:
@@ -96,9 +97,11 @@ Parsed as:
 | john | John Doe   | 35  |
 | jane | Jane Smith | 29  |
 
-### 3.5 Footer Line
+### 3.5 Footer Lines
 
-The last line of every `.ingr` file is a record count footer **with no trailing newline**:
+The footer consists of exactly two lines at the end of every `.ingr` file:
+
+**Line 1 — record count** (with trailing newline):
 
 ```
 # 1 record
@@ -109,7 +112,18 @@ or
 ```
 
 - Uses `record` (singular) for exactly 1, `records` (plural) for all other counts (including 0).
+
+**Line 2 — content hash** (no trailing newline):
+
+```
+# sha256:{hex}
+```
+
+- `sha256` is the hash algorithm name.
+- `{hex}` is the lowercase hex-encoded SHA-256 digest of all file content **above** this line (header + records + count line including its `\n`).
 - No newline character after this line.
+
+The space after `#` in both footer lines is preserved but optional for parsers.
 
 ---
 
@@ -120,10 +134,11 @@ or
 3. Line 1 is the metadata header; it must match the format above.
 4. Each field value line must be a valid single-line JSON expression.
 5. JSON objects and arrays must not contain embedded newlines.
-6. `(total_lines - 2) % N == 0` (subtract 1 for header + 1 for footer).
-7. Last line is the footer; it must match `# {N} records` or `# 1 record`.
-8. No newline after the footer line.
-9. No inline delimiters between records.
+6. `(total_lines - 3) % N == 0` (subtract 1 for header + 1 for count line + 1 for hash line).
+7. Second-to-last line is the count footer; it must match `# {N} records` or `# 1 record`.
+8. Last line is the hash footer; it must match `# sha256:{hex}`.
+9. No newline after the hash line.
+10. No inline delimiters between records.
 
 ---
 
@@ -140,6 +155,7 @@ Header + 2 records + footer, `N = 3`:
 null
 29
 # 2 records
+# sha256:3a7bd3e2360a3d80...
 ```
 
 Second record:
@@ -158,12 +174,13 @@ A valid `.ingr` file must:
 - Have the last line be a well-formed footer matching the actual record count.
 - Not contain partial records between header and footer.
 - Have every value line be a valid single-line JSON expression.
-- Have no trailing newline after the footer.
+- Have the hash line match the SHA-256 of all preceding content.
+- Have no trailing newline after the hash line.
 
 Validation condition:
 
 ```
-(total_lines - 2) % N == 0
+(total_lines - 3) % N == 0
 ```
 
 ---
@@ -200,7 +217,9 @@ Not ideal for:
 `.ingr` is a self-describing, deterministic, fixed-line record format:
 
 - Line 1: `#INGR: {recordset_name}: $ID, col2, col3, ...`
-- Lines 2…(end-1): `N` JSON-encoded values per record, one value per line
-- Last line: `# {N} records` or `# 1 record` — no trailing newline
+- Lines 2…(end-2): `N` JSON-encoded values per record, one value per line
+- Second-to-last line: `# {N} records\n`
+- Last line: `# sha256:{hex}` — no trailing newline
 - No record delimiters
+- Content integrity verifiable via the SHA-256 footer
 - Optimised for simplicity and Git friendliness
