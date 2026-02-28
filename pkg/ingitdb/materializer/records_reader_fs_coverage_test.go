@@ -307,10 +307,10 @@ func TestFileRecordsReader_ReadRecords_SingleRecord_Success(t *testing.T) {
 	if len(entries) != 2 {
 		t.Fatalf("expected 2 entries, got %d", len(entries))
 	}
-	if entries[0].Key != "tag1" {
-		t.Errorf("expected key tag1, got %q", entries[0].Key)
+	if entries[0].ID != "tag1" {
+		t.Errorf("expected key tag1, got %q", entries[0].ID)
 	}
-	if entries[1].Key != "tag2" {
-		t.Errorf("expected key tag2, got %q", entries[1].Key)
+	if entries[1].ID != "tag2" {
+		t.Errorf("expected key tag2, got %q", entries[1].ID)
 	}
 }

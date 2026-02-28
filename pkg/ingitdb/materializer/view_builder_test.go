@@ -83,9 +83,9 @@ func TestSimpleViewBuilder_BuildViewsOrdersRecords(t *testing.T) {
 	builder := SimpleViewBuilder{
 		DefReader: fakeViewDefReader{views: map[string]*ingitdb.ViewDef{"README": view}},
 		RecordsReader: fakeRecordsReader{records: []ingitdb.RecordEntry{
-			{Key: "a", Data: map[string]any{"title": "Alpha", "extra": "x"}},
-			{Key: "c", Data: map[string]any{"title": "Charlie", "extra": "y"}},
-			{Key: "b", Data: map[string]any{"title": "Bravo", "extra": "z"}},
+			{ID: "a", Data: map[string]any{"title": "Alpha", "extra": "x"}},
+			{ID: "c", Data: map[string]any{"title": "Charlie", "extra": "y"}},
+			{ID: "b", Data: map[string]any{"title": "Bravo", "extra": "z"}},
 		}},
 		Writer: writer,
 	}
@@ -412,13 +412,13 @@ func TestSimpleViewBuilder_BuildDefaultView_SingleBatch(t *testing.T) {
 	}
 
 	records := []ingitdb.RecordEntry{
-		{Key: "1", Data: map[string]any{"id": "1", "name": "Widget", "price": 9.99}},
-		{Key: "2", Data: map[string]any{"id": "2", "name": "Gadget", "price": 19.99}},
+		{ID: "1", Data: map[string]any{"id": "1", "name": "Widget", "price": 9.99}},
+		{ID: "2", Data: map[string]any{"id": "2", "name": "Gadget", "price": 19.99}},
 	}
 
 	writer := &capturingWriter{}
 	builder := SimpleViewBuilder{
-		DefReader: fakeViewDefReader{views: map[string]*ingitdb.ViewDef{ingitdb.DefaultViewID: view}},
+		DefReader:     fakeViewDefReader{views: map[string]*ingitdb.ViewDef{ingitdb.DefaultViewID: view}},
 		RecordsReader: fakeRecordsReader{records: records},
 		Writer:        writer,
 	}
@@ -458,14 +458,14 @@ func TestSimpleViewBuilder_BuildDefaultView_MultiBatch(t *testing.T) {
 	records := make([]ingitdb.RecordEntry, 5)
 	for i := 1; i <= 5; i++ {
 		records[i-1] = ingitdb.RecordEntry{
-			Key:  string(rune(i + 48)),
+			ID:   string(rune(i + 48)),
 			Data: map[string]any{"id": string(rune(i + 48)), "value": i * 10},
 		}
 	}
 
 	writer := &capturingWriter{}
 	builder := SimpleViewBuilder{
-		DefReader: fakeViewDefReader{views: map[string]*ingitdb.ViewDef{ingitdb.DefaultViewID: view}},
+		DefReader:     fakeViewDefReader{views: map[string]*ingitdb.ViewDef{ingitdb.DefaultViewID: view}},
 		RecordsReader: fakeRecordsReader{records: records},
 		Writer:        writer,
 	}
@@ -497,12 +497,12 @@ func TestSimpleViewBuilder_BuildDefaultView_Idempotent(t *testing.T) {
 	}
 
 	records := []ingitdb.RecordEntry{
-		{Key: "1", Data: map[string]any{"id": "1", "name": "Alice"}},
+		{ID: "1", Data: map[string]any{"id": "1", "name": "Alice"}},
 	}
 
 	writer := &capturingWriter{}
 	builder := SimpleViewBuilder{
-		DefReader: fakeViewDefReader{views: map[string]*ingitdb.ViewDef{ingitdb.DefaultViewID: view}},
+		DefReader:     fakeViewDefReader{views: map[string]*ingitdb.ViewDef{ingitdb.DefaultViewID: view}},
 		RecordsReader: fakeRecordsReader{records: records},
 		Writer:        writer,
 	}
@@ -574,7 +574,7 @@ func TestBuildDefaultView_MultiBatchWithFilenaming(t *testing.T) {
 	records := make([]ingitdb.RecordEntry, 10)
 	for i := 0; i < 10; i++ {
 		records[i] = ingitdb.RecordEntry{
-			Key:  fmt.Sprintf("%d", i+1),
+			ID:   fmt.Sprintf("%d", i+1),
 			Data: map[string]any{"id": fmt.Sprintf("%d", i+1), "value": (i + 1) * 10},
 		}
 	}
@@ -642,8 +642,8 @@ func TestBuildDefaultView_SingleBatchNoSuffix(t *testing.T) {
 	}
 
 	records := []ingitdb.RecordEntry{
-		{Key: "1", Data: map[string]any{"id": "1", "name": "Item1"}},
-		{Key: "2", Data: map[string]any{"id": "2", "name": "Item2"}},
+		{ID: "1", Data: map[string]any{"id": "1", "name": "Item1"}},
+		{ID: "2", Data: map[string]any{"id": "2", "name": "Item2"}},
 	}
 
 	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
@@ -688,7 +688,7 @@ func TestBuildDefaultView_Idempotency_NoChanges(t *testing.T) {
 	}
 
 	records := []ingitdb.RecordEntry{
-		{Key: "1", Data: map[string]any{"id": "1", "value": "test"}},
+		{ID: "1", Data: map[string]any{"id": "1", "value": "test"}},
 	}
 
 	// First build
@@ -735,9 +735,9 @@ func TestBuildDefaultView_Idempotency_OneRecordChanged(t *testing.T) {
 	}
 
 	records1 := []ingitdb.RecordEntry{
-		{Key: "1", Data: map[string]any{"id": "1", "value": "first"}},
-		{Key: "2", Data: map[string]any{"id": "2", "value": "second"}},
-		{Key: "3", Data: map[string]any{"id": "3", "value": "third"}},
+		{ID: "1", Data: map[string]any{"id": "1", "value": "first"}},
+		{ID: "2", Data: map[string]any{"id": "2", "value": "second"}},
+		{ID: "3", Data: map[string]any{"id": "3", "value": "third"}},
 	}
 
 	// First build
@@ -751,9 +751,9 @@ func TestBuildDefaultView_Idempotency_OneRecordChanged(t *testing.T) {
 
 	// Second build with one record changed (in batch 1)
 	records2 := []ingitdb.RecordEntry{
-		{Key: "1", Data: map[string]any{"id": "1", "value": "CHANGED"}},
-		{Key: "2", Data: map[string]any{"id": "2", "value": "second"}},
-		{Key: "3", Data: map[string]any{"id": "3", "value": "third"}},
+		{ID: "1", Data: map[string]any{"id": "1", "value": "CHANGED"}},
+		{ID: "2", Data: map[string]any{"id": "2", "value": "second"}},
+		{ID: "3", Data: map[string]any{"id": "3", "value": "third"}},
 	}
 
 	created2, updated2, unchanged2, errs2 := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records2, nil)
@@ -791,7 +791,7 @@ func TestBuildDefaultView_AllFormats(t *testing.T) {
 			}
 
 			records := []ingitdb.RecordEntry{
-				{Key: "1", Data: map[string]any{"id": "1", "name": "Test"}},
+				{ID: "1", Data: map[string]any{"id": "1", "name": "Test"}},
 			}
 
 			created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
@@ -840,7 +840,7 @@ func TestBuildDefaultView_CreatesMissingDirectories(t *testing.T) {
 	}
 
 	records := []ingitdb.RecordEntry{
-		{Key: "1", Data: map[string]any{"id": "1"}},
+		{ID: "1", Data: map[string]any{"id": "1"}},
 	}
 
 	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
@@ -922,7 +922,7 @@ func TestBuildDefaultView_WithCustomFileName(t *testing.T) {
 	}
 
 	records := []ingitdb.RecordEntry{
-		{Key: "1", Data: map[string]any{"id": "1", "price": 99.99}},
+		{ID: "1", Data: map[string]any{"id": "1", "price": 99.99}},
 	}
 
 	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
@@ -964,7 +964,7 @@ func TestBuildDefaultView_DefaultFileNameUsesCollectionID(t *testing.T) {
 	}
 
 	records := []ingitdb.RecordEntry{
-		{Key: "1", Data: map[string]any{"id": "1", "title": "Article1"}},
+		{ID: "1", Data: map[string]any{"id": "1", "title": "Article1"}},
 	}
 
 	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
@@ -1008,7 +1008,7 @@ func TestBuildDefaultView_LargeBatchCount_VerifyPadding(t *testing.T) {
 	records := make([]ingitdb.RecordEntry, 15)
 	for i := 0; i < 15; i++ {
 		records[i] = ingitdb.RecordEntry{
-			Key:  fmt.Sprintf("%d", i+1),
+			ID:   fmt.Sprintf("%d", i+1),
 			Data: map[string]any{"id": fmt.Sprintf("%d", i+1)},
 		}
 	}
@@ -1057,8 +1057,8 @@ func TestBuildDefaultView_FileContentIsValid(t *testing.T) {
 	}
 
 	records := []ingitdb.RecordEntry{
-		{Key: "1", Data: map[string]any{"id": "1", "name": "Alice", "score": 95}},
-		{Key: "2", Data: map[string]any{"id": "2", "name": "Bob", "score": 87}},
+		{ID: "1", Data: map[string]any{"id": "1", "name": "Alice", "score": 95}},
+		{ID: "2", Data: map[string]any{"id": "2", "name": "Bob", "score": 87}},
 	}
 
 	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
@@ -1106,11 +1106,11 @@ func TestBuildDefaultView_FormatExportBatchError(t *testing.T) {
 	view := &ingitdb.ViewDef{
 		ID:        ingitdb.DefaultViewID,
 		IsDefault: true,
-		Format:    "",  // Empty format defaults to TSV, so no error
+		Format:    "", // Empty format defaults to TSV, so no error
 	}
 
 	records := []ingitdb.RecordEntry{
-		{Key: "1", Data: map[string]any{"id": "1"}},
+		{ID: "1", Data: map[string]any{"id": "1"}},
 	}
 
 	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
@@ -1125,33 +1125,33 @@ func TestBuildDefaultView_FormatExportBatchError(t *testing.T) {
 }
 
 func TestBuildDefaultView_RecordsDelimiterFromSettings(t *testing.T) {
-t.Parallel()
+	t.Parallel()
 
-tmpDir := t.TempDir()
-col := &ingitdb.CollectionDef{
-ID:           "test",
-DirPath:      filepath.Join(tmpDir, "test"),
-ColumnsOrder: []string{"id"},
-}
-view := &ingitdb.ViewDef{
-ID:        ingitdb.DefaultViewID,
-IsDefault: true,
-Format:    "ingr",
-}
-def := &ingitdb.Definition{
-Settings: ingitdb.Settings{RecordsDelimiter: true},
-}
-records := []ingitdb.RecordEntry{
-{Key: "1", Data: map[string]any{"id": "1"}},
-}
+	tmpDir := t.TempDir()
+	col := &ingitdb.CollectionDef{
+		ID:           "test",
+		DirPath:      filepath.Join(tmpDir, "test"),
+		ColumnsOrder: []string{"id"},
+	}
+	view := &ingitdb.ViewDef{
+		ID:        ingitdb.DefaultViewID,
+		IsDefault: true,
+		Format:    "ingr",
+	}
+	def := &ingitdb.Definition{
+		Settings: ingitdb.Settings{RecordsDelimiter: true},
+	}
+	records := []ingitdb.RecordEntry{
+		{ID: "1", Data: map[string]any{"id": "1"}},
+	}
 
-created, _, _, errs := buildDefaultView(tmpDir, "", col, def, view, records, nil)
-if len(errs) > 0 {
-t.Fatalf("unexpected errors: %v", errs)
-}
-if created != 1 {
-t.Fatalf("expected 1 created, got %d", created)
-}
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, def, view, records, nil)
+	if len(errs) > 0 {
+		t.Fatalf("unexpected errors: %v", errs)
+	}
+	if created != 1 {
+		t.Fatalf("expected 1 created, got %d", created)
+	}
 	content, err := os.ReadFile(filepath.Join(tmpDir, ingitdb.IngitdbDir, "test", "test.ingr"))
 	if err != nil {
 		t.Fatalf("read output: %v", err)
@@ -1162,35 +1162,35 @@ t.Fatalf("expected 1 created, got %d", created)
 }
 
 func TestBuildDefaultView_RuntimeOverrideDisablesViewDefDelimiter(t *testing.T) {
-t.Parallel()
+	t.Parallel()
 
-tmpDir := t.TempDir()
-col := &ingitdb.CollectionDef{
-ID:           "test",
-DirPath:      filepath.Join(tmpDir, "test"),
-ColumnsOrder: []string{"id"},
-}
-view := &ingitdb.ViewDef{
-ID:               ingitdb.DefaultViewID,
-IsDefault:        true,
-Format:           "ingr",
-RecordsDelimiter: true,
-}
-falseVal := false
-def := &ingitdb.Definition{
-RuntimeOverrides: ingitdb.RuntimeOverrides{RecordsDelimiter: &falseVal},
-}
-records := []ingitdb.RecordEntry{
-{Key: "1", Data: map[string]any{"id": "1"}},
-}
+	tmpDir := t.TempDir()
+	col := &ingitdb.CollectionDef{
+		ID:           "test",
+		DirPath:      filepath.Join(tmpDir, "test"),
+		ColumnsOrder: []string{"id"},
+	}
+	view := &ingitdb.ViewDef{
+		ID:               ingitdb.DefaultViewID,
+		IsDefault:        true,
+		Format:           "ingr",
+		RecordsDelimiter: true,
+	}
+	falseVal := false
+	def := &ingitdb.Definition{
+		RuntimeOverrides: ingitdb.RuntimeOverrides{RecordsDelimiter: &falseVal},
+	}
+	records := []ingitdb.RecordEntry{
+		{ID: "1", Data: map[string]any{"id": "1"}},
+	}
 
-created, _, _, errs := buildDefaultView(tmpDir, "", col, def, view, records, nil)
-if len(errs) > 0 {
-t.Fatalf("unexpected errors: %v", errs)
-}
-if created != 1 {
-t.Fatalf("expected 1 created, got %d", created)
-}
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, def, view, records, nil)
+	if len(errs) > 0 {
+		t.Fatalf("unexpected errors: %v", errs)
+	}
+	if created != 1 {
+		t.Fatalf("expected 1 created, got %d", created)
+	}
 	content, err := os.ReadFile(filepath.Join(tmpDir, ingitdb.IngitdbDir, "test", "test.ingr"))
 	if err != nil {
 		t.Fatalf("read output: %v", err)

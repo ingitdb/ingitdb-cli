@@ -261,7 +261,7 @@ func TestFilterColumns_NoColumns(t *testing.T) {
 	t.Parallel()
 
 	records := []ingitdb.RecordEntry{
-		{Key: "a", Data: map[string]any{"title": "A", "desc": "Description"}},
+		{ID: "a", Data: map[string]any{"title": "A", "desc": "Description"}},
 	}
 
 	filtered := filterColumns(records, nil)
@@ -280,8 +280,8 @@ func TestFilterColumns_NilData(t *testing.T) {
 	t.Parallel()
 
 	records := []ingitdb.RecordEntry{
-		{Key: "a", Data: nil},
-		{Key: "b", Data: map[string]any{"title": "B"}},
+		{ID: "a", Data: nil},
+		{ID: "b", Data: map[string]any{"title": "B"}},
 	}
 
 	filtered := filterColumns(records, []string{"title"})
@@ -300,8 +300,8 @@ func TestOrderRecords_EmptyOrderBy(t *testing.T) {
 	t.Parallel()
 
 	records := []ingitdb.RecordEntry{
-		{Key: "b", Data: map[string]any{"title": "B"}},
-		{Key: "a", Data: map[string]any{"title": "A"}},
+		{ID: "b", Data: map[string]any{"title": "B"}},
+		{ID: "a", Data: map[string]any{"title": "A"}},
 	}
 
 	err := orderRecords(records, "")
@@ -309,7 +309,7 @@ func TestOrderRecords_EmptyOrderBy(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	// Order should remain unchanged
-	if records[0].Key != "b" {
+	if records[0].ID != "b" {
 		t.Errorf("expected order to remain unchanged")
 	}
 }
@@ -332,8 +332,8 @@ func TestOrderRecords_LastModified_Asc(t *testing.T) {
 	}
 
 	records := []ingitdb.RecordEntry{
-		{Key: "b", FilePath: file2, Data: map[string]any{"title": "B"}},
-		{Key: "a", FilePath: file1, Data: map[string]any{"title": "A"}},
+		{ID: "b", FilePath: file2, Data: map[string]any{"title": "B"}},
+		{ID: "a", FilePath: file1, Data: map[string]any{"title": "A"}},
 	}
 
 	err := orderRecords(records, "$last_modified asc")
@@ -341,11 +341,11 @@ func TestOrderRecords_LastModified_Asc(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	// file1 was created first, so it should be first
-	if records[0].Key != "a" {
-		t.Errorf("expected record a to be first, got %s", records[0].Key)
+	if records[0].ID != "a" {
+		t.Errorf("expected record a to be first, got %s", records[0].ID)
 	}
-	if records[1].Key != "b" {
-		t.Errorf("expected record b to be second, got %s", records[1].Key)
+	if records[1].ID != "b" {
+		t.Errorf("expected record b to be second, got %s", records[1].ID)
 	}
 }
 
@@ -367,8 +367,8 @@ func TestOrderRecords_LastModified_Desc(t *testing.T) {
 	}
 
 	records := []ingitdb.RecordEntry{
-		{Key: "a", FilePath: file1, Data: map[string]any{"title": "A"}},
-		{Key: "b", FilePath: file2, Data: map[string]any{"title": "B"}},
+		{ID: "a", FilePath: file1, Data: map[string]any{"title": "A"}},
+		{ID: "b", FilePath: file2, Data: map[string]any{"title": "B"}},
 	}
 
 	err := orderRecords(records, "$last_modified desc")
@@ -376,11 +376,11 @@ func TestOrderRecords_LastModified_Desc(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	// file2 was created last, so it should be first in desc order
-	if records[0].Key != "b" {
-		t.Errorf("expected record b to be first, got %s", records[0].Key)
+	if records[0].ID != "b" {
+		t.Errorf("expected record b to be first, got %s", records[0].ID)
 	}
-	if records[1].Key != "a" {
-		t.Errorf("expected record a to be second, got %s", records[1].Key)
+	if records[1].ID != "a" {
+		t.Errorf("expected record a to be second, got %s", records[1].ID)
 	}
 }
 
@@ -388,7 +388,7 @@ func TestOrderRecords_LastModified_StatError(t *testing.T) {
 	t.Parallel()
 
 	records := []ingitdb.RecordEntry{
-		{Key: "a", FilePath: "/nonexistent/file.json", Data: map[string]any{"title": "A"}},
+		{ID: "a", FilePath: "/nonexistent/file.json", Data: map[string]any{"title": "A"}},
 	}
 
 	err := orderRecords(records, "$last_modified")
@@ -401,17 +401,17 @@ func TestOrderRecords_FieldAsc(t *testing.T) {
 	t.Parallel()
 
 	records := []ingitdb.RecordEntry{
-		{Key: "c", Data: map[string]any{"priority": 3}},
-		{Key: "a", Data: map[string]any{"priority": 1}},
-		{Key: "b", Data: map[string]any{"priority": 2}},
+		{ID: "c", Data: map[string]any{"priority": 3}},
+		{ID: "a", Data: map[string]any{"priority": 1}},
+		{ID: "b", Data: map[string]any{"priority": 2}},
 	}
 
 	err := orderRecords(records, "priority")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if records[0].Key != "a" || records[1].Key != "b" || records[2].Key != "c" {
-		t.Errorf("expected records ordered by priority asc, got: %v", []string{records[0].Key, records[1].Key, records[2].Key})
+	if records[0].ID != "a" || records[1].ID != "b" || records[2].ID != "c" {
+		t.Errorf("expected records ordered by priority asc, got: %v", []string{records[0].ID, records[1].ID, records[2].ID})
 	}
 }
 
@@ -419,17 +419,17 @@ func TestOrderRecords_FieldDesc(t *testing.T) {
 	t.Parallel()
 
 	records := []ingitdb.RecordEntry{
-		{Key: "a", Data: map[string]any{"priority": 1}},
-		{Key: "b", Data: map[string]any{"priority": 2}},
-		{Key: "c", Data: map[string]any{"priority": 3}},
+		{ID: "a", Data: map[string]any{"priority": 1}},
+		{ID: "b", Data: map[string]any{"priority": 2}},
+		{ID: "c", Data: map[string]any{"priority": 3}},
 	}
 
 	err := orderRecords(records, "priority DESC")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if records[0].Key != "c" || records[1].Key != "b" || records[2].Key != "a" {
-		t.Errorf("expected records ordered by priority desc, got: %v", []string{records[0].Key, records[1].Key, records[2].Key})
+	if records[0].ID != "c" || records[1].ID != "b" || records[2].ID != "a" {
+		t.Errorf("expected records ordered by priority desc, got: %v", []string{records[0].ID, records[1].ID, records[2].ID})
 	}
 }
 
@@ -438,7 +438,7 @@ func TestOrderKey_LastModified(t *testing.T) {
 
 	now := time.Now()
 	record := ingitdb.RecordEntry{
-		Key:  "test",
+		ID:   "test",
 		Data: map[string]any{"title": "Test"},
 	}
 	spec := orderBySpec{Field: "$last_modified"}
@@ -454,7 +454,7 @@ func TestOrderKey_Field(t *testing.T) {
 	t.Parallel()
 
 	record := ingitdb.RecordEntry{
-		Key:  "test",
+		ID:   "test",
 		Data: map[string]any{"title": "Test Title"},
 	}
 	spec := orderBySpec{Field: "title"}
@@ -469,7 +469,7 @@ func TestOrderKey_NilData(t *testing.T) {
 	t.Parallel()
 
 	record := ingitdb.RecordEntry{
-		Key:  "test",
+		ID:   "test",
 		Data: nil,
 	}
 	spec := orderBySpec{Field: "title"}

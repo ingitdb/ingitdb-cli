@@ -59,7 +59,7 @@ func (r FileRecordsReader) ReadRecords(
 			d := dalgo2ingitdb.ApplyLocaleToRead(data, col.Columns)
 			d["id"] = key
 			entry := ingitdb.RecordEntry{
-				Key:  key,
+				ID:   key,
 				Data: d,
 			}
 			if err := yield(entry); err != nil {
@@ -92,7 +92,7 @@ func (r FileRecordsReader) ReadRecords(
 			d := dalgo2ingitdb.ApplyLocaleToRead(data, col.Columns)
 			d["id"] = key
 			entry := ingitdb.RecordEntry{
-				Key:  key,
+				ID:   key,
 				Data: d,
 			}
 			if err := yield(entry); err != nil {
@@ -118,7 +118,7 @@ func recordPatternForKey(name, dirPath string) (patternPath string, extractKey f
 	idx := strings.Index(name, placeholder)
 	prefix := filepath.ToSlash(name[:idx])
 	rest := name[idx+len(placeholder):]
-	// Key segment ends at the first "/" in rest (or at the end if no slash).
+	// ID segment ends at the first "/" in rest (or at the end if no slash).
 	endIdx := strings.IndexByte(rest, '/')
 	var keySuffix string
 	if endIdx < 0 {
