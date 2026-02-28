@@ -59,9 +59,8 @@ func (r FileRecordsReader) ReadRecords(
 			d := dalgo2ingitdb.ApplyLocaleToRead(data, col.Columns)
 			d["id"] = key
 			entry := ingitdb.RecordEntry{
-				Key:      key,
-				FilePath: path,
-				Data:     d,
+				Key:  key,
+				Data: d,
 			}
 			if err := yield(entry); err != nil {
 				return err
@@ -93,9 +92,8 @@ func (r FileRecordsReader) ReadRecords(
 			d := dalgo2ingitdb.ApplyLocaleToRead(data, col.Columns)
 			d["id"] = key
 			entry := ingitdb.RecordEntry{
-				Key:      key,
-				FilePath: filePath,
-				Data:     d,
+				Key:  key,
+				Data: d,
 			}
 			if err := yield(entry); err != nil {
 				return err

@@ -6,9 +6,8 @@ import (
 )
 
 type ViewDef struct {
-	ID      string            `yaml:"-"`
-	Titles  map[string]string `yaml:"titles,omitempty"`
-	OrderBy string            `yaml:"order_by,omitempty"`
+	ID     string            `yaml:"-"`
+	Titles map[string]string `yaml:"titles,omitempty"`
 
 	// Formats TODO: Needs definition
 	Formats []string `yaml:"formats,omitempty"`
@@ -44,7 +43,7 @@ type ViewDef struct {
 	// IncludeHash controls whether a sha256 hash line is appended to INGR footer.
 	IncludeHash bool `yaml:"include_hash,omitempty"`
 
-	// RecordsDelimiter controls whether a bare '#' line is written after each record in INGR output.
+	// RecordsDelimiter controls whether a "#-" line is written after each record in INGR output.
 	RecordsDelimiter bool `yaml:"records_delimiter,omitempty"`
 }
 
