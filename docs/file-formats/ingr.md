@@ -25,7 +25,7 @@ Each record:
 
 - Contains a **fixed number of lines (N)**, where N equals the number of columns declared in the header.
 - Each line represents **one field value**, encoded as JSON.
-- Records follow each other immediately with no delimiters (optional delimiter lines are described in §3.5).
+- Records follow each other immediately with no delimiters (optional delimiter lines are described in §3.6).
 
 **Parser rule:**
 
@@ -42,7 +42,7 @@ Each record:
 The first line of every `.ingr` file is a metadata header:
 
 ```
-# INGR.io | {recordset_name}: $ID, col2, col3, ...
+# INGR.io | {recordset_name}: $ID[:type], col2[:type], col3[:type], ...
 ```
 
 - Starts with `# INGR.io | ` (spaces after `#` and around `|` are optional for parsers).
@@ -52,18 +52,75 @@ The first line of every `.ingr` file is a metadata header:
 - **Column list** — comma-separated column names, separated by `, ` (comma + space) for readability. Parsers may trim
   surrounding whitespace from each name.
 - **`$ID`** is the reserved name for the record key (always the first column).
+- Each column name may carry an **optional type annotation** using `col:type` syntax (see §3.2).
 
-Example:
+Example (untyped):
 
 ```
 # INGR.io | people: $ID, name, age
 ```
 
-### 3.2 Fixed Field Count
+Example (typed):
+
+```
+# INGR.io | people: $ID:string, name:string, age:int
+```
+
+### 3.2 Column Type Annotations
+
+Column names may include an **optional** type annotation separated by `:`, analogous to TypeScript's optional type
+suffixes. When no type is given, the column is untyped (equivalent to `any`).
+
+```
+col_name[:type]
+```
+
+#### Scalar types
+
+| Annotation  | Meaning                                              | Example value          |
+|-------------|------------------------------------------------------|------------------------|
+| `string`    | UTF-8 string                                         | `"hello"`              |
+| `int`       | Integer                                              | `42`                   |
+| `float`     | Floating-point                                       | `3.14`                 |
+| `decimal`   | Exact-precision decimal                              | `19.99`                |
+| `number`    | Any numeric value                                    | `100` / `3.14`         |
+| `bool`      | Boolean                                              | `true` / `false`       |
+| `date`      | Date — ISO 8601 string                               | `"2024-01-15"`         |
+| `time`      | Time string                                          | `"14:30:00"`           |
+| `datetime`  | Date + time — ISO 8601 string                        | `"2024-01-15T14:30:00Z"` |
+| `any`       | Untyped; accepts any JSON value (equivalent to `any` in TypeScript or a plain `object` in JavaScript — string, number, boolean, null, array, or object) | `null` / `{}` / `[]`  |
+
+#### Composite types (Go notation)
+
+| Annotation              | Meaning                          | Example value                   |
+|-------------------------|----------------------------------|---------------------------------|
+| `[]{type}`              | Slice / array                    | `[1,2,3]` / `["a","b"]`        |
+| `map[string]{type}`     | Map with string keys             | `{"x":1,"y":2}`                 |
+| `map[int]{type}`        | Map with integer keys            | `{"1":10,"2":20}`               |
+| `map[float]{type}`      | Map with float keys              | `{"3.14":"pi"}`                 |
+| Nested, e.g. `[]map[string]int` | Slice of string→int maps  | `[{"a":1},{"b":2}]`            |
+
+> **Map key encoding:** JSON requires all object keys to be strings. Numeric key types (`int`, `float`, `decimal`, `number`)
+> are therefore encoded as JSON strings (e.g. `"42"`, `"3.14"`). Parsers must convert them to the declared key type and
+> return an error if conversion fails.
+
+> **Notes**
+> - `$ID` may also be typed, e.g. `$ID:int` or `$ID:string`.
+> - Untyped columns (no `:type` suffix) default to `any`.
+> - Type annotations are advisory metadata for producers, consumers, and validators; they do not change the underlying
+>   JSON encoding of values.
+
+Example header with mixed typed and untyped columns:
+
+```
+# INGR.io | example: $ID:int, FirstName:string, Age:int, Weight:decimal, N:number, IsConfirmed:bool, UserData:map[string]any
+```
+
+### 3.3 Fixed Field Count
 
 The number of fields per record **N** is determined by the number of columns in the header (including `$ID`).
 
-### 3.3 Value Encoding
+### 3.4 Value Encoding
 
 Each field value is encoded as a **compact single-line JSON expression**:
 
@@ -79,12 +136,12 @@ Each field value is encoded as a **compact single-line JSON expression**:
 
 JSON objects and arrays must be written without embedded newlines (compact form).
 
-### 3.4 Example (fields: `$ID`, `name`, `age`)
+### 3.5 Example (fields: `$ID:string`, `name:string`, `age:int`)
 
 Without record delimiter:
 
 ```
-# INGR.io | people: $ID, name, age
+# INGR.io | people: $ID:string, name:string, age:int
 "john"
 "John Doe"
 35
@@ -94,10 +151,10 @@ Without record delimiter:
 # 2 records
 ```
 
-With record delimiter (see §3.5):
+With record delimiter (see §3.6):
 
 ```
-# INGR.io | people: $ID, name, age
+# INGR.io | people: $ID:string, name:string, age:int
 "john"
 "John Doe"
 35
@@ -116,7 +173,7 @@ Parsed as:
 | john | John Doe   | 35  |
 | jane | Jane Smith | 29  |
 
-### 3.5 Record Delimiter (Optional)
+### 3.6 Record Delimiter (Optional)
 
 Records may be separated by a **delimiter line** — a line containing only `#` with no other content.
 
@@ -127,7 +184,7 @@ Rules:
 - A delimiter line after the **last record** (before the record count line) is permitted.
 - Parsers must accept both forms (with and without delimiter).
 
-### 3.6 Footer
+### 3.7 Footer
 
 The footer starts immediately after the last record (or the last record's delimiter line). It consists of one **required** line followed by any number of **optional** comment lines:
 
@@ -255,7 +312,7 @@ Not ideal for:
 
 `.ingr` is a self-describing, deterministic, fixed-line record format:
 
-- Line 1: `# INGR.io | {recordset_name}: $ID, col2, col3, ...`
+- Line 1: `# INGR.io | {recordset_name}: $ID[:type], col2[:type], col3[:type], ...`
 - Lines 2…(end-N): `N` JSON-encoded values per record, one value per line
 - Optional: a bare `#` delimiter line after each record (all or none)
 - First footer line: `# {N} records` (required, with `\n` unless last line)
