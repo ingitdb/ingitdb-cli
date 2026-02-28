@@ -27,7 +27,7 @@ require (
 	github.com/google/go-github/v72 v72.0.0
 	github.com/invopop/jsonschema v0.13.0 // indirect
 	github.com/mailru/easyjson v0.9.1 // indirect
-	github.com/metoro-io/mcp-golang v0.16.0
+	github.com/metoro-io/mcp-golang v0.16.1
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.2.0 // indirect
