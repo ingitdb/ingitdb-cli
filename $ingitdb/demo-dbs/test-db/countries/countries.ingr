@@ -1,4 +1,4 @@
-#INGR: countries/default_view: $ID, area_km2, currency, flag, population, titles
+# INGR.io | countries/default_view: $ID, area_km2, currency, flag, population, titles
 "au"
 7692024
 "AUD"
@@ -90,4 +90,3 @@
 60142978
 {"en":"South Africa","ru":"Южная Африка"}
 # 15 records
-# sha256:14f2540892699b406f2a1dc2620dd3c9baad12b7ad874ea6ae15e60344ecbe36

@@ -1,6 +1,5 @@
-#INGR: companies/default_view: $ID, industry, title
+# INGR.io | companies/default_view: $ID, industry, title
 "acme-inc"
 "Manufacturing"
 "ACME Inc."
 # 1 record
-# sha256:dff2d9150d7d62cbfe531af8df9426eb66420fb93f5576cd1362929d00ce5418

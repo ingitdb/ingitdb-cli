@@ -25,12 +25,12 @@ Each record:
 
 - Contains a **fixed number of lines (N)**, where N equals the number of columns declared in the header.
 - Each line represents **one field value**, encoded as JSON.
-- Records follow each other immediately with no delimiters.
+- Records follow each other immediately with no delimiters (optional delimiter lines are described in §3.5).
 
 **Parser rule:**
 
 1. Read line 1 → parse header to get column list (length = N).
-2. Read `N` lines → 1 record.
+2. Read `N` lines → 1 record. Skip any `#` delimiter line immediately after.
 3. Repeat until EOF.
 
 ---
@@ -42,10 +42,10 @@ Each record:
 The first line of every `.ingr` file is a metadata header:
 
 ```
-# https://INGR.io | {recordset_name}: $ID, col2, col3, ...
+# INGR.io | {recordset_name}: $ID, col2, col3, ...
 ```
 
-- Starts with `# https://INGR.io | ` (spaces after `#` and around `|` are optional for parsers).
+- Starts with `# INGR.io | ` (spaces after `#` and around `|` are optional for parsers).
 - **Recordset name** — an arbitrary identifier for the dataset (e.g. `people`, `orders/2024`). Its meaning is defined by
   the producer.
 - Followed by `: ` (colon + space).
@@ -56,7 +56,7 @@ The first line of every `.ingr` file is a metadata header:
 Example:
 
 ```
-# https://INGR.io | people: $ID, name, age
+# INGR.io | people: $ID, name, age
 ```
 
 ### 3.2 Fixed Field Count
@@ -81,8 +81,10 @@ JSON objects and arrays must be written without embedded newlines (compact form)
 
 ### 3.4 Example (fields: `$ID`, `name`, `age`)
 
+Without record delimiter:
+
 ```
-# https://INGR.io people: $ID, name, age
+# INGR.io | people: $ID, name, age
 "john"
 "John Doe"
 35
@@ -90,7 +92,21 @@ JSON objects and arrays must be written without embedded newlines (compact form)
 "Jane Smith"
 29
 # 2 records
-# sha256:3a7bd3e2360a3d80...
+```
+
+With record delimiter (see §3.5):
+
+```
+# INGR.io | people: $ID, name, age
+"john"
+"John Doe"
+35
+#
+"jane"
+"Jane Smith"
+29
+#
+# 2 records
 ```
 
 Parsed as:
@@ -100,10 +116,20 @@ Parsed as:
 | john | John Doe   | 35  |
 | jane | Jane Smith | 29  |
 
-### 3.5 Footer
+### 3.5 Record Delimiter (Optional)
 
-The footer starts immediately after the last record. It consists of one **required** line followed by any number of *
-*optional** comment lines:
+Records may be separated by a **delimiter line** — a line containing only `#` with no other content.
+
+Rules:
+
+- The delimiter is **optional**. A file may use it or omit it entirely.
+- If used, a delimiter line **must appear after every record**, including the first. It cannot be used only between some records.
+- A delimiter line after the **last record** (before the record count line) is permitted.
+- Parsers must accept both forms (with and without delimiter).
+
+### 3.6 Footer
+
+The footer starts immediately after the last record (or the last record's delimiter line). It consists of one **required** line followed by any number of **optional** comment lines:
 
 **Required — record count** (always the first footer line; the trailing newline is optional but recommended):
 
@@ -118,7 +144,7 @@ or
 ```
 
 - Uses `record` (singular) for exactly 1, `records` (plural) for all other counts (including 0).
-- Must be the first line after the records.
+- Must be the first line after the records (and any trailing delimiter).
 - Parsers should accept the count line with or without a trailing newline.
 
 **Optional — additional footer lines** (each starting with `#`):
@@ -147,11 +173,11 @@ The space after `#` is preserved but optional for parsers.
 3. Line 1 is the metadata header; it must match the format above.
 4. Each field value line must be a valid single-line JSON expression.
 5. JSON objects and arrays must not contain embedded newlines.
-6. `(total_lines - 1 - footer_lines) % N == 0` where `footer_lines ≥ 1`.
+6. `(total_lines - 1 - footer_lines - delimiter_lines) % N == 0` where `footer_lines ≥ 1`.
 7. First footer line must match `# {N} records` or `# 1 record`.
 8. All subsequent footer lines must start with `#`.
 9. No newline after the last line of the file.
-10. No inline delimiters between records.
+10. Record delimiter lines (`#`) are optional, but if used must appear after every record.
 
 ---
 
@@ -160,7 +186,7 @@ The space after `#` is preserved but optional for parsers.
 Header + 2 records + footer, `N = 3`:
 
 ```
-# https://INGR.io people: $ID, name, age
+# INGR.io people: $ID, name, age
 "john"
 "John Doe"
 35
@@ -188,11 +214,12 @@ A valid `.ingr` file must:
 - Not contain partial records between header and footer.
 - Have every value line be a valid single-line JSON expression.
 - Have no trailing newline after the last line.
+- Either use record delimiters after every record, or not use them at all.
 
 Validation condition:
 
 ```
-(total_lines - 1 - footer_lines) % N == 0   // footer_lines ≥ 1
+(total_lines - 1 - footer_lines - delimiter_lines) % N == 0   // footer_lines ≥ 1
 ```
 
 ---
@@ -228,9 +255,9 @@ Not ideal for:
 
 `.ingr` is a self-describing, deterministic, fixed-line record format:
 
-- Line 1: `# https://INGR.io | {recordset_name}: $ID, col2, col3, ...`
+- Line 1: `# INGR.io | {recordset_name}: $ID, col2, col3, ...`
 - Lines 2…(end-N): `N` JSON-encoded values per record, one value per line
+- Optional: a bare `#` delimiter line after each record (all or none)
 - First footer line: `# {N} records` (required, with `\n` unless last line)
 - Additional footer lines: optional `#`-prefixed lines (e.g. `# sha256:{hex}`)
-- No record delimiters
 - Optimised for simplicity and Git friendliness

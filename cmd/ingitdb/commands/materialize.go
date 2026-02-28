@@ -32,6 +32,10 @@ func Materialize(
 				Name:  "views",
 				Usage: "comma-separated list of views to materialize",
 			},
+			&cli.BoolFlag{
+				Name:  "records-delimiter",
+				Usage: "write a '#' delimiter line after each record in INGR output",
+			},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			if viewBuilder == nil {
@@ -65,6 +69,12 @@ func Materialize(
 			if err != nil {
 				return fmt.Errorf("failed to read database definition: %w", err)
 			}
+			var recordsDelimiter *bool
+			if cmd.IsSet("records-delimiter") {
+				v := cmd.Bool("records-delimiter")
+				recordsDelimiter = &v
+			}
+			def.RuntimeOverrides.RecordsDelimiter = recordsDelimiter
 			var totalResult ingitdb.MaterializeResult
 			for _, col := range def.Collections {
 				result, buildErr := viewBuilder.BuildViews(ctx, dirPath, repoRoot, col, def)

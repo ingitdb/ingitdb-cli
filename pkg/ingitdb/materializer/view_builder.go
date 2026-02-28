@@ -28,7 +28,6 @@ func (b SimpleViewBuilder) BuildViews(
 	col *ingitdb.CollectionDef,
 	def *ingitdb.Definition,
 ) (*ingitdb.MaterializeResult, error) {
-	_ = def
 	if b.DefReader == nil {
 		return nil, fmt.Errorf("view definition reader is required")
 	}
@@ -58,7 +57,7 @@ func (b SimpleViewBuilder) BuildViews(
 
 		if view.IsDefault {
 			// Handle default view export
-			created, updated, unchanged, errs := buildDefaultView(dbPath, repoRoot, col, view, records, b.Logf)
+			created, updated, unchanged, errs := buildDefaultView(dbPath, repoRoot, col, def, view, records, b.Logf)
 			result.FilesCreated += created
 			result.FilesUpdated += updated
 			result.FilesUnchanged += unchanged
@@ -120,7 +119,7 @@ func (b SimpleViewBuilder) BuildView(
 
 	if view.IsDefault {
 		// Handle default view export
-		created, updated, unchanged, errs := buildDefaultView(dbPath, repoRoot, col, view, records, b.Logf)
+		created, updated, unchanged, errs := buildDefaultView(dbPath, repoRoot, col, def, view, records, b.Logf)
 		result.FilesCreated += created
 		result.FilesUpdated += updated
 		result.FilesUnchanged += unchanged
@@ -200,7 +199,7 @@ func filterColumns(records []ingitdb.RecordEntry, cols []string) []ingitdb.Recor
 	return filtered
 }
 
-func buildDefaultView(dbPath string, repoRoot string, col *ingitdb.CollectionDef, view *ingitdb.ViewDef, records []ingitdb.RecordEntry, logf func(string, ...any)) (created, updated, unchanged int, errs []error) {
+func buildDefaultView(dbPath string, repoRoot string, col *ingitdb.CollectionDef, def *ingitdb.Definition, view *ingitdb.ViewDef, records []ingitdb.RecordEntry, logf func(string, ...any)) (created, updated, unchanged int, errs []error) {
 	columns := determineColumns(col, view)
 	format := strings.ToLower(view.Format)
 	ext := defaultViewFormatExtension(format)
@@ -234,7 +233,18 @@ func buildDefaultView(dbPath string, repoRoot string, col *ingitdb.CollectionDef
 			batchRecords = records[start:end]
 		}
 
-		content, err := formatExportBatch(format, col.ID+"/"+view.ID, view.IncludeHash, columns, batchRecords)
+		var exportOpts []ExportOption
+		if view.IncludeHash {
+			exportOpts = append(exportOpts, WithHash())
+		}
+		recordsDelimiter := view.RecordsDelimiter || def.Settings.RecordsDelimiter
+		if def.RuntimeOverrides.RecordsDelimiter != nil {
+			recordsDelimiter = *def.RuntimeOverrides.RecordsDelimiter
+		}
+		if recordsDelimiter {
+			exportOpts = append(exportOpts, WithRecordsDelimiter())
+		}
+		content, err := formatExportBatch(format, col.ID+"/"+view.ID, columns, batchRecords, exportOpts...)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("batch %d: %w", batchNum, err))
 			continue

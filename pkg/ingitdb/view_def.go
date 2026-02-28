@@ -43,6 +43,9 @@ type ViewDef struct {
 
 	// IncludeHash controls whether a sha256 hash line is appended to INGR footer.
 	IncludeHash bool `yaml:"include_hash,omitempty"`
+
+	// RecordsDelimiter controls whether a bare '#' line is written after each record in INGR output.
+	RecordsDelimiter bool `yaml:"records_delimiter,omitempty"`
 }
 
 // Validate checks the view definition for consistency.

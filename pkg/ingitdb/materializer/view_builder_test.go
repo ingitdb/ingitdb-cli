@@ -579,7 +579,7 @@ func TestBuildDefaultView_MultiBatchWithFilenaming(t *testing.T) {
 		}
 	}
 
-	created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
 
 	if len(errs) > 0 {
 		t.Fatalf("buildDefaultView returned errors: %v", errs)
@@ -646,7 +646,7 @@ func TestBuildDefaultView_SingleBatchNoSuffix(t *testing.T) {
 		{Key: "2", Data: map[string]any{"id": "2", "name": "Item2"}},
 	}
 
-	created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
 
 	if len(errs) > 0 {
 		t.Fatalf("buildDefaultView returned errors: %v", errs)
@@ -692,7 +692,7 @@ func TestBuildDefaultView_Idempotency_NoChanges(t *testing.T) {
 	}
 
 	// First build
-	created1, _, unchanged1, errs1 := buildDefaultView(tmpDir, "", col, view, records, nil)
+	created1, _, unchanged1, errs1 := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
 	if len(errs1) > 0 {
 		t.Fatalf("first buildDefaultView: %v", errs1)
 	}
@@ -705,7 +705,7 @@ func TestBuildDefaultView_Idempotency_NoChanges(t *testing.T) {
 	}
 
 	// Second build with identical data
-	created2, updated2, unchanged2, errs2 := buildDefaultView(tmpDir, "", col, view, records, nil)
+	created2, updated2, unchanged2, errs2 := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
 	if len(errs2) > 0 {
 		t.Fatalf("second buildDefaultView: %v", errs2)
 	}
@@ -741,7 +741,7 @@ func TestBuildDefaultView_Idempotency_OneRecordChanged(t *testing.T) {
 	}
 
 	// First build
-	created1, _, _, errs1 := buildDefaultView(tmpDir, "", col, view, records1, nil)
+	created1, _, _, errs1 := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records1, nil)
 	if len(errs1) > 0 {
 		t.Fatalf("first buildDefaultView: %v", errs1)
 	}
@@ -756,7 +756,7 @@ func TestBuildDefaultView_Idempotency_OneRecordChanged(t *testing.T) {
 		{Key: "3", Data: map[string]any{"id": "3", "value": "third"}},
 	}
 
-	created2, updated2, unchanged2, errs2 := buildDefaultView(tmpDir, "", col, view, records2, nil)
+	created2, updated2, unchanged2, errs2 := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records2, nil)
 	if len(errs2) > 0 {
 		t.Fatalf("second buildDefaultView: %v", errs2)
 	}
@@ -794,7 +794,7 @@ func TestBuildDefaultView_AllFormats(t *testing.T) {
 				{Key: "1", Data: map[string]any{"id": "1", "name": "Test"}},
 			}
 
-			created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
+			created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
 
 			if len(errs) > 0 {
 				t.Errorf("buildDefaultView for %s returned errors: %v", format, errs)
@@ -843,7 +843,7 @@ func TestBuildDefaultView_CreatesMissingDirectories(t *testing.T) {
 		{Key: "1", Data: map[string]any{"id": "1"}},
 	}
 
-	created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
 
 	if len(errs) > 0 {
 		t.Fatalf("buildDefaultView returned errors: %v", errs)
@@ -878,7 +878,7 @@ func TestBuildDefaultView_EmptyRecords(t *testing.T) {
 
 	records := []ingitdb.RecordEntry{}
 
-	created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
 
 	if len(errs) > 0 {
 		t.Fatalf("buildDefaultView returned errors: %v", errs)
@@ -925,7 +925,7 @@ func TestBuildDefaultView_WithCustomFileName(t *testing.T) {
 		{Key: "1", Data: map[string]any{"id": "1", "price": 99.99}},
 	}
 
-	created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
 
 	if len(errs) > 0 {
 		t.Fatalf("buildDefaultView returned errors: %v", errs)
@@ -967,7 +967,7 @@ func TestBuildDefaultView_DefaultFileNameUsesCollectionID(t *testing.T) {
 		{Key: "1", Data: map[string]any{"id": "1", "title": "Article1"}},
 	}
 
-	created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
 
 	if len(errs) > 0 {
 		t.Fatalf("buildDefaultView returned errors: %v", errs)
@@ -1013,7 +1013,7 @@ func TestBuildDefaultView_LargeBatchCount_VerifyPadding(t *testing.T) {
 		}
 	}
 
-	created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
 
 	if len(errs) > 0 {
 		t.Fatalf("buildDefaultView returned errors: %v", errs)
@@ -1061,7 +1061,7 @@ func TestBuildDefaultView_FileContentIsValid(t *testing.T) {
 		{Key: "2", Data: map[string]any{"id": "2", "name": "Bob", "score": 87}},
 	}
 
-	created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
 
 	if len(errs) > 0 {
 		t.Fatalf("buildDefaultView returned errors: %v", errs)
@@ -1113,7 +1113,7 @@ func TestBuildDefaultView_FormatExportBatchError(t *testing.T) {
 		{Key: "1", Data: map[string]any{"id": "1"}},
 	}
 
-	created, _, _, errs := buildDefaultView(tmpDir, "", col, view, records, nil)
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
 
 	// Empty format is valid (defaults to TSV), so no errors expected
 	if len(errs) > 0 {
@@ -1121,5 +1121,81 @@ func TestBuildDefaultView_FormatExportBatchError(t *testing.T) {
 	}
 	if created != 1 {
 		t.Fatalf("expected 1 created, got %d", created)
+	}
+}
+
+func TestBuildDefaultView_RecordsDelimiterFromSettings(t *testing.T) {
+t.Parallel()
+
+tmpDir := t.TempDir()
+col := &ingitdb.CollectionDef{
+ID:           "test",
+DirPath:      filepath.Join(tmpDir, "test"),
+ColumnsOrder: []string{"id"},
+}
+view := &ingitdb.ViewDef{
+ID:        ingitdb.DefaultViewID,
+IsDefault: true,
+Format:    "ingr",
+}
+def := &ingitdb.Definition{
+Settings: ingitdb.Settings{RecordsDelimiter: true},
+}
+records := []ingitdb.RecordEntry{
+{Key: "1", Data: map[string]any{"id": "1"}},
+}
+
+created, _, _, errs := buildDefaultView(tmpDir, "", col, def, view, records, nil)
+if len(errs) > 0 {
+t.Fatalf("unexpected errors: %v", errs)
+}
+if created != 1 {
+t.Fatalf("expected 1 created, got %d", created)
+}
+	content, err := os.ReadFile(filepath.Join(tmpDir, ingitdb.IngitdbDir, "test", "test.ingr"))
+	if err != nil {
+		t.Fatalf("read output: %v", err)
+	}
+	if !strings.Contains(string(content), "\n#\n") {
+		t.Error("expected '#' delimiter line in output when Settings.RecordsDelimiter=true")
+	}
+}
+
+func TestBuildDefaultView_RuntimeOverrideDisablesViewDefDelimiter(t *testing.T) {
+t.Parallel()
+
+tmpDir := t.TempDir()
+col := &ingitdb.CollectionDef{
+ID:           "test",
+DirPath:      filepath.Join(tmpDir, "test"),
+ColumnsOrder: []string{"id"},
+}
+view := &ingitdb.ViewDef{
+ID:               ingitdb.DefaultViewID,
+IsDefault:        true,
+Format:           "ingr",
+RecordsDelimiter: true,
+}
+falseVal := false
+def := &ingitdb.Definition{
+RuntimeOverrides: ingitdb.RuntimeOverrides{RecordsDelimiter: &falseVal},
+}
+records := []ingitdb.RecordEntry{
+{Key: "1", Data: map[string]any{"id": "1"}},
+}
+
+created, _, _, errs := buildDefaultView(tmpDir, "", col, def, view, records, nil)
+if len(errs) > 0 {
+t.Fatalf("unexpected errors: %v", errs)
+}
+if created != 1 {
+t.Fatalf("expected 1 created, got %d", created)
+}
+	content, err := os.ReadFile(filepath.Join(tmpDir, ingitdb.IngitdbDir, "test", "test.ingr"))
+	if err != nil {
+		t.Fatalf("read output: %v", err)
+	}
+	if strings.Contains(string(content), "#\n") {
+		t.Error("expected no '#' delimiter line when RuntimeOverrides.RecordsDelimiter=false overrides ViewDef")
 	}
 }
