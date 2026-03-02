@@ -112,7 +112,7 @@ The batch number is **only injected when more than one batch is required**. If a
 
 | Format  | Extension | Notes |
 | ------- | --------- | ----- |
-| `ingr`  | `.ingr`   | **Default.** Compact fixed-line record format — one field per line, no header, no delimiters. Optimised for Git diffs. See [INGR spec](../file-formats/ingr.md). |
+| `ingr`  | `.ingr`   | **Default.** Compact fixed-line record format — one field per line, no header, no delimiters. Optimised for Git diffs. See [INGR spec](https://raw.githubusercontent.com/ingr-io/ingr-file-format/refs/heads/main/README.md). |
 | `tsv`   | `.tsv`    | Tab-separated values. Row 1 = column headers. One record per line. |
 | `csv`   | `.csv`    | Comma-separated values (RFC 4180). Row 1 = column headers. Values containing commas or double-quotes are quoted. |
 | `json`  | `.json`   | JSON array of objects `[{…}, …]`. |

@@ -17,7 +17,7 @@ type ForeignKeyIndex interface {
 type RecordValidator interface {
 	ValidateRecord(
 		col *ingitdb.CollectionDef,
-		entry ingitdb.RecordEntry,
+		entry ingitdb.IRecordEntry,
 		result *ingitdb.ValidationResult,
 	) int
 }

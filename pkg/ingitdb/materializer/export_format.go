@@ -2,7 +2,6 @@ package materializer
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -48,7 +47,7 @@ func formatBatchFileName(base, ext string, batchNum, totalBatches int) string {
 // format must already be lowercased (or empty for ingr default).
 // viewName is used only by INGR to generate the metadata header line.
 // opts are applied only by the INGR formatter; all other formats ignore them.
-func formatExportBatch(format string, viewName string, headers []string, records []ingitdb.RecordEntry, opts ...ExportOption) ([]byte, error) {
+func formatExportBatch(format string, viewName string, headers []string, records []ingitdb.IRecordEntry, opts ...ExportOption) ([]byte, error) {
 	switch format {
 	case "tsv":
 		return formatTSV(headers, records)
@@ -67,7 +66,7 @@ func formatExportBatch(format string, viewName string, headers []string, records
 	}
 }
 
-func formatTSV(headers []string, records []ingitdb.RecordEntry) ([]byte, error) {
+func formatTSV(headers []string, records []ingitdb.IRecordEntry) ([]byte, error) {
 	var buf bytes.Buffer
 	buf.WriteString(strings.Join(headers, "\t"))
 	buf.WriteByte('\n')
@@ -77,8 +76,9 @@ func formatTSV(headers []string, records []ingitdb.RecordEntry) ([]byte, error) 
 				buf.WriteByte('\t')
 			}
 			val := ""
-			if rec.Data != nil {
-				if v, ok := rec.Data[h]; ok && v != nil {
+			d := rec.GetData()
+			if d != nil {
+				if v, ok := d[h]; ok && v != nil {
 					val = fmt.Sprint(v)
 				}
 			}
@@ -97,7 +97,7 @@ func escapeTSV(s string) string {
 	return s
 }
 
-func formatCSV(headers []string, records []ingitdb.RecordEntry) ([]byte, error) {
+func formatCSV(headers []string, records []ingitdb.IRecordEntry) ([]byte, error) {
 	var buf bytes.Buffer
 	w := csv.NewWriter(&buf)
 	if err := w.Write(headers); err != nil {
@@ -105,9 +105,10 @@ func formatCSV(headers []string, records []ingitdb.RecordEntry) ([]byte, error) 
 	}
 	for _, rec := range records {
 		row := make([]string, len(headers))
+		d := rec.GetData()
 		for i, h := range headers {
-			if rec.Data != nil {
-				if v, ok := rec.Data[h]; ok && v != nil {
+			if d != nil {
+				if v, ok := d[h]; ok && v != nil {
 					row[i] = fmt.Sprint(v)
 				}
 			}
@@ -123,12 +124,12 @@ func formatCSV(headers []string, records []ingitdb.RecordEntry) ([]byte, error) 
 	return buf.Bytes(), nil
 }
 
-func formatJSON(headers []string, records []ingitdb.RecordEntry) ([]byte, error) {
+func formatJSON(headers []string, records []ingitdb.IRecordEntry) ([]byte, error) {
 	rows := recordsToMaps(headers, records)
 	return json.Marshal(rows)
 }
 
-func formatJSONL(headers []string, records []ingitdb.RecordEntry) ([]byte, error) {
+func formatJSONL(headers []string, records []ingitdb.IRecordEntry) ([]byte, error) {
 	rows := recordsToMaps(headers, records)
 	var buf bytes.Buffer
 	for _, row := range rows {
@@ -142,18 +143,19 @@ func formatJSONL(headers []string, records []ingitdb.RecordEntry) ([]byte, error
 	return buf.Bytes(), nil
 }
 
-func formatYAML(headers []string, records []ingitdb.RecordEntry) ([]byte, error) {
+func formatYAML(headers []string, records []ingitdb.IRecordEntry) ([]byte, error) {
 	rows := recordsToMaps(headers, records)
 	return yaml.Marshal(rows)
 }
 
-func recordsToMaps(headers []string, records []ingitdb.RecordEntry) []map[string]any {
+func recordsToMaps(headers []string, records []ingitdb.IRecordEntry) []map[string]any {
 	rows := make([]map[string]any, 0, len(records))
 	for _, rec := range records {
 		row := make(map[string]any, len(headers))
+		d := rec.GetData()
 		for _, h := range headers {
-			if rec.Data != nil {
-				row[h] = rec.Data[h]
+			if d != nil {
+				row[h] = d[h]
 			} else {
 				row[h] = nil
 			}

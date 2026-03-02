@@ -156,9 +156,9 @@ func readAllRecords(
 	reader ingitdb.RecordsReader,
 	dbPath string,
 	col *ingitdb.CollectionDef,
-) ([]ingitdb.RecordEntry, error) {
-	var records []ingitdb.RecordEntry
-	err := reader.ReadRecords(ctx, dbPath, col, func(entry ingitdb.RecordEntry) error {
+) ([]ingitdb.IRecordEntry, error) {
+	var records []ingitdb.IRecordEntry
+	err := reader.ReadRecords(ctx, dbPath, col, func(entry ingitdb.IRecordEntry) error {
 		records = append(records, entry)
 		return nil
 	})
@@ -168,7 +168,7 @@ func readAllRecords(
 	return records, nil
 }
 
-func filterColumns(records []ingitdb.RecordEntry, cols []string) []ingitdb.RecordEntry {
+func filterColumns(records []ingitdb.IRecordEntry, cols []string) []ingitdb.IRecordEntry {
 	if len(cols) == 0 {
 		return records
 	}
@@ -176,25 +176,25 @@ func filterColumns(records []ingitdb.RecordEntry, cols []string) []ingitdb.Recor
 	for _, col := range cols {
 		allowed[col] = struct{}{}
 	}
-	filtered := make([]ingitdb.RecordEntry, 0, len(records))
+	filtered := make([]ingitdb.IRecordEntry, 0, len(records))
 	for _, record := range records {
-		if record.Data == nil {
+		d := record.GetData()
+		if d == nil {
 			filtered = append(filtered, record)
 			continue
 		}
 		data := make(map[string]any, len(cols))
 		for key := range allowed {
-			if value, ok := record.Data[key]; ok {
+			if value, ok := d[key]; ok {
 				data[key] = value
 			}
 		}
-		record.Data = data
-		filtered = append(filtered, record)
+		filtered = append(filtered, ingitdb.NewMapRecordEntry(record.GetID(), data))
 	}
 	return filtered
 }
 
-func buildDefaultView(dbPath string, repoRoot string, col *ingitdb.CollectionDef, def *ingitdb.Definition, view *ingitdb.ViewDef, records []ingitdb.RecordEntry, logf func(string, ...any)) (created, updated, unchanged int, errs []error) {
+func buildDefaultView(dbPath string, repoRoot string, col *ingitdb.CollectionDef, def *ingitdb.Definition, view *ingitdb.ViewDef, records []ingitdb.IRecordEntry, logf func(string, ...any)) (created, updated, unchanged int, errs []error) {
 	columns := determineColumns(col, view)
 	format := strings.ToLower(view.Format)
 	ext := defaultViewFormatExtension(format)
@@ -216,7 +216,7 @@ func buildDefaultView(dbPath string, repoRoot string, col *ingitdb.CollectionDef
 	}
 
 	for batchNum := 1; batchNum <= totalBatches; batchNum++ {
-		var batchRecords []ingitdb.RecordEntry
+		var batchRecords []ingitdb.IRecordEntry
 		if totalBatches == 1 {
 			batchRecords = records
 		} else {
@@ -327,7 +327,7 @@ func displayRelPath(repoRoot, outPath string) string {
 // sortRecordsByOrderBy sorts records in-place according to the orderBy expression.
 // Format: "<field> [asc|desc]" (case-insensitive; default is ascending).
 // No-op when orderBy is empty.
-func sortRecordsByOrderBy(records []ingitdb.RecordEntry, orderBy string) {
+func sortRecordsByOrderBy(records []ingitdb.IRecordEntry, orderBy string) {
 	orderBy = strings.TrimSpace(orderBy)
 	if orderBy == "" {
 		return
@@ -348,11 +348,12 @@ func sortRecordsByOrderBy(records []ingitdb.RecordEntry, orderBy string) {
 }
 
 // recordFieldValue returns the value of a field from a record's Data map, or nil if absent.
-func recordFieldValue(r ingitdb.RecordEntry, field string) any {
-	if r.Data == nil {
+func recordFieldValue(r ingitdb.IRecordEntry, field string) any {
+	d := r.GetData()
+	if d == nil {
 		return nil
 	}
-	return r.Data[field]
+	return d[field]
 }
 
 // compareAny compares two values of arbitrary type.

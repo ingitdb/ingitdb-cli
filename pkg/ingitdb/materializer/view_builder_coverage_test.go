@@ -85,7 +85,7 @@ func (e errorRecordsReader) ReadRecords(
 	ctx context.Context,
 	dbPath string,
 	col *ingitdb.CollectionDef,
-	yield func(ingitdb.RecordEntry) error,
+	yield func(ingitdb.IRecordEntry) error,
 ) error {
 	_ = ctx
 	_ = dbPath
@@ -121,7 +121,7 @@ func (w errorWriter) WriteView(
 	ctx context.Context,
 	col *ingitdb.CollectionDef,
 	view *ingitdb.ViewDef,
-	records []ingitdb.RecordEntry,
+	records []ingitdb.IRecordEntry,
 	outPath string,
 ) (WriteOutcome, error) {
 	_ = ctx
@@ -188,7 +188,7 @@ func (w *unchangedWriter) WriteView(
 	ctx context.Context,
 	col *ingitdb.CollectionDef,
 	view *ingitdb.ViewDef,
-	records []ingitdb.RecordEntry,
+	records []ingitdb.IRecordEntry,
 	outPath string,
 ) (WriteOutcome, error) {
 	_ = ctx

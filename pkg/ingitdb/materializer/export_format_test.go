@@ -77,19 +77,27 @@ func TestFormatBatchFileName(t *testing.T) {
 	}
 }
 
+func recordsToInterface(records []ingitdb.RecordEntry) []ingitdb.IRecordEntry {
+	result := make([]ingitdb.IRecordEntry, len(records))
+	for i, r := range records {
+		result[i] = r
+	}
+	return result
+}
+
 func TestFormatExportBatch_TSV(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name    string
 		headers []string
-		records []ingitdb.RecordEntry
+		records []ingitdb.IRecordEntry
 		want    string
 	}{
 		{
 			"single record",
 			[]string{"id", "name"},
-			[]ingitdb.RecordEntry{
+			[]ingitdb.IRecordEntry{
 				{ID: "1", Data: map[string]any{"id": "1", "name": "Alice"}},
 			},
 			"id\tname\n1\tAlice\n",
@@ -97,7 +105,7 @@ func TestFormatExportBatch_TSV(t *testing.T) {
 		{
 			"multiple records",
 			[]string{"id", "name", "age"},
-			[]ingitdb.RecordEntry{
+			[]ingitdb.IRecordEntry{
 				{ID: "1", Data: map[string]any{"id": "1", "name": "Alice", "age": 30}},
 				{ID: "2", Data: map[string]any{"id": "2", "name": "Bob", "age": 25}},
 			},
@@ -106,7 +114,7 @@ func TestFormatExportBatch_TSV(t *testing.T) {
 		{
 			"nil value",
 			[]string{"id", "name"},
-			[]ingitdb.RecordEntry{
+			[]ingitdb.IRecordEntry{
 				{ID: "1", Data: map[string]any{"id": "1", "name": nil}},
 			},
 			"id\tname\n1\t\n",
@@ -114,7 +122,7 @@ func TestFormatExportBatch_TSV(t *testing.T) {
 		{
 			"missing field",
 			[]string{"id", "name"},
-			[]ingitdb.RecordEntry{
+			[]ingitdb.IRecordEntry{
 				{ID: "1", Data: map[string]any{"id": "1"}},
 			},
 			"id\tname\n1\t\n",
@@ -122,7 +130,7 @@ func TestFormatExportBatch_TSV(t *testing.T) {
 		{
 			"escape tab",
 			[]string{"id", "text"},
-			[]ingitdb.RecordEntry{
+			[]ingitdb.IRecordEntry{
 				{ID: "1", Data: map[string]any{"id": "1", "text": "hello\tworld"}},
 			},
 			"id\ttext\n1\thello\\tworld\n",
@@ -130,7 +138,7 @@ func TestFormatExportBatch_TSV(t *testing.T) {
 		{
 			"escape newline",
 			[]string{"id", "text"},
-			[]ingitdb.RecordEntry{
+			[]ingitdb.IRecordEntry{
 				{ID: "1", Data: map[string]any{"id": "1", "text": "line1\nline2"}},
 			},
 			"id\ttext\n1\tline1\\nline2\n",
@@ -138,7 +146,7 @@ func TestFormatExportBatch_TSV(t *testing.T) {
 		{
 			"escape backslash",
 			[]string{"id", "text"},
-			[]ingitdb.RecordEntry{
+			[]ingitdb.IRecordEntry{
 				{ID: "1", Data: map[string]any{"id": "1", "text": "path\\to\\file"}},
 			},
 			"id\ttext\n1\tpath\\\\to\\\\file\n",
@@ -146,7 +154,7 @@ func TestFormatExportBatch_TSV(t *testing.T) {
 		{
 			"escape carriage return",
 			[]string{"id", "text"},
-			[]ingitdb.RecordEntry{
+			[]ingitdb.IRecordEntry{
 				{ID: "1", Data: map[string]any{"id": "1", "text": "hello\rworld"}},
 			},
 			"id\ttext\n1\thello\\rworld\n",
@@ -154,13 +162,13 @@ func TestFormatExportBatch_TSV(t *testing.T) {
 		{
 			"empty records",
 			[]string{"id", "name"},
-			[]ingitdb.RecordEntry{},
+			[]ingitdb.IRecordEntry{},
 			"id\tname\n",
 		},
 		{
 			"nil data",
 			[]string{"id", "name"},
-			[]ingitdb.RecordEntry{
+			[]ingitdb.IRecordEntry{
 				{ID: "1", Data: nil},
 			},
 			"id\tname\n\t\n",
@@ -170,7 +178,7 @@ func TestFormatExportBatch_TSV(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got, err := formatExportBatch("tsv", "", tt.headers, tt.records)
+			got, err := formatExportBatch("tsv", "", tt.headers, recordsToInterface(tt.records))
 			if err != nil {
 				t.Fatalf("formatExportBatch: %v", err)
 			}
@@ -187,13 +195,13 @@ func TestFormatExportBatch_CSV(t *testing.T) {
 	tests := []struct {
 		name    string
 		headers []string
-		records []ingitdb.RecordEntry
+		records []ingitdb.IRecordEntry
 		check   func(string) bool
 	}{
 		{
 			"single record",
 			[]string{"id", "name"},
-			[]ingitdb.RecordEntry{
+			[]ingitdb.IRecordEntry{
 				{ID: "1", Data: map[string]any{"id": "1", "name": "Alice"}},
 			},
 			func(s string) bool {
@@ -205,7 +213,7 @@ func TestFormatExportBatch_CSV(t *testing.T) {
 		{
 			"field with comma",
 			[]string{"id", "name"},
-			[]ingitdb.RecordEntry{
+			[]ingitdb.IRecordEntry{
 				{ID: "1", Data: map[string]any{"id": "1", "name": "Smith, John"}},
 			},
 			func(s string) bool {
@@ -217,7 +225,7 @@ func TestFormatExportBatch_CSV(t *testing.T) {
 		{
 			"field with quote",
 			[]string{"id", "name"},
-			[]ingitdb.RecordEntry{
+			[]ingitdb.IRecordEntry{
 				{ID: "1", Data: map[string]any{"id": "1", "name": `He said "hello"`}},
 			},
 			func(s string) bool {
@@ -229,7 +237,7 @@ func TestFormatExportBatch_CSV(t *testing.T) {
 		{
 			"field with newline",
 			[]string{"id", "description"},
-			[]ingitdb.RecordEntry{
+			[]ingitdb.IRecordEntry{
 				{ID: "1", Data: map[string]any{"id": "1", "description": "Line 1\nLine 2"}},
 			},
 			func(s string) bool {
@@ -241,7 +249,7 @@ func TestFormatExportBatch_CSV(t *testing.T) {
 		{
 			"empty records",
 			[]string{"id", "name"},
-			[]ingitdb.RecordEntry{},
+			[]ingitdb.IRecordEntry{},
 			func(s string) bool {
 				r := csv.NewReader(strings.NewReader(s))
 				records, err := r.ReadAll()
@@ -253,7 +261,7 @@ func TestFormatExportBatch_CSV(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got, err := formatExportBatch("csv", "", tt.headers, tt.records)
+			got, err := formatExportBatch("csv", "", tt.headers, recordsToInterface(tt.records))
 			if err != nil {
 				t.Fatalf("formatExportBatch: %v", err)
 			}
@@ -268,7 +276,7 @@ func TestFormatExportBatch_JSON(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "name", "age"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "1", Data: map[string]any{"id": "1", "name": "Alice", "age": 30}},
 		{ID: "2", Data: map[string]any{"id": "2", "name": "Bob", "age": 25}},
 	}
@@ -298,7 +306,7 @@ func TestFormatExportBatch_JSONL(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "name"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "1", Data: map[string]any{"id": "1", "name": "Alice"}},
 		{ID: "2", Data: map[string]any{"id": "2", "name": "Bob"}},
 	}
@@ -330,7 +338,7 @@ func TestFormatExportBatch_YAML(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "name"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "1", Data: map[string]any{"id": "1", "name": "Alice"}},
 	}
 
@@ -356,7 +364,7 @@ func TestFormatExportBatch_EmptyRecords(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "name"}
-	records := []ingitdb.RecordEntry{}
+	records := []ingitdb.IRecordEntry{}
 
 	tests := []struct {
 		format string
@@ -402,7 +410,7 @@ func TestFormatExportBatch_INGR(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "name", "age"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "1", Data: map[string]any{"id": "1", "name": "Alice", "age": 30}},
 		{ID: "2", Data: map[string]any{"id": "2", "name": "Bob", "age": 25}},
 	}
@@ -425,7 +433,7 @@ func TestFormatExportBatch_INGR(t *testing.T) {
 func TestFormatINGR_EmptyRecords(t *testing.T) {
 	t.Parallel()
 
-	got, err := formatExportBatch("ingr", "test/view", []string{"id", "name"}, []ingitdb.RecordEntry{})
+	got, err := formatExportBatch("ingr", "test/view", []string{"id", "name"}, []ingitdb.IRecordEntry{})
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
@@ -440,7 +448,7 @@ func TestFormatINGR_NilAndMissingFields(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "name", "age"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "1", Data: map[string]any{"id": "1", "name": nil}}, // missing age, nil name
 	}
 
@@ -460,7 +468,7 @@ func TestFormatINGR_DefaultFormatIsINGR(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "1", Data: map[string]any{"id": "hello"}},
 	}
 
@@ -479,7 +487,7 @@ func TestFormatINGR_HashCoversHeaderAndRecordsAndCountLine(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "name"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "a", Data: map[string]any{"id": "a", "name": "Alice"}},
 	}
 
@@ -516,7 +524,7 @@ func TestFormatINGR_HashOmittedWhenDisabled(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "name"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "a", Data: map[string]any{"id": "a", "name": "Alice"}},
 	}
 
@@ -547,17 +555,17 @@ func TestFormatINGR_HeaderPrefix(t *testing.T) {
 	tests := []struct {
 		name    string
 		headers []string
-		records []ingitdb.RecordEntry
+		records []ingitdb.IRecordEntry
 	}{
 		{
 			name:    "with records",
 			headers: []string{"id", "city"},
-			records: []ingitdb.RecordEntry{{ID: "1", Data: map[string]any{"id": "1", "city": "Oslo"}}},
+			records: []ingitdb.IRecordEntry{{ID: "1", Data: map[string]any{"id": "1", "city": "Oslo"}}},
 		},
 		{
 			name:    "empty records",
 			headers: []string{"id"},
-			records: []ingitdb.RecordEntry{},
+			records: []ingitdb.IRecordEntry{},
 		},
 	}
 	for _, tc := range tests {
@@ -580,7 +588,7 @@ func TestFormatINGR_IDAlwaysFirst(t *testing.T) {
 
 	// formatINGR receives already-ordered headers; verify id appears as $ID first in the header line.
 	headers := []string{"id", "name", "age"}
-	records := []ingitdb.RecordEntry{}
+	records := []ingitdb.IRecordEntry{}
 	got, err := formatExportBatch("ingr", "t/v", headers, records)
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
@@ -693,7 +701,7 @@ func TestRecordsToMaps(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "name", "age"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "1", Data: map[string]any{"id": "1", "name": "Alice", "age": 30}},
 		{ID: "2", Data: map[string]any{"id": "2", "name": "Bob"}},
 		{ID: "3", Data: nil},
@@ -724,7 +732,7 @@ func TestFormatExportBatch_EmptyColumnsSlice(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "1", Data: map[string]any{"id": "1", "name": "Alice"}},
 	}
 
@@ -742,7 +750,7 @@ func TestFormatExportBatch_RecordsWithNilData(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "name"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "1", Data: nil},
 		{ID: "2", Data: map[string]any{"id": "2", "name": "Bob"}},
 	}
@@ -784,7 +792,7 @@ func TestFormatExportBatch_UnicodeCharacters(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "text"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "1", Data: map[string]any{"id": "1", "text": "Hello 你好 مرحبا 🎉"}},
 		{ID: "2", Data: map[string]any{"id": "2", "text": "Café résumé naïve"}},
 	}
@@ -828,7 +836,7 @@ func TestFormatExportBatch_VeryLongLines(t *testing.T) {
 
 	longString := strings.Repeat("x", 10000)
 	headers := []string{"id", "longtext"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "1", Data: map[string]any{"id": "1", "longtext": longString}},
 	}
 
@@ -905,7 +913,7 @@ func TestFormatTSV_TabSeparationAndNoTrailingNewline(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "name", "value"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "1", Data: map[string]any{"id": "1", "name": "Alice", "value": 100}},
 		{ID: "2", Data: map[string]any{"id": "2", "name": "Bob", "value": 200}},
 	}
@@ -943,7 +951,7 @@ func TestFormatCSV_CRLF_LineEndings(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "description"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "1", Data: map[string]any{"id": "1", "description": "Line 1\r\nLine 2"}},
 	}
 
@@ -972,7 +980,7 @@ func TestFormatCSV_EmptyStringVsNil(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "value"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "1", Data: map[string]any{"id": "1", "value": ""}},
 		{ID: "2", Data: map[string]any{"id": "2", "value": nil}},
 		{ID: "3", Data: map[string]any{"id": "3"}}, // Missing field
@@ -1011,7 +1019,7 @@ func TestFormatCSV_SingleAndDoubleQuoteCombinations(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "text"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "1", Data: map[string]any{"id": "1", "text": `He said "hello"`}},
 		{ID: "2", Data: map[string]any{"id": "2", "text": `It's a test`}},
 		{ID: "3", Data: map[string]any{"id": "3", "text": `"Quoted" and 'apostrophe'`}},
@@ -1047,7 +1055,7 @@ func TestFormatCSV_NumbersAndBooleans(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "count", "enabled"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "1", Data: map[string]any{"id": "1", "count": 42, "enabled": true}},
 		{ID: "2", Data: map[string]any{"id": "2", "count": 0, "enabled": false}},
 		{ID: "3", Data: map[string]any{"id": "3", "count": 3.14159, "enabled": nil}},
@@ -1090,7 +1098,7 @@ func TestFormatJSONL_EachLineIsValidJSON(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "name"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "1", Data: map[string]any{"id": "1", "name": "Alice"}},
 		{ID: "2", Data: map[string]any{"id": "2", "name": "Bob"}},
 		{ID: "3", Data: map[string]any{"id": "3", "name": "Charlie"}},
@@ -1121,7 +1129,7 @@ func TestFormatJSONL_WithSpecialCharactersAndUnicode(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "text"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "1", Data: map[string]any{"id": "1", "text": "Hello\nWorld\t\u0000"}},
 		{ID: "2", Data: map[string]any{"id": "2", "text": "日本語テスト"}},
 	}
@@ -1273,7 +1281,7 @@ func TestFormatINGR_WithRecordsDelimiter(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "name", "age"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "john", Data: map[string]any{"id": "john", "name": "John Doe", "age": 35}},
 		{ID: "jane", Data: map[string]any{"id": "jane", "name": "Jane Smith", "age": 29}},
 	}
@@ -1311,7 +1319,7 @@ func TestFormatINGR_WithoutRecordsDelimiter(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id", "name"}
-	records := []ingitdb.RecordEntry{
+	records := []ingitdb.IRecordEntry{
 		{ID: "a", Data: map[string]any{"id": "a", "name": "Alice"}},
 		{ID: "b", Data: map[string]any{"id": "b", "name": "Bob"}},
 	}

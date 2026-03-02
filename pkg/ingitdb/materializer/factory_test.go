@@ -13,7 +13,7 @@ func (noopRecordsReader) ReadRecords(
 	ctx context.Context,
 	dbPath string,
 	col *ingitdb.CollectionDef,
-	yield func(ingitdb.RecordEntry) error,
+	yield func(ingitdb.IRecordEntry) error,
 ) error {
 	return nil
 }

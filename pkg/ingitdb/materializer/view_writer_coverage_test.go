@@ -69,7 +69,7 @@ func TestFileViewWriter_WriteView_TemplateExecuteError(t *testing.T) {
 	}
 
 	writer := NewFileViewWriter()
-	records := []ingitdb.RecordEntry{{Data: map[string]any{"title": "Test"}}}
+	records := []ingitdb.IRecordEntry{ingitdb.NewMapRecordEntry("", map[string]any{"title": "Test"})}
 	_, err := writer.WriteView(context.Background(), col, view, records, filepath.Join(dir, "output.md"))
 	if err == nil {
 		t.Fatal("expected error for template execution failure")
@@ -189,8 +189,8 @@ func TestViewTemplateData_DefaultRecordsVarName(t *testing.T) {
 	t.Parallel()
 
 	view := &ingitdb.ViewDef{RecordsVarName: ""}
-	records := []ingitdb.RecordEntry{
-		{Data: map[string]any{"title": "A"}},
+	records := []ingitdb.IRecordEntry{
+		ingitdb.NewMapRecordEntry("", map[string]any{"title": "A"}),
 	}
 
 	data := viewTemplateData(view, records)
@@ -203,8 +203,8 @@ func TestViewTemplateData_CustomRecordsVarName(t *testing.T) {
 	t.Parallel()
 
 	view := &ingitdb.ViewDef{RecordsVarName: "items"}
-	records := []ingitdb.RecordEntry{
-		{Data: map[string]any{"title": "A"}},
+	records := []ingitdb.IRecordEntry{
+		ingitdb.NewMapRecordEntry("", map[string]any{"title": "A"}),
 	}
 
 	data := viewTemplateData(view, records)
@@ -220,9 +220,9 @@ func TestViewTemplateData_NilRecordData(t *testing.T) {
 	t.Parallel()
 
 	view := &ingitdb.ViewDef{RecordsVarName: "items"}
-	records := []ingitdb.RecordEntry{
-		{Data: nil},
-		{Data: map[string]any{"title": "A"}},
+	records := []ingitdb.IRecordEntry{
+		ingitdb.NewMapRecordEntry("", nil),
+		ingitdb.NewMapRecordEntry("", map[string]any{"title": "A"}),
 	}
 
 	data := viewTemplateData(view, records)

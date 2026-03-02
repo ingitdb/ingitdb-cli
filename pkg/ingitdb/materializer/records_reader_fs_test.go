@@ -121,7 +121,7 @@ func TestFileRecordsReader_ReadRecords_NoRecordFile(t *testing.T) {
 		RecordFile: nil,
 	}
 
-	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.RecordEntry) error {
+	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.IRecordEntry) error {
 		return nil
 	})
 
@@ -142,7 +142,7 @@ func TestFileRecordsReader_ReadRecords_UnsupportedRecordType(t *testing.T) {
 		},
 	}
 
-	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.RecordEntry) error {
+	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.IRecordEntry) error {
 		return nil
 	})
 
@@ -170,7 +170,7 @@ func TestFileRecordsReader_ReadRecords_MapOfIDRecords_FileNotFound(t *testing.T)
 	}
 
 	var called bool
-	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.RecordEntry) error {
+	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.IRecordEntry) error {
 		called = true
 		return nil
 	})
@@ -197,7 +197,7 @@ func TestFileRecordsReader_ReadRecords_SingleRecord_NoPlaceholder(t *testing.T) 
 		},
 	}
 
-	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.RecordEntry) error {
+	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.IRecordEntry) error {
 		return nil
 	})
 

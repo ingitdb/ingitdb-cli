@@ -27,9 +27,9 @@ func TestFileViewWriter_RenderAndWrite(t *testing.T) {
 	}
 
 	writer := NewFileViewWriter()
-	records := []ingitdb.RecordEntry{
-		{Data: map[string]any{"title": "Home"}},
-		{Data: map[string]any{"title": "Work"}},
+	records := []ingitdb.IRecordEntry{
+		ingitdb.NewMapRecordEntry("", map[string]any{"title": "Home"}),
+		ingitdb.NewMapRecordEntry("", map[string]any{"title": "Work"}),
 	}
 	outPath := filepath.Join(dir, "README.md")
 	written, err := writer.WriteView(context.Background(), col, view, records, outPath)
@@ -66,7 +66,7 @@ func TestFileViewWriter_Unchanged(t *testing.T) {
 	}
 
 	writer := NewFileViewWriter()
-	records := []ingitdb.RecordEntry{{Data: map[string]any{"title": "Home"}}}
+	records := []ingitdb.IRecordEntry{ingitdb.NewMapRecordEntry("", map[string]any{"title": "Home"})}
 	outPath := filepath.Join(dir, "README.md")
 	if _, err := writer.WriteView(context.Background(), col, view, records, outPath); err != nil {
 		t.Fatalf("WriteView: %v", err)
@@ -107,7 +107,7 @@ func TestFileViewWriter_StripsMarkdownComments(t *testing.T) {
 	}
 
 	writer := NewFileViewWriter()
-	records := []ingitdb.RecordEntry{{Data: map[string]any{"title": "Home"}}}
+	records := []ingitdb.IRecordEntry{ingitdb.NewMapRecordEntry("", map[string]any{"title": "Home"})}
 	outPath := filepath.Join(dir, "README.md")
 	if _, err := writer.WriteView(context.Background(), col, view, records, outPath); err != nil {
 		t.Fatalf("WriteView: %v", err)
@@ -138,7 +138,7 @@ func TestFileViewWriter_StripsMarkdownComments_EmptyLineCollapse(t *testing.T) {
 	}
 
 	writer := NewFileViewWriter()
-	records := []ingitdb.RecordEntry{{Data: map[string]any{"title": "Home"}}}
+	records := []ingitdb.IRecordEntry{ingitdb.NewMapRecordEntry("", map[string]any{"title": "Home"})}
 	outPath := filepath.Join(dir, "README.md")
 	if _, err := writer.WriteView(context.Background(), col, view, records, outPath); err != nil {
 		t.Fatalf("WriteView: %v", err)

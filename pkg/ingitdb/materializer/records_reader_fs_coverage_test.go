@@ -29,7 +29,7 @@ func TestFileRecordsReader_ReadRecords_MapOfIDRecords_StatError(t *testing.T) {
 		},
 	}
 
-	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.RecordEntry) error {
+	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.IRecordEntry) error {
 		return nil
 	})
 
@@ -63,7 +63,7 @@ func TestFileRecordsReader_ReadRecords_MapOfIDRecords_ReadError(t *testing.T) {
 		},
 	}
 
-	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.RecordEntry) error {
+	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.IRecordEntry) error {
 		return nil
 	})
 
@@ -96,7 +96,7 @@ func TestFileRecordsReader_ReadRecords_MapOfIDRecords_ParseError(t *testing.T) {
 		},
 	}
 
-	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.RecordEntry) error {
+	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.IRecordEntry) error {
 		return nil
 	})
 
@@ -127,7 +127,7 @@ func TestFileRecordsReader_ReadRecords_MapOfIDRecords_YieldError(t *testing.T) {
 		},
 	}
 
-	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.RecordEntry) error {
+	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.IRecordEntry) error {
 		return yieldErr
 	})
 
@@ -158,7 +158,7 @@ func TestFileRecordsReader_ReadRecords_SingleRecord_GlobError(t *testing.T) {
 		},
 	}
 
-	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.RecordEntry) error {
+	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.IRecordEntry) error {
 		return nil
 	})
 
@@ -192,7 +192,7 @@ func TestFileRecordsReader_ReadRecords_SingleRecord_ReadError(t *testing.T) {
 		},
 	}
 
-	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.RecordEntry) error {
+	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.IRecordEntry) error {
 		return nil
 	})
 
@@ -225,7 +225,7 @@ func TestFileRecordsReader_ReadRecords_SingleRecord_ParseError(t *testing.T) {
 		},
 	}
 
-	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.RecordEntry) error {
+	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.IRecordEntry) error {
 		return nil
 	})
 
@@ -256,7 +256,7 @@ func TestFileRecordsReader_ReadRecords_SingleRecord_YieldError(t *testing.T) {
 		},
 	}
 
-	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.RecordEntry) error {
+	err := reader.ReadRecords(context.Background(), "/tmp", col, func(ingitdb.IRecordEntry) error {
 		return yieldErr
 	})
 
@@ -295,8 +295,8 @@ func TestFileRecordsReader_ReadRecords_SingleRecord_Success(t *testing.T) {
 		},
 	}
 
-	var entries []ingitdb.RecordEntry
-	err := reader.ReadRecords(context.Background(), "/tmp", col, func(entry ingitdb.RecordEntry) error {
+	var entries []ingitdb.IRecordEntry
+	err := reader.ReadRecords(context.Background(), "/tmp", col, func(entry ingitdb.IRecordEntry) error {
 		entries = append(entries, entry)
 		return nil
 	})
@@ -307,10 +307,10 @@ func TestFileRecordsReader_ReadRecords_SingleRecord_Success(t *testing.T) {
 	if len(entries) != 2 {
 		t.Fatalf("expected 2 entries, got %d", len(entries))
 	}
-	if entries[0].ID != "tag1" {
-		t.Errorf("expected key tag1, got %q", entries[0].ID)
+	if entries[0].GetID() != "tag1" {
+		t.Errorf("expected key tag1, got %q", entries[0].GetID())
 	}
-	if entries[1].ID != "tag2" {
-		t.Errorf("expected key tag2, got %q", entries[1].ID)
+	if entries[1].GetID() != "tag2" {
+		t.Errorf("expected key tag2, got %q", entries[1].GetID())
 	}
 }

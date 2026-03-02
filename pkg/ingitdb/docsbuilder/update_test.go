@@ -247,7 +247,7 @@ type MockRecordsReader struct {
 	YieldError error
 }
 
-func (m MockRecordsReader) ReadRecords(ctx context.Context, dirPath string, col *ingitdb.CollectionDef, yield func(ingitdb.RecordEntry) error) error {
+func (m MockRecordsReader) ReadRecords(ctx context.Context, dirPath string, col *ingitdb.CollectionDef, yield func(ingitdb.IRecordEntry) error) error {
 	if m.YieldError != nil {
 		return m.YieldError
 	}

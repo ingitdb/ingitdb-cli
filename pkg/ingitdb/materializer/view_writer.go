@@ -24,7 +24,7 @@ func (w FuncViewWriter) WriteView(
 	ctx context.Context,
 	col *ingitdb.CollectionDef,
 	view *ingitdb.ViewDef,
-	records []ingitdb.RecordEntry,
+	records []ingitdb.IRecordEntry,
 	outPath string,
 ) (WriteOutcome, error) {
 	_ = ctx
@@ -70,7 +70,7 @@ func (w FileViewWriter) WriteView(
 	ctx context.Context,
 	col *ingitdb.CollectionDef,
 	view *ingitdb.ViewDef,
-	records []ingitdb.RecordEntry,
+	records []ingitdb.IRecordEntry,
 	outPath string,
 ) (WriteOutcome, error) {
 	_ = ctx
@@ -109,14 +109,14 @@ func (w FileViewWriter) WriteView(
 	return WriteOutcomeCreated, nil
 }
 
-func viewTemplateData(view *ingitdb.ViewDef, records []ingitdb.RecordEntry) map[string]any {
+func viewTemplateData(view *ingitdb.ViewDef, records []ingitdb.IRecordEntry) map[string]any {
 	varName := view.RecordsVarName
 	if varName == "" {
 		varName = "records"
 	}
 	items := make([]map[string]any, 0, len(records))
 	for _, record := range records {
-		items = append(items, record.Data)
+		items = append(items, record.GetData())
 	}
 	return map[string]any{
 		varName: items,

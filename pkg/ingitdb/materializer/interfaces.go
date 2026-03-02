@@ -40,7 +40,7 @@ type ViewWriter interface {
 		ctx context.Context,
 		col *ingitdb.CollectionDef,
 		view *ingitdb.ViewDef,
-		records []ingitdb.RecordEntry,
+		records []ingitdb.IRecordEntry,
 		outPath string,
 	) (WriteOutcome, error)
 }

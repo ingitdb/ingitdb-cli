@@ -9,6 +9,6 @@ type RecordsReader interface {
 		ctx context.Context,
 		dbPath string,
 		col *CollectionDef,
-		yield func(RecordEntry) error,
+		yield func(IRecordEntry) error,
 	) error
 }

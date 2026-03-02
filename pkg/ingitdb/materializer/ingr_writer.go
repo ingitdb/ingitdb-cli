@@ -17,7 +17,7 @@ import (
 // The footer always starts with "# {N} records\n" (the record count line, with newline).
 // If opts.IncludeHash is true, a second footer line "# sha256:{hex}" is appended (no trailing newline);
 // otherwise the count line itself is the last line, also without a trailing newline.
-func formatINGR(viewName string, opts ExportOptions, headers []string, records []ingitdb.RecordEntry) ([]byte, error) {
+func formatINGR(viewName string, opts ExportOptions, headers []string, records []ingitdb.IRecordEntry) ([]byte, error) {
 	var buf bytes.Buffer
 	// Write metadata header line
 	buf.WriteString("# INGR.io | ")
@@ -35,10 +35,11 @@ func formatINGR(viewName string, opts ExportOptions, headers []string, records [
 	}
 	buf.WriteByte('\n')
 	for _, rec := range records {
+		d := rec.GetData()
 		for _, h := range headers {
 			var val any
-			if rec.Data != nil {
-				val = rec.Data[h]
+			if d != nil {
+				val = d[h]
 			}
 			b, err := json.Marshal(val)
 			if err != nil {

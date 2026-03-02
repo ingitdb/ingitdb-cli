@@ -30,7 +30,7 @@ func (r FileRecordsReader) ReadRecords(
 	ctx context.Context,
 	dbPath string,
 	col *ingitdb.CollectionDef,
-	yield func(ingitdb.RecordEntry) error,
+	yield func(ingitdb.IRecordEntry) error,
 ) error {
 	_ = ctx
 	_ = dbPath
@@ -58,10 +58,7 @@ func (r FileRecordsReader) ReadRecords(
 		for key, data := range records {
 			d := dalgo2ingitdb.ApplyLocaleToRead(data, col.Columns)
 			d["id"] = key
-			entry := ingitdb.RecordEntry{
-				ID:   key,
-				Data: d,
-			}
+			entry := ingitdb.NewMapRecordEntry(key, d)
 			if err := yield(entry); err != nil {
 				return err
 			}
@@ -91,10 +88,7 @@ func (r FileRecordsReader) ReadRecords(
 			}
 			d := dalgo2ingitdb.ApplyLocaleToRead(data, col.Columns)
 			d["id"] = key
-			entry := ingitdb.RecordEntry{
-				ID:   key,
-				Data: d,
-			}
+			entry := ingitdb.NewMapRecordEntry(key, d)
 			if err := yield(entry); err != nil {
 				return err
 			}
