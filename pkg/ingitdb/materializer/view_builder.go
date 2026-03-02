@@ -61,6 +61,12 @@ func (b SimpleViewBuilder) BuildViews(
 			result.FilesUpdated += updated
 			result.FilesUnchanged += unchanged
 			result.Errors = append(result.Errors, errs...)
+			// Generate FK-filtered views for every FK column.
+			fkCreated, fkUpdated, fkUnchanged, fkErrs := buildFKViews(dbPath, repoRoot, col, def, view, records, b.Logf)
+			result.FilesCreated += fkCreated
+			result.FilesUpdated += fkUpdated
+			result.FilesUnchanged += fkUnchanged
+			result.Errors = append(result.Errors, fkErrs...)
 			continue
 		}
 
@@ -121,6 +127,12 @@ func (b SimpleViewBuilder) BuildView(
 		result.FilesUpdated += updated
 		result.FilesUnchanged += unchanged
 		result.Errors = append(result.Errors, errs...)
+		// Generate FK-filtered views for every FK column.
+		fkCreated, fkUpdated, fkUnchanged, fkErrs := buildFKViews(dbPath, repoRoot, col, def, view, records, b.Logf)
+		result.FilesCreated += fkCreated
+		result.FilesUpdated += fkUpdated
+		result.FilesUnchanged += fkUnchanged
+		result.Errors = append(result.Errors, fkErrs...)
 		return result, nil
 	}
 
@@ -284,6 +296,118 @@ func buildDefaultView(dbPath string, repoRoot string, col *ingitdb.CollectionDef
 		if logf != nil {
 			logf("Materializing view %s/%s... %d records saved to %s",
 				col.ID, view.ID, len(batchRecords), displayRelPath(repoRoot, outPath))
+		}
+	}
+	return
+}
+
+// buildFKViews generates one filtered output file per unique FK value for every FK column
+// in the collection. It is called immediately after buildDefaultView when the view is the
+// default view and the collection has at least one FK column.
+func buildFKViews(
+	dbPath string, repoRoot string,
+	col *ingitdb.CollectionDef, def *ingitdb.Definition,
+	view *ingitdb.ViewDef, records []ingitdb.IRecordEntry,
+	logf func(string, ...any),
+) (created, updated, unchanged int, errs []error) {
+	columns := col.Columns
+	if len(columns) == 0 {
+		return
+	}
+
+	exportColumns := determineColumns(col, view)
+	format := strings.ToLower(view.Format)
+	ext := defaultViewFormatExtension(format)
+
+	outputRoot := repoRoot
+	if outputRoot == "" {
+		outputRoot = dbPath
+	}
+	relColPath, _ := filepath.Rel(outputRoot, col.DirPath)
+
+	// Build export options once — same cascade logic as buildDefaultView.
+	var exportOpts []ExportOption
+	exportOpts = append(exportOpts, WithColumnTypes(col))
+	if view.IncludeHash {
+		exportOpts = append(exportOpts, WithHash())
+	}
+	resolved := 1
+	if def.Settings.RecordsDelimiter != 0 {
+		resolved = def.Settings.RecordsDelimiter
+	}
+	if view.RecordsDelimiter != 0 {
+		resolved = view.RecordsDelimiter
+	}
+	if def.RuntimeOverrides.RecordsDelimiter != nil {
+		resolved = *def.RuntimeOverrides.RecordsDelimiter
+	}
+	if resolved > 0 {
+		exportOpts = append(exportOpts, WithRecordsDelimiter())
+	}
+
+	for colName, colDef := range columns {
+		if colDef.ForeignKey == "" {
+			continue
+		}
+		fkCollection := colDef.ForeignKey
+
+		// Group records by FK value; skip nil/empty.
+		groups := make(map[string][]ingitdb.IRecordEntry)
+		for _, rec := range records {
+			d := rec.GetData()
+			if d == nil {
+				continue
+			}
+			raw := d[colName]
+			if raw == nil {
+				continue
+			}
+			fkVal := fmt.Sprintf("%v", raw)
+			if fkVal == "" {
+				continue
+			}
+			groups[fkVal] = append(groups[fkVal], rec)
+		}
+
+		fkDir := "$fk_" + colName
+		for fkValue, fkRecords := range groups {
+			viewName := col.ID + "/$fk_" + colName + "/" + fkCollection + "/" + fkValue
+			content, err := formatExportBatch(format, viewName, exportColumns, fkRecords, exportOpts...)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("buildFKViews %s/%s: format: %w", colName, fkValue, err))
+				continue
+			}
+
+			outPath := filepath.Join(outputRoot, ingitdb.IngitdbDir, relColPath, fkDir, fkCollection, fkValue+"."+ext)
+
+			if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
+				errs = append(errs, fmt.Errorf("buildFKViews %s/%s: mkdir: %w", colName, fkValue, err))
+				continue
+			}
+
+			existing, readErr := os.ReadFile(outPath)
+			if readErr == nil && bytes.Equal(existing, content) {
+				unchanged++
+				if logf != nil {
+					logf("Materializing FK view %s... %d records saved to %s",
+						viewName, len(fkRecords), displayRelPath(repoRoot, outPath))
+				}
+				continue
+			}
+
+			if err := os.WriteFile(outPath, content, 0o644); err != nil {
+				errs = append(errs, fmt.Errorf("buildFKViews %s/%s: write: %w", colName, fkValue, err))
+				continue
+			}
+			if readErr == nil {
+				updated++
+			} else {
+				created++
+			}
+			if logf != nil {
+				logf("Materializing FK view %s... %d records saved to %s",
+					viewName, len(fkRecords), displayRelPath(repoRoot, outPath))
+			}
 		}
 	}
 	return
