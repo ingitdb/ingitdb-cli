@@ -3,6 +3,7 @@ module github.com/ingitdb/ingitdb-cli
 go 1.26.0
 
 require (
+	github.com/google/go-github/v72 v72.0.0
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/mock v0.6.0
@@ -24,7 +25,7 @@ require (
 require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
-	github.com/google/go-github/v72 v72.0.0
+	github.com/google/go-github/v84 v84.0.0
 	github.com/invopop/jsonschema v0.13.0 // indirect
 	github.com/mailru/easyjson v0.9.1 // indirect
 	github.com/metoro-io/mcp-golang v0.16.0
