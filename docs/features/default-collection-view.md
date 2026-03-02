@@ -113,7 +113,7 @@ The batch number is **only injected when more than one batch is required**. If a
 
 | Format  | Extension | Notes |
 | ------- | --------- | ----- |
-| `ingr`  | `.ingr`   | **Default.** Compact fixed-line record format — one field per line, no header, no delimiters. Optimised for Git diffs. See [INGR spec](https://raw.githubusercontent.com/ingr-io/ingr-file-format/refs/heads/main/README.md). |
+| `ingr`  | `.ingr`   | **Default.** Compact fixed-line record format — one field per line, no header, no delimiters. Optimised for Git diffs. The metadata header line lists each column with its type (e.g. `$ID:string`, `population:number`). See [INGR spec](https://raw.githubusercontent.com/ingr-io/ingr-file-format/refs/heads/main/README.md) and [INGR header format](#ingr-header-format) below. |
 | `tsv`   | `.tsv`    | Tab-separated values. Row 1 = column headers. One record per line. |
 | `csv`   | `.csv`    | Comma-separated values (RFC 4180). Row 1 = column headers. Values containing commas or double-quotes are quoted. |
 | `json`  | `.json`   | JSON array of objects `[{…}, …]`. |
@@ -123,6 +123,32 @@ The batch number is **only injected when more than one batch is required**. If a
 **INGR is the default format** because it produces the smallest, most readable Git diffs: each field
 occupies exactly one line, so a change to a single field appears as a single-line diff regardless of
 record size. TSV remains available when a header row or spreadsheet compatibility is needed.
+
+### INGR header format
+
+Every INGR view file begins with a single metadata comment that identifies the collection, the view,
+and the **name and type** of every column:
+
+```
+# INGR.io | {collection}/{view_id}: {col1}:{type1}, {col2}:{type2}, …
+```
+
+The `id` column is always first and is displayed as `$ID:string`. All other column types come from
+the collection's `definition.yaml` schema:
+
+| YAML schema type | Header token |
+| ---------------- | ------------ |
+| `string` (or unset) | `string` |
+| `int` / `number` / `float` | `int` / `number` / `float` |
+| `bool` | `bool` |
+| `date` / `datetime` | `date` / `datetime` |
+| `map[locale]string` | `map[locale]string` |
+
+**Example** — a `countries` collection:
+
+```
+# INGR.io | countries/$default_view: $ID:string, area_km2:number, currency:string, flag:string, population:number, titles:map[locale]string
+```
 
 ### TSV escaping
 
