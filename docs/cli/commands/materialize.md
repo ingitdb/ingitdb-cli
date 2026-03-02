@@ -20,13 +20,14 @@ Renders the `README.md` file for a collection. If the generated content differs 
 #### 🔸 materialize views`
 
 ```
-ingitdb materialize views [--path=PATH] [--views=VIEW1,VIEW2,...]
+ingitdb materialize views [--path=PATH] [--views=VIEW1,VIEW2,...] [--records-delimiter=N]
 ```
 
-| Flag           | Description                                                                                       |
-| -------------- | ------------------------------------------------------------------------------------------------- |
-| `--path=PATH`  | Path to the database directory. Defaults to the current working directory.                        |
-| `--views=LIST` | Comma-separated list of view names to materialize. Without this flag, all views are materialized. |
+| Flag                      | Description                                                                                                                                                   |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--path=PATH`             | Path to the database directory. Defaults to the current working directory.                                                                                    |
+| `--views=LIST`            | Comma-separated list of view names to materialize. Without this flag, all views are materialized.                                                             |
+| `--records-delimiter=N`   | Override the `#-` delimiter behaviour for INGR output. `1` = enabled, `-1` = disabled, `0` or omitted = use view/project default (app default is `1`). |
 
 Output is written into the `$views/` directory defined in the collection's view definition.
 

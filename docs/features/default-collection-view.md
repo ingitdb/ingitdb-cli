@@ -70,6 +70,7 @@ default_view:
   order_by: id asc          # sort order (default: record id ascending)
   format: ingr              # ingr (default), tsv, csv, json, jsonl, yaml
   max_batch_size: 0         # 0 = single file; N > 0 = max N records per file
+  records_delimiter: 0      # 0 = app default (1=enabled); 1 = enabled; -1 = disabled
   file_name: "${collection_id}"   # base file name without extension (default: collection ID)
   columns:                  # optional: omit to include all columns
     - id

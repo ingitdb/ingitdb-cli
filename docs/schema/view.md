@@ -22,7 +22,7 @@ Views support string substitution in names using `{field}` placeholders (e.g., `
 | `records_var_name` | `string`            | Template variable name acting as the handler for the target slice sequence.                       |
 | `format`           | `string`            | Export file format. Supported values: `ingr` (default), `tsv`, `csv`, `json`, `jsonl`, `yaml`. Default: `ingr`. |
 | `max_batch_size`   | `int`               | Max records per output file. `0` = all records in single file (default).                          |
-| `records_delimiter`| `int`               | Controls `#-` delimiter lines in INGR output. `0` = use default (app default is `1` = enabled). `1` = enabled. `-1` = disabled. |
+| `records_delimiter`| `int`               | Controls `#-` delimiter lines in INGR output. `0` = use project or app default (app default is `1` = enabled). `1` = enabled. `-1` = disabled. |
 
 ## 📂 Field references in view partitions
 
