@@ -209,6 +209,9 @@ func filterColumns(records []ingitdb.IRecordEntry, cols []string) []ingitdb.IRec
 func buildDefaultView(dbPath string, repoRoot string, col *ingitdb.CollectionDef, def *ingitdb.Definition, view *ingitdb.ViewDef, records []ingitdb.IRecordEntry, logf func(string, ...any)) (created, updated, unchanged int, errs []error) {
 	columns := determineColumns(col, view)
 	format := strings.ToLower(view.Format)
+	if format == "" {
+		format = "ingr"
+	}
 	ext := defaultViewFormatExtension(format)
 	base := view.FileName
 	if base == "" {
@@ -270,7 +273,7 @@ func buildDefaultView(dbPath string, repoRoot string, col *ingitdb.CollectionDef
 		outPath := filepath.Join(outputRoot, ingitdb.IngitdbDir, relColPath, fileName)
 
 		if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
-			errs = append(errs, fmt.Errorf("mkdir for %s: %w", outPath, err))
+			errs = append(errs, fmt.Errorf("mkdir for %s: %w", outPath, err)) // untestable: os.MkdirAll called directly without injection
 			continue
 		}
 
@@ -285,7 +288,7 @@ func buildDefaultView(dbPath string, repoRoot string, col *ingitdb.CollectionDef
 		}
 
 		if err := os.WriteFile(outPath, content, 0o644); err != nil {
-			errs = append(errs, fmt.Errorf("write %s: %w", outPath, err))
+			errs = append(errs, fmt.Errorf("write %s: %w", outPath, err)) // untestable: os.WriteFile called directly without injection
 			continue
 		}
 		if readErr == nil {
@@ -317,6 +320,9 @@ func buildFKViews(
 
 	exportColumns := determineColumns(col, view)
 	format := strings.ToLower(view.Format)
+	if format == "" {
+		format = "ingr"
+	}
 	ext := defaultViewFormatExtension(format)
 
 	outputRoot := repoRoot

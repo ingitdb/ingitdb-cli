@@ -124,7 +124,7 @@ func recordPatternForKey(name, dirPath string) (patternPath string, extractKey f
 	extractKey = func(filePath string) string {
 		rel, relErr := filepath.Rel(dirPath, filePath)
 		if relErr != nil {
-			return filepath.Base(filePath)
+			return filepath.Base(filePath) // untestable: filepath.Rel on absolute paths never fails on Unix/macOS
 		}
 		rel = filepath.ToSlash(rel)
 		s := strings.TrimPrefix(rel, prefix)

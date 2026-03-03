@@ -898,7 +898,7 @@ func TestBuildDefaultView_FileContentIsValid(t *testing.T) {
 
 // --- Error path tests ---
 
-func TestBuildDefaultView_FormatExportBatchError(t *testing.T) {
+func TestBuildDefaultView_EmptyFormatDefaultsToINGR(t *testing.T) {
 	t.Parallel()
 
 	tmpDir := t.TempDir()
@@ -907,25 +907,34 @@ func TestBuildDefaultView_FormatExportBatchError(t *testing.T) {
 		DirPath:      filepath.Join(tmpDir, "test"),
 		ColumnsOrder: []string{"id"},
 	}
-	// Use invalid format to trigger formatExportBatch error path
+	// Empty format should default to "ingr"
 	view := &ingitdb.ViewDef{
 		ID:        ingitdb.DefaultViewID,
 		IsDefault: true,
-		Format:    "", // Empty format defaults to TSV, so no error
+		Format:    "",
 	}
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1"}),
+		ingitdb.NewMapRecordEntry("a1", map[string]any{"id": "a1"}),
 	}
 
+	os.MkdirAll(col.DirPath, 0o755)
 	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
 
-	// Empty format is valid (defaults to TSV), so no errors expected
 	if len(errs) > 0 {
 		t.Fatalf("unexpected errors: %v", errs)
 	}
 	if created != 1 {
 		t.Fatalf("expected 1 created, got %d", created)
+	}
+	// Verify the output file is INGR format (header starts with "# INGR.io |")
+	outPath := filepath.Join(tmpDir, ingitdb.IngitdbDir, "test", "test.ingr")
+	content, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatalf("read output: %v", err)
+	}
+	if !strings.HasPrefix(string(content), "# INGR.io |") {
+		t.Errorf("expected INGR format output, got: %q", string(content)[:50])
 	}
 }
 

@@ -457,7 +457,7 @@ func TestFormatINGR_NilAndMissingFields(t *testing.T) {
 	}
 }
 
-func TestFormatINGR_DefaultFormatIsINGR(t *testing.T) {
+func TestFormatExportBatch_EmptyFormatReturnsError(t *testing.T) {
 	t.Parallel()
 
 	headers := []string{"id"}
@@ -465,14 +465,24 @@ func TestFormatINGR_DefaultFormatIsINGR(t *testing.T) {
 		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "hello"}},
 	}
 
-	// empty format string should use INGR (the default)
-	got, err := formatExportBatch("", "test/view", headers, records)
-	if err != nil {
-		t.Fatalf("formatExportBatch: %v", err)
+	_, err := formatExportBatch("", "test/view", headers, records)
+	if err == nil {
+		t.Fatal("expected error for empty format string")
 	}
-	want := "# INGR.io | test/view: $ID\n\"hello\"\n# 1 record\n"
-	if string(got) != want {
-		t.Errorf("default format output = %q, want %q", string(got), want)
+	if !strings.Contains(err.Error(), "unknown export format") {
+		t.Errorf("expected 'unknown export format' in error, got: %v", err)
+	}
+}
+
+func TestFormatExportBatch_UnknownFormatReturnsError(t *testing.T) {
+	t.Parallel()
+
+	_, err := formatExportBatch("xml", "test/view", []string{"id"}, nil)
+	if err == nil {
+		t.Fatal("expected error for unknown format")
+	}
+	if !strings.Contains(err.Error(), "unknown export format") {
+		t.Errorf("expected 'unknown export format' in error, got: %v", err)
 	}
 }
 
@@ -1334,5 +1344,37 @@ func TestFormatINGR_WithoutRecordsDelimiter(t *testing.T) {
 		if line == "#" {
 			t.Errorf("unexpected delimiter '#' at line %d", i+1)
 		}
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Error paths for JSON marshalling in formatJSONL and formatINGR
+// ---------------------------------------------------------------------------
+
+func TestFormatJSONL_MarshalError(t *testing.T) {
+	t.Parallel()
+
+	// A channel cannot be JSON-marshalled; this triggers the error path in formatJSONL.
+	headers := []string{"id", "bad"}
+	records := []ingitdb.IRecordEntry{
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "bad": make(chan int)}},
+	}
+	_, err := formatJSONL(headers, records)
+	if err == nil {
+		t.Fatal("expected marshal error for channel value, got nil")
+	}
+}
+
+func TestFormatINGR_MarshalError(t *testing.T) {
+	t.Parallel()
+
+	// A channel cannot be JSON-marshalled; this triggers the error path in formatINGR.
+	headers := []string{"id", "bad"}
+	records := []ingitdb.IRecordEntry{
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "bad": make(chan int)}},
+	}
+	_, err := formatINGR("test/view", ExportOptions{}, headers, records)
+	if err == nil {
+		t.Fatal("expected marshal error for channel value, got nil")
 	}
 }

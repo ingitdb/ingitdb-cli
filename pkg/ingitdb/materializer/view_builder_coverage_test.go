@@ -3,7 +3,9 @@ package materializer
 import (
 	"context"
 	"errors"
+	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
@@ -685,6 +687,7 @@ func TestCompareAny(t *testing.T) {
 		// fallback string comparison (mismatched types)
 		{name: "mixed_types_fallback_equal", a: true, b: true, want: 0},
 		{name: "string_vs_int_fallback_less", a: "10", b: 20, want: -1},   // "10" < "20" lexicographically
+		{name: "fallback_greater", a: true, b: false, want: 1},             // "true" > "false" lexicographically
 	}
 
 	for _, tc := range tests {
@@ -795,5 +798,280 @@ func TestSortRecordsByOrderBy_EmptyOrderBy(t *testing.T) {
 	sortRecordsByOrderBy(records, "")
 	if records[0].GetID() != "b" {
 		t.Errorf("expected order unchanged, got first record ID %q", records[0].GetID())
+	}
+}
+
+// ---------------------------------------------------------------------------
+// BuildViews — FilesUpdated and Logf for non-default views
+// ---------------------------------------------------------------------------
+
+func TestBuildViews_NonDefaultView_Updated(t *testing.T) {
+	t.Parallel()
+
+	view := &ingitdb.ViewDef{ID: "report", FileName: "report.md"}
+	builder := SimpleViewBuilder{
+		DefReader:     fakeViewDefReader{views: map[string]*ingitdb.ViewDef{"report": view}},
+		RecordsReader: fakeRecordsReader{},
+		Writer:        &updatedWriterImpl{},
+	}
+	col := &ingitdb.CollectionDef{ID: "col", DirPath: "/db/col"}
+	result, err := builder.BuildViews(context.Background(), "/db", "/db", col, &ingitdb.Definition{})
+	if err != nil {
+		t.Fatalf("BuildViews: %v", err)
+	}
+	if result.FilesUpdated != 1 {
+		t.Errorf("expected FilesUpdated=1, got %d", result.FilesUpdated)
+	}
+	if result.FilesCreated != 0 || result.FilesUnchanged != 0 {
+		t.Errorf("expected only FilesUpdated=1, got created=%d unchanged=%d",
+			result.FilesCreated, result.FilesUnchanged)
+	}
+}
+
+func TestBuildViews_NonDefaultView_Logf(t *testing.T) {
+	t.Parallel()
+
+	view := &ingitdb.ViewDef{ID: "report", FileName: "report.md"}
+	logCalls := 0
+	builder := SimpleViewBuilder{
+		DefReader:     fakeViewDefReader{views: map[string]*ingitdb.ViewDef{"report": view}},
+		RecordsReader: fakeRecordsReader{},
+		Writer:        &capturingWriter{},
+		Logf: func(format string, args ...any) {
+			logCalls++
+		},
+	}
+	col := &ingitdb.CollectionDef{ID: "col", DirPath: "/db/col"}
+	_, err := builder.BuildViews(context.Background(), "/db", "/db", col, &ingitdb.Definition{})
+	if err != nil {
+		t.Fatalf("BuildViews: %v", err)
+	}
+	if logCalls == 0 {
+		t.Error("expected Logf to be called for non-default view write")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// buildDefaultView — IncludeHash and logf paths
+// ---------------------------------------------------------------------------
+
+func TestBuildDefaultView_IncludeHash(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	col := &ingitdb.CollectionDef{
+		ID:           "items",
+		DirPath:      filepath.Join(tmpDir, "items"),
+		ColumnsOrder: []string{"id", "name"},
+	}
+	view := &ingitdb.ViewDef{
+		ID:          ingitdb.DefaultViewID,
+		IsDefault:   true,
+		Format:      "ingr",
+		IncludeHash: true,
+	}
+	records := []ingitdb.IRecordEntry{
+		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "name": "Widget"}),
+	}
+
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
+	if len(errs) > 0 {
+		t.Fatalf("buildDefaultView: %v", errs)
+	}
+	if created != 1 {
+		t.Fatalf("expected 1 created, got %d", created)
+	}
+
+	outPath := filepath.Join(tmpDir, ingitdb.IngitdbDir, "items", "items.ingr")
+	content, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatalf("read output: %v", err)
+	}
+	if !strings.Contains(string(content), "# sha256:") {
+		t.Error("expected '# sha256:' hash line in INGR output when IncludeHash=true")
+	}
+}
+
+func TestBuildDefaultView_LogfCalledOnCreated(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	col := &ingitdb.CollectionDef{
+		ID:           "data",
+		DirPath:      filepath.Join(tmpDir, "data"),
+		ColumnsOrder: []string{"id"},
+	}
+	view := &ingitdb.ViewDef{
+		ID:        ingitdb.DefaultViewID,
+		IsDefault: true,
+		Format:    "json",
+	}
+	records := []ingitdb.IRecordEntry{
+		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1"}),
+	}
+
+	logCalls := 0
+	logf := func(format string, args ...any) { logCalls++ }
+
+	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, logf)
+	if len(errs) > 0 {
+		t.Fatalf("buildDefaultView: %v", errs)
+	}
+	if created != 1 {
+		t.Fatalf("expected 1 created, got %d", created)
+	}
+	if logCalls == 0 {
+		t.Error("expected logf to be called when a new file is created")
+	}
+}
+
+func TestBuildDefaultView_LogfCalledOnUnchanged(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	col := &ingitdb.CollectionDef{
+		ID:           "data",
+		DirPath:      filepath.Join(tmpDir, "data"),
+		ColumnsOrder: []string{"id"},
+	}
+	view := &ingitdb.ViewDef{
+		ID:        ingitdb.DefaultViewID,
+		IsDefault: true,
+		Format:    "json",
+	}
+	records := []ingitdb.IRecordEntry{
+		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1"}),
+	}
+
+	// First run: create the file (no logf needed).
+	_, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
+	if len(errs) > 0 {
+		t.Fatalf("first buildDefaultView: %v", errs)
+	}
+
+	// Second run with identical records: unchanged path — logf should be called.
+	logCalls := 0
+	logf := func(format string, args ...any) { logCalls++ }
+
+	_, _, unchanged, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, logf)
+	if len(errs) > 0 {
+		t.Fatalf("second buildDefaultView: %v", errs)
+	}
+	if unchanged != 1 {
+		t.Fatalf("expected 1 unchanged, got %d", unchanged)
+	}
+	if logCalls == 0 {
+		t.Error("expected logf to be called when file content is unchanged")
+	}
+}
+
+func TestBuildDefaultView_LogfCalledOnUpdated(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	col := &ingitdb.CollectionDef{
+		ID:           "data",
+		DirPath:      filepath.Join(tmpDir, "data"),
+		ColumnsOrder: []string{"id", "value"},
+	}
+	view := &ingitdb.ViewDef{
+		ID:        ingitdb.DefaultViewID,
+		IsDefault: true,
+		Format:    "json",
+	}
+	records1 := []ingitdb.IRecordEntry{
+		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "value": "original"}),
+	}
+	records2 := []ingitdb.IRecordEntry{
+		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "value": "changed"}),
+	}
+
+	// First run: create the file.
+	_, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records1, nil)
+	if len(errs) > 0 {
+		t.Fatalf("first buildDefaultView: %v", errs)
+	}
+
+	// Second run with different records: updated path — logf should be called.
+	logCalls := 0
+	logf := func(format string, args ...any) { logCalls++ }
+
+	_, updated, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records2, logf)
+	if len(errs) > 0 {
+		t.Fatalf("second buildDefaultView: %v", errs)
+	}
+	if updated != 1 {
+		t.Fatalf("expected 1 updated, got %d", updated)
+	}
+	if logCalls == 0 {
+		t.Error("expected logf to be called when file content is updated")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// buildDefaultView — format error path (formatExportBatch returns an error)
+// ---------------------------------------------------------------------------
+
+func TestBuildDefaultView_FormatError(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	col := &ingitdb.CollectionDef{
+		ID:           "orders",
+		DirPath:      filepath.Join(tmpDir, "orders"),
+		ColumnsOrder: []string{"id", "bad"},
+	}
+	view := &ingitdb.ViewDef{
+		ID:        ingitdb.DefaultViewID,
+		IsDefault: true,
+		Format:    "jsonl", // formatJSONL will call json.Marshal which fails on channels
+	}
+	// A channel value cannot be JSON-marshalled → triggers the format error branch.
+	records := []ingitdb.IRecordEntry{
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "bad": make(chan int)}},
+	}
+
+	_, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil)
+	if len(errs) == 0 {
+		t.Fatal("expected format error for unmarshalable channel value, got none")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// buildFKViews — format error path
+// ---------------------------------------------------------------------------
+
+func TestBuildFKViews_FormatError(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	col := &ingitdb.CollectionDef{
+		ID:           "orders",
+		DirPath:      filepath.Join(tmpDir, "orders"),
+		ColumnsOrder: []string{"id", "customer", "bad"},
+		Columns: map[string]*ingitdb.ColumnDef{
+			"customer": {Type: ingitdb.ColumnTypeString, ForeignKey: "customers"},
+			"bad":      {Type: ingitdb.ColumnTypeString},
+		},
+	}
+	def := &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"customers": {ID: "customers", DirPath: filepath.Join(tmpDir, "customers")},
+		},
+	}
+	view := &ingitdb.ViewDef{
+		ID:        ingitdb.DefaultViewID,
+		IsDefault: true,
+		Format:    "jsonl", // formatJSONL → json.Marshal fails on channel value
+	}
+	// The "bad" column (a channel) is NOT the FK column, so it ends up in fkExportColumns.
+	// formatExportBatch("jsonl",...) then fails to marshal the channel value.
+	records := []ingitdb.IRecordEntry{
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "customer": "alice", "bad": make(chan int)}},
+	}
+
+	_, _, _, errs := buildFKViews(tmpDir, "", col, def, view, records, nil)
+	if len(errs) == 0 {
+		t.Fatal("expected format error for unmarshalable channel value in FK view, got none")
 	}
 }

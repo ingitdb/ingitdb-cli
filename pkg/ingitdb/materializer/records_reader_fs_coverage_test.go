@@ -268,6 +268,90 @@ func TestFileRecordsReader_ReadRecords_SingleRecord_YieldError(t *testing.T) {
 	}
 }
 
+// ---------------------------------------------------------------------------
+// ReadRecords — IsNotExist path: stat returns os.ErrNotExist → return nil
+// ---------------------------------------------------------------------------
+
+// Note: TestFileRecordsReader_ReadRecords_MapOfIDRecords_FileNotFound in
+// records_reader_fs_test.go already covers the os.IsNotExist branch.
+
+// TestFileRecordsReader_ReadRecords_MapOfIDRecords_Success covers the successful
+// completion of the MapOfIDRecords case (return nil after iterating all records).
+func TestFileRecordsReader_ReadRecords_MapOfIDRecords_Success(t *testing.T) {
+	t.Parallel()
+
+	reader := FileRecordsReader{
+		statFile: func(path string) (os.FileInfo, error) {
+			return nil, nil // file exists
+		},
+		readFile: func(path string) ([]byte, error) {
+			return []byte(`{"key1": {"title": "Item 1"}, "key2": {"title": "Item 2"}}`), nil
+		},
+	}
+	col := &ingitdb.CollectionDef{
+		ID:      "test",
+		DirPath: "/tmp/test",
+		RecordFile: &ingitdb.RecordFileDef{
+			Name:       "records.json",
+			RecordType: ingitdb.MapOfIDRecords,
+			Format:     "json",
+		},
+	}
+
+	var entries []ingitdb.IRecordEntry
+	err := reader.ReadRecords(context.Background(), "/tmp", col, func(entry ingitdb.IRecordEntry) error {
+		entries = append(entries, entry)
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(entries) != 2 {
+		t.Errorf("expected 2 entries, got %d", len(entries))
+	}
+}
+
+// TestFileRecordsReader_ReadRecords_SingleRecord_SkipsHiddenKey covers the
+// strings.HasPrefix(key, ".") branch that skips hidden directory entries.
+func TestFileRecordsReader_ReadRecords_SingleRecord_SkipsHiddenKey(t *testing.T) {
+	t.Parallel()
+
+	reader := FileRecordsReader{
+		glob: func(pattern string) ([]string, error) {
+			// Return one hidden path (starts with ".") and one visible one.
+			return []string{"/tmp/test/.hidden.json", "/tmp/test/visible.json"}, nil
+		},
+		readFile: func(path string) ([]byte, error) {
+			return []byte(`{"title": "Test"}`), nil
+		},
+	}
+	col := &ingitdb.CollectionDef{
+		ID:      "test",
+		DirPath: "/tmp/test",
+		RecordFile: &ingitdb.RecordFileDef{
+			Name:       "{key}.json",
+			RecordType: ingitdb.SingleRecord,
+			Format:     "json",
+		},
+	}
+
+	var entries []ingitdb.IRecordEntry
+	err := reader.ReadRecords(context.Background(), "/tmp", col, func(entry ingitdb.IRecordEntry) error {
+		entries = append(entries, entry)
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// ".hidden" key is skipped; only "visible" should be yielded.
+	if len(entries) != 1 {
+		t.Errorf("expected 1 entry (hidden key skipped), got %d", len(entries))
+	}
+	if len(entries) == 1 && entries[0].GetID() != "visible" {
+		t.Errorf("expected key 'visible', got %q", entries[0].GetID())
+	}
+}
+
 func TestFileRecordsReader_ReadRecords_SingleRecord_Success(t *testing.T) {
 	t.Parallel()
 

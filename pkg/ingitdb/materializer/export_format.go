@@ -13,7 +13,7 @@ import (
 )
 
 // defaultViewFormatExtension returns the file extension for a given format string.
-// Empty string or unknown -> "ingr", "tsv" -> "tsv", "ingr" -> "ingr", "csv" -> "csv", etc.
+// Callers must resolve empty format to "ingr" before calling.
 func defaultViewFormatExtension(format string) string {
 	switch strings.ToLower(format) {
 	case "tsv":
@@ -44,11 +44,16 @@ func formatBatchFileName(base, ext string, batchNum, totalBatches int) string {
 }
 
 // formatExportBatch serializes a batch of records into the given format.
-// format must already be lowercased (or empty for ingr default).
+// format must be one of: "ingr", "tsv", "csv", "json", "jsonl", "yaml".
+// An empty or unrecognised format returns an error; callers must pass "ingr" explicitly.
 // viewName is used only by INGR to generate the metadata header line.
 // opts are applied only by the INGR formatter; all other formats ignore them.
 func formatExportBatch(format string, viewName string, headers []string, records []ingitdb.IRecordEntry, opts ...ExportOption) ([]byte, error) {
 	switch format {
+	case "ingr":
+		var cfg ExportOptions
+		ApplyOptions(&cfg, opts...)
+		return formatINGR(viewName, cfg, headers, records)
 	case "tsv":
 		return formatTSV(headers, records)
 	case "csv":
@@ -59,10 +64,8 @@ func formatExportBatch(format string, viewName string, headers []string, records
 		return formatJSONL(headers, records)
 	case "yaml":
 		return formatYAML(headers, records)
-	default: // "", "ingr"
-		var cfg ExportOptions
-		ApplyOptions(&cfg, opts...)
-		return formatINGR(viewName, cfg, headers, records)
+	default:
+		return nil, fmt.Errorf("unknown export format %q", format)
 	}
 }
 
@@ -101,7 +104,7 @@ func formatCSV(headers []string, records []ingitdb.IRecordEntry) ([]byte, error)
 	var buf bytes.Buffer
 	w := csv.NewWriter(&buf)
 	if err := w.Write(headers); err != nil {
-		return nil, err
+		return nil, err // untestable: csv.Writer writing to bytes.Buffer never errors
 	}
 	for _, rec := range records {
 		row := make([]string, len(headers))
@@ -114,12 +117,12 @@ func formatCSV(headers []string, records []ingitdb.IRecordEntry) ([]byte, error)
 			}
 		}
 		if err := w.Write(row); err != nil {
-			return nil, err
+			return nil, err // untestable: csv.Writer writing to bytes.Buffer never errors
 		}
 	}
 	w.Flush()
 	if err := w.Error(); err != nil {
-		return nil, err
+		return nil, err // untestable: csv.Writer writing to bytes.Buffer never errors
 	}
 	return buf.Bytes(), nil
 }
