@@ -4,19 +4,9 @@ on:
   push:
     branches-ignore:
       - renovate/**
-    paths:
-      - 'go.*'
-      - '**/*.go'
-      - 'src/**'
-      - '.github/workflows/*.yml'
   pull_request:
     branches:
       - '**'
-    paths:
-      - 'go.*'
-      - '**/*.go'
-      - 'src/**'
-      - '.github/workflows/*.yml'
 
 jobs:
 
