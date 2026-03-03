@@ -24,7 +24,7 @@ type githubFileFixture struct {
 func TestGitHubDB_GetSingleRecord(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
-		path:    "demo-dbs/todo/tags/active.yaml",
+		path:    "demo-dbs/todo/tags/$records/active.yaml",
 		content: "title: Active\n",
 	}}
 	server := newGitHubContentsServer(t, fixtures)
@@ -163,7 +163,7 @@ func TestGitHubDB_GetNotFound(t *testing.T) {
 func TestGitHubDB_SetSingleRecord(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
-		path:    "demo-dbs/todo/tags/active.yaml",
+		path:    "demo-dbs/todo/tags/$records/active.yaml",
 		content: "title: Active\n",
 	}}
 	server := newGitHubContentsServer(t, fixtures)
@@ -246,7 +246,7 @@ func TestGitHubDB_InsertSingleRecord(t *testing.T) {
 func TestGitHubDB_InsertSingleRecord_AlreadyExists(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
-		path:    "demo-dbs/todo/tags/active.yaml",
+		path:    "demo-dbs/todo/tags/$records/active.yaml",
 		content: "title: Active\n",
 	}}
 	server := newGitHubContentsServer(t, fixtures)
@@ -289,7 +289,7 @@ func TestGitHubDB_InsertSingleRecord_AlreadyExists(t *testing.T) {
 func TestGitHubDB_DeleteSingleRecord(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
-		path:    "demo-dbs/todo/tags/active.yaml",
+		path:    "demo-dbs/todo/tags/$records/active.yaml",
 		content: "title: Active\n",
 	}}
 	server := newGitHubContentsServer(t, fixtures)

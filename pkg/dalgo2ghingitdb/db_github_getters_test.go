@@ -121,7 +121,7 @@ func TestNewGitHubDBWithDef_NilDefinition(t *testing.T) {
 func TestGitHubDB_Get(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
-		path:    "demo-dbs/todo/tags/active.yaml",
+		path:    "demo-dbs/todo/tags/$records/active.yaml",
 		content: "title: Active\n",
 	}}
 	server := newGitHubContentsServer(t, fixtures)

@@ -22,7 +22,11 @@ func TestUpdate_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("yaml.Marshal: %v", err)
 	}
-	if err = os.WriteFile(filepath.Join(dir, "item.yaml"), initial, 0o644); err != nil {
+	recordsDir := filepath.Join(dir, "$records")
+	if err = os.MkdirAll(recordsDir, 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	if err = os.WriteFile(filepath.Join(recordsDir, "item.yaml"), initial, 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
 
@@ -39,7 +43,7 @@ func TestUpdate_Success(t *testing.T) {
 		t.Fatalf("Update: %v", err)
 	}
 
-	content, readErr := os.ReadFile(filepath.Join(dir, "item.yaml"))
+	content, readErr := os.ReadFile(filepath.Join(recordsDir, "item.yaml"))
 	if readErr != nil {
 		t.Fatalf("ReadFile: %v", readErr)
 	}
@@ -82,7 +86,11 @@ func TestUpdate_InvalidSetYAML(t *testing.T) {
 	if err != nil {
 		t.Fatalf("yaml.Marshal: %v", err)
 	}
-	if err = os.WriteFile(filepath.Join(dir, "item.yaml"), initial, 0o644); err != nil {
+	recordsDir2 := filepath.Join(dir, "$records")
+	if err = os.MkdirAll(recordsDir2, 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	if err = os.WriteFile(filepath.Join(recordsDir2, "item.yaml"), initial, 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
 

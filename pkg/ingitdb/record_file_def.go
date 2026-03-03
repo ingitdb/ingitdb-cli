@@ -44,6 +44,16 @@ func (rfd RecordFileDef) Validate() error {
 	return nil
 }
 
+// RecordsBasePath returns "$records" when record_file.name contains {key},
+// causing inGitDB to store individual record files under a $records/ subdirectory.
+// This keeps README.md visible at the top of the collection directory on GitHub.com.
+func (rfd RecordFileDef) RecordsBasePath() string {
+	if strings.Contains(rfd.Name, "{key}") {
+		return "$records"
+	}
+	return ""
+}
+
 func (rfd RecordFileDef) GetRecordFileName(record dal.Record) string {
 	name := rfd.Name
 	if i := strings.Index(name, "{key}"); i >= 0 {

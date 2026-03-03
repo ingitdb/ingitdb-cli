@@ -14,9 +14,11 @@ import (
 )
 
 // resolveRecordPath replaces all {key} occurrences in the record file name template and joins with the collection dir.
+// When {key} is present, records are stored under a $records/ subdirectory to keep README.md visible on GitHub.com.
 func resolveRecordPath(colDef *ingitdb.CollectionDef, recordKey string) string {
 	name := strings.ReplaceAll(colDef.RecordFile.Name, "{key}", recordKey)
-	return filepath.Join(colDef.DirPath, name)
+	base := colDef.RecordFile.RecordsBasePath()
+	return filepath.Join(colDef.DirPath, base, name)
 }
 
 // readRecordFromFile reads a YAML or JSON file and returns its content as a map.

@@ -14,8 +14,8 @@ import (
 	"strings"
 	"testing"
 
-	"go.uber.org/mock/gomock"
 	mcp "github.com/metoro-io/mcp-golang"
+	"go.uber.org/mock/gomock"
 	"gopkg.in/yaml.v3"
 
 	"github.com/dal-go/dalgo/dal"
@@ -768,7 +768,11 @@ func TestUpdate_WithViewBuilder(t *testing.T) {
 	if marshalErr != nil {
 		t.Fatalf("yaml.Marshal: %v", marshalErr)
 	}
-	if writeErr := os.WriteFile(filepath.Join(dir, "item.yaml"), initial, 0o644); writeErr != nil {
+	recordsDir := filepath.Join(dir, "$records")
+	if mkErr := os.MkdirAll(recordsDir, 0o755); mkErr != nil {
+		t.Fatalf("MkdirAll: %v", mkErr)
+	}
+	if writeErr := os.WriteFile(filepath.Join(recordsDir, "item.yaml"), initial, 0o644); writeErr != nil {
 		t.Fatalf("WriteFile: %v", writeErr)
 	}
 

@@ -286,10 +286,16 @@ func TestInsert_SingleRecord_StatError(t *testing.T) {
 	dir := t.TempDir()
 	def := makeTestDef(t, dir)
 
-	// Create a directory where we want to create a file (naming collision)
-	// The template is {key}.yaml, so if key is "blocking", file will be blocking.yaml
-	blockingDir := filepath.Join(dir, "blocking.yaml")
-	err := os.Mkdir(blockingDir, 0o755)
+	// Create a directory where we want to create a file (naming collision).
+	// The template is {key}.yaml with $records/ prefix, so if key is "blocking",
+	// the file will be at $records/blocking.yaml.
+	recordsDir := filepath.Join(dir, "$records")
+	err := os.Mkdir(recordsDir, 0o755)
+	if err != nil {
+		t.Fatalf("setup: mkdir $records: %v", err)
+	}
+	blockingDir := filepath.Join(recordsDir, "blocking.yaml")
+	err = os.Mkdir(blockingDir, 0o755)
 	if err != nil {
 		t.Fatalf("setup: mkdir: %v", err)
 	}
@@ -371,8 +377,12 @@ func TestGet_SingleRecord_ReadError(t *testing.T) {
 	dir := t.TempDir()
 	def := makeTestDef(t, dir)
 
-	// Create an invalid YAML file
-	path := filepath.Join(dir, "bad.yaml")
+	// Create an invalid YAML file under $records/ (where {key}.yaml records are stored).
+	recordsDir := filepath.Join(dir, "$records")
+	if mkErr := os.MkdirAll(recordsDir, 0o755); mkErr != nil {
+		t.Fatalf("setup: MkdirAll: %v", mkErr)
+	}
+	path := filepath.Join(recordsDir, "bad.yaml")
 	err := os.WriteFile(path, []byte("key: [unclosed"), 0o644)
 	if err != nil {
 		t.Fatalf("setup: write invalid file: %v", err)
@@ -515,19 +525,19 @@ func TestResolveRecordPath(t *testing.T) {
 			name:      "simple template",
 			template:  "{key}.yaml",
 			recordKey: "abc",
-			want:      "abc.yaml",
+			want:      "$records/abc.yaml",
 		},
 		{
 			name:      "subdirectory template",
 			template:  "{key}/{key}.yaml",
 			recordKey: "de",
-			want:      "de/de.yaml",
+			want:      "$records/de/de.yaml",
 		},
 		{
 			name:      "multiple key occurrences",
 			template:  "{key}/data/{key}.json",
 			recordKey: "test",
-			want:      "test/data/test.json",
+			want:      "$records/test/data/test.json",
 		},
 		{
 			name:      "no key placeholder",

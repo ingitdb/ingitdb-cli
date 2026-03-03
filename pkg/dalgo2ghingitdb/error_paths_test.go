@@ -221,7 +221,7 @@ func TestReadonlyTx_Get_ReadError(t *testing.T) {
 func TestReadonlyTx_Get_ParseError_SingleRecord(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
-		path:    "test-ingitdb/test/bad.yaml",
+		path:    "test-ingitdb/test/$records/bad.yaml",
 		content: "!!invalid yaml: [unclosed",
 	}}
 	server := newGitHubContentsServer(t, fixtures)

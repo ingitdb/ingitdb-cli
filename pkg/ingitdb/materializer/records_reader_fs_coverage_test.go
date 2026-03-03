@@ -240,7 +240,7 @@ func TestFileRecordsReader_ReadRecords_SingleRecord_YieldError(t *testing.T) {
 	yieldErr := errors.New("yield error")
 	reader := FileRecordsReader{
 		glob: func(pattern string) ([]string, error) {
-			return []string{"/tmp/test/tag1.json"}, nil
+			return []string{"/tmp/test/$records/tag1.json"}, nil
 		},
 		readFile: func(path string) ([]byte, error) {
 			return []byte(`{"title": "Test"}`), nil
@@ -319,7 +319,7 @@ func TestFileRecordsReader_ReadRecords_SingleRecord_SkipsHiddenKey(t *testing.T)
 	reader := FileRecordsReader{
 		glob: func(pattern string) ([]string, error) {
 			// Return one hidden path (starts with ".") and one visible one.
-			return []string{"/tmp/test/.hidden.json", "/tmp/test/visible.json"}, nil
+			return []string{"/tmp/test/$records/.hidden.json", "/tmp/test/$records/visible.json"}, nil
 		},
 		readFile: func(path string) ([]byte, error) {
 			return []byte(`{"title": "Test"}`), nil
@@ -358,8 +358,8 @@ func TestFileRecordsReader_ReadRecords_SingleRecord_Success(t *testing.T) {
 	reader := FileRecordsReader{
 		glob: func(pattern string) ([]string, error) {
 			return []string{
-				"/tmp/test/prefix-tag1-suffix.json",
-				"/tmp/test/prefix-tag2-suffix.json",
+				"/tmp/test/$records/prefix-tag1-suffix.json",
+				"/tmp/test/$records/prefix-tag2-suffix.json",
 			}, nil
 		},
 		readFile: func(path string) ([]byte, error) {

@@ -22,7 +22,11 @@ func TestReadRecord_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("yaml.Marshal: %v", err)
 	}
-	if err = os.WriteFile(filepath.Join(dir, "r1.yaml"), content, 0o644); err != nil {
+	recordsDir := filepath.Join(dir, "$records")
+	if err = os.MkdirAll(recordsDir, 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	if err = os.WriteFile(filepath.Join(recordsDir, "r1.yaml"), content, 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
 
@@ -70,7 +74,11 @@ func TestReadRecord_JSONFormat(t *testing.T) {
 	if err != nil {
 		t.Fatalf("yaml.Marshal: %v", err)
 	}
-	if err = os.WriteFile(filepath.Join(dir, "r1.yaml"), content, 0o644); err != nil {
+	recordsDir := filepath.Join(dir, "$records")
+	if err = os.MkdirAll(recordsDir, 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	if err = os.WriteFile(filepath.Join(recordsDir, "r1.yaml"), content, 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
 
@@ -97,7 +105,11 @@ func TestReadRecord_InvalidFormat(t *testing.T) {
 	if err != nil {
 		t.Fatalf("yaml.Marshal: %v", err)
 	}
-	if err = os.WriteFile(filepath.Join(dir, "r1.yaml"), content, 0o644); err != nil {
+	recordsDir := filepath.Join(dir, "$records")
+	if err = os.MkdirAll(recordsDir, 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	if err = os.WriteFile(filepath.Join(recordsDir, "r1.yaml"), content, 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
 

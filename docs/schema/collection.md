@@ -33,14 +33,22 @@ Controls how records are physically stored.
 
 #### 🔸 `map[string]any` — one record per file
 
-Each record is a separate file. The file name typically contains `{key}`.
+Each record is a separate file. The `name` pattern must contain `{key}`.
 
 ```yaml
 record_file:
-  name: "$records/{key}.json"
+  name: "{key}.json"
   type: "map[string]any"
   format: json
 ```
+
+> **`$records/` subdirectory** — When `{key}` is present in `name`, inGitDB automatically
+> stores all record files under a `$records/` subdirectory inside the collection directory,
+> rather than directly in the collection directory. This keeps the collection's `README.md`
+> visible at the top of the directory listing on GitHub.com — if records were stored at the
+> collection root, a large number of them would push `README.md` below the initial render
+> viewport. The `$` prefix signals to viewers that this is an inGitDB-managed directory,
+> consistent with the `/$ingitdb` convention.
 
 File `$records/ireland.json`:
 

@@ -9,6 +9,7 @@ import (
 
 func resolveRecordPath(colDef *ingitdb.CollectionDef, recordKey string) string {
 	recordName := strings.ReplaceAll(colDef.RecordFile.Name, "{key}", recordKey)
-	recordPath := path.Join(colDef.DirPath, recordName)
+	base := colDef.RecordFile.RecordsBasePath()
+	recordPath := path.Join(colDef.DirPath, base, recordName)
 	return path.Clean(recordPath)
 }

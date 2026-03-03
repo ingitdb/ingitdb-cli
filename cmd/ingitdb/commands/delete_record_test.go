@@ -22,7 +22,11 @@ func TestDeleteRecord_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("yaml.Marshal: %v", err)
 	}
-	path := filepath.Join(dir, "bye.yaml")
+	recordsDir := filepath.Join(dir, "$records")
+	if err = os.MkdirAll(recordsDir, 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	path := filepath.Join(recordsDir, "bye.yaml")
 	if err = os.WriteFile(path, content, 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}

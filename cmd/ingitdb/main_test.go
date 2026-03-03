@@ -226,7 +226,7 @@ func TestRun_InvalidCommand(t *testing.T) {
 		t.Logf("cli.OsExiter called with code %d", code)
 	}
 	t.Cleanup(func() {
-		t.Logf("cleanup: exitCalled=%v, exitCode=%d, osExiterCalled=%v, osExiterCode=%d", 
+		t.Logf("cleanup: exitCalled=%v, exitCode=%d, osExiterCalled=%v, osExiterCode=%d",
 			exitCalled, exitCode, osExiterCalled, osExiterCode)
 		exit = oldExit
 		cli.OsExiter = oldOsExiter
@@ -429,9 +429,13 @@ func TestRun_ReadRecord_ExercisesNewDB(t *testing.T) {
 
 	dir := t.TempDir()
 
-	// Write a record file for the local filesystem DB.
+	// Write a record file under $records/ (where {key}.yaml records are stored).
+	recordsDir := dir + "/$records"
+	if err := os.MkdirAll(recordsDir, 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
 	recordContent := []byte("name: hello\n")
-	if err := os.WriteFile(dir+"/r1.yaml", recordContent, 0o644); err != nil {
+	if err := os.WriteFile(recordsDir+"/r1.yaml", recordContent, 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
 

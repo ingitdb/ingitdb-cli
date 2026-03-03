@@ -3,6 +3,7 @@ package datavalidator
 import (
 	"context"
 	"os"
+	"path/filepath"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
@@ -41,20 +42,26 @@ func (sv *simpleValidator) Validate(_ context.Context, _ string, def *ingitdb.De
 }
 
 // countRecords counts the number of record keys in a collection directory.
+// When a $records/ subdirectory exists (used for per-key record files), it
+// counts entries inside that directory instead of at the collection root.
 func countRecords(collectionPath string) (int, error) {
-	entries, err := os.ReadDir(collectionPath)
+	recordsSubDir := filepath.Join(collectionPath, "$records")
+	if info, err := os.Stat(recordsSubDir); err == nil && info.IsDir() {
+		return countEntries(recordsSubDir)
+	}
+	return countEntries(collectionPath)
+}
+
+func countEntries(dirPath string) (int, error) {
+	entries, err := os.ReadDir(dirPath)
 	if err != nil {
-		// Collection directory may not exist yet
 		return 0, err
 	}
-
 	count := 0
 	for _, entry := range entries {
-		// Skip special directories like .collection
 		if entry.IsDir() && entry.Name() != ".collection" {
 			count++
 		}
 	}
-
 	return count, nil
 }

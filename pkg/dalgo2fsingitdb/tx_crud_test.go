@@ -63,7 +63,11 @@ func TestGet_SingleRecord_Found(t *testing.T) {
 
 	dir := t.TempDir()
 	def := makeTestDef(t, dir)
-	writeYAMLFixture(t, filepath.Join(dir, "abc.yaml"), map[string]any{"name": "Alpha"})
+	recordsDir := filepath.Join(dir, "$records")
+	if err := os.MkdirAll(recordsDir, 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	writeYAMLFixture(t, filepath.Join(recordsDir, "abc.yaml"), map[string]any{"name": "Alpha"})
 
 	db := openTestDB(t, dir, def)
 	ctx := context.Background()
@@ -125,7 +129,7 @@ func TestInsert_SingleRecord(t *testing.T) {
 		t.Fatalf("Insert: %v", err)
 	}
 
-	content, readErr := os.ReadFile(filepath.Join(dir, "new.yaml"))
+	content, readErr := os.ReadFile(filepath.Join(dir, "$records", "new.yaml"))
 	if readErr != nil {
 		t.Fatalf("ReadFile: %v", readErr)
 	}
@@ -170,7 +174,7 @@ func TestInsert_SingleRecord_KeySubdirPattern(t *testing.T) {
 		t.Fatalf("Insert: %v", err)
 	}
 
-	content, readErr := os.ReadFile(filepath.Join(dir, "de", "de.yaml"))
+	content, readErr := os.ReadFile(filepath.Join(dir, "$records", "de", "de.yaml"))
 	if readErr != nil {
 		t.Fatalf("ReadFile: %v", readErr)
 	}
@@ -188,7 +192,11 @@ func TestInsert_SingleRecord_AlreadyExists(t *testing.T) {
 
 	dir := t.TempDir()
 	def := makeTestDef(t, dir)
-	writeYAMLFixture(t, filepath.Join(dir, "dup.yaml"), map[string]any{"name": "Existing"})
+	recordsDir := filepath.Join(dir, "$records")
+	if err := os.MkdirAll(recordsDir, 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	writeYAMLFixture(t, filepath.Join(recordsDir, "dup.yaml"), map[string]any{"name": "Existing"})
 
 	db := openTestDB(t, dir, def)
 	ctx := context.Background()
@@ -222,7 +230,7 @@ func TestSet_SingleRecord(t *testing.T) {
 		t.Fatalf("Set: %v", err)
 	}
 
-	content, readErr := os.ReadFile(filepath.Join(dir, "upsert.yaml"))
+	content, readErr := os.ReadFile(filepath.Join(dir, "$records", "upsert.yaml"))
 	if readErr != nil {
 		t.Fatalf("ReadFile: %v", readErr)
 	}
@@ -240,7 +248,11 @@ func TestDelete_SingleRecord(t *testing.T) {
 
 	dir := t.TempDir()
 	def := makeTestDef(t, dir)
-	path := filepath.Join(dir, "del.yaml")
+	recordsDir := filepath.Join(dir, "$records")
+	if err := os.MkdirAll(recordsDir, 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	path := filepath.Join(recordsDir, "del.yaml")
 	writeYAMLFixture(t, path, map[string]any{"name": "ToDelete"})
 
 	db := openTestDB(t, dir, def)

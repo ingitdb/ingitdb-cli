@@ -32,7 +32,7 @@ func TestCreate_Success(t *testing.T) {
 		t.Fatalf("Create: %v", err)
 	}
 
-	if _, statErr := os.Stat(filepath.Join(dir, "hello.yaml")); statErr != nil {
+	if _, statErr := os.Stat(filepath.Join(dir, "$records", "hello.yaml")); statErr != nil {
 		t.Fatalf("expected file hello.yaml to be created: %v", statErr)
 	}
 }

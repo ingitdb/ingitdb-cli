@@ -38,7 +38,8 @@ func (r FileRecordsReader) ReadRecords(
 		return fmt.Errorf("collection %q has no record file definition", col.ID)
 	}
 	fileName := col.RecordFile.Name
-	path := filepath.Join(col.DirPath, fileName)
+	recordsBase := col.RecordFile.RecordsBasePath()
+	path := filepath.Join(col.DirPath, recordsBase, fileName)
 	switch col.RecordFile.RecordType {
 	case ingitdb.MapOfIDRecords:
 		if _, err := r.statFile(path); err != nil {
@@ -65,7 +66,7 @@ func (r FileRecordsReader) ReadRecords(
 		}
 		return nil
 	case ingitdb.SingleRecord:
-		patternPath, extractKey, err := recordPatternForKey(fileName, col.DirPath)
+		patternPath, extractKey, err := recordPatternForKey(fileName, filepath.Join(col.DirPath, recordsBase))
 		if err != nil {
 			return err
 		}
