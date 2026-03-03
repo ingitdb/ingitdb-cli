@@ -17,6 +17,7 @@
 - [update](commands/update.md) — update fields of an existing record
 - [query](commands/query.md) — query records from a collection _(not yet implemented)_
 - [materialize](commands/materialize.md) — build generated files from records _(not yet implemented)_
+- [ci](commands/ci.md) — run CI checks for the database (currently: materialize views)
 - [pull](commands/pull.md) — pull latest changes, resolve conflicts, and rebuild views _(not yet implemented)_
 - [setup](commands/setup.md) — initialise a new database directory _(not yet implemented)_
 - [resolve](commands/resolve.md) — resolve merge conflicts in database files _(not yet implemented)_

@@ -27,5 +27,5 @@ jobs:
 
       - run: chmod +x ingitdb
 
-      - name: inGitDB validation
-        run: ./ingitdb validate .
+      - name: inGitDB CI
+        run: ./ingitdb ci

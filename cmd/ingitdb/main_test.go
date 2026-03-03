@@ -385,6 +385,7 @@ func TestRun_AllCommands(t *testing.T) {
 		{name: "version", args: []string{"ingitdb", "version"}},
 		{name: "query help", args: []string{"ingitdb", "query", "--help"}},
 		{name: "materialize help", args: []string{"ingitdb", "materialize", "--help"}},
+		{name: "ci help", args: []string{"ingitdb", "ci", "--help"}},
 		{name: "pull help", args: []string{"ingitdb", "pull", "--help"}},
 		{name: "setup help", args: []string{"ingitdb", "setup", "--help"}},
 		{name: "resolve help", args: []string{"ingitdb", "resolve", "--help"}},
