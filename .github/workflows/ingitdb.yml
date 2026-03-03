@@ -29,3 +29,14 @@ jobs:
 
       - name: inGitDB CI
         run: ./ingitdb ci
+
+      - name: Commit materialized views
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "chore: update materialized views [skip ci]"
+
+      - name: Push materialized views
+        run: git push
+        if: github.event_name == 'push'
