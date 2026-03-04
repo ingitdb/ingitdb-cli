@@ -34,7 +34,7 @@ func minimalCol(t *testing.T, tmpDir string) *ingitdb.CollectionDef {
 	return &ingitdb.CollectionDef{
 		ID:           "things",
 		DirPath:      filepath.Join(tmpDir, "things"),
-		ColumnsOrder: []string{"id", "name"},
+		ColumnsOrder: []string{"$ID", "name"},
 	}
 }
 
@@ -50,7 +50,7 @@ func minimalView() *ingitdb.ViewDef {
 // oneRecord returns a slice with a single record suitable for minimalCol.
 func oneRecord() []ingitdb.IRecordEntry {
 	return []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "name": "Widget"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "name": "Widget"}),
 	}
 }
 
@@ -176,7 +176,7 @@ func TestBuildFKViews_MkdirAllError_ViaSeam(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "orders",
 		DirPath:      filepath.Join(tmpDir, "orders"),
-		ColumnsOrder: []string{"id", "customer"},
+		ColumnsOrder: []string{"$ID", "customer"},
 		Columns: map[string]*ingitdb.ColumnDef{
 			"customer": {Type: ingitdb.ColumnTypeString, ForeignKey: "customers"},
 		},
@@ -192,7 +192,7 @@ func TestBuildFKViews_MkdirAllError_ViaSeam(t *testing.T) {
 		Format:    "json",
 	}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "customer": "alice"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "customer": "alice"}),
 	}
 
 	mkdirErr := errors.New("fk mkdir permission denied")
@@ -227,7 +227,7 @@ func TestBuildFKViews_WriteFileError_ViaSeam(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "orders",
 		DirPath:      filepath.Join(tmpDir, "orders"),
-		ColumnsOrder: []string{"id", "customer"},
+		ColumnsOrder: []string{"$ID", "customer"},
 		Columns: map[string]*ingitdb.ColumnDef{
 			"customer": {Type: ingitdb.ColumnTypeString, ForeignKey: "customers"},
 		},
@@ -243,7 +243,7 @@ func TestBuildFKViews_WriteFileError_ViaSeam(t *testing.T) {
 		Format:    "json",
 	}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "customer": "alice"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "customer": "alice"}),
 	}
 
 	writeErr := errors.New("fk write permission denied")
@@ -280,7 +280,7 @@ func TestBuildFKViews_UnchangedLogfViaSeam(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "orders",
 		DirPath:      filepath.Join(tmpDir, "orders"),
-		ColumnsOrder: []string{"id", "customer"},
+		ColumnsOrder: []string{"$ID", "customer"},
 		Columns: map[string]*ingitdb.ColumnDef{
 			"customer": {Type: ingitdb.ColumnTypeString, ForeignKey: "customers"},
 		},
@@ -296,14 +296,14 @@ func TestBuildFKViews_UnchangedLogfViaSeam(t *testing.T) {
 		Format:    "json",
 	}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "customer": "alice"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "customer": "alice"}),
 	}
 
 	// Build the FK export columns (customer is excluded from FK view).
-	exportCols := []string{"id"} // customer (the FK col) is stripped
+	exportCols := []string{"$ID"} // customer (the FK col) is stripped
 	viewName := "customers/$fk/orders/customer/alice"
 	fkRecords := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "customer": "alice"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "customer": "alice"}),
 	}
 	exportContent, err := formatExportBatch("json", viewName, exportCols, fkRecords,
 		WithColumnTypes(col), WithRecordsDelimiter())
@@ -390,7 +390,7 @@ func TestSimpleViewBuilder_BuildView_DefaultView_MkdirError(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "items",
 		DirPath:      filepath.Join(tmpDir, "items"),
-		ColumnsOrder: []string{"id"},
+		ColumnsOrder: []string{"$ID"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:        ingitdb.DefaultViewID,
@@ -398,7 +398,7 @@ func TestSimpleViewBuilder_BuildView_DefaultView_MkdirError(t *testing.T) {
 		Format:    "json",
 	}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1"}),
 	}
 
 	mkdirErr := errors.New("builder mkdir denied")
@@ -431,7 +431,7 @@ func TestSimpleViewBuilder_BuildViews_DefaultView_WriteFileError(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "items",
 		DirPath:      filepath.Join(tmpDir, "items"),
-		ColumnsOrder: []string{"id"},
+		ColumnsOrder: []string{"$ID"},
 	}
 	dv := &ingitdb.ViewDef{
 		ID:        ingitdb.DefaultViewID,
@@ -439,7 +439,7 @@ func TestSimpleViewBuilder_BuildViews_DefaultView_WriteFileError(t *testing.T) {
 		Format:    "json",
 	}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1"}),
 	}
 
 	writeErr := errors.New("builder write denied")

@@ -28,7 +28,7 @@ type ExportOptions struct {
 	RecordsDelimiter bool
 	// ColumnTypes maps column names to their types for inclusion in the INGR header.
 	// When set, each header column is written as "name:type" (e.g. "area_km2:int").
-	// The "id" column key maps to the $ID pseudo-column.
+	// The "$ID" column key maps to the record key pseudo-column.
 	ColumnTypes map[string]ingitdb.ColumnType
 }
 
@@ -54,7 +54,11 @@ func WithRecordsDelimiter() ExportOption {
 func WithColumnTypes(col *ingitdb.CollectionDef) ExportOption {
 	return func(o *ExportOptions) {
 		o.ColumnTypes = make(map[string]ingitdb.ColumnType, len(col.Columns)+1)
-		o.ColumnTypes["id"] = ingitdb.ColumnTypeString
+		if def, ok := col.Columns["$ID"]; ok {
+			o.ColumnTypes["$ID"] = def.Type
+		} else {
+			o.ColumnTypes["$ID"] = ingitdb.ColumnTypeString
+		}
 		for name, def := range col.Columns {
 			o.ColumnTypes[name] = def.Type
 		}

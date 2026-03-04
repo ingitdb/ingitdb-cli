@@ -208,7 +208,7 @@ func TestSimpleViewBuilder_BuildDefaultView_SingleBatch(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "products",
 		DirPath:      filepath.Join(tmpDir, "products"),
-		ColumnsOrder: []string{"id", "name", "price"},
+		ColumnsOrder: []string{"$ID", "name", "price"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:        ingitdb.DefaultViewID,
@@ -217,8 +217,8 @@ func TestSimpleViewBuilder_BuildDefaultView_SingleBatch(t *testing.T) {
 	}
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "name": "Widget", "price": 9.99}),
-		ingitdb.NewMapRecordEntry("2", map[string]any{"id": "2", "name": "Gadget", "price": 19.99}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "name": "Widget", "price": 9.99}),
+		ingitdb.NewMapRecordEntry("2", map[string]any{"$ID": "2", "name": "Gadget", "price": 19.99}),
 	}
 
 	writer := &capturingWriter{}
@@ -251,7 +251,7 @@ func TestSimpleViewBuilder_BuildDefaultView_MultiBatch(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "items",
 		DirPath:      filepath.Join(tmpDir, "items"),
-		ColumnsOrder: []string{"id", "value"},
+		ColumnsOrder: []string{"$ID", "value"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:           ingitdb.DefaultViewID,
@@ -264,7 +264,7 @@ func TestSimpleViewBuilder_BuildDefaultView_MultiBatch(t *testing.T) {
 	for i := 1; i <= 5; i++ {
 		records[i-1] = ingitdb.NewMapRecordEntry(
 			string(rune(i+48)),
-			map[string]any{"id": string(rune(i + 48)), "value": i * 10},
+			map[string]any{"$ID": string(rune(i + 48)), "value": i * 10},
 		)
 	}
 
@@ -293,7 +293,7 @@ func TestSimpleViewBuilder_BuildDefaultView_Idempotent(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "data",
 		DirPath:      filepath.Join(tmpDir, "data"),
-		ColumnsOrder: []string{"id", "name"},
+		ColumnsOrder: []string{"$ID", "name"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:        ingitdb.DefaultViewID,
@@ -302,7 +302,7 @@ func TestSimpleViewBuilder_BuildDefaultView_Idempotent(t *testing.T) {
 	}
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "name": "Alice"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "name": "Alice"}),
 	}
 
 	writer := &capturingWriter{}
@@ -365,7 +365,7 @@ func TestBuildDefaultView_MultiBatchWithFilenaming(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "data",
 		DirPath:      filepath.Join(tmpDir, "data"),
-		ColumnsOrder: []string{"id", "value"},
+		ColumnsOrder: []string{"$ID", "value"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:           ingitdb.DefaultViewID,
@@ -380,7 +380,7 @@ func TestBuildDefaultView_MultiBatchWithFilenaming(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		records[i] = ingitdb.NewMapRecordEntry(
 			fmt.Sprintf("%d", i+1),
-			map[string]any{"id": fmt.Sprintf("%d", i+1), "value": (i + 1) * 10},
+			map[string]any{"$ID": fmt.Sprintf("%d", i+1), "value": (i + 1) * 10},
 		)
 	}
 
@@ -436,7 +436,7 @@ func TestBuildDefaultView_SingleBatchNoSuffix(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "items",
 		DirPath:      filepath.Join(tmpDir, "items"),
-		ColumnsOrder: []string{"id", "name"},
+		ColumnsOrder: []string{"$ID", "name"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:           ingitdb.DefaultViewID,
@@ -447,8 +447,8 @@ func TestBuildDefaultView_SingleBatchNoSuffix(t *testing.T) {
 	}
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "name": "Item1"}),
-		ingitdb.NewMapRecordEntry("2", map[string]any{"id": "2", "name": "Item2"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "name": "Item1"}),
+		ingitdb.NewMapRecordEntry("2", map[string]any{"$ID": "2", "name": "Item2"}),
 	}
 
 	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil, defaultFSops())
@@ -484,7 +484,7 @@ func TestBuildDefaultView_Idempotency_NoChanges(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "test",
 		DirPath:      filepath.Join(tmpDir, "test"),
-		ColumnsOrder: []string{"id", "value"},
+		ColumnsOrder: []string{"$ID", "value"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:        ingitdb.DefaultViewID,
@@ -493,7 +493,7 @@ func TestBuildDefaultView_Idempotency_NoChanges(t *testing.T) {
 	}
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "value": "test"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "value": "test"}),
 	}
 
 	// First build
@@ -530,7 +530,7 @@ func TestBuildDefaultView_Idempotency_OneRecordChanged(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "test",
 		DirPath:      filepath.Join(tmpDir, "test"),
-		ColumnsOrder: []string{"id", "value"},
+		ColumnsOrder: []string{"$ID", "value"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:           ingitdb.DefaultViewID,
@@ -540,9 +540,9 @@ func TestBuildDefaultView_Idempotency_OneRecordChanged(t *testing.T) {
 	}
 
 	records1 := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "value": "first"}),
-		ingitdb.NewMapRecordEntry("2", map[string]any{"id": "2", "value": "second"}),
-		ingitdb.NewMapRecordEntry("3", map[string]any{"id": "3", "value": "third"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "value": "first"}),
+		ingitdb.NewMapRecordEntry("2", map[string]any{"$ID": "2", "value": "second"}),
+		ingitdb.NewMapRecordEntry("3", map[string]any{"$ID": "3", "value": "third"}),
 	}
 
 	// First build
@@ -556,9 +556,9 @@ func TestBuildDefaultView_Idempotency_OneRecordChanged(t *testing.T) {
 
 	// Second build with one record changed (in batch 1)
 	records2 := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "value": "CHANGED"}),
-		ingitdb.NewMapRecordEntry("2", map[string]any{"id": "2", "value": "second"}),
-		ingitdb.NewMapRecordEntry("3", map[string]any{"id": "3", "value": "third"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "value": "CHANGED"}),
+		ingitdb.NewMapRecordEntry("2", map[string]any{"$ID": "2", "value": "second"}),
+		ingitdb.NewMapRecordEntry("3", map[string]any{"$ID": "3", "value": "third"}),
 	}
 
 	created2, updated2, unchanged2, errs2 := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records2, nil, defaultFSops())
@@ -587,7 +587,7 @@ func TestBuildDefaultView_AllFormats(t *testing.T) {
 			col := &ingitdb.CollectionDef{
 				ID:           "test_" + format,
 				DirPath:      filepath.Join(tmpDir, "test_"+format),
-				ColumnsOrder: []string{"id", "name"},
+				ColumnsOrder: []string{"$ID", "name"},
 			}
 			view := &ingitdb.ViewDef{
 				ID:        ingitdb.DefaultViewID,
@@ -596,7 +596,7 @@ func TestBuildDefaultView_AllFormats(t *testing.T) {
 			}
 
 			records := []ingitdb.IRecordEntry{
-				ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "name": "Test"}),
+				ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "name": "Test"}),
 			}
 
 			created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil, defaultFSops())
@@ -636,7 +636,7 @@ func TestBuildDefaultView_CreatesMissingDirectories(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "nested/collection",
 		DirPath:      filepath.Join(tmpDir, "nested/collection"),
-		ColumnsOrder: []string{"id"},
+		ColumnsOrder: []string{"$ID"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:        ingitdb.DefaultViewID,
@@ -645,7 +645,7 @@ func TestBuildDefaultView_CreatesMissingDirectories(t *testing.T) {
 	}
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1"}),
 	}
 
 	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil, defaultFSops())
@@ -673,7 +673,7 @@ func TestBuildDefaultView_EmptyRecords(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "empty",
 		DirPath:      filepath.Join(tmpDir, "empty"),
-		ColumnsOrder: []string{"id", "name"},
+		ColumnsOrder: []string{"$ID", "name"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:        ingitdb.DefaultViewID,
@@ -705,7 +705,7 @@ func TestBuildDefaultView_EmptyRecords(t *testing.T) {
 		t.Fatalf("failed to read file: %v", err)
 	}
 
-	if !strings.Contains(string(content), "id") {
+	if !strings.Contains(string(content), "$ID") {
 		t.Errorf("file should contain headers")
 	}
 }
@@ -717,7 +717,7 @@ func TestBuildDefaultView_WithCustomFileName(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "products",
 		DirPath:      filepath.Join(tmpDir, "products"),
-		ColumnsOrder: []string{"id", "price"},
+		ColumnsOrder: []string{"$ID", "price"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:        ingitdb.DefaultViewID,
@@ -727,7 +727,7 @@ func TestBuildDefaultView_WithCustomFileName(t *testing.T) {
 	}
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "price": 99.99}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "price": 99.99}),
 	}
 
 	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil, defaultFSops())
@@ -759,7 +759,7 @@ func TestBuildDefaultView_DefaultFileNameUsesCollectionID(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "articles",
 		DirPath:      filepath.Join(tmpDir, "articles"),
-		ColumnsOrder: []string{"id", "title"},
+		ColumnsOrder: []string{"$ID", "title"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:        ingitdb.DefaultViewID,
@@ -769,7 +769,7 @@ func TestBuildDefaultView_DefaultFileNameUsesCollectionID(t *testing.T) {
 	}
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "title": "Article1"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "title": "Article1"}),
 	}
 
 	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil, defaultFSops())
@@ -801,7 +801,7 @@ func TestBuildDefaultView_LargeBatchCount_VerifyPadding(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "huge",
 		DirPath:      filepath.Join(tmpDir, "huge"),
-		ColumnsOrder: []string{"id"},
+		ColumnsOrder: []string{"$ID"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:           ingitdb.DefaultViewID,
@@ -814,7 +814,7 @@ func TestBuildDefaultView_LargeBatchCount_VerifyPadding(t *testing.T) {
 	for i := 0; i < 15; i++ {
 		records[i] = ingitdb.NewMapRecordEntry(
 			fmt.Sprintf("%d", i+1),
-			map[string]any{"id": fmt.Sprintf("%d", i+1)},
+			map[string]any{"$ID": fmt.Sprintf("%d", i+1)},
 		)
 	}
 
@@ -853,7 +853,7 @@ func TestBuildDefaultView_FileContentIsValid(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "validation",
 		DirPath:      filepath.Join(tmpDir, "validation"),
-		ColumnsOrder: []string{"id", "name", "score"},
+		ColumnsOrder: []string{"$ID", "name", "score"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:        ingitdb.DefaultViewID,
@@ -862,8 +862,8 @@ func TestBuildDefaultView_FileContentIsValid(t *testing.T) {
 	}
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "name": "Alice", "score": 95}),
-		ingitdb.NewMapRecordEntry("2", map[string]any{"id": "2", "name": "Bob", "score": 87}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "name": "Alice", "score": 95}),
+		ingitdb.NewMapRecordEntry("2", map[string]any{"$ID": "2", "name": "Bob", "score": 87}),
 	}
 
 	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil, defaultFSops())
@@ -905,7 +905,7 @@ func TestBuildDefaultView_EmptyFormatDefaultsToINGR(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "test",
 		DirPath:      filepath.Join(tmpDir, "test"),
-		ColumnsOrder: []string{"id"},
+		ColumnsOrder: []string{"$ID"},
 	}
 	// Empty format should default to "ingr"
 	view := &ingitdb.ViewDef{
@@ -915,7 +915,7 @@ func TestBuildDefaultView_EmptyFormatDefaultsToINGR(t *testing.T) {
 	}
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("a1", map[string]any{"id": "a1"}),
+		ingitdb.NewMapRecordEntry("a1", map[string]any{"$ID": "a1"}),
 	}
 
 	if err := os.MkdirAll(col.DirPath, 0o755); err != nil {
@@ -947,7 +947,7 @@ func TestBuildDefaultView_RecordsDelimiterFromSettings(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "test",
 		DirPath:      filepath.Join(tmpDir, "test"),
-		ColumnsOrder: []string{"id"},
+		ColumnsOrder: []string{"$ID"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:        ingitdb.DefaultViewID,
@@ -958,7 +958,7 @@ func TestBuildDefaultView_RecordsDelimiterFromSettings(t *testing.T) {
 		Settings: ingitdb.Settings{RecordsDelimiter: 1},
 	}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1"}),
 	}
 
 	created, _, _, errs := buildDefaultView(tmpDir, "", col, def, view, records, nil, defaultFSops())
@@ -984,7 +984,7 @@ func TestBuildDefaultView_RuntimeOverrideDisablesViewDefDelimiter(t *testing.T) 
 	col := &ingitdb.CollectionDef{
 		ID:           "test",
 		DirPath:      filepath.Join(tmpDir, "test"),
-		ColumnsOrder: []string{"id"},
+		ColumnsOrder: []string{"$ID"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:               ingitdb.DefaultViewID,
@@ -997,7 +997,7 @@ func TestBuildDefaultView_RuntimeOverrideDisablesViewDefDelimiter(t *testing.T) 
 		RuntimeOverrides: ingitdb.RuntimeOverrides{RecordsDelimiter: &minusOne},
 	}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1"}),
 	}
 
 	created, _, _, errs := buildDefaultView(tmpDir, "", col, def, view, records, nil, defaultFSops())

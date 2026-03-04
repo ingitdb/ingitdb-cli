@@ -17,7 +17,7 @@ func makeCompaniesCol(t *testing.T, dirPath string) *ingitdb.CollectionDef {
 	return &ingitdb.CollectionDef{
 		ID:           "companies",
 		DirPath:      dirPath,
-		ColumnsOrder: []string{"id", "name", "country"},
+		ColumnsOrder: []string{"$ID", "name", "country"},
 		Columns: map[string]*ingitdb.ColumnDef{
 			"name":    {Type: ingitdb.ColumnTypeString},
 			"country": {Type: ingitdb.ColumnTypeString, ForeignKey: "countries"},
@@ -71,9 +71,9 @@ func TestBuildFKViews_HappyPath_SingleFKColumn(t *testing.T) {
 	view := makeDefaultView("json")
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme", "country": "gb"}),
-		ingitdb.NewMapRecordEntry("shopify", map[string]any{"id": "shopify", "name": "Shopify", "country": "ca"}),
-		ingitdb.NewMapRecordEntry("bmo", map[string]any{"id": "bmo", "name": "BMO", "country": "ca"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("shopify", map[string]any{"$ID": "shopify", "name": "Shopify", "country": "ca"}),
+		ingitdb.NewMapRecordEntry("bmo", map[string]any{"$ID": "bmo", "name": "BMO", "country": "ca"}),
 	}
 
 	created, updated, unchanged, errs := buildFKViews(tmpDir, "", col, makeDefWithCountries(tmpDir), view, records, nil, defaultFSops())
@@ -127,9 +127,9 @@ func TestBuildFKViews_NullAndEmptyFKValuesSkipped(t *testing.T) {
 	view := makeDefaultView("json")
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("r1", map[string]any{"id": "r1", "name": "US Co", "country": "us"}),
-		ingitdb.NewMapRecordEntry("r2", map[string]any{"id": "r2", "name": "No Country", "country": ""}),
-		ingitdb.NewMapRecordEntry("r3", map[string]any{"id": "r3", "name": "Nil Country", "country": nil}),
+		ingitdb.NewMapRecordEntry("r1", map[string]any{"$ID": "r1", "name": "US Co", "country": "us"}),
+		ingitdb.NewMapRecordEntry("r2", map[string]any{"$ID": "r2", "name": "No Country", "country": ""}),
+		ingitdb.NewMapRecordEntry("r3", map[string]any{"$ID": "r3", "name": "Nil Country", "country": nil}),
 	}
 
 	created, _, _, errs := buildFKViews(tmpDir, "", col, makeDefWithCountries(tmpDir), view, records, nil, defaultFSops())
@@ -165,7 +165,7 @@ func TestBuildFKViews_MultipleFKColumns(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "employees",
 		DirPath:      filepath.Join(tmpDir, "employees"),
-		ColumnsOrder: []string{"id", "name", "country", "department"},
+		ColumnsOrder: []string{"$ID", "name", "country", "department"},
 		Columns: map[string]*ingitdb.ColumnDef{
 			"name":       {Type: ingitdb.ColumnTypeString},
 			"country":    {Type: ingitdb.ColumnTypeString, ForeignKey: "countries"},
@@ -175,9 +175,9 @@ func TestBuildFKViews_MultipleFKColumns(t *testing.T) {
 	view := makeDefaultView("json")
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("alice", map[string]any{"id": "alice", "name": "Alice", "country": "gb", "department": "eng"}),
-		ingitdb.NewMapRecordEntry("bob", map[string]any{"id": "bob", "name": "Bob", "country": "ca", "department": "eng"}),
-		ingitdb.NewMapRecordEntry("carol", map[string]any{"id": "carol", "name": "Carol", "country": "gb", "department": "hr"}),
+		ingitdb.NewMapRecordEntry("alice", map[string]any{"$ID": "alice", "name": "Alice", "country": "gb", "department": "eng"}),
+		ingitdb.NewMapRecordEntry("bob", map[string]any{"$ID": "bob", "name": "Bob", "country": "ca", "department": "eng"}),
+		ingitdb.NewMapRecordEntry("carol", map[string]any{"$ID": "carol", "name": "Carol", "country": "gb", "department": "hr"}),
 	}
 
 	created, _, _, errs := buildFKViews(tmpDir, "", col, makeDefWithCountriesAndDepts(tmpDir), view, records, nil, defaultFSops())
@@ -223,8 +223,8 @@ func TestBuildFKViews_Idempotency(t *testing.T) {
 	def := makeDefWithCountries(tmpDir)
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme", "country": "gb"}),
-		ingitdb.NewMapRecordEntry("shopify", map[string]any{"id": "shopify", "name": "Shopify", "country": "ca"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("shopify", map[string]any{"$ID": "shopify", "name": "Shopify", "country": "ca"}),
 	}
 
 	// First run.
@@ -266,8 +266,8 @@ func TestBuildFKViews_IdempotencyAfterChange(t *testing.T) {
 	def := makeDefWithCountries(tmpDir)
 
 	records1 := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme", "country": "gb"}),
-		ingitdb.NewMapRecordEntry("shopify", map[string]any{"id": "shopify", "name": "Shopify", "country": "ca"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("shopify", map[string]any{"$ID": "shopify", "name": "Shopify", "country": "ca"}),
 	}
 
 	// First run.
@@ -278,8 +278,8 @@ func TestBuildFKViews_IdempotencyAfterChange(t *testing.T) {
 
 	// Second run — gb record changed.
 	records2 := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme Corp", "country": "gb"}),
-		ingitdb.NewMapRecordEntry("shopify", map[string]any{"id": "shopify", "name": "Shopify", "country": "ca"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme Corp", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("shopify", map[string]any{"$ID": "shopify", "name": "Shopify", "country": "ca"}),
 	}
 
 	created2, updated2, unchanged2, errs2 := buildFKViews(tmpDir, "", col, def, view, records2, nil, defaultFSops())
@@ -306,7 +306,7 @@ func TestBuildFKViews_NoFKColumns(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "products",
 		DirPath:      filepath.Join(tmpDir, "products"),
-		ColumnsOrder: []string{"id", "name"},
+		ColumnsOrder: []string{"$ID", "name"},
 		Columns: map[string]*ingitdb.ColumnDef{
 			"name": {Type: ingitdb.ColumnTypeString},
 		},
@@ -314,7 +314,7 @@ func TestBuildFKViews_NoFKColumns(t *testing.T) {
 	view := makeDefaultView("json")
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "name": "Widget"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "name": "Widget"}),
 	}
 
 	created, updated, unchanged, errs := buildFKViews(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil, defaultFSops())
@@ -357,7 +357,7 @@ func TestBuildFKViews_NoDefaultView_BuildViewsIntegration(t *testing.T) {
 	builder := SimpleViewBuilder{
 		DefReader:     fakeViewDefReader{views: map[string]*ingitdb.ViewDef{"custom": nonDefaultView}},
 		RecordsReader: fakeRecordsReader{records: []ingitdb.IRecordEntry{
-			ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme", "country": "gb"}),
+			ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
 		}},
 		Writer: writer,
 	}
@@ -385,7 +385,7 @@ func TestBuildFKViews_INGRHeaderHasColumnTypeAnnotations(t *testing.T) {
 	view := makeDefaultView("ingr")
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
 	}
 
 	created, _, _, errs := buildFKViews(tmpDir, "", col, makeDefWithCountries(tmpDir), view, records, nil, defaultFSops())
@@ -418,7 +418,7 @@ func TestBuildFKViews_ViewNameInINGRHeader(t *testing.T) {
 	view := makeDefaultView("ingr")
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
 	}
 
 	_, _, _, errs := buildFKViews(tmpDir, "", col, makeDefWithCountries(tmpDir), view, records, nil, defaultFSops())
@@ -450,8 +450,8 @@ func TestBuildFKViews_FKColumnExcludedFromOutput(t *testing.T) {
 	view := makeDefaultView("ingr")
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme Corp", "country": "gb"}),
-		ingitdb.NewMapRecordEntry("bbc", map[string]any{"id": "bbc", "name": "BBC", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme Corp", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("bbc", map[string]any{"$ID": "bbc", "name": "BBC", "country": "gb"}),
 	}
 
 	created, _, _, errs := buildFKViews(tmpDir, "", col, makeDefWithCountries(tmpDir), view, records, nil, defaultFSops())
@@ -502,8 +502,8 @@ func TestBuildFKViews_ErrorAccumulation(t *testing.T) {
 	view := makeDefaultView("json")
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme", "country": "gb"}),
-		ingitdb.NewMapRecordEntry("shopify", map[string]any{"id": "shopify", "name": "Shopify", "country": "ca"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("shopify", map[string]any{"$ID": "shopify", "name": "Shopify", "country": "ca"}),
 	}
 
 	// Pre-create the gb path as a directory so WriteFile on it will fail.
@@ -541,7 +541,7 @@ func TestBuildFKViews_LogfCalled(t *testing.T) {
 	view := makeDefaultView("json")
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
 	}
 
 	var logMessages []string
@@ -571,7 +571,7 @@ func TestBuildFKViews_LogfCalledOnUnchanged(t *testing.T) {
 	def := makeDefWithCountries(tmpDir)
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
 	}
 
 	// First run to create.
@@ -613,7 +613,7 @@ func TestBuildFKViews_RepoRootOverridesOutputRoot(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "companies",
 		DirPath:      filepath.Join(dbPath, "companies"),
-		ColumnsOrder: []string{"id", "name", "country"},
+		ColumnsOrder: []string{"$ID", "name", "country"},
 		Columns: map[string]*ingitdb.ColumnDef{
 			"name":    {Type: ingitdb.ColumnTypeString},
 			"country": {Type: ingitdb.ColumnTypeString, ForeignKey: "countries"},
@@ -628,7 +628,7 @@ func TestBuildFKViews_RepoRootOverridesOutputRoot(t *testing.T) {
 	}
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
 	}
 
 	created, _, _, errs := buildFKViews(dbPath, repoRoot, col, def, view, records, nil, defaultFSops())
@@ -666,7 +666,7 @@ func TestBuildFKViews_EmptyColumns(t *testing.T) {
 	view := makeDefaultView("json")
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1"}),
 	}
 
 	created, updated, unchanged, errs := buildFKViews(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil, defaultFSops())
@@ -694,7 +694,7 @@ func TestBuildFKViews_IncludeHash(t *testing.T) {
 	}
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
 	}
 
 	created, _, _, errs := buildFKViews(tmpDir, "", col, makeDefWithCountries(tmpDir), view, records, nil, defaultFSops())
@@ -735,7 +735,7 @@ func TestBuildFKViews_RecordsDelimiterFromSettings(t *testing.T) {
 	}
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
 	}
 
 	created, _, _, errs := buildFKViews(tmpDir, "", col, def, view, records, nil, defaultFSops())
@@ -771,7 +771,7 @@ func TestBuildFKViews_RecordsDelimiterFromView(t *testing.T) {
 	}
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
 	}
 
 	created, _, _, errs := buildFKViews(tmpDir, "", col, makeDefWithCountries(tmpDir), view, records, nil, defaultFSops())
@@ -815,7 +815,7 @@ func TestBuildFKViews_RuntimeOverrideDisablesDelimiter(t *testing.T) {
 	}
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
 	}
 
 	created, _, _, errs := buildFKViews(tmpDir, "", col, def, view, records, nil, defaultFSops())
@@ -848,7 +848,7 @@ func TestBuildFKViews_NilDataRecordSkipped(t *testing.T) {
 	nilDataRecord := ingitdb.NewMapRecordEntry("ghost", nil)
 	records := []ingitdb.IRecordEntry{
 		nilDataRecord,
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
 	}
 
 	created, updated, unchanged, errs := buildFKViews(tmpDir, "", col, makeDefWithCountries(tmpDir), view, records, nil, defaultFSops())
@@ -882,8 +882,8 @@ func TestBuildViews_FKViewsIntegration_DefaultView(t *testing.T) {
 	col.DefaultView = makeDefaultView("json")
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme", "country": "gb"}),
-		ingitdb.NewMapRecordEntry("shopify", map[string]any{"id": "shopify", "name": "Shopify", "country": "ca"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("shopify", map[string]any{"$ID": "shopify", "name": "Shopify", "country": "ca"}),
 	}
 
 	builder := SimpleViewBuilder{
@@ -943,7 +943,7 @@ func TestBuildFKViews_MkdirAllError(t *testing.T) {
 	}
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
 	}
 
 	_, _, _, errs := buildFKViews(tmpDir, "", col, makeDefWithCountries(tmpDir), view, records, nil, defaultFSops())
@@ -976,7 +976,7 @@ func TestBuildFKViews_FKCollectionNotFoundInDefinition(t *testing.T) {
 	def := &ingitdb.Definition{}
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
 	}
 
 	created, updated, unchanged, errs := buildFKViews(tmpDir, "", col, def, view, records, nil, defaultFSops())
@@ -1028,7 +1028,7 @@ func TestBuildFKViews_EmptyFormat(t *testing.T) {
 	}
 
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("acme", map[string]any{"id": "acme", "name": "Acme", "country": "gb"}),
+		ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
 	}
 
 	created, updated, unchanged, errs := buildFKViews(tmpDir, "", col, makeDefWithCountries(tmpDir), view, records, nil, defaultFSops())

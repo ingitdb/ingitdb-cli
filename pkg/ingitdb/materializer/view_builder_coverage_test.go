@@ -488,7 +488,7 @@ func TestSimpleViewBuilder_BuildView_DefaultView(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "items",
 		DirPath:      filepath.Join(tmpDir, "items"),
-		ColumnsOrder: []string{"id", "name"},
+		ColumnsOrder: []string{"$ID", "name"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:        ingitdb.DefaultViewID,
@@ -496,7 +496,7 @@ func TestSimpleViewBuilder_BuildView_DefaultView(t *testing.T) {
 		Format:    "json",
 	}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "name": "Widget"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "name": "Widget"}),
 	}
 
 	builder := SimpleViewBuilder{
@@ -862,7 +862,7 @@ func TestBuildDefaultView_IncludeHash(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "items",
 		DirPath:      filepath.Join(tmpDir, "items"),
-		ColumnsOrder: []string{"id", "name"},
+		ColumnsOrder: []string{"$ID", "name"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:          ingitdb.DefaultViewID,
@@ -871,7 +871,7 @@ func TestBuildDefaultView_IncludeHash(t *testing.T) {
 		IncludeHash: true,
 	}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "name": "Widget"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "name": "Widget"}),
 	}
 
 	created, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil, defaultFSops())
@@ -899,7 +899,7 @@ func TestBuildDefaultView_LogfCalledOnCreated(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "data",
 		DirPath:      filepath.Join(tmpDir, "data"),
-		ColumnsOrder: []string{"id"},
+		ColumnsOrder: []string{"$ID"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:        ingitdb.DefaultViewID,
@@ -907,7 +907,7 @@ func TestBuildDefaultView_LogfCalledOnCreated(t *testing.T) {
 		Format:    "json",
 	}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1"}),
 	}
 
 	logCalls := 0
@@ -932,7 +932,7 @@ func TestBuildDefaultView_LogfCalledOnUnchanged(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "data",
 		DirPath:      filepath.Join(tmpDir, "data"),
-		ColumnsOrder: []string{"id"},
+		ColumnsOrder: []string{"$ID"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:        ingitdb.DefaultViewID,
@@ -940,7 +940,7 @@ func TestBuildDefaultView_LogfCalledOnUnchanged(t *testing.T) {
 		Format:    "json",
 	}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1"}),
 	}
 
 	// First run: create the file (no logf needed).
@@ -972,7 +972,7 @@ func TestBuildDefaultView_LogfCalledOnUpdated(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "data",
 		DirPath:      filepath.Join(tmpDir, "data"),
-		ColumnsOrder: []string{"id", "value"},
+		ColumnsOrder: []string{"$ID", "value"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:        ingitdb.DefaultViewID,
@@ -980,10 +980,10 @@ func TestBuildDefaultView_LogfCalledOnUpdated(t *testing.T) {
 		Format:    "json",
 	}
 	records1 := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "value": "original"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "value": "original"}),
 	}
 	records2 := []ingitdb.IRecordEntry{
-		ingitdb.NewMapRecordEntry("1", map[string]any{"id": "1", "value": "changed"}),
+		ingitdb.NewMapRecordEntry("1", map[string]any{"$ID": "1", "value": "changed"}),
 	}
 
 	// First run: create the file.
@@ -1019,7 +1019,7 @@ func TestBuildDefaultView_FormatError(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "orders",
 		DirPath:      filepath.Join(tmpDir, "orders"),
-		ColumnsOrder: []string{"id", "bad"},
+		ColumnsOrder: []string{"$ID", "bad"},
 	}
 	view := &ingitdb.ViewDef{
 		ID:        ingitdb.DefaultViewID,
@@ -1028,7 +1028,7 @@ func TestBuildDefaultView_FormatError(t *testing.T) {
 	}
 	// A channel value cannot be JSON-marshalled → triggers the format error branch.
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "bad": make(chan int)}},
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "bad": make(chan int)}},
 	}
 
 	_, _, _, errs := buildDefaultView(tmpDir, "", col, &ingitdb.Definition{}, view, records, nil, defaultFSops())
@@ -1048,7 +1048,7 @@ func TestBuildFKViews_FormatError(t *testing.T) {
 	col := &ingitdb.CollectionDef{
 		ID:           "orders",
 		DirPath:      filepath.Join(tmpDir, "orders"),
-		ColumnsOrder: []string{"id", "customer", "bad"},
+		ColumnsOrder: []string{"$ID", "customer", "bad"},
 		Columns: map[string]*ingitdb.ColumnDef{
 			"customer": {Type: ingitdb.ColumnTypeString, ForeignKey: "customers"},
 			"bad":      {Type: ingitdb.ColumnTypeString},
@@ -1067,7 +1067,7 @@ func TestBuildFKViews_FormatError(t *testing.T) {
 	// The "bad" column (a channel) is NOT the FK column, so it ends up in fkExportColumns.
 	// formatExportBatch("jsonl",...) then fails to marshal the channel value.
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "customer": "alice", "bad": make(chan int)}},
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "customer": "alice", "bad": make(chan int)}},
 	}
 
 	_, _, _, errs := buildFKViews(tmpDir, "", col, def, view, records, nil, defaultFSops())

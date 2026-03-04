@@ -90,9 +90,9 @@ func TestRebaseCommand(t *testing.T) {
 					DirPath: filepath.Join(tempDir, "docs", "demo-apps", "test"),
 					Titles:  map[string]string{"en": "Test Collection"},
 					Columns: map[string]*ingitdb.ColumnDef{
-						"id": {Type: ingitdb.ColumnTypeString},
+						"$ID": {Type: ingitdb.ColumnTypeString},
 					},
-					ColumnsOrder: []string{"id"},
+					ColumnsOrder: []string{"$ID"},
 				},
 			},
 		}, nil

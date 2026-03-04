@@ -11,7 +11,7 @@ import (
 
 // formatINGR serializes records in INGR format.
 // The first line is a metadata header: "# INGR.io | {viewName}: $ID, col2, col3, ..."
-// where "id" is represented as "$ID". Subsequent lines are N lines per record
+// where the record key is the "$ID" column. Subsequent lines are N lines per record
 // (one JSON-encoded field value per line). N equals len(headers).
 // If opts.RecordsDelimiter is true, a "#-" line is written after each record.
 // The footer always starts with "# {N} records\n" (the record count line, with newline).
@@ -27,11 +27,7 @@ func formatINGR(viewName string, opts ExportOptions, headers []string, records [
 		if i > 0 {
 			buf.WriteString(", ")
 		}
-		name := h
-		if h == "id" {
-			name = "$ID"
-		}
-		buf.WriteString(name)
+		buf.WriteString(h)
 		if opts.ColumnTypes != nil {
 			if ct, ok := opts.ColumnTypes[h]; ok {
 				buf.WriteByte(':')

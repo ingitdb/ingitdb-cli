@@ -174,7 +174,7 @@ func recordsToMaps(headers []string, records []ingitdb.IRecordEntry) []map[strin
 //  2. col.ColumnsOrder if non-empty
 //  3. keys of col.Columns sorted alphabetically
 //
-// "id" is always prepended if it is not already at index 0.
+// "$ID" is always prepended if it is not already at index 0.
 func determineColumns(col *ingitdb.CollectionDef, view *ingitdb.ViewDef) []string {
 	var cols []string
 	if len(view.Columns) > 0 {
@@ -191,16 +191,16 @@ func determineColumns(col *ingitdb.CollectionDef, view *ingitdb.ViewDef) []strin
 		sort.Strings(cols)
 	}
 
-	// Ensure "id" is at index 0
-	if len(cols) == 0 || cols[0] != "id" {
-		// Remove "id" from wherever it is (if present)
+	// Ensure "$ID" is at index 0
+	if len(cols) == 0 || cols[0] != "$ID" {
+		// Remove "$ID" from wherever it is (if present)
 		filtered := cols[:0]
 		for _, c := range cols {
-			if c != "id" {
+			if c != "$ID" {
 				filtered = append(filtered, c)
 			}
 		}
-		cols = append([]string{"id"}, filtered...)
+		cols = append([]string{"$ID"}, filtered...)
 	}
 	return cols
 }

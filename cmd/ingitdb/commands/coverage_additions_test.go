@@ -143,7 +143,7 @@ func TestDocsUpdate_RunDocsUpdateError(t *testing.T) {
 					DirPath: filepath.Join(dir, "nonexistent"),
 					Titles:  map[string]string{"en": "Test Items"},
 					Columns: map[string]*ingitdb.ColumnDef{
-						"id": {Type: ingitdb.ColumnTypeString},
+						"$ID": {Type: ingitdb.ColumnTypeString},
 					},
 				},
 			},

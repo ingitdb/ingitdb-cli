@@ -89,82 +89,82 @@ func TestFormatExportBatch_TSV(t *testing.T) {
 	}{
 		{
 			"single record",
-			[]string{"id", "name"},
+			[]string{"$ID", "name"},
 			[]ingitdb.IRecordEntry{
-				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "name": "Alice"}},
+				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "name": "Alice"}},
 			},
-			"id\tname\n1\tAlice\n",
+			"$ID\tname\n1\tAlice\n",
 		},
 		{
 			"multiple records",
-			[]string{"id", "name", "age"},
+			[]string{"$ID", "name", "age"},
 			[]ingitdb.IRecordEntry{
-				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "name": "Alice", "age": 30}},
-				ingitdb.RecordEntry{ID: "2", Data: map[string]any{"id": "2", "name": "Bob", "age": 25}},
+				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "name": "Alice", "age": 30}},
+				ingitdb.RecordEntry{ID: "2", Data: map[string]any{"$ID": "2", "name": "Bob", "age": 25}},
 			},
-			"id\tname\tage\n1\tAlice\t30\n2\tBob\t25\n",
+			"$ID\tname\tage\n1\tAlice\t30\n2\tBob\t25\n",
 		},
 		{
 			"nil value",
-			[]string{"id", "name"},
+			[]string{"$ID", "name"},
 			[]ingitdb.IRecordEntry{
-				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "name": nil}},
+				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "name": nil}},
 			},
-			"id\tname\n1\t\n",
+			"$ID\tname\n1\t\n",
 		},
 		{
 			"missing field",
-			[]string{"id", "name"},
+			[]string{"$ID", "name"},
 			[]ingitdb.IRecordEntry{
-				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1"}},
+				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1"}},
 			},
-			"id\tname\n1\t\n",
+			"$ID\tname\n1\t\n",
 		},
 		{
 			"escape tab",
-			[]string{"id", "text"},
+			[]string{"$ID", "text"},
 			[]ingitdb.IRecordEntry{
-				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "text": "hello\tworld"}},
+				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "text": "hello\tworld"}},
 			},
-			"id\ttext\n1\thello\\tworld\n",
+			"$ID\ttext\n1\thello\\tworld\n",
 		},
 		{
 			"escape newline",
-			[]string{"id", "text"},
+			[]string{"$ID", "text"},
 			[]ingitdb.IRecordEntry{
-				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "text": "line1\nline2"}},
+				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "text": "line1\nline2"}},
 			},
-			"id\ttext\n1\tline1\\nline2\n",
+			"$ID\ttext\n1\tline1\\nline2\n",
 		},
 		{
 			"escape backslash",
-			[]string{"id", "text"},
+			[]string{"$ID", "text"},
 			[]ingitdb.IRecordEntry{
-				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "text": "path\\to\\file"}},
+				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "text": "path\\to\\file"}},
 			},
-			"id\ttext\n1\tpath\\\\to\\\\file\n",
+			"$ID\ttext\n1\tpath\\\\to\\\\file\n",
 		},
 		{
 			"escape carriage return",
-			[]string{"id", "text"},
+			[]string{"$ID", "text"},
 			[]ingitdb.IRecordEntry{
-				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "text": "hello\rworld"}},
+				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "text": "hello\rworld"}},
 			},
-			"id\ttext\n1\thello\\rworld\n",
+			"$ID\ttext\n1\thello\\rworld\n",
 		},
 		{
 			"empty records",
-			[]string{"id", "name"},
+			[]string{"$ID", "name"},
 			[]ingitdb.IRecordEntry{},
-			"id\tname\n",
+			"$ID\tname\n",
 		},
 		{
 			"nil data",
-			[]string{"id", "name"},
+			[]string{"$ID", "name"},
 			[]ingitdb.IRecordEntry{
 				ingitdb.RecordEntry{ID: "1", Data: nil},
 			},
-			"id\tname\n\t\n",
+			"$ID\tname\n\t\n",
 		},
 	}
 
@@ -193,21 +193,21 @@ func TestFormatExportBatch_CSV(t *testing.T) {
 	}{
 		{
 			"single record",
-			[]string{"id", "name"},
+			[]string{"$ID", "name"},
 			[]ingitdb.IRecordEntry{
-				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "name": "Alice"}},
+				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "name": "Alice"}},
 			},
 			func(s string) bool {
 				r := csv.NewReader(strings.NewReader(s))
 				records, err := r.ReadAll()
-				return err == nil && len(records) == 2 && records[0][0] == "id" && records[1][0] == "1"
+				return err == nil && len(records) == 2 && records[0][0] == "$ID" && records[1][0] == "1"
 			},
 		},
 		{
 			"field with comma",
-			[]string{"id", "name"},
+			[]string{"$ID", "name"},
 			[]ingitdb.IRecordEntry{
-				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "name": "Smith, John"}},
+				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "name": "Smith, John"}},
 			},
 			func(s string) bool {
 				r := csv.NewReader(strings.NewReader(s))
@@ -217,9 +217,9 @@ func TestFormatExportBatch_CSV(t *testing.T) {
 		},
 		{
 			"field with quote",
-			[]string{"id", "name"},
+			[]string{"$ID", "name"},
 			[]ingitdb.IRecordEntry{
-				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "name": `He said "hello"`}},
+				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "name": `He said "hello"`}},
 			},
 			func(s string) bool {
 				r := csv.NewReader(strings.NewReader(s))
@@ -229,9 +229,9 @@ func TestFormatExportBatch_CSV(t *testing.T) {
 		},
 		{
 			"field with newline",
-			[]string{"id", "description"},
+			[]string{"$ID", "description"},
 			[]ingitdb.IRecordEntry{
-				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "description": "Line 1\nLine 2"}},
+				ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "description": "Line 1\nLine 2"}},
 			},
 			func(s string) bool {
 				r := csv.NewReader(strings.NewReader(s))
@@ -241,12 +241,12 @@ func TestFormatExportBatch_CSV(t *testing.T) {
 		},
 		{
 			"empty records",
-			[]string{"id", "name"},
+			[]string{"$ID", "name"},
 			[]ingitdb.IRecordEntry{},
 			func(s string) bool {
 				r := csv.NewReader(strings.NewReader(s))
 				records, err := r.ReadAll()
-				return err == nil && len(records) == 1 && records[0][0] == "id"
+				return err == nil && len(records) == 1 && records[0][0] == "$ID"
 			},
 		},
 	}
@@ -268,10 +268,10 @@ func TestFormatExportBatch_CSV(t *testing.T) {
 func TestFormatExportBatch_JSON(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "name", "age"}
+	headers := []string{"$ID", "name", "age"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "name": "Alice", "age": 30}},
-		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"id": "2", "name": "Bob", "age": 25}},
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "name": "Alice", "age": 30}},
+		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"$ID": "2", "name": "Bob", "age": 25}},
 	}
 
 	got, err := formatExportBatch("json", "", headers, records)
@@ -287,10 +287,10 @@ func TestFormatExportBatch_JSON(t *testing.T) {
 	if len(result) != 2 {
 		t.Errorf("expected 2 records, got %d", len(result))
 	}
-	if result[0]["id"] != "1" || result[0]["name"] != "Alice" {
+	if result[0]["$ID"] != "1" || result[0]["name"] != "Alice" {
 		t.Errorf("first record mismatch: %v", result[0])
 	}
-	if result[1]["id"] != "2" || result[1]["name"] != "Bob" {
+	if result[1]["$ID"] != "2" || result[1]["name"] != "Bob" {
 		t.Errorf("second record mismatch: %v", result[1])
 	}
 }
@@ -298,10 +298,10 @@ func TestFormatExportBatch_JSON(t *testing.T) {
 func TestFormatExportBatch_JSONL(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "name"}
+	headers := []string{"$ID", "name"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "name": "Alice"}},
-		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"id": "2", "name": "Bob"}},
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "name": "Alice"}},
+		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"$ID": "2", "name": "Bob"}},
 	}
 
 	got, err := formatExportBatch("jsonl", "", headers, records)
@@ -322,7 +322,7 @@ func TestFormatExportBatch_JSONL(t *testing.T) {
 		t.Fatalf("failed to unmarshal second line: %v", err)
 	}
 
-	if obj1["id"] != "1" || obj2["id"] != "2" {
+	if obj1["$ID"] != "1" || obj2["$ID"] != "2" {
 		t.Errorf("JSONL records mismatch")
 	}
 }
@@ -330,9 +330,9 @@ func TestFormatExportBatch_JSONL(t *testing.T) {
 func TestFormatExportBatch_YAML(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "name"}
+	headers := []string{"$ID", "name"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "name": "Alice"}},
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "name": "Alice"}},
 	}
 
 	got, err := formatExportBatch("yaml", "", headers, records)
@@ -348,7 +348,7 @@ func TestFormatExportBatch_YAML(t *testing.T) {
 	if len(result) != 1 {
 		t.Errorf("expected 1 record, got %d", len(result))
 	}
-	if result[0]["id"] != "1" || result[0]["name"] != "Alice" {
+	if result[0]["$ID"] != "1" || result[0]["name"] != "Alice" {
 		t.Errorf("record mismatch: %v", result[0])
 	}
 }
@@ -356,7 +356,7 @@ func TestFormatExportBatch_YAML(t *testing.T) {
 func TestFormatExportBatch_EmptyRecords(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "name"}
+	headers := []string{"$ID", "name"}
 	records := []ingitdb.IRecordEntry{}
 
 	tests := []struct {
@@ -365,11 +365,11 @@ func TestFormatExportBatch_EmptyRecords(t *testing.T) {
 	}{
 		{"tsv", func(s string) bool {
 			// TSV with just headers
-			return strings.Contains(s, "id\tname")
+			return strings.Contains(s, "$ID\tname")
 		}},
 		{"csv", func(s string) bool {
 			// CSV with just headers
-			return strings.Contains(s, "id")
+			return strings.Contains(s, "$ID")
 		}},
 		{"json", func(s string) bool {
 			// JSON empty array
@@ -402,10 +402,10 @@ func TestFormatExportBatch_EmptyRecords(t *testing.T) {
 func TestFormatExportBatch_INGR(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "name", "age"}
+	headers := []string{"$ID", "name", "age"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "name": "Alice", "age": 30}},
-		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"id": "2", "name": "Bob", "age": 25}},
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "name": "Alice", "age": 30}},
+		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"$ID": "2", "name": "Bob", "age": 25}},
 	}
 
 	got, err := formatExportBatch("ingr", "test/view", headers, records)
@@ -426,7 +426,7 @@ func TestFormatExportBatch_INGR(t *testing.T) {
 func TestFormatINGR_EmptyRecords(t *testing.T) {
 	t.Parallel()
 
-	got, err := formatExportBatch("ingr", "test/view", []string{"id", "name"}, []ingitdb.IRecordEntry{})
+	got, err := formatExportBatch("ingr", "test/view", []string{"$ID", "name"}, []ingitdb.IRecordEntry{})
 	if err != nil {
 		t.Fatalf("formatExportBatch: %v", err)
 	}
@@ -440,9 +440,9 @@ func TestFormatINGR_EmptyRecords(t *testing.T) {
 func TestFormatINGR_NilAndMissingFields(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "name", "age"}
+	headers := []string{"$ID", "name", "age"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "name": nil}}, // missing age, nil name
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "name": nil}}, // missing age, nil name
 	}
 
 	got, err := formatExportBatch("ingr", "test/view", headers, records)
@@ -460,9 +460,9 @@ func TestFormatINGR_NilAndMissingFields(t *testing.T) {
 func TestFormatExportBatch_EmptyFormatReturnsError(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id"}
+	headers := []string{"$ID"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "hello"}},
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "hello"}},
 	}
 
 	_, err := formatExportBatch("", "test/view", headers, records)
@@ -477,7 +477,7 @@ func TestFormatExportBatch_EmptyFormatReturnsError(t *testing.T) {
 func TestFormatExportBatch_UnknownFormatReturnsError(t *testing.T) {
 	t.Parallel()
 
-	_, err := formatExportBatch("xml", "test/view", []string{"id"}, nil)
+	_, err := formatExportBatch("xml", "test/view", []string{"$ID"}, nil)
 	if err == nil {
 		t.Fatal("expected error for unknown format")
 	}
@@ -489,9 +489,9 @@ func TestFormatExportBatch_UnknownFormatReturnsError(t *testing.T) {
 func TestFormatINGR_HashCoversHeaderAndRecordsAndCountLine(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "name"}
+	headers := []string{"$ID", "name"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "a", Data: map[string]any{"id": "a", "name": "Alice"}},
+		ingitdb.RecordEntry{ID: "a", Data: map[string]any{"$ID": "a", "name": "Alice"}},
 	}
 
 	got, err := formatExportBatch("ingr", "test/view", headers, records, WithHash())
@@ -526,9 +526,9 @@ func TestFormatINGR_HashCoversHeaderAndRecordsAndCountLine(t *testing.T) {
 func TestFormatINGR_HashOmittedWhenDisabled(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "name"}
+	headers := []string{"$ID", "name"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "a", Data: map[string]any{"id": "a", "name": "Alice"}},
+		ingitdb.RecordEntry{ID: "a", Data: map[string]any{"$ID": "a", "name": "Alice"}},
 	}
 
 	got, err := formatExportBatch("ingr", "test/view", headers, records)
@@ -562,12 +562,12 @@ func TestFormatINGR_HeaderPrefix(t *testing.T) {
 	}{
 		{
 			name:    "with records",
-			headers: []string{"id", "city"},
-			records: []ingitdb.IRecordEntry{ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "city": "Oslo"}}},
+			headers: []string{"$ID", "city"},
+			records: []ingitdb.IRecordEntry{ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "city": "Oslo"}}},
 		},
 		{
 			name:    "empty records",
-			headers: []string{"id"},
+			headers: []string{"$ID"},
 			records: []ingitdb.IRecordEntry{},
 		},
 	}
@@ -590,7 +590,7 @@ func TestFormatINGR_IDAlwaysFirst(t *testing.T) {
 	t.Parallel()
 
 	// formatINGR receives already-ordered headers; verify id appears as $ID first in the header line.
-	headers := []string{"id", "name", "age"}
+	headers := []string{"$ID", "name", "age"}
 	records := []ingitdb.IRecordEntry{}
 	got, err := formatExportBatch("ingr", "t/v", headers, records)
 	if err != nil {
@@ -615,39 +615,39 @@ func TestDetermineColumns(t *testing.T) {
 	}{
 		{
 			"view columns with id at index 0",
-			&ingitdb.CollectionDef{ID: "col1", ColumnsOrder: []string{"id", "x", "y"}},
-			&ingitdb.ViewDef{Columns: []string{"id", "x"}},
-			[]string{"id", "x"},
+			&ingitdb.CollectionDef{ID: "col1", ColumnsOrder: []string{"$ID", "x", "y"}},
+			&ingitdb.ViewDef{Columns: []string{"$ID", "x"}},
+			[]string{"$ID", "x"},
 		},
 		{
 			"view columns without id",
-			&ingitdb.CollectionDef{ID: "col1", ColumnsOrder: []string{"id", "x", "y"}},
+			&ingitdb.CollectionDef{ID: "col1", ColumnsOrder: []string{"$ID", "x", "y"}},
 			&ingitdb.ViewDef{Columns: []string{"x", "y"}},
-			[]string{"id", "x", "y"},
+			[]string{"$ID", "x", "y"},
 		},
 		{
 			"view columns with id in middle",
-			&ingitdb.CollectionDef{ID: "col1", ColumnsOrder: []string{"id", "x", "y"}},
-			&ingitdb.ViewDef{Columns: []string{"x", "id", "y"}},
-			[]string{"id", "x", "y"},
+			&ingitdb.CollectionDef{ID: "col1", ColumnsOrder: []string{"$ID", "x", "y"}},
+			&ingitdb.ViewDef{Columns: []string{"x", "$ID", "y"}},
+			[]string{"$ID", "x", "y"},
 		},
 		{
 			"use collection columns order",
-			&ingitdb.CollectionDef{ID: "col1", ColumnsOrder: []string{"id", "a", "b", "c"}},
+			&ingitdb.CollectionDef{ID: "col1", ColumnsOrder: []string{"$ID", "a", "b", "c"}},
 			&ingitdb.ViewDef{Columns: []string{}},
-			[]string{"id", "a", "b", "c"},
+			[]string{"$ID", "a", "b", "c"},
 		},
 		{
 			"empty columns",
 			&ingitdb.CollectionDef{ID: "col1", ColumnsOrder: []string{}},
 			&ingitdb.ViewDef{Columns: []string{}},
-			[]string{"id"},
+			[]string{"$ID"},
 		},
 		{
 			"single column id",
-			&ingitdb.CollectionDef{ID: "col1", ColumnsOrder: []string{"id"}},
+			&ingitdb.CollectionDef{ID: "col1", ColumnsOrder: []string{"$ID"}},
 			&ingitdb.ViewDef{Columns: []string{}},
-			[]string{"id"},
+			[]string{"$ID"},
 		},
 	}
 
@@ -703,10 +703,10 @@ func TestEscapeTSV(t *testing.T) {
 func TestRecordsToMaps(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "name", "age"}
+	headers := []string{"$ID", "name", "age"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "name": "Alice", "age": 30}},
-		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"id": "2", "name": "Bob"}},
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "name": "Alice", "age": 30}},
+		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"$ID": "2", "name": "Bob"}},
 		ingitdb.RecordEntry{ID: "3", Data: nil},
 	}
 
@@ -716,15 +716,15 @@ func TestRecordsToMaps(t *testing.T) {
 		t.Errorf("expected 3 records, got %d", len(result))
 	}
 
-	if result[0]["id"] != "1" || result[0]["name"] != "Alice" || result[0]["age"] != 30 {
+	if result[0]["$ID"] != "1" || result[0]["name"] != "Alice" || result[0]["age"] != 30 {
 		t.Errorf("first record mismatch: %v", result[0])
 	}
 
-	if result[1]["id"] != "2" || result[1]["name"] != "Bob" {
+	if result[1]["$ID"] != "2" || result[1]["name"] != "Bob" {
 		t.Errorf("second record mismatch: %v", result[1])
 	}
 
-	if result[2]["id"] != nil {
+	if result[2]["$ID"] != nil {
 		t.Errorf("third record should have nil values, got %v", result[2])
 	}
 }
@@ -736,7 +736,7 @@ func TestFormatExportBatch_EmptyColumnsSlice(t *testing.T) {
 
 	headers := []string{}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "name": "Alice"}},
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "name": "Alice"}},
 	}
 
 	got, err := formatExportBatch("tsv", "", headers, records)
@@ -752,10 +752,10 @@ func TestFormatExportBatch_EmptyColumnsSlice(t *testing.T) {
 func TestFormatExportBatch_RecordsWithNilData(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "name"}
+	headers := []string{"$ID", "name"}
 	records := []ingitdb.IRecordEntry{
 		ingitdb.RecordEntry{ID: "1", Data: nil},
-		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"id": "2", "name": "Bob"}},
+		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"$ID": "2", "name": "Bob"}},
 	}
 
 	tests := []struct {
@@ -794,10 +794,10 @@ func TestFormatExportBatch_RecordsWithNilData(t *testing.T) {
 func TestFormatExportBatch_UnicodeCharacters(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "text"}
+	headers := []string{"$ID", "text"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "text": "Hello 你好 مرحبا 🎉"}},
-		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"id": "2", "text": "Café résumé naïve"}},
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "text": "Hello 你好 مرحبا 🎉"}},
+		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"$ID": "2", "text": "Café résumé naïve"}},
 	}
 
 	tests := []struct {
@@ -838,9 +838,9 @@ func TestFormatExportBatch_VeryLongLines(t *testing.T) {
 	t.Parallel()
 
 	longString := strings.Repeat("x", 10000)
-	headers := []string{"id", "longtext"}
+	headers := []string{"$ID", "longtext"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "longtext": longString}},
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "longtext": longString}},
 	}
 
 	got, err := formatExportBatch("tsv", "", headers, records)
@@ -915,10 +915,10 @@ func TestEscapeTSV_MultipleEscapesInValue(t *testing.T) {
 func TestFormatTSV_TabSeparationAndNoTrailingNewline(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "name", "value"}
+	headers := []string{"$ID", "name", "value"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "name": "Alice", "value": 100}},
-		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"id": "2", "name": "Bob", "value": 200}},
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "name": "Alice", "value": 100}},
+		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"$ID": "2", "name": "Bob", "value": 200}},
 	}
 
 	got, err := formatExportBatch("tsv", "", headers, records)
@@ -930,8 +930,8 @@ func TestFormatTSV_TabSeparationAndNoTrailingNewline(t *testing.T) {
 	lines := strings.Split(strings.TrimSuffix(content, "\n"), "\n")
 
 	// Check that headers are properly separated by tabs
-	if lines[0] != "id\tname\tvalue" {
-		t.Errorf("header line = %q, want %q", lines[0], "id\tname\tvalue")
+	if lines[0] != "$ID\tname\tvalue" {
+		t.Errorf("header line = %q, want %q", lines[0], "$ID\tname\tvalue")
 	}
 
 	// Check that data rows have proper tab separation
@@ -953,9 +953,9 @@ func TestFormatTSV_TabSeparationAndNoTrailingNewline(t *testing.T) {
 func TestFormatCSV_CRLF_LineEndings(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "description"}
+	headers := []string{"$ID", "description"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "description": "Line 1\r\nLine 2"}},
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "description": "Line 1\r\nLine 2"}},
 	}
 
 	got, err := formatExportBatch("csv", "", headers, records)
@@ -982,11 +982,11 @@ func TestFormatCSV_CRLF_LineEndings(t *testing.T) {
 func TestFormatCSV_EmptyStringVsNil(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "value"}
+	headers := []string{"$ID", "value"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "value": ""}},
-		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"id": "2", "value": nil}},
-		ingitdb.RecordEntry{ID: "3", Data: map[string]any{"id": "3"}}, // Missing field
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "value": ""}},
+		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"$ID": "2", "value": nil}},
+		ingitdb.RecordEntry{ID: "3", Data: map[string]any{"$ID": "3"}}, // Missing field
 	}
 
 	got, err := formatExportBatch("csv", "", headers, records)
@@ -1021,11 +1021,11 @@ func TestFormatCSV_EmptyStringVsNil(t *testing.T) {
 func TestFormatCSV_SingleAndDoubleQuoteCombinations(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "text"}
+	headers := []string{"$ID", "text"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "text": `He said "hello"`}},
-		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"id": "2", "text": `It's a test`}},
-		ingitdb.RecordEntry{ID: "3", Data: map[string]any{"id": "3", "text": `"Quoted" and 'apostrophe'`}},
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "text": `He said "hello"`}},
+		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"$ID": "2", "text": `It's a test`}},
+		ingitdb.RecordEntry{ID: "3", Data: map[string]any{"$ID": "3", "text": `"Quoted" and 'apostrophe'`}},
 	}
 
 	got, err := formatExportBatch("csv", "", headers, records)
@@ -1057,11 +1057,11 @@ func TestFormatCSV_SingleAndDoubleQuoteCombinations(t *testing.T) {
 func TestFormatCSV_NumbersAndBooleans(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "count", "enabled"}
+	headers := []string{"$ID", "count", "enabled"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "count": 42, "enabled": true}},
-		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"id": "2", "count": 0, "enabled": false}},
-		ingitdb.RecordEntry{ID: "3", Data: map[string]any{"id": "3", "count": 3.14159, "enabled": nil}},
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "count": 42, "enabled": true}},
+		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"$ID": "2", "count": 0, "enabled": false}},
+		ingitdb.RecordEntry{ID: "3", Data: map[string]any{"$ID": "3", "count": 3.14159, "enabled": nil}},
 	}
 
 	got, err := formatExportBatch("csv", "", headers, records)
@@ -1100,11 +1100,11 @@ func TestFormatCSV_NumbersAndBooleans(t *testing.T) {
 func TestFormatJSONL_EachLineIsValidJSON(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "name"}
+	headers := []string{"$ID", "name"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "name": "Alice"}},
-		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"id": "2", "name": "Bob"}},
-		ingitdb.RecordEntry{ID: "3", Data: map[string]any{"id": "3", "name": "Charlie"}},
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "name": "Alice"}},
+		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"$ID": "2", "name": "Bob"}},
+		ingitdb.RecordEntry{ID: "3", Data: map[string]any{"$ID": "3", "name": "Charlie"}},
 	}
 
 	got, err := formatExportBatch("jsonl", "", headers, records)
@@ -1122,7 +1122,7 @@ func TestFormatJSONL_EachLineIsValidJSON(t *testing.T) {
 		if err := json.Unmarshal([]byte(line), &obj); err != nil {
 			t.Errorf("line %d is not valid JSON: %v", i, err)
 		}
-		if obj["id"] == "" {
+		if obj["$ID"] == "" {
 			t.Errorf("line %d missing id field", i)
 		}
 	}
@@ -1131,10 +1131,10 @@ func TestFormatJSONL_EachLineIsValidJSON(t *testing.T) {
 func TestFormatJSONL_WithSpecialCharactersAndUnicode(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "text"}
+	headers := []string{"$ID", "text"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "text": "Hello\nWorld\t\u0000"}},
-		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"id": "2", "text": "日本語テスト"}},
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "text": "Hello\nWorld\t\u0000"}},
+		ingitdb.RecordEntry{ID: "2", Data: map[string]any{"$ID": "2", "text": "日本語テスト"}},
 	}
 
 	got, err := formatExportBatch("jsonl", "", headers, records)
@@ -1156,7 +1156,7 @@ func TestFormatJSONL_WithSpecialCharactersAndUnicode(t *testing.T) {
 		t.Fatalf("failed to unmarshal line 1: %v", err)
 	}
 
-	if obj1["id"] != "1" || obj2["id"] != "2" {
+	if obj1["$ID"] != "1" || obj2["$ID"] != "2" {
 		t.Errorf("IDs mismatch")
 	}
 }
@@ -1168,14 +1168,14 @@ func TestDetermineColumns_IdNotAtIndex0_ViewColumns(t *testing.T) {
 
 	col := &ingitdb.CollectionDef{
 		ID:           "col1",
-		ColumnsOrder: []string{"id", "x", "y"},
+		ColumnsOrder: []string{"$ID", "x", "y"},
 	}
 	view := &ingitdb.ViewDef{
-		Columns: []string{"x", "y", "id"},
+		Columns: []string{"x", "y", "$ID"},
 	}
 
 	got := determineColumns(col, view)
-	expected := []string{"id", "x", "y"}
+	expected := []string{"$ID", "x", "y"}
 
 	if !slicesEqual(got, expected) {
 		t.Errorf("determineColumns() = %v, want %v", got, expected)
@@ -1187,14 +1187,14 @@ func TestDetermineColumns_IdAlreadyAtIndex0_ViewColumns(t *testing.T) {
 
 	col := &ingitdb.CollectionDef{
 		ID:           "col1",
-		ColumnsOrder: []string{"id", "x", "y"},
+		ColumnsOrder: []string{"$ID", "x", "y"},
 	}
 	view := &ingitdb.ViewDef{
-		Columns: []string{"id", "x", "y"},
+		Columns: []string{"$ID", "x", "y"},
 	}
 
 	got := determineColumns(col, view)
-	expected := []string{"id", "x", "y"}
+	expected := []string{"$ID", "x", "y"}
 
 	if !slicesEqual(got, expected) {
 		t.Errorf("determineColumns() = %v, want %v", got, expected)
@@ -1206,14 +1206,14 @@ func TestDetermineColumns_IdNotInViewColumns(t *testing.T) {
 
 	col := &ingitdb.CollectionDef{
 		ID:           "col1",
-		ColumnsOrder: []string{"id", "a", "b", "c"},
+		ColumnsOrder: []string{"$ID", "a", "b", "c"},
 	}
 	view := &ingitdb.ViewDef{
 		Columns: []string{"a", "b"},
 	}
 
 	got := determineColumns(col, view)
-	expected := []string{"id", "a", "b"}
+	expected := []string{"$ID", "a", "b"}
 
 	if !slicesEqual(got, expected) {
 		t.Errorf("determineColumns() = %v, want %v", got, expected)
@@ -1225,14 +1225,14 @@ func TestDetermineColumns_UseCollectionColumnsOrder_IdNotAtIndex0(t *testing.T) 
 
 	col := &ingitdb.CollectionDef{
 		ID:           "col1",
-		ColumnsOrder: []string{"name", "id", "email"},
+		ColumnsOrder: []string{"name", "$ID", "email"},
 	}
 	view := &ingitdb.ViewDef{
 		Columns: []string{},
 	}
 
 	got := determineColumns(col, view)
-	expected := []string{"id", "name", "email"}
+	expected := []string{"$ID", "name", "email"}
 
 	if !slicesEqual(got, expected) {
 		t.Errorf("determineColumns() = %v, want %v", got, expected)
@@ -1251,7 +1251,7 @@ func TestDetermineColumns_EmptyCollectionColumnsOrder(t *testing.T) {
 	}
 
 	got := determineColumns(col, view)
-	expected := []string{"id"}
+	expected := []string{"$ID"}
 
 	if !slicesEqual(got, expected) {
 		t.Errorf("determineColumns() = %v, want %v", got, expected)
@@ -1273,7 +1273,7 @@ func TestDetermineColumns_FallbackToColumnsSortedByName(t *testing.T) {
 	view := &ingitdb.ViewDef{}
 
 	got := determineColumns(col, view)
-	expected := []string{"id", "apple", "mango", "zebra"}
+	expected := []string{"$ID", "apple", "mango", "zebra"}
 
 	if !slicesEqual(got, expected) {
 		t.Errorf("determineColumns() = %v, want %v", got, expected)
@@ -1283,10 +1283,10 @@ func TestDetermineColumns_FallbackToColumnsSortedByName(t *testing.T) {
 func TestFormatINGR_WithRecordsDelimiter(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "name", "age"}
+	headers := []string{"$ID", "name", "age"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "john", Data: map[string]any{"id": "john", "name": "John Doe", "age": 35}},
-		ingitdb.RecordEntry{ID: "jane", Data: map[string]any{"id": "jane", "name": "Jane Smith", "age": 29}},
+		ingitdb.RecordEntry{ID: "john", Data: map[string]any{"$ID": "john", "name": "John Doe", "age": 35}},
+		ingitdb.RecordEntry{ID: "jane", Data: map[string]any{"$ID": "jane", "name": "Jane Smith", "age": 29}},
 	}
 
 	got, err := formatExportBatch("ingr", "people/view", headers, records, WithRecordsDelimiter())
@@ -1321,10 +1321,10 @@ func TestFormatINGR_WithRecordsDelimiter(t *testing.T) {
 func TestFormatINGR_WithoutRecordsDelimiter(t *testing.T) {
 	t.Parallel()
 
-	headers := []string{"id", "name"}
+	headers := []string{"$ID", "name"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "a", Data: map[string]any{"id": "a", "name": "Alice"}},
-		ingitdb.RecordEntry{ID: "b", Data: map[string]any{"id": "b", "name": "Bob"}},
+		ingitdb.RecordEntry{ID: "a", Data: map[string]any{"$ID": "a", "name": "Alice"}},
+		ingitdb.RecordEntry{ID: "b", Data: map[string]any{"$ID": "b", "name": "Bob"}},
 	}
 
 	got, err := formatExportBatch("ingr", "people/view", headers, records)
@@ -1355,9 +1355,9 @@ func TestFormatJSONL_MarshalError(t *testing.T) {
 	t.Parallel()
 
 	// A channel cannot be JSON-marshalled; this triggers the error path in formatJSONL.
-	headers := []string{"id", "bad"}
+	headers := []string{"$ID", "bad"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "bad": make(chan int)}},
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "bad": make(chan int)}},
 	}
 	_, err := formatJSONL(headers, records)
 	if err == nil {
@@ -1369,9 +1369,9 @@ func TestFormatINGR_MarshalError(t *testing.T) {
 	t.Parallel()
 
 	// A channel cannot be JSON-marshalled; this triggers the error path in formatINGR.
-	headers := []string{"id", "bad"}
+	headers := []string{"$ID", "bad"}
 	records := []ingitdb.IRecordEntry{
-		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"id": "1", "bad": make(chan int)}},
+		ingitdb.RecordEntry{ID: "1", Data: map[string]any{"$ID": "1", "bad": make(chan int)}},
 	}
 	_, err := formatINGR("test/view", ExportOptions{}, headers, records)
 	if err == nil {

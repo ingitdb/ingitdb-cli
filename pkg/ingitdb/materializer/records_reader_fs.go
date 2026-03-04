@@ -58,7 +58,7 @@ func (r FileRecordsReader) ReadRecords(
 		}
 		for key, data := range records {
 			d := dalgo2ingitdb.ApplyLocaleToRead(data, col.Columns)
-			d["id"] = key
+			d["$ID"] = key
 			entry := ingitdb.NewMapRecordEntry(key, d)
 			if err := yield(entry); err != nil {
 				return err
@@ -88,7 +88,7 @@ func (r FileRecordsReader) ReadRecords(
 				continue // skip hidden directories like .collection
 			}
 			d := dalgo2ingitdb.ApplyLocaleToRead(data, col.Columns)
-			d["id"] = key
+			d["$ID"] = key
 			entry := ingitdb.NewMapRecordEntry(key, d)
 			if err := yield(entry); err != nil {
 				return err
