@@ -504,8 +504,17 @@ graph LR
 
 > Line items for an order — each record is one product at a given quantity and unit price.
 
-**Subcollection of [orders](#orders)** — records live under their parent order record in the repository
-(e.g. `orders/$records/ord-2024-0001/order_details/$records/line-001.yaml`).
+**Subcollection of [orders](#orders)** — all line items for an order are stored together in a single
+`details.json` file under each order record
+(e.g. `orders/$records/ord-2024-0001/order_details/details.json`).
+
+`record_file`:
+```yaml
+record_file:
+  name: "details.json"
+  type: "[]map[string]any"
+  format: json
+```
 
 | Column | Type | Required | Constraints | Foreign Key |
 |--------|------|:--------:|-------------|-------------|
