@@ -1,0 +1,41 @@
+titles:
+  en: Exchange Rates
+
+record_file:
+  name: "{key}.yaml"
+  type: "map[string]any"
+  format: yaml
+
+columns:
+  id:
+    type: string
+    required: true
+    max_length: 64
+  from_currency_id:
+    type: string
+    required: true
+    foreign_key: currencies
+  to_currency_id:
+    type: string
+    required: true
+    foreign_key: currencies
+  rate:
+    type: float
+    required: true
+    # TODO: min value constraint needs implementation in ColumnDef
+    # min: 0
+  effective_date:
+    type: date
+    required: true
+  source:
+    type: string
+    required: false
+    max_length: 128
+
+columns_order:
+  - id
+  - from_currency_id
+  - to_currency_id
+  - rate
+  - effective_date
+  - source

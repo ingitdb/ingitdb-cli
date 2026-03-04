@@ -1,0 +1,63 @@
+titles:
+  en: Addresses
+
+record_file:
+  name: "{key}.yaml"
+  type: "map[string]any"
+  format: yaml
+
+columns:
+  id:
+    type: string
+    required: true
+    max_length: 64
+  customer_id:
+    type: string
+    required: true
+    foreign_key: customers
+  label:
+    type: string
+    required: false
+    max_length: 64
+  line1:
+    type: string
+    required: true
+    min_length: 1
+    max_length: 128
+  line2:
+    type: string
+    required: false
+    max_length: 128
+  city:
+    type: string
+    required: true
+    min_length: 1
+    max_length: 100
+  state:
+    type: string
+    required: false
+    max_length: 100
+  postal_code:
+    type: string
+    required: true
+    min_length: 1
+    max_length: 20
+  country_id:
+    type: string
+    required: true
+    foreign_key: countries
+  is_default:
+    type: bool
+    required: true
+
+columns_order:
+  - id
+  - customer_id
+  - label
+  - line1
+  - line2
+  - city
+  - state
+  - postal_code
+  - country_id
+  - is_default

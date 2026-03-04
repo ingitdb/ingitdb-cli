@@ -1,0 +1,38 @@
+titles:
+  en: Shippers
+
+record_file:
+  name: "{key}.yaml"
+  type: "map[string]any"
+  format: yaml
+
+columns:
+  id:
+    type: string
+    required: true
+    max_length: 64
+  name:
+    type: string
+    required: true
+    min_length: 2
+    max_length: 100
+  tracking_url_template:
+    type: string
+    required: false
+    max_length: 512
+  contact_email:
+    type: string
+    required: false
+    max_length: 254
+    # TODO: regex constraint needs implementation in ColumnDef
+    # regex: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+  is_active:
+    type: bool
+    required: true
+
+columns_order:
+  - id
+  - name
+  - tracking_url_template
+  - contact_email
+  - is_active
