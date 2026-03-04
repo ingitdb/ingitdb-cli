@@ -10,7 +10,7 @@ import (
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
-func TestFileRecordsReader_ReadRecords_MapOfIDRecords_StatError(t *testing.T) {
+func TestFileRecordsReader_ReadRecords_MapOfRecords_StatError(t *testing.T) {
 	t.Parallel()
 
 	statErr := errors.New("permission denied")
@@ -24,7 +24,7 @@ func TestFileRecordsReader_ReadRecords_MapOfIDRecords_StatError(t *testing.T) {
 		DirPath: "/tmp/test",
 		RecordFile: &ingitdb.RecordFileDef{
 			Name:       "records.json",
-			RecordType: ingitdb.MapOfIDRecords,
+			RecordType: ingitdb.MapOfRecords,
 			Format:     "json",
 		},
 	}
@@ -41,7 +41,7 @@ func TestFileRecordsReader_ReadRecords_MapOfIDRecords_StatError(t *testing.T) {
 	}
 }
 
-func TestFileRecordsReader_ReadRecords_MapOfIDRecords_ReadError(t *testing.T) {
+func TestFileRecordsReader_ReadRecords_MapOfRecords_ReadError(t *testing.T) {
 	t.Parallel()
 
 	readErr := errors.New("read failed")
@@ -58,7 +58,7 @@ func TestFileRecordsReader_ReadRecords_MapOfIDRecords_ReadError(t *testing.T) {
 		DirPath: "/tmp/test",
 		RecordFile: &ingitdb.RecordFileDef{
 			Name:       "records.json",
-			RecordType: ingitdb.MapOfIDRecords,
+			RecordType: ingitdb.MapOfRecords,
 			Format:     "json",
 		},
 	}
@@ -75,7 +75,7 @@ func TestFileRecordsReader_ReadRecords_MapOfIDRecords_ReadError(t *testing.T) {
 	}
 }
 
-func TestFileRecordsReader_ReadRecords_MapOfIDRecords_ParseError(t *testing.T) {
+func TestFileRecordsReader_ReadRecords_MapOfRecords_ParseError(t *testing.T) {
 	t.Parallel()
 
 	reader := FileRecordsReader{
@@ -91,7 +91,7 @@ func TestFileRecordsReader_ReadRecords_MapOfIDRecords_ParseError(t *testing.T) {
 		DirPath: "/tmp/test",
 		RecordFile: &ingitdb.RecordFileDef{
 			Name:       "records.json",
-			RecordType: ingitdb.MapOfIDRecords,
+			RecordType: ingitdb.MapOfRecords,
 			Format:     "json",
 		},
 	}
@@ -105,7 +105,7 @@ func TestFileRecordsReader_ReadRecords_MapOfIDRecords_ParseError(t *testing.T) {
 	}
 }
 
-func TestFileRecordsReader_ReadRecords_MapOfIDRecords_YieldError(t *testing.T) {
+func TestFileRecordsReader_ReadRecords_MapOfRecords_YieldError(t *testing.T) {
 	t.Parallel()
 
 	yieldErr := errors.New("yield error")
@@ -122,7 +122,7 @@ func TestFileRecordsReader_ReadRecords_MapOfIDRecords_YieldError(t *testing.T) {
 		DirPath: "/tmp/test",
 		RecordFile: &ingitdb.RecordFileDef{
 			Name:       "records.json",
-			RecordType: ingitdb.MapOfIDRecords,
+			RecordType: ingitdb.MapOfRecords,
 			Format:     "json",
 		},
 	}
@@ -272,12 +272,12 @@ func TestFileRecordsReader_ReadRecords_SingleRecord_YieldError(t *testing.T) {
 // ReadRecords — IsNotExist path: stat returns os.ErrNotExist → return nil
 // ---------------------------------------------------------------------------
 
-// Note: TestFileRecordsReader_ReadRecords_MapOfIDRecords_FileNotFound in
+// Note: TestFileRecordsReader_ReadRecords_MapOfRecords_FileNotFound in
 // records_reader_fs_test.go already covers the os.IsNotExist branch.
 
-// TestFileRecordsReader_ReadRecords_MapOfIDRecords_Success covers the successful
-// completion of the MapOfIDRecords case (return nil after iterating all records).
-func TestFileRecordsReader_ReadRecords_MapOfIDRecords_Success(t *testing.T) {
+// TestFileRecordsReader_ReadRecords_MapOfRecords_Success covers the successful
+// completion of the MapOfRecords case (return nil after iterating all records).
+func TestFileRecordsReader_ReadRecords_MapOfRecords_Success(t *testing.T) {
 	t.Parallel()
 
 	reader := FileRecordsReader{
@@ -293,7 +293,7 @@ func TestFileRecordsReader_ReadRecords_MapOfIDRecords_Success(t *testing.T) {
 		DirPath: "/tmp/test",
 		RecordFile: &ingitdb.RecordFileDef{
 			Name:       "records.json",
-			RecordType: ingitdb.MapOfIDRecords,
+			RecordType: ingitdb.MapOfRecords,
 			Format:     "json",
 		},
 	}

@@ -70,7 +70,7 @@ func TestGitHubDB_GetSingleRecord(t *testing.T) {
 	}
 }
 
-func TestGitHubDB_GetMapOfIDRecords(t *testing.T) {
+func TestGitHubDB_GetMapOfRecords(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
 		path:    "demo-dbs/todo/tags/tags.json",
@@ -87,7 +87,7 @@ func TestGitHubDB_GetMapOfIDRecords(t *testing.T) {
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",
-					RecordType: ingitdb.MapOfIDRecords,
+					RecordType: ingitdb.MapOfRecords,
 				},
 				Columns: map[string]*ingitdb.ColumnDef{
 					"title": {Type: ingitdb.ColumnTypeString, Locale: "en"},

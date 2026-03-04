@@ -33,8 +33,8 @@ func (r readwriteTx) Set(ctx context.Context, record dal.Record) error {
 	path := resolveRecordPath(colDef, recordKey)
 	data := record.Data().(map[string]any)
 	switch colDef.RecordFile.RecordType {
-	case ingitdb.MapOfIDRecords:
-		allRecords, _, err := readMapOfIDRecordsFile(path, colDef.RecordFile.Format)
+	case ingitdb.MapOfRecords:
+		allRecords, _, err := readMapOfRecordsFile(path, colDef.RecordFile.Format)
 		if err != nil {
 			return err
 		}
@@ -42,7 +42,7 @@ func (r readwriteTx) Set(ctx context.Context, record dal.Record) error {
 			allRecords = make(map[string]map[string]any)
 		}
 		allRecords[recordKey] = dalgo2ingitdb.ApplyLocaleToWrite(data, colDef.Columns)
-		return writeMapOfIDRecordsFile(path, colDef.RecordFile.Format, allRecords)
+		return writeMapOfRecordsFile(path, colDef.RecordFile.Format, allRecords)
 	default:
 		return writeRecordToFile(path, colDef.RecordFile.Format, data)
 	}
@@ -61,8 +61,8 @@ func (r readwriteTx) Delete(ctx context.Context, key *dal.Key) error {
 	}
 	path := resolveRecordPath(colDef, recordKey)
 	switch colDef.RecordFile.RecordType {
-	case ingitdb.MapOfIDRecords:
-		allRecords, found, err := readMapOfIDRecordsFile(path, colDef.RecordFile.Format)
+	case ingitdb.MapOfRecords:
+		allRecords, found, err := readMapOfRecordsFile(path, colDef.RecordFile.Format)
 		if err != nil {
 			return err
 		}
@@ -73,7 +73,7 @@ func (r readwriteTx) Delete(ctx context.Context, key *dal.Key) error {
 			return dal.ErrRecordNotFound
 		}
 		delete(allRecords, recordKey)
-		return writeMapOfIDRecordsFile(path, colDef.RecordFile.Format, allRecords)
+		return writeMapOfRecordsFile(path, colDef.RecordFile.Format, allRecords)
 	default:
 		return deleteRecordFile(path)
 	}
@@ -107,8 +107,8 @@ func (r readwriteTx) Insert(ctx context.Context, record dal.Record, opts ...dal.
 	}
 	path := resolveRecordPath(colDef, recordKey)
 	switch colDef.RecordFile.RecordType {
-	case ingitdb.MapOfIDRecords:
-		allRecords, _, err := readMapOfIDRecordsFile(path, colDef.RecordFile.Format)
+	case ingitdb.MapOfRecords:
+		allRecords, _, err := readMapOfRecordsFile(path, colDef.RecordFile.Format)
 		if err != nil {
 			return err
 		}
@@ -121,7 +121,7 @@ func (r readwriteTx) Insert(ctx context.Context, record dal.Record, opts ...dal.
 		record.SetError(nil)
 		data := record.Data().(map[string]any)
 		allRecords[recordKey] = dalgo2ingitdb.ApplyLocaleToWrite(data, colDef.Columns)
-		return writeMapOfIDRecordsFile(path, colDef.RecordFile.Format, allRecords)
+		return writeMapOfRecordsFile(path, colDef.RecordFile.Format, allRecords)
 	default:
 		_, statErr := os.Stat(path)
 		if statErr == nil {

@@ -54,7 +54,7 @@ func TestReadwriteTx_Set_InvalidRecordData(t *testing.T) {
 	}
 }
 
-func TestReadwriteTx_Set_MapOfIDRecords_InvalidRecordData(t *testing.T) {
+func TestReadwriteTx_Set_MapOfRecords_InvalidRecordData(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
 		path:    "test-ingitdb/test/data.json",
@@ -71,7 +71,7 @@ func TestReadwriteTx_Set_MapOfIDRecords_InvalidRecordData(t *testing.T) {
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "data.json",
 					Format:     "json",
-					RecordType: ingitdb.MapOfIDRecords,
+					RecordType: ingitdb.MapOfRecords,
 				},
 			},
 		},
@@ -136,7 +136,7 @@ func TestReadwriteTx_Insert_InvalidRecordData(t *testing.T) {
 	}
 }
 
-func TestReadwriteTx_Insert_MapOfIDRecords_InvalidRecordData(t *testing.T) {
+func TestReadwriteTx_Insert_MapOfRecords_InvalidRecordData(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
 		path:    "test-ingitdb/test/data.json",
@@ -153,7 +153,7 @@ func TestReadwriteTx_Insert_MapOfIDRecords_InvalidRecordData(t *testing.T) {
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "data.json",
 					Format:     "json",
-					RecordType: ingitdb.MapOfIDRecords,
+					RecordType: ingitdb.MapOfRecords,
 				},
 			},
 		},
@@ -257,7 +257,7 @@ func TestReadonlyTx_Get_ParseError_SingleRecord(t *testing.T) {
 	}
 }
 
-func TestReadonlyTx_Get_ParseError_MapOfIDRecords(t *testing.T) {
+func TestReadonlyTx_Get_ParseError_MapOfRecords(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
 		path:    "test-ingitdb/test/bad.json",
@@ -274,7 +274,7 @@ func TestReadonlyTx_Get_ParseError_MapOfIDRecords(t *testing.T) {
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "bad.json",
 					Format:     "json",
-					RecordType: ingitdb.MapOfIDRecords,
+					RecordType: ingitdb.MapOfRecords,
 				},
 			},
 		},
@@ -308,7 +308,7 @@ func TestEncodeRecordContent_YML(t *testing.T) {
 	}
 }
 
-func TestReadwriteTx_InsertMapOfIDRecords_NewFile(t *testing.T) {
+func TestReadwriteTx_InsertMapOfRecords_NewFile(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{}
 	server := newGitHubContentsServer(t, fixtures)
@@ -322,7 +322,7 @@ func TestReadwriteTx_InsertMapOfIDRecords_NewFile(t *testing.T) {
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",
-					RecordType: ingitdb.MapOfIDRecords,
+					RecordType: ingitdb.MapOfRecords,
 				},
 				Columns: map[string]*ingitdb.ColumnDef{
 					"title": {Type: ingitdb.ColumnTypeString},

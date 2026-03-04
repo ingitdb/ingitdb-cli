@@ -3,7 +3,7 @@ titles:
   ru: Статусы
 record_file:
   name: "statuses.yaml"
-  type: "map[string]map[string]any"
+  type: "map[$record_id]map[$field_name]any"
   format: yaml
 columns:
   titles:

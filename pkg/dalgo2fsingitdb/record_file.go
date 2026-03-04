@@ -88,10 +88,10 @@ func deleteRecordFile(path string) error {
 	return err
 }
 
-// readMapOfIDRecordsFile reads a file whose top-level keys are record IDs and whose
-// values are field maps (map[id]map[field]any layout).
+// readMapOfRecordsFile reads a file whose top-level keys are record IDs and whose
+// values are field maps (map[$record_id]map[$field_name]any layout).
 // Returns (nil, false, nil) if the file does not exist.
-func readMapOfIDRecordsFile(path string, format ingitdb.RecordFormat) (map[string]map[string]any, bool, error) {
+func readMapOfRecordsFile(path string, format ingitdb.RecordFormat) (map[string]map[string]any, bool, error) {
 	raw, found, err := readRecordFromFile(path, format)
 	if err != nil || !found {
 		return nil, found, err
@@ -107,8 +107,8 @@ func readMapOfIDRecordsFile(path string, format ingitdb.RecordFormat) (map[strin
 	return result, true, nil
 }
 
-// writeMapOfIDRecordsFile writes a map[id]map[field]any dataset back to a file.
-func writeMapOfIDRecordsFile(path string, format ingitdb.RecordFormat, data map[string]map[string]any) error {
+// writeMapOfRecordsFile writes a map[$record_id]map[$field_name]any dataset back to a file.
+func writeMapOfRecordsFile(path string, format ingitdb.RecordFormat, data map[string]map[string]any) error {
 	raw := make(map[string]any, len(data))
 	for id, fields := range data {
 		raw[id] = fields

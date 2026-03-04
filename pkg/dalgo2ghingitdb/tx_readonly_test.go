@@ -276,7 +276,7 @@ func TestReadonlyTx_ResolveCollection_NoRecordFile(t *testing.T) {
 	}
 }
 
-func TestReadonlyTx_GetMapOfIDRecords_RecordNotInMap(t *testing.T) {
+func TestReadonlyTx_GetMapOfRecords_RecordNotInMap(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
 		path:    "demo-dbs/todo/tags/tags.json",
@@ -293,7 +293,7 @@ func TestReadonlyTx_GetMapOfIDRecords_RecordNotInMap(t *testing.T) {
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",
-					RecordType: ingitdb.MapOfIDRecords,
+					RecordType: ingitdb.MapOfRecords,
 				},
 				Columns: map[string]*ingitdb.ColumnDef{
 					"title": {Type: ingitdb.ColumnTypeString},

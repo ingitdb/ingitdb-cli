@@ -287,7 +287,7 @@ func TestDelete_SingleRecord_NotFound(t *testing.T) {
 	}
 }
 
-// makeMapOfIDDef builds a Definition with one MapOfIDRecords JSON collection.
+// makeMapOfIDDef builds a Definition with one MapOfRecords JSON collection.
 func makeMapOfIDDef(t *testing.T, dirPath string) *ingitdb.Definition {
 	t.Helper()
 	colDef := &ingitdb.CollectionDef{
@@ -296,7 +296,7 @@ func makeMapOfIDDef(t *testing.T, dirPath string) *ingitdb.Definition {
 		RecordFile: &ingitdb.RecordFileDef{
 			Name:       "tags.json",
 			Format:     "json",
-			RecordType: ingitdb.MapOfIDRecords,
+			RecordType: ingitdb.MapOfRecords,
 		},
 		Columns: map[string]*ingitdb.ColumnDef{
 			"title":  {Type: ingitdb.ColumnTypeString, Locale: "en"},
@@ -323,7 +323,7 @@ func writeJSONMapOfIDFixture(t *testing.T, path string, data map[string]map[stri
 	}
 }
 
-func TestGet_MapOfIDRecords_Found(t *testing.T) {
+func TestGet_MapOfRecords_Found(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -363,7 +363,7 @@ func TestGet_MapOfIDRecords_Found(t *testing.T) {
 	}
 }
 
-func TestGet_MapOfIDRecords_KeyNotFound(t *testing.T) {
+func TestGet_MapOfRecords_KeyNotFound(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -389,7 +389,7 @@ func TestGet_MapOfIDRecords_KeyNotFound(t *testing.T) {
 	}
 }
 
-func TestGet_MapOfIDRecords_FileNotFound(t *testing.T) {
+func TestGet_MapOfRecords_FileNotFound(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -411,7 +411,7 @@ func TestGet_MapOfIDRecords_FileNotFound(t *testing.T) {
 	}
 }
 
-func TestInsert_MapOfIDRecords(t *testing.T) {
+func TestInsert_MapOfRecords(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -459,7 +459,7 @@ func TestInsert_MapOfIDRecords(t *testing.T) {
 	}
 }
 
-func TestInsert_MapOfIDRecords_TitleOnly(t *testing.T) {
+func TestInsert_MapOfRecords_TitleOnly(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -497,7 +497,7 @@ func TestInsert_MapOfIDRecords_TitleOnly(t *testing.T) {
 	}
 }
 
-func TestInsert_MapOfIDRecords_PrimaryLocaleInTitlesNormalized(t *testing.T) {
+func TestInsert_MapOfRecords_PrimaryLocaleInTitlesNormalized(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -545,7 +545,7 @@ func TestInsert_MapOfIDRecords_PrimaryLocaleInTitlesNormalized(t *testing.T) {
 	}
 }
 
-func TestInsert_MapOfIDRecords_AlreadyExists(t *testing.T) {
+func TestInsert_MapOfRecords_AlreadyExists(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -568,7 +568,7 @@ func TestInsert_MapOfIDRecords_AlreadyExists(t *testing.T) {
 	}
 }
 
-func TestSet_MapOfIDRecords(t *testing.T) {
+func TestSet_MapOfRecords(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -623,7 +623,7 @@ func TestSet_MapOfIDRecords(t *testing.T) {
 	}
 }
 
-func TestDelete_MapOfIDRecords(t *testing.T) {
+func TestDelete_MapOfRecords(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -660,7 +660,7 @@ func TestDelete_MapOfIDRecords(t *testing.T) {
 	}
 }
 
-func TestDelete_MapOfIDRecords_KeyNotFound(t *testing.T) {
+func TestDelete_MapOfRecords_KeyNotFound(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -681,7 +681,7 @@ func TestDelete_MapOfIDRecords_KeyNotFound(t *testing.T) {
 	}
 }
 
-func TestDelete_MapOfIDRecords_FileNotFound(t *testing.T) {
+func TestDelete_MapOfRecords_FileNotFound(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()

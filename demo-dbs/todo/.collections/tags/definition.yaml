@@ -4,7 +4,7 @@ titles:
 
 record_file:
   name: "tags.json"
-  type: "map[id]map[field]any"
+  type: "map[$record_id]map[$field_name]any"
   format: json
 
 columns:

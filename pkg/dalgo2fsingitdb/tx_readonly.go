@@ -48,8 +48,8 @@ func (r readonlyTx) Get(ctx context.Context, record dal.Record) error {
 		record.SetError(nil)
 		target := record.Data().(map[string]any)
 		maps.Copy(target, data)
-	case ingitdb.MapOfIDRecords:
-		allRecords, found, err := readMapOfIDRecordsFile(path, colDef.RecordFile.Format)
+	case ingitdb.MapOfRecords:
+		allRecords, found, err := readMapOfRecordsFile(path, colDef.RecordFile.Format)
 		if err != nil {
 			return err
 		}

@@ -7,3 +7,4 @@ countries: demo-dbs/test-db/countries
 # with the key prefix (e.g., todo.* imports todo.statuses, todo.tags, todo.tasks)
 todo.*: demo-dbs/todo
 agile.*: demo-dbs/agile-ledger
+commerce.*: demo-dbs/demo-commerce-ingitdb

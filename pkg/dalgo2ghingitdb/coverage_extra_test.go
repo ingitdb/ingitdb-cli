@@ -143,7 +143,7 @@ func buildMapRecordDef(collectionID, dirPath, fileName string) *ingitdb.Definiti
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       fileName,
 					Format:     "json",
-					RecordType: ingitdb.MapOfIDRecords,
+					RecordType: ingitdb.MapOfRecords,
 				},
 				Columns: map[string]*ingitdb.ColumnDef{},
 			},
@@ -374,7 +374,7 @@ func TestSet_ReadFileWithSHA_Error_SingleRecord(t *testing.T) {
 	}
 }
 
-func TestSet_ReadFileWithSHA_Error_MapOfIDRecords(t *testing.T) {
+func TestSet_ReadFileWithSHA_Error_MapOfRecords(t *testing.T) {
 	t.Parallel()
 	server := newAPIErrorServer(t)
 	defer server.Close()
@@ -401,7 +401,7 @@ func TestSet_ReadFileWithSHA_Error_MapOfIDRecords(t *testing.T) {
 // tx_readwrite.go – Set: parseErr when existing map-file is malformed
 // ---------------------------------------------------------------------------
 
-func TestSet_ParseError_MapOfIDRecords(t *testing.T) {
+func TestSet_ParseError_MapOfRecords(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
 		path:    "data/tags/tags.json",
@@ -459,7 +459,7 @@ func TestSet_WriteFile_Error_SingleRecord(t *testing.T) {
 	}
 }
 
-func TestSet_WriteFile_Error_MapOfIDRecords(t *testing.T) {
+func TestSet_WriteFile_Error_MapOfRecords(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
 		path:    "data/tags/tags.json",
@@ -531,7 +531,7 @@ func TestSet_EncodeError_SingleRecord(t *testing.T) {
 	}
 }
 
-func TestSet_EncodeError_MapOfIDRecords(t *testing.T) {
+func TestSet_EncodeError_MapOfRecords(t *testing.T) {
 	t.Parallel()
 	server := newGitHubContentsServer(t, nil) // 404 → new file
 	defer server.Close()
@@ -582,7 +582,7 @@ func TestInsert_ReadFileWithSHA_Error_SingleRecord(t *testing.T) {
 	}
 }
 
-func TestInsert_ReadFileWithSHA_Error_MapOfIDRecords(t *testing.T) {
+func TestInsert_ReadFileWithSHA_Error_MapOfRecords(t *testing.T) {
 	t.Parallel()
 	server := newAPIErrorServer(t)
 	defer server.Close()
@@ -609,7 +609,7 @@ func TestInsert_ReadFileWithSHA_Error_MapOfIDRecords(t *testing.T) {
 // tx_readwrite.go – Insert: parseErr when existing map-file is malformed
 // ---------------------------------------------------------------------------
 
-func TestInsert_ParseError_MapOfIDRecords(t *testing.T) {
+func TestInsert_ParseError_MapOfRecords(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
 		path:    "data/tags/tags.json",
@@ -663,7 +663,7 @@ func TestInsert_WriteFile_Error_SingleRecord(t *testing.T) {
 	}
 }
 
-func TestInsert_WriteFile_Error_MapOfIDRecords(t *testing.T) {
+func TestInsert_WriteFile_Error_MapOfRecords(t *testing.T) {
 	t.Parallel()
 	server := newReadWriteFailServer(t, nil) // GET → 404 (new file) then PUT → 403
 	defer server.Close()
@@ -727,7 +727,7 @@ func TestInsert_EncodeError_SingleRecord(t *testing.T) {
 	}
 }
 
-func TestInsert_EncodeError_MapOfIDRecords(t *testing.T) {
+func TestInsert_EncodeError_MapOfRecords(t *testing.T) {
 	t.Parallel()
 	server := newGitHubContentsServer(t, nil) // GET → 404 (new file)
 	defer server.Close()
@@ -777,7 +777,7 @@ func TestDelete_ReadFileWithSHA_Error_SingleRecord(t *testing.T) {
 	}
 }
 
-func TestDelete_ReadFileWithSHA_Error_MapOfIDRecords(t *testing.T) {
+func TestDelete_ReadFileWithSHA_Error_MapOfRecords(t *testing.T) {
 	t.Parallel()
 	server := newAPIErrorServer(t)
 	defer server.Close()
@@ -803,7 +803,7 @@ func TestDelete_ReadFileWithSHA_Error_MapOfIDRecords(t *testing.T) {
 // tx_readwrite.go – Delete: parseErr when map-file is malformed
 // ---------------------------------------------------------------------------
 
-func TestDelete_ParseError_MapOfIDRecords(t *testing.T) {
+func TestDelete_ParseError_MapOfRecords(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
 		path:    "data/tags/tags.json",
@@ -835,7 +835,7 @@ func TestDelete_ParseError_MapOfIDRecords(t *testing.T) {
 // remaining entries is never executed. This test deletes one of two entries.
 // ---------------------------------------------------------------------------
 
-func TestDelete_MapOfIDRecords_LoopBodyCovered(t *testing.T) {
+func TestDelete_MapOfRecords_LoopBodyCovered(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
 		path:    "data/tags/tags.json",
@@ -866,7 +866,7 @@ func TestDelete_MapOfIDRecords_LoopBodyCovered(t *testing.T) {
 // tx_readwrite.go – Delete: encodeErr after removing entry from map
 // ---------------------------------------------------------------------------
 
-func TestDelete_EncodeError_MapOfIDRecords(t *testing.T) {
+func TestDelete_EncodeError_MapOfRecords(t *testing.T) {
 	t.Parallel()
 	// File has two entries. The one that remains after deletion has un-serialisable data.
 	// We store the raw JSON to fake it: we need the server to return something that parses
@@ -882,7 +882,7 @@ func TestDelete_EncodeError_MapOfIDRecords(t *testing.T) {
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",
-					RecordType: ingitdb.MapOfIDRecords,
+					RecordType: ingitdb.MapOfRecords,
 				},
 				Columns: map[string]*ingitdb.ColumnDef{},
 			},
@@ -922,7 +922,7 @@ func TestDelete_EncodeError_MapOfIDRecords(t *testing.T) {
 // tx_readwrite.go – Delete: writeFile error after removing entry from map
 // ---------------------------------------------------------------------------
 
-func TestDelete_WriteFile_Error_MapOfIDRecords(t *testing.T) {
+func TestDelete_WriteFile_Error_MapOfRecords(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
 		path:    "data/tags/tags.json",

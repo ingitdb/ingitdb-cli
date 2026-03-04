@@ -44,7 +44,7 @@ func TestRecordFileDefValidate(t *testing.T) {
 			def: RecordFileDef{
 				Name:       "records.json",
 				Format:     "json",
-				RecordType: "map[id]map[field]any",
+				RecordType: "map[$record_id]map[$field_name]any",
 			},
 			err: "",
 		},

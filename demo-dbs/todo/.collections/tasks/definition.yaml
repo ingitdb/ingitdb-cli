@@ -3,7 +3,7 @@ titles:
   ru: Задачи
 record_file:
   name: "tasks.json"
-  type: "map[string]map[string]any"
+  type: "map[$record_id]map[$field_name]any"
   format: json
 columns:
   title:

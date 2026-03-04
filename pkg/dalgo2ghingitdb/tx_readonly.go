@@ -46,7 +46,7 @@ func (r readonlyTx) Get(ctx context.Context, record dal.Record) error {
 		record.SetError(nil)
 		target := record.Data().(map[string]any)
 		maps.Copy(target, data)
-	case ingitdb.MapOfIDRecords:
+	case ingitdb.MapOfRecords:
 		data, found, err := r.readRecordFromMap(ctx, recordPath, recordKey, colDef)
 		if err != nil {
 			return err
@@ -107,7 +107,7 @@ func (r readonlyTx) readRecordFromMap(ctx context.Context, recordPath, recordKey
 	if !found {
 		return nil, false, nil
 	}
-	allRecords, parseErr := dalgo2ingitdb.ParseMapOfIDRecordsContent(content, colDef.RecordFile.Format)
+	allRecords, parseErr := dalgo2ingitdb.ParseMapOfRecordsContent(content, colDef.RecordFile.Format)
 	if parseErr != nil {
 		return nil, false, parseErr
 	}

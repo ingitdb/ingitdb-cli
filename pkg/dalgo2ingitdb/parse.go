@@ -28,8 +28,8 @@ func ParseRecordContent(content []byte, format ingitdb.RecordFormat) (map[string
 	return data, nil
 }
 
-// ParseMapOfIDRecordsContent parses content containing a map of ID-keyed records.
-func ParseMapOfIDRecordsContent(content []byte, format ingitdb.RecordFormat) (map[string]map[string]any, error) {
+// ParseMapOfRecordsContent parses content containing a map of ID-keyed records.
+func ParseMapOfRecordsContent(content []byte, format ingitdb.RecordFormat) (map[string]map[string]any, error) {
 	raw, err := ParseRecordContent(content, format)
 	if err != nil {
 		return nil, err

@@ -151,7 +151,7 @@ func TestFileRecordsReader_ReadRecords_UnsupportedRecordType(t *testing.T) {
 	}
 }
 
-func TestFileRecordsReader_ReadRecords_MapOfIDRecords_FileNotFound(t *testing.T) {
+func TestFileRecordsReader_ReadRecords_MapOfRecords_FileNotFound(t *testing.T) {
 	t.Parallel()
 
 	reader := FileRecordsReader{
@@ -164,7 +164,7 @@ func TestFileRecordsReader_ReadRecords_MapOfIDRecords_FileNotFound(t *testing.T)
 		DirPath: "/tmp/test",
 		RecordFile: &ingitdb.RecordFileDef{
 			Name:       "records.json",
-			RecordType: ingitdb.MapOfIDRecords,
+			RecordType: ingitdb.MapOfRecords,
 			Format:     "json",
 		},
 	}

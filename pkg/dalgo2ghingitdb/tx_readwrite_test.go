@@ -187,7 +187,7 @@ func TestReadwriteTx_InsertMulti(t *testing.T) {
 	}
 }
 
-func TestReadwriteTx_SetMapOfIDRecords(t *testing.T) {
+func TestReadwriteTx_SetMapOfRecords(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
 		path:    "demo-dbs/todo/tags/tags.json",
@@ -204,7 +204,7 @@ func TestReadwriteTx_SetMapOfIDRecords(t *testing.T) {
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",
-					RecordType: ingitdb.MapOfIDRecords,
+					RecordType: ingitdb.MapOfRecords,
 				},
 				Columns: map[string]*ingitdb.ColumnDef{
 					"title": {Type: ingitdb.ColumnTypeString},
@@ -230,7 +230,7 @@ func TestReadwriteTx_SetMapOfIDRecords(t *testing.T) {
 	}
 }
 
-func TestReadwriteTx_SetMapOfIDRecords_NewFile(t *testing.T) {
+func TestReadwriteTx_SetMapOfRecords_NewFile(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{}
 	server := newGitHubContentsServer(t, fixtures)
@@ -244,7 +244,7 @@ func TestReadwriteTx_SetMapOfIDRecords_NewFile(t *testing.T) {
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",
-					RecordType: ingitdb.MapOfIDRecords,
+					RecordType: ingitdb.MapOfRecords,
 				},
 				Columns: map[string]*ingitdb.ColumnDef{
 					"title": {Type: ingitdb.ColumnTypeString},
@@ -270,7 +270,7 @@ func TestReadwriteTx_SetMapOfIDRecords_NewFile(t *testing.T) {
 	}
 }
 
-func TestReadwriteTx_InsertMapOfIDRecords(t *testing.T) {
+func TestReadwriteTx_InsertMapOfRecords(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
 		path:    "demo-dbs/todo/tags/tags.json",
@@ -287,7 +287,7 @@ func TestReadwriteTx_InsertMapOfIDRecords(t *testing.T) {
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",
-					RecordType: ingitdb.MapOfIDRecords,
+					RecordType: ingitdb.MapOfRecords,
 				},
 				Columns: map[string]*ingitdb.ColumnDef{
 					"title": {Type: ingitdb.ColumnTypeString},
@@ -313,7 +313,7 @@ func TestReadwriteTx_InsertMapOfIDRecords(t *testing.T) {
 	}
 }
 
-func TestReadwriteTx_InsertMapOfIDRecords_AlreadyExists(t *testing.T) {
+func TestReadwriteTx_InsertMapOfRecords_AlreadyExists(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
 		path:    "demo-dbs/todo/tags/tags.json",
@@ -330,7 +330,7 @@ func TestReadwriteTx_InsertMapOfIDRecords_AlreadyExists(t *testing.T) {
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",
-					RecordType: ingitdb.MapOfIDRecords,
+					RecordType: ingitdb.MapOfRecords,
 				},
 				Columns: map[string]*ingitdb.ColumnDef{
 					"title": {Type: ingitdb.ColumnTypeString},
@@ -360,7 +360,7 @@ func TestReadwriteTx_InsertMapOfIDRecords_AlreadyExists(t *testing.T) {
 	}
 }
 
-func TestReadwriteTx_DeleteMapOfIDRecords(t *testing.T) {
+func TestReadwriteTx_DeleteMapOfRecords(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
 		path:    "demo-dbs/todo/tags/tags.json",
@@ -377,7 +377,7 @@ func TestReadwriteTx_DeleteMapOfIDRecords(t *testing.T) {
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",
-					RecordType: ingitdb.MapOfIDRecords,
+					RecordType: ingitdb.MapOfRecords,
 				},
 				Columns: map[string]*ingitdb.ColumnDef{
 					"title": {Type: ingitdb.ColumnTypeString},
@@ -401,7 +401,7 @@ func TestReadwriteTx_DeleteMapOfIDRecords(t *testing.T) {
 	}
 }
 
-func TestReadwriteTx_DeleteMapOfIDRecords_FileNotFound(t *testing.T) {
+func TestReadwriteTx_DeleteMapOfRecords_FileNotFound(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{}
 	server := newGitHubContentsServer(t, fixtures)
@@ -415,7 +415,7 @@ func TestReadwriteTx_DeleteMapOfIDRecords_FileNotFound(t *testing.T) {
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",
-					RecordType: ingitdb.MapOfIDRecords,
+					RecordType: ingitdb.MapOfRecords,
 				},
 				Columns: map[string]*ingitdb.ColumnDef{
 					"title": {Type: ingitdb.ColumnTypeString},
@@ -439,7 +439,7 @@ func TestReadwriteTx_DeleteMapOfIDRecords_FileNotFound(t *testing.T) {
 	}
 }
 
-func TestReadwriteTx_DeleteMapOfIDRecords_RecordNotInMap(t *testing.T) {
+func TestReadwriteTx_DeleteMapOfRecords_RecordNotInMap(t *testing.T) {
 	t.Parallel()
 	fixtures := []githubFileFixture{{
 		path:    "demo-dbs/todo/tags/tags.json",
@@ -456,7 +456,7 @@ func TestReadwriteTx_DeleteMapOfIDRecords_RecordNotInMap(t *testing.T) {
 				RecordFile: &ingitdb.RecordFileDef{
 					Name:       "tags.json",
 					Format:     "json",
-					RecordType: ingitdb.MapOfIDRecords,
+					RecordType: ingitdb.MapOfRecords,
 				},
 				Columns: map[string]*ingitdb.ColumnDef{
 					"title": {Type: ingitdb.ColumnTypeString},

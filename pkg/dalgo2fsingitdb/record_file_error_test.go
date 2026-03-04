@@ -213,7 +213,7 @@ func TestWriteRecordToFile_WriteError(t *testing.T) {
 	}
 }
 
-func TestReadMapOfIDRecordsFile_InvalidRecordValue(t *testing.T) {
+func TestReadMapOfRecordsFile_InvalidRecordValue(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -224,7 +224,7 @@ func TestReadMapOfIDRecordsFile_InvalidRecordValue(t *testing.T) {
 		t.Fatalf("setup: write test file: %v", err)
 	}
 
-	_, _, err = readMapOfIDRecordsFile(path, "yaml")
+	_, _, err = readMapOfRecordsFile(path, "yaml")
 	if err == nil {
 		t.Fatal("expected error for non-map record value, got nil")
 	}

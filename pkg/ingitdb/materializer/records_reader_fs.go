@@ -41,7 +41,7 @@ func (r FileRecordsReader) ReadRecords(
 	recordsBase := col.RecordFile.RecordsBasePath()
 	path := filepath.Join(col.DirPath, recordsBase, fileName)
 	switch col.RecordFile.RecordType {
-	case ingitdb.MapOfIDRecords:
+	case ingitdb.MapOfRecords:
 		if _, err := r.statFile(path); err != nil {
 			if os.IsNotExist(err) {
 				return nil
@@ -52,7 +52,7 @@ func (r FileRecordsReader) ReadRecords(
 		if err != nil {
 			return fmt.Errorf("failed to read records file %s: %w", path, err)
 		}
-		records, err := dalgo2ingitdb.ParseMapOfIDRecordsContent(content, col.RecordFile.Format)
+		records, err := dalgo2ingitdb.ParseMapOfRecordsContent(content, col.RecordFile.Format)
 		if err != nil {
 			return fmt.Errorf("failed to parse records file %s: %w", path, err)
 		}

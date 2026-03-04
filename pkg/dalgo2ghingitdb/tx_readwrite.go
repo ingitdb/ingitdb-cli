@@ -27,7 +27,7 @@ func (r readwriteTx) Set(ctx context.Context, record dal.Record) error {
 	record.SetError(nil)
 
 	switch colDef.RecordFile.RecordType {
-	case ingitdb.MapOfIDRecords:
+	case ingitdb.MapOfRecords:
 		content, sha, found, readErr := r.db.fileReader.readFileWithSHA(ctx, recordPath)
 		if readErr != nil {
 			return readErr
@@ -38,7 +38,7 @@ func (r readwriteTx) Set(ctx context.Context, record dal.Record) error {
 			sha = ""
 		} else {
 			parseErr := error(nil)
-			allRecords, parseErr = dalgo2ingitdb.ParseMapOfIDRecordsContent(content, colDef.RecordFile.Format)
+			allRecords, parseErr = dalgo2ingitdb.ParseMapOfRecordsContent(content, colDef.RecordFile.Format)
 			if parseErr != nil {
 				return parseErr
 			}
@@ -91,7 +91,7 @@ func (r readwriteTx) Insert(ctx context.Context, record dal.Record, opts ...dal.
 	recordPath := resolveRecordPath(colDef, recordKey)
 
 	switch colDef.RecordFile.RecordType {
-	case ingitdb.MapOfIDRecords:
+	case ingitdb.MapOfRecords:
 		content, sha, found, readErr := r.db.fileReader.readFileWithSHA(ctx, recordPath)
 		if readErr != nil {
 			return readErr
@@ -102,7 +102,7 @@ func (r readwriteTx) Insert(ctx context.Context, record dal.Record, opts ...dal.
 			sha = ""
 		} else {
 			parseErr := error(nil)
-			allRecords, parseErr = dalgo2ingitdb.ParseMapOfIDRecordsContent(content, colDef.RecordFile.Format)
+			allRecords, parseErr = dalgo2ingitdb.ParseMapOfRecordsContent(content, colDef.RecordFile.Format)
 			if parseErr != nil {
 				return parseErr
 			}
@@ -162,7 +162,7 @@ func (r readwriteTx) Delete(ctx context.Context, key *dal.Key) error {
 	recordPath := resolveRecordPath(colDef, recordKey)
 
 	switch colDef.RecordFile.RecordType {
-	case ingitdb.MapOfIDRecords:
+	case ingitdb.MapOfRecords:
 		content, sha, found, readErr := r.db.fileReader.readFileWithSHA(ctx, recordPath)
 		if readErr != nil {
 			return readErr
@@ -170,7 +170,7 @@ func (r readwriteTx) Delete(ctx context.Context, key *dal.Key) error {
 		if !found {
 			return dal.ErrRecordNotFound
 		}
-		allRecords, parseErr := dalgo2ingitdb.ParseMapOfIDRecordsContent(content, colDef.RecordFile.Format)
+		allRecords, parseErr := dalgo2ingitdb.ParseMapOfRecordsContent(content, colDef.RecordFile.Format)
 		if parseErr != nil {
 			return parseErr
 		}
@@ -183,7 +183,7 @@ func (r readwriteTx) Delete(ctx context.Context, key *dal.Key) error {
 			toEncode[k] = v
 		}
 		encoded, encodeErr := encodeRecordContent(toEncode, colDef.RecordFile.Format)
-		if encodeErr != nil { // untestable: ParseMapOfIDRecordsContent already fails for unsupported formats;
+		if encodeErr != nil { // untestable: ParseMapOfRecordsContent already fails for unsupported formats;
 			// for supported formats (json/yaml) parsed data can always be re-encoded
 			return encodeErr
 		}

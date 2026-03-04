@@ -61,7 +61,7 @@ func TestParseRecordContent_UnsupportedFormat(t *testing.T) {
 	}
 }
 
-func TestParseMapOfIDRecordsContent_YAML(t *testing.T) {
+func TestParseMapOfRecordsContent_YAML(t *testing.T) {
 	t.Parallel()
 
 	yamlContent := []byte(`
@@ -72,7 +72,7 @@ user2:
   name: Bob
   role: user
 `)
-	records, err := ParseMapOfIDRecordsContent(yamlContent, ingitdb.RecordFormat("yaml"))
+	records, err := ParseMapOfRecordsContent(yamlContent, ingitdb.RecordFormat("yaml"))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -103,14 +103,14 @@ user2:
 	}
 }
 
-func TestParseMapOfIDRecordsContent_JSON(t *testing.T) {
+func TestParseMapOfRecordsContent_JSON(t *testing.T) {
 	t.Parallel()
 
 	jsonContent := []byte(`{
   "tag1": {"title": "Work", "color": "blue"},
   "tag2": {"title": "Home", "color": "green"}
 }`)
-	records, err := ParseMapOfIDRecordsContent(jsonContent, ingitdb.RecordFormat("json"))
+	records, err := ParseMapOfRecordsContent(jsonContent, ingitdb.RecordFormat("json"))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -141,14 +141,14 @@ func TestParseMapOfIDRecordsContent_JSON(t *testing.T) {
 	}
 }
 
-func TestParseMapOfIDRecordsContent_InvalidRecord(t *testing.T) {
+func TestParseMapOfRecordsContent_InvalidRecord(t *testing.T) {
 	t.Parallel()
 
 	jsonContent := []byte(`{
   "valid": {"title": "Work"},
   "invalid": "not a map"
 }`)
-	_, err := ParseMapOfIDRecordsContent(jsonContent, ingitdb.RecordFormat("json"))
+	_, err := ParseMapOfRecordsContent(jsonContent, ingitdb.RecordFormat("json"))
 	if err == nil {
 		t.Fatal("expected error for non-map record value")
 	}
@@ -197,13 +197,13 @@ func TestParseRecordContent_InvalidJSON(t *testing.T) {
 	}
 }
 
-func TestParseMapOfIDRecordsContent_ParseError(t *testing.T) {
+func TestParseMapOfRecordsContent_ParseError(t *testing.T) {
 	t.Parallel()
 
 	// Use invalid YAML syntax that will fail to parse.
 	invalidYAML := []byte(`{broken yaml syntax`)
-	_, err := ParseMapOfIDRecordsContent(invalidYAML, ingitdb.RecordFormat("yaml"))
+	_, err := ParseMapOfRecordsContent(invalidYAML, ingitdb.RecordFormat("yaml"))
 	if err == nil {
-		t.Fatal("expected error for invalid YAML in ParseMapOfIDRecordsContent")
+		t.Fatal("expected error for invalid YAML in ParseMapOfRecordsContent")
 	}
 }

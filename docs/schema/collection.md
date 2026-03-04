@@ -218,11 +218,11 @@ in_progress:
   titles: { en: In Progress, ru: В работе }
 ```
 
-#### 🔸 `map[id]map[field]any` — all records in one file keyed by ID
+#### 🔸 `map[$record_id]map[$field_name]any` — all records in one file keyed by ID
 
-Similar to `map[string]map[string]any` but used when the file name is static
-(no `{key}` placeholder). Top-level keys are record IDs, second-level keys are
-field names.
+All records are stored in a single file. Top-level keys are record IDs, second-level keys are
+field names. `$record_id` and `$field_name` are aliases for `string` used for readability —
+they make it clear which dimension of the map represents record identifiers versus field names.
 
 This is the preferred type when you want a single, human-readable file for a
 small reference collection (e.g. tags, categories).
@@ -230,7 +230,7 @@ small reference collection (e.g. tags, categories).
 ```yaml
 record_file:
   name: "tags.json"
-  type: "map[id]map[field]any"
+  type: "map[$record_id]map[$field_name]any"
   format: json
 ```
 
@@ -476,7 +476,7 @@ titles:
   ru: Теги
 record_file:
   name: "tags.json"
-  type: "map[id]map[field]any"
+  type: "map[$record_id]map[$field_name]any"
   format: json
 columns:
   title:

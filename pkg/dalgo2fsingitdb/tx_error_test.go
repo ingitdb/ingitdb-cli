@@ -318,7 +318,7 @@ func TestInsert_SingleRecord_StatError(t *testing.T) {
 	}
 }
 
-func TestSet_MapOfIDRecords_ReadError(t *testing.T) {
+func TestSet_MapOfRecords_ReadError(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -345,7 +345,7 @@ func TestSet_MapOfIDRecords_ReadError(t *testing.T) {
 	}
 }
 
-func TestSet_MapOfIDRecords_EmptyFile(t *testing.T) {
+func TestSet_MapOfRecords_EmptyFile(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -405,7 +405,7 @@ func TestGet_SingleRecord_ReadError(t *testing.T) {
 	}
 }
 
-func TestGet_MapOfIDRecords_ReadError(t *testing.T) {
+func TestGet_MapOfRecords_ReadError(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -432,7 +432,7 @@ func TestGet_MapOfIDRecords_ReadError(t *testing.T) {
 	}
 }
 
-func TestGet_MapOfIDRecords_InvalidRecordInFile(t *testing.T) {
+func TestGet_MapOfRecords_InvalidRecordInFile(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -460,7 +460,7 @@ func TestGet_MapOfIDRecords_InvalidRecordInFile(t *testing.T) {
 	}
 }
 
-func TestInsert_MapOfIDRecords_ReadError(t *testing.T) {
+func TestInsert_MapOfRecords_ReadError(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -487,7 +487,7 @@ func TestInsert_MapOfIDRecords_ReadError(t *testing.T) {
 	}
 }
 
-func TestDelete_MapOfIDRecords_ReadError(t *testing.T) {
+func TestDelete_MapOfRecords_ReadError(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -588,7 +588,7 @@ func TestDeleteRecordFile_Success(t *testing.T) {
 	}
 }
 
-func TestWriteMapOfIDRecordsFile_Success(t *testing.T) {
+func TestWriteMapOfRecordsFile_Success(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -598,9 +598,9 @@ func TestWriteMapOfIDRecordsFile_Success(t *testing.T) {
 		"id2": {"field": "value2"},
 	}
 
-	err := writeMapOfIDRecordsFile(path, "yaml", data)
+	err := writeMapOfRecordsFile(path, "yaml", data)
 	if err != nil {
-		t.Fatalf("writeMapOfIDRecordsFile: %v", err)
+		t.Fatalf("writeMapOfRecordsFile: %v", err)
 	}
 
 	// Read back and verify
