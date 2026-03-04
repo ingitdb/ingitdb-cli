@@ -214,7 +214,7 @@ func TestLoadViews_ReadFileError(t *testing.T) {
 		readDir:  os.ReadDir,
 	}
 
-	_, err := dl.loadViews(root, ingitdb.NewReadOptions())
+	_, err := dl.loadViews(viewsDir, ingitdb.NewReadOptions())
 	if err == nil {
 		t.Fatal("loadViews() expected error, got nil")
 	}
@@ -248,8 +248,7 @@ func TestLoadViews_ViewValidationError(t *testing.T) {
 		t.Fatalf("setup: write view file: %v", err)
 	}
 
-	schemaDir := filepath.Join(root, ingitdb.SchemaDir)
-	_, err := newDefLoader().loadViews(schemaDir, ingitdb.NewReadOptions(ingitdb.Validate()))
+	_, err := newDefLoader().loadViews(viewsDir, ingitdb.NewReadOptions(ingitdb.Validate()))
 	if err == nil {
 		t.Fatal("loadViews() expected error, got nil")
 	}
