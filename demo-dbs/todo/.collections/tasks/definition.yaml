@@ -2,10 +2,9 @@ titles:
   en: Tasks
   ru: Задачи
 record_file:
-  name: "$records/{key}.json"
-  type: "map[string]any"
+  name: "tasks.json"
+  type: "map[string]map[string]any"
   format: json
-data_dir: $records
 columns:
   title:
     type: string

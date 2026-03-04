@@ -75,16 +75,27 @@ func (b SimpleViewBuilder) BuildViews(
 	if b.Writer == nil {
 		return nil, fmt.Errorf("view writer is required")
 	}
-	views, err := b.DefReader.ReadViewDefs(col.DirPath)
-	if err != nil {
-		return nil, err
-	}
-	// Inject the inline default_view from the collection definition.
-	if col.DefaultView != nil {
-		dv := *col.DefaultView
-		dv.ID = ingitdb.DefaultViewID
-		dv.IsDefault = true
-		views[ingitdb.DefaultViewID] = &dv
+	// Use pre-loaded views from the collection definition when available (both
+	// layouts).  Fall back to reading from disk for callers that construct a
+	// CollectionDef without going through ReadDefinition (e.g. GitHub path).
+	var views map[string]*ingitdb.ViewDef
+	if col.Views != nil {
+		views = col.Views
+	} else {
+		var err error
+		views, err = b.DefReader.ReadViewDefs(col.DirPath)
+		if err != nil {
+			return nil, err
+		}
+		// Inject the inline default_view when it was not already injected.
+		if col.DefaultView != nil {
+			if _, exists := views[ingitdb.DefaultViewID]; !exists {
+				dv := *col.DefaultView
+				dv.ID = ingitdb.DefaultViewID
+				dv.IsDefault = true
+				views[ingitdb.DefaultViewID] = &dv
+			}
+		}
 	}
 	fs := b.fsOpsOrDefault()
 	result := &ingitdb.MaterializeResult{}

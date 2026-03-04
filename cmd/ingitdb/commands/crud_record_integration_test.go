@@ -17,16 +17,19 @@ import (
 func TestCRUDRecord_UpdatesTagsReadme(t *testing.T) {
 	repoRoot := findRepoRoot(t)
 	tmpDir := t.TempDir()
-	dstTagsDir := filepath.Join(tmpDir, "demo-dbs", "todo", "tags")
-	srcTagsDir := filepath.Join(repoRoot, "demo-dbs", "todo", "tags")
-	if err := copyDir(srcTagsDir, dstTagsDir); err != nil {
-		t.Fatalf("copy tags dir: %v", err)
+
+	// Copy the shared todo dir (schema + data) to tmp.
+	srcTodoDir := filepath.Join(repoRoot, "demo-dbs", "todo")
+	dstTodoDir := filepath.Join(tmpDir, "demo-dbs", "todo")
+	if err := copyDir(srcTodoDir, dstTodoDir); err != nil {
+		t.Fatalf("copy todo dir: %v", err)
 	}
+
 	ingitDBDir := filepath.Join(tmpDir, ".ingitdb")
 	if err := os.MkdirAll(ingitDBDir, 0755); err != nil {
 		t.Fatalf("create .ingitdb dir: %v", err)
 	}
-	rootCollections := []byte("todo.tags: demo-dbs/todo/tags\n")
+	rootCollections := []byte("todo.tags: demo-dbs/todo/.collections/tags\n")
 	if err := os.WriteFile(filepath.Join(ingitDBDir, "root-collections.yaml"), rootCollections, 0o644); err != nil {
 		t.Fatalf("write root collections: %v", err)
 	}
@@ -43,22 +46,22 @@ func TestCRUDRecord_UpdatesTagsReadme(t *testing.T) {
 	if err := runCLICommand(createCmd, "record", "--path="+tmpDir, "--id=todo.tags/urgent", "--data={title: Urgent}"); err != nil {
 		t.Fatalf("Create record: %v", err)
 	}
-	assertTagTitle(t, dstTagsDir, "urgent", "Urgent")
-	assertReadmeContains(t, dstTagsDir, "**Urgent**")
+	assertTagTitle(t, dstTodoDir, "urgent", "Urgent")
+	assertReadmeContains(t, dstTodoDir, "**Urgent**")
 
 	updateCmd := Update(homeDir, getWd, readDef, newDB, logf)
 	if err := runCLICommand(updateCmd, "record", "--path="+tmpDir, "--id=todo.tags/urgent", "--set={titles: {en: Updated}}"); err != nil {
 		t.Fatalf("Update record: %v", err)
 	}
-	assertTagTitle(t, dstTagsDir, "urgent", "Updated")
-	assertReadmeContains(t, dstTagsDir, "**Updated**")
+	assertTagTitle(t, dstTodoDir, "urgent", "Updated")
+	assertReadmeContains(t, dstTodoDir, "**Updated**")
 
 	deleteCmd := Delete(homeDir, getWd, readDef, newDB, logf)
 	if err := runCLICommand(deleteCmd, "record", "--path="+tmpDir, "--id=todo.tags/urgent"); err != nil {
 		t.Fatalf("Delete record: %v", err)
 	}
-	assertTagMissing(t, dstTagsDir, "urgent")
-	assertReadmeNotContains(t, dstTagsDir, "**Updated**")
+	assertTagMissing(t, dstTodoDir, "urgent")
+	assertReadmeNotContains(t, dstTodoDir, "**Updated**")
 }
 
 func assertTagTitle(t *testing.T, tagsDir, key, title string) {
