@@ -5,7 +5,7 @@ import (
 )
 
 // ValidateCollectionID validates a full collection ID.
-// Allowed characters are alphanumeric and dot; ID must start/end with alphanumeric.
+// Allowed characters are alphanumeric, dot, and underscore; ID must start/end with alphanumeric.
 func ValidateCollectionID(id string) error {
 	if id == "" {
 		return fmt.Errorf("collection id cannot be empty")
@@ -18,7 +18,7 @@ func ValidateCollectionID(id string) error {
 			}
 			continue
 		}
-		if isAlphaNum || r == '.' {
+		if isAlphaNum || r == '.' || r == '_' {
 			continue
 		}
 		return fmt.Errorf("collection id %q contains invalid character %q", id, r)

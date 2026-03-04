@@ -89,6 +89,86 @@ func TestValidate_CollectionWithRecords(t *testing.T) {
 	}
 }
 
+func TestValidate_CollectionWithFlatYAMLRecords(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	recordsDir := filepath.Join(dir, "currencies", "$records")
+	if err := os.MkdirAll(recordsDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir: %v", err)
+	}
+
+	// Flat YAML record files (no subdirectories)
+	for _, name := range []string{"USD.yaml", "EUR.yaml", "GBP.yaml"} {
+		if err := os.WriteFile(filepath.Join(recordsDir, name), []byte("id: "+name[:3]), 0o644); err != nil {
+			t.Fatalf("setup: write file: %v", err)
+		}
+	}
+	// Non-record file should NOT be counted
+	if err := os.WriteFile(filepath.Join(recordsDir, "README.md"), []byte("docs"), 0o644); err != nil {
+		t.Fatalf("setup: write README: %v", err)
+	}
+
+	colDir := filepath.Join(dir, "currencies")
+	def := &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"currencies": {DirPath: colDir},
+		},
+	}
+
+	v := NewValidator()
+	result, err := v.Validate(context.Background(), dir, def)
+	if err != nil {
+		t.Fatalf("Validate() unexpected error: %v", err)
+	}
+
+	count := result.GetRecordCount("currencies")
+	if count != 3 {
+		t.Errorf("GetRecordCount(currencies) = %d, want 3", count)
+	}
+}
+
+func TestValidate_CollectionDeduplicatesDirAndFile(t *testing.T) {
+	t.Parallel()
+
+	// When a record has both a flat file (ord001.yaml) and a subdirectory (ord001/)
+	// for subcollection data, it should be counted only once.
+	dir := t.TempDir()
+	recordsDir := filepath.Join(dir, "orders", "$records")
+	if err := os.MkdirAll(recordsDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir: %v", err)
+	}
+
+	if err := os.WriteFile(filepath.Join(recordsDir, "ord001.yaml"), []byte("id: ord001"), 0o644); err != nil {
+		t.Fatalf("setup: write file: %v", err)
+	}
+	if err := os.Mkdir(filepath.Join(recordsDir, "ord001"), 0o755); err != nil {
+		t.Fatalf("setup: mkdir subdir: %v", err)
+	}
+	// Second record with only a file
+	if err := os.WriteFile(filepath.Join(recordsDir, "ord002.yaml"), []byte("id: ord002"), 0o644); err != nil {
+		t.Fatalf("setup: write file: %v", err)
+	}
+
+	colDir := filepath.Join(dir, "orders")
+	def := &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"orders": {DirPath: colDir},
+		},
+	}
+
+	v := NewValidator()
+	result, err := v.Validate(context.Background(), dir, def)
+	if err != nil {
+		t.Fatalf("Validate() unexpected error: %v", err)
+	}
+
+	count := result.GetRecordCount("orders")
+	if count != 2 {
+		t.Errorf("GetRecordCount(orders) = %d, want 2 (ord001 counted once despite file+dir)", count)
+	}
+}
+
 func TestValidate_CollectionDirWithDotCollectionExcluded(t *testing.T) {
 	t.Parallel()
 
@@ -107,7 +187,7 @@ func TestValidate_CollectionDirWithDotCollectionExcluded(t *testing.T) {
 	if err := os.Mkdir(filepath.Join(colDir, "record1"), 0o755); err != nil {
 		t.Fatalf("setup: mkdir record1: %v", err)
 	}
-	// Regular file (not a dir) should NOT be counted
+	// Non-record file (not yaml/json) should NOT be counted
 	if err := os.WriteFile(filepath.Join(colDir, "readme.md"), []byte("hi"), 0o644); err != nil {
 		t.Fatalf("setup: write file: %v", err)
 	}

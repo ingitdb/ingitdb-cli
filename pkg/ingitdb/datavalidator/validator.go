@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
@@ -57,11 +58,24 @@ func countEntries(dirPath string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	count := 0
+	// Count unique record keys. A key may appear as a plain file (e.g. USD.yaml)
+	// or as a subdirectory (e.g. ord001/ holding subcollection data), or both.
+	// We deduplicate by stripping the file extension so that a record with both
+	// an ord001.yaml and an ord001/ directory is counted only once.
+	seen := make(map[string]struct{})
 	for _, entry := range entries {
-		if entry.IsDir() && entry.Name() != ".collection" {
-			count++
+		name := entry.Name()
+		if strings.HasPrefix(name, ".") || name == "$records" {
+			continue
+		}
+		if entry.IsDir() {
+			seen[name] = struct{}{}
+		} else {
+			ext := strings.ToLower(filepath.Ext(name))
+			if ext == ".yaml" || ext == ".json" {
+				seen[strings.TrimSuffix(name, filepath.Ext(name))] = struct{}{}
+			}
 		}
 	}
-	return count, nil
+	return len(seen), nil
 }

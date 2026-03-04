@@ -12,6 +12,8 @@ func TestValidateCollectionID(t *testing.T) {
 	}{
 		{name: "single_alnum", id: "a", ok: true},
 		{name: "namespaced", id: "todo.tags", ok: true},
+		{name: "underscore", id: "exchange_rates", ok: true},
+		{name: "namespace_underscore", id: "demo_commerce", ok: true},
 		{name: "contains_slash", id: "todo/tags", ok: false},
 		{name: "contains_dash", id: "todo-tags", ok: false},
 		{name: "starts_with_dot", id: ".todo", ok: false},
