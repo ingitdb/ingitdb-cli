@@ -6,4 +6,5 @@ These examples provide practical use-cases and templates to help you get started
 ## Applications
 
 - [Agile Ledger](agile-ledger)
+- [CRM Orders](crm-orders)
 - [Todo App](todo)
