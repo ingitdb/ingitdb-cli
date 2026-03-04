@@ -58,8 +58,31 @@ agile.*: demo-dbs/agile-ledger
 | Absolute     | Used as-is                                                         |
 | `~/…`        | `~` is expanded to the user's home directory                       |
 
-Paths must point to a **single collection directory**. Glob wildcards (`*`) are not allowed
-in path values (only in collection ID keys, as the `.*` namespace-import syntax).
+Each path must resolve to exactly one collection definition. Glob wildcards (`*`) are not
+allowed in path values (only in collection ID keys, as the `.*` namespace-import syntax).
+
+#### Collection directory styles
+
+A path can point to either of the two inGitDB collection layouts:
+
+| Style | Layout | Path points to |
+| ----- | ------ | -------------- |
+| **Dedicated directory** | `.collection/definition.yaml` inside the target dir | The collection directory itself (e.g. `data/countries`) |
+| **Shared directory** | `.collections/<name>/definition.yaml` under a parent | The named subdirectory inside `.collections/` (e.g. `cooking/.collections/recipes`) |
+
+```yaml
+# .ingitdb/root-collections.yaml
+
+# Dedicated directory (standard) — .collection/definition.yaml lives inside data/countries/
+countries: data/countries
+
+# Shared directory — point directly at the named subdir inside .collections/
+recipes: cooking/.collections/recipes
+ingredients: cooking/.collections/ingredients
+```
+
+Both styles are first-class citizens; `root-collections.yaml` treats them identically once
+the path resolves to a directory that contains the expected `definition.yaml`.
 
 ### Namespace imports
 
@@ -96,6 +119,14 @@ todo.tasks:    demo-dbs/todo/tasks
 | Referenced directory does not exist                                    | Returns error |
 | Referenced directory has no `.ingitdb/root-collections.yaml`          | Returns error |
 | Referenced `.ingitdb/root-collections.yaml` is empty                  | Returns error |
+
+For **plain collection entries** (non-namespace-import keys):
+
+| Condition                                                                       | Behaviour     |
+| ------------------------------------------------------------------------------- | ------------- |
+| Path does not exist                                                             | Returns error |
+| Path exists but contains neither `.collection/` nor `.collections/<name>/` with a `definition.yaml` | Returns error |
+| Path points to a `.collections/<name>/` subdirectory with no `definition.yaml` | Returns error |
 
 ### Design rationale
 

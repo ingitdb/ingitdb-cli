@@ -1,14 +1,60 @@
-# ⚙️ Subcollection Definition File (`.collection/subcollections/<name>/definition.yaml`)
+# ⚙️ Subcollection Definition File
 
 A **subcollection** is a collection nested within another collection's records. Subcollections use the exact same definition format as standard root-level collections (mapping to the [`CollectionDef`](../../pkg/ingitdb/collection_def.go) type), with their placement defining their relationship to parent data.
 
 ## 📂 File location
 
-The definitions for subcollections are located in the `.collection/subcollections` subdirectory of the parent collection's directory.
-Each subcollection is a dedicated directory (e.g., `.collection/subcollections/departments/`) that contains its own `.collection/definition.yaml` file, mirroring the structure of root collections. The subcollection directory name dictates the identity of the subcollection.
+The location of a subcollection's `definition.yaml` depends on which
+[layout style](collection.md#-collection-layout-styles) the parent collection uses.
 
-If a subcollection has its own subcollections (i.e., nested subcollections), their definitions are placed within the `.collection/subcollections` directory of that subcollection.
-For example, subcollections of `departments` are defined inside `.collection/subcollections/departments/.collection/subcollections/`.
+**Dedicated-directory layout (`.collection/`)**
+
+Subcollections live under `.collection/subcollections/` inside the parent collection directory.
+Each subcollection has its own named subdirectory containing a `definition.yaml`.
+
+```
+<parent-collection-dir>/
+  .collection/
+    definition.yaml
+    subcollections/
+      <sub>/
+        definition.yaml
+```
+
+Nested subcollections mirror the same pattern one level deeper:
+
+```
+<parent-collection-dir>/
+  .collection/
+    subcollections/
+      <sub>/
+        definition.yaml
+        subcollections/       ← sub's own subcollections
+          <nested-sub>/
+            definition.yaml
+```
+
+**Shared-directory layout (`.collections/`)**
+
+Subcollections are **direct non-`$`-prefixed subdirectories** of the parent collection's entry
+inside `.collections/`.
+
+```
+<base-dir>/
+  .collections/
+    <parent-name>/
+      definition.yaml
+      <sub>/                  ← subcollection (no "subcollections/" intermediate dir)
+        definition.yaml
+        <nested-sub>/         ← nested subcollection
+          definition.yaml
+```
+
+The subcollection directory name is its ID. Any directory not prefixed with `$` is treated as
+a subcollection. `data_dir` is resolved relative to the base directory (parent of
+`.collections/`).
+
+The subcollection directory name dictates the identity of the subcollection.
 
 ## 📂 Example
 
@@ -40,7 +86,7 @@ companies
 
 ### Schema Structure
 
-To support the above data structure, the schema definition files are organized into a matching metadata hierarchy under the root `.collection` folder:
+**Dedicated-directory layout** — schema definition files under the root `.collection/` folder:
 
 ```text
 companies/
@@ -61,10 +107,33 @@ companies/
         definition.yaml                               <-- "offices" schema
 ```
 
-If you manage a `companies` collection and you want to track `departments` (a subcollection) for each company, the `departments` definition would look exactly like a standard root-level collection:
+**Shared-directory layout** — the same hierarchy expressed under `.collections/`:
+
+```text
+companies/
+  .collections/
+    companies/
+      definition.yaml                                 <-- "companies" schema
+      departments/
+        definition.yaml                               <-- "departments" schema
+        projects/
+          definition.yaml                             <-- "projects" schema
+        teams/
+          definition.yaml                             <-- "teams" schema
+          members/
+            definition.yaml                           <-- "members" schema
+      offices/
+        definition.yaml                               <-- "offices" schema
+```
+
+If you manage a `companies` collection and you want to track `departments` (a subcollection)
+for each company, the `departments` definition would look exactly like a standard root-level
+collection. The comment below shows the dedicated-layout path; adjust to
+`.collections/companies/departments/definition.yaml` for the shared layout.
 
 ```yaml
 # companies/.collection/subcollections/departments/definition.yaml
+# (shared layout: companies/.collections/companies/departments/definition.yaml)
 titles:
   en: Departments
 record_file:

@@ -1,9 +1,127 @@
-# ⚙️ Collection Definition File (`.collection/definition.yaml`)
+# ⚙️ Collection Definition File (`definition.yaml`)
 
-Each collection directory contains an `.collection/definition.yaml` file that describes
-how records are stored and what columns (fields) they have. The file structure maps to the [`CollectionDef`](../../pkg/ingitdb/collection_def.go) type.
+Each collection is described by a `definition.yaml` file that controls how records are stored
+and what columns (fields) they contain. The file structure maps to the
+[`CollectionDef`](../../pkg/ingitdb/collection_def.go) type.
 
-See the [Collection README Builder](../components/readme-builders/collection.md) documentation for details on how a collection's `README.md` is automatically populated and updated.
+See the [Collection README Builder](../components/readme-builders/collection.md) for details on
+how a collection's `README.md` is automatically populated and updated.
+
+---
+
+## 📂 Collection layout styles
+
+inGitDB supports **two directory layouts** for `definition.yaml`. Choose the one that fits
+each directory's content.
+
+### 1 · Dedicated-directory layout (`.collection/`)
+
+One collection per directory. The collection's ID is the name of the directory that contains
+`.collection/`. This is the default choice for most standalone collections.
+
+```
+<collection-dir>/
+  .collection/
+    definition.yaml         ← collection schema
+    views/
+      <view-name>.yaml      ← named views
+    subcollections/
+      <sub>/
+        definition.yaml     ← subcollection schema
+  <data files …>
+```
+
+**Use when** a directory is devoted to a single collection.
+
+```
+todo/tags/
+  .collection/
+    definition.yaml   ← "tags" collection
+  tags.json
+```
+
+### 2 · Shared-directory layout (`.collections/`)
+
+Multiple collections share one directory. Each collection lives in its own named subdirectory
+under `.collections/`. The collection's ID is the subdirectory name.
+
+```
+<base-dir>/
+  .collections/
+    <collection-name>/
+      definition.yaml         ← collection schema
+      $views/
+        <view-name>.yaml      ← named views (reserved folder)
+      <subcollection-name>/   ← subcollection schema (any non-$-prefixed subdir)
+        definition.yaml
+  <data files …>              ← resolved via data_dir in each definition.yaml
+```
+
+**Use when** two or more related data files (e.g. `recipes.yaml` and `ingredients.csv`) must
+live in the same directory.
+
+```
+cooking/
+  .collections/
+    recipes/
+      definition.yaml         ← "recipes" collection
+      $views/
+        by_cuisine.yaml
+      ingredients_of_recipe/
+        definition.yaml       ← subcollection
+    ingredients/
+      definition.yaml         ← "ingredients" collection
+  recipes/
+    chicken-soup.yaml
+    pasta.yaml
+  ingredients.csv
+```
+
+| Term | Meaning |
+| ---- | ------- |
+| **base dir** | Parent of `.collections/`; anchor for all `data_dir` path resolution |
+| **collection name** | Subdirectory name inside `.collections/`; becomes the collection's ID |
+| **`$views/`** | Reserved folder for named view definitions; `$`-prefix marks inGitDB-managed dirs |
+
+### Choosing a layout
+
+| Situation | Recommended layout |
+| --------- | ------------------ |
+| One collection per directory (most cases) | Dedicated (`.collection/`) |
+| Two or more collections share the same data directory | Shared (`.collections/`) |
+
+### Referencing layouts from `root-collections.yaml`
+
+The two layouts differ only in where `definition.yaml` lives. From the perspective of
+[`root-collections.yaml`](root-config.md#-root-collectionsyaml), each style is referenced
+symmetrically — the path simply points to the directory that **contains the definition**:
+
+| Layout | Path in `root-collections.yaml` | Resolves to |
+| ------ | ------------------------------- | ----------- |
+| Dedicated (`.collection/`) | The collection directory itself | `definition.yaml` is at `<path>/.collection/definition.yaml` |
+| Shared (`.collections/`) | The named subdir inside `.collections/` | `definition.yaml` is at `<path>/definition.yaml` |
+
+```yaml
+# .ingitdb/root-collections.yaml
+
+# Dedicated: .collection/definition.yaml lives inside data/countries/
+countries: data/countries
+
+# Shared: point directly at the named subdir inside .collections/
+recipes: cooking/.collections/recipes
+ingredients: cooking/.collections/ingredients
+```
+
+Both entries are valid plain collection entries; `root-collections.yaml` treats them
+identically once the path resolves to a directory that contains the expected
+`definition.yaml`.
+
+### Layout conflict
+
+If both `.collection/` and `.collections/` exist in the same directory the validator returns
+an **error**. Only one layout may be active per directory.
+
+---
 
 ## 📂 Top-level fields
 
@@ -11,7 +129,7 @@ See the [Collection README Builder](../components/readme-builders/collection.md)
 | --------------- | ------------------------------------------------------------ | ----------------------------------------------- |
 | `titles`        | `map[locale]string`                                          | Human-readable collection name, keyed by locale |
 | `record_file`   | [`RecordFileDef`](../../pkg/ingitdb/record_file_def.go)      | How records are stored on disk (required)       |
-| `data_dir`      | `string`                                                     | Custom data directory (optional)                |
+| `data_dir`      | `string`                                                     | Custom data directory (optional; see [layout notes](#-shared-directory-layout-details)) |
 | `readme`        | [`CollectionReadmeDef`](../../pkg/ingitdb/collection_def.go) | README.md generation configuration (optional)   |
 | `columns`       | `map[string]`[`ColumnDef`](../../pkg/ingitdb/column_def.go)  | Column (field) definitions                      |
 | `columns_order` | `[]string`                                                   | Display order for columns                       |
@@ -131,7 +249,7 @@ File `tags.json`:
 
 ---
 
-## 📂 columns`
+## 📂 `columns`
 
 Each entry under `columns` is a **ColumnDef** keyed by the field name.
 
@@ -250,7 +368,105 @@ See [Default Collection View](../features/default-collection-view.md) for the fu
 
 ---
 
-## 📂 Full example
+## 📂 Shared-directory layout details
+
+This section applies only when using the `.collections/` layout.
+
+### `data_dir` resolution
+
+`data_dir` is always resolved **relative to the base directory** (the parent of `.collections/`),
+not relative to the collection's own schema subdirectory.
+
+| `data_dir` value | Effective data path (base = `/cooking/`) |
+| ---------------- | ---------------------------------------- |
+| `recipes`        | `/cooking/recipes/`                      |
+| `.`              | `/cooking/`                              |
+| *(omitted)*      | `/cooking/`                              |
+
+```yaml
+# /cooking/.collections/recipes/definition.yaml
+data_dir: recipes
+record_file:
+  name: "{key}.yaml"
+  type: "map[string]any"
+  format: yaml
+```
+
+Record path: `/cooking/recipes/chicken-soup.yaml`
+
+```yaml
+# /cooking/.collections/ingredients/definition.yaml
+# data_dir omitted — data lives directly in /cooking/
+record_file:
+  name: "ingredients.csv"
+  type: "[]map[string]any"
+  format: csv
+```
+
+Record path: `/cooking/ingredients.csv`
+
+> **Note:** In the dedicated layout (`.collection/`), `data_dir` is resolved relative to the
+> collection directory itself (the parent of `.collection/`). The resolution anchor differs
+> between the two layouts.
+
+### Named views (`$views/`)
+
+Named views are stored in the reserved `$views/` subdirectory inside the collection's entry
+under `.collections/`. The file name without `.yaml` becomes the view's identifier.
+
+```
+/cooking/.collections/recipes/$views/by_cuisine.yaml
+```
+
+The `$` prefix signals that this is an inGitDB-managed directory and not a subcollection.
+See [View Definition File](view.md) for the full view schema.
+
+### Subcollections
+
+A subcollection's schema is a **direct non-`$`-prefixed subdirectory** of the parent
+collection's `.collections/` entry.
+
+```
+/cooking/.collections/recipes/ingredients_of_recipe/definition.yaml
+```
+
+Subcollections can nest arbitrarily:
+
+```
+/cooking/.collections/recipes/ingredients_of_recipe/nutrient/definition.yaml
+```
+
+A subcollection's own `data_dir` follows the same resolution rule — relative to the **base
+directory** (parent of `.collections/`), not to the subcollection's schema directory.
+
+See [Subcollection Definition File](subcollection.md) for the full hierarchical data model.
+
+### Discovery rules
+
+The scanner walks the repository looking for `.collections/` directories. For each one found:
+
+1. The **base directory** is set to the parent of `.collections/`.
+2. Every direct subdirectory of `.collections/` is examined:
+   - Subdirectories whose name starts with `$` are **skipped** (managed directories).
+   - All others must contain a `definition.yaml` and are treated as collection definitions.
+3. Within each collection's subdirectory, subcollections are discovered recursively using the
+   same rule (skip `$`-prefixed, recurse into the rest).
+
+### Validator rules
+
+| Rule | Severity | Description |
+| ---- | -------- | ----------- |
+| Duplicate `record_file.name` within the same base directory | **error** | Two collections resolving to the same file path would corrupt each other's data. |
+| Duplicate collection name within the same `.collections/` directory | **error** | Each named subdirectory must be unique. |
+| Both `.collection/` and `.collections/` present in the same directory | **error** | Only one layout may be active per directory. |
+| `$views/` entry that is not a directory | **warning** | A plain file named `$views` is unexpected and ignored. |
+| Subdirectory with no `definition.yaml` | **warning** | Reported but not fatal; may be a work-in-progress collection. |
+
+---
+
+## 📂 Full examples
+
+### Dedicated-directory layout
 
 `todo/tags/.collection/definition.yaml`:
 
@@ -279,4 +495,51 @@ columns:
   "home": { "titles": { "en": "Home", "ru": "Дом" } },
   "personal": { "titles": { "en": "Personal", "ru": "Личное" } }
 }
+```
+
+### Shared-directory layout
+
+`/cooking/.collections/recipes/definition.yaml`:
+
+```yaml
+titles:
+  en: Recipes
+data_dir: recipes
+record_file:
+  name: "{key}.yaml"
+  type: "map[string]any"
+  format: yaml
+columns:
+  title:
+    type: string
+    required: true
+  cuisine:
+    type: string
+  prep_time_minutes:
+    type: int
+columns_order:
+  - title
+  - cuisine
+  - prep_time_minutes
+default_view:
+  format: tsv
+  columns: [id, title, cuisine]
+```
+
+`/cooking/.collections/ingredients/definition.yaml`:
+
+```yaml
+titles:
+  en: Ingredients
+# data_dir omitted — data lives directly in /cooking/
+record_file:
+  name: "ingredients.csv"
+  type: "[]map[string]any"
+  format: csv
+columns:
+  name:
+    type: string
+    required: true
+  unit:
+    type: string
 ```

@@ -6,6 +6,54 @@ Tasks within each phase are ordered by dependency — implement them top to bott
 
 ---
 
+## 🧩 Phase 0: Foundation
+
+### 🖥️ P0-1: Add support for the shared-directory `.collections/` layout
+
+**What:** Extend collection discovery to recognise both the existing
+`.collection/definition.yaml` single-collection layout **and** the new
+`.collections/{name}/definition.yaml` shared-directory layout. Both layouts remain valid;
+neither replaces the other.
+
+**Why:** The existing layout forces each collection into a dedicated directory, making it
+impossible to co-locate e.g. `recipes.csv` and `ingredients.csv` in the same `/cooking/`
+folder. The shared-directory layout unlocks this while keeping the simpler dedicated layout
+available for collections that don't need co-location.
+
+**Acceptance criteria:**
+
+- Collection meta is discovered from **either**:
+  - `.collection/definition.yaml` (dedicated layout, ID = parent dir name)
+  - `.collections/{name}/definition.yaml` (shared layout, ID = subdir name)
+- Named views are loaded from:
+  - `.collection/views/*.yaml` (dedicated layout)
+  - `.collections/{name}/$views/*.yaml` (shared layout)
+- Subcollections are discovered from:
+  - `.collection/subcollections/{sub}/` (dedicated layout)
+  - Direct non-`$`-prefixed subdirs of `.collections/{name}/` (shared layout)
+- In the shared layout, `data_dir` is resolved relative to the parent of `.collections/`
+- Validator reports an **error** if both `.collection/` and `.collections/` are present in the
+  same directory
+- Validator reports an **error** if two collections in the same `.collections/` directory
+  resolve to the same `record_file.name`
+- All demo collections in the repo (`test-ingitdb/` and any others) continue to pass
+  validation
+- All existing tests pass; new tests cover shared-layout discovery and the conflict error
+- `docs/schema/collection.md` documents both layouts (already done — see the merged doc)
+- `docs/schema/subcollection.md` documents both subcollection paths (already done)
+
+**Implementation notes:**
+
+- Introduce a layout-detection step in the scanner: if `.collection/` exists → dedicated; if
+  `.collections/` exists → shared; if both → validation error; if neither → not a collection dir
+- The constant `SchemaDir` (currently `.collection`) should become a runtime value rather than
+  a compile-time constant to support both paths; or introduce two constants
+  (`SchemaDirDedicated = ".collection"`, `SchemaDirShared = ".collections"`)
+- Discovery logic in `pkg/ingitdb/validator/def_validator.go` must handle both layouts
+- See [`docs/schema/collection.md`](schema/collection.md) for the full spec of both layouts
+
+---
+
 ## 🧩 Phase 1: Validator + Materialized Views
 
 ### 🖥️ P1-1: Migrate CLI to subcommand-based interface
