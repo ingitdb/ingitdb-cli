@@ -1,0 +1,46 @@
+titles:
+  en: Product Images
+
+record_file:
+  name: "{key}.yaml"
+  type: "map[string]any"
+  format: yaml
+
+columns:
+  id:
+    type: string
+    required: true
+    max_length: 64
+  url:
+    type: string
+    required: true
+    max_length: 512
+    # TODO: regex constraint needs implementation in ColumnDef
+    # regex: "^https?://"
+  alt_text:
+    type: string
+    required: true
+    max_length: 255
+  width_px:
+    type: int
+    required: false
+    # TODO: min value constraint needs implementation in ColumnDef
+    # min: 1
+  height_px:
+    type: int
+    required: false
+    # TODO: min value constraint needs implementation in ColumnDef
+    # min: 1
+  sort_order:
+    type: int
+    required: false
+    # TODO: min value constraint needs implementation in ColumnDef
+    # min: 0
+
+columns_order:
+  - id
+  - url
+  - alt_text
+  - width_px
+  - height_px
+  - sort_order

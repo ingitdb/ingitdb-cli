@@ -1,0 +1,64 @@
+titles:
+  en: Customers
+
+record_file:
+  name: "{key}.yaml"
+  type: "map[string]any"
+  format: yaml
+
+columns:
+  id:
+    type: string
+    required: true
+    max_length: 64
+  first_name:
+    type: string
+    required: true
+    min_length: 1
+    max_length: 64
+  last_name:
+    type: string
+    required: true
+    min_length: 1
+    max_length: 64
+  email:
+    type: string
+    required: true
+    max_length: 254
+    # TODO: regex constraint needs implementation in ColumnDef
+    # regex: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+  phone:
+    type: string
+    required: false
+    # TODO: regex constraint needs implementation in ColumnDef
+    # regex: "^\\+\\d{7,15}$"
+  country_id:
+    type: string
+    required: true
+    foreign_key: countries
+  preferred_currency_id:
+    type: string
+    required: false
+    foreign_key: currencies
+  created_at:
+    type: datetime
+    required: true
+  is_active:
+    type: bool
+    required: true
+  notes:
+    type: string
+    required: false
+    max_length: 1000
+
+columns_order:
+  - id
+  - first_name
+  - last_name
+  - email
+  - phone
+  - country_id
+  - preferred_currency_id
+  - created_at
+  - is_active
+  - notes

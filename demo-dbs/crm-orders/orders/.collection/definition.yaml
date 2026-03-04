@@ -1,0 +1,99 @@
+titles:
+  en: Orders
+
+record_file:
+  name: "{key}.yaml"
+  type: "map[string]any"
+  format: yaml
+
+columns:
+  id:
+    type: string
+    required: true
+    max_length: 64
+  customer_id:
+    type: string
+    required: true
+    foreign_key: customers
+  billing_address_id:
+    type: string
+    required: true
+    foreign_key: addresses
+  shipping_address_id:
+    type: string
+    required: true
+    foreign_key: addresses
+  shipping_option_id:
+    type: string
+    required: true
+    foreign_key: shipping_options
+  currency_id:
+    type: string
+    required: true
+    foreign_key: currencies
+  promotion_id:
+    type: string
+    required: false
+    foreign_key: promotions
+  status:
+    type: string
+    required: true
+    # TODO: enum constraint needs implementation in ColumnDef
+    # enum: [pending, confirmed, processing, shipped, delivered, cancelled, refunded]
+  subtotal:
+    type: float
+    required: true
+    # TODO: min value constraint needs implementation in ColumnDef
+    # min: 0
+  discount_amount:
+    type: float
+    required: true
+    # TODO: min value constraint needs implementation in ColumnDef
+    # min: 0
+  tax_amount:
+    type: float
+    required: true
+    # TODO: min value constraint needs implementation in ColumnDef
+    # min: 0
+  shipping_amount:
+    type: float
+    required: true
+    # TODO: min value constraint needs implementation in ColumnDef
+    # min: 0
+  total_amount:
+    type: float
+    required: true
+    # TODO: min value constraint needs implementation in ColumnDef
+    # min: 0
+  placed_at:
+    type: datetime
+    required: true
+  shipped_at:
+    type: datetime
+    required: false
+  delivered_at:
+    type: datetime
+    required: false
+  notes:
+    type: string
+    required: false
+    max_length: 1000
+
+columns_order:
+  - id
+  - customer_id
+  - billing_address_id
+  - shipping_address_id
+  - shipping_option_id
+  - currency_id
+  - promotion_id
+  - status
+  - subtotal
+  - discount_amount
+  - tax_amount
+  - shipping_amount
+  - total_amount
+  - placed_at
+  - shipped_at
+  - delivered_at
+  - notes

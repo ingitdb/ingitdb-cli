@@ -1,0 +1,14 @@
+currencies: currencies
+exchange_rates: exchange_rates
+countries: countries
+customers: customers
+addresses: addresses
+product_categories: product_categories
+product_images: product_images
+products: products
+suppliers: suppliers
+shippers: shippers
+shipping_options: shipping_options
+tax_rates: tax_rates
+promotions: promotions
+orders: orders
