@@ -97,40 +97,6 @@ github_app:
 
 ## Flow
 
-```
-External scheduler (cron / Cloud Scheduler)
-        |
-        v
-POST /schedule/dependency-check
-        |
-        v
-App reads all records in configured collections
-        |
-        v
-For each record, evaluate configured validators:
-  - cross-collection ref checks (internal)
-  - external source ref checks (HTTP calls)
-        |
-    +---+---+
-    |       |
-  PASS  VIOLATIONS
-    |       |
-    v       v
-  Done   Group violations by collection and record
-            |
-            v
-         Is there an open GitHub Issue for this check?
-            |
-        +---+---+
-        |       |
-      YES       NO
-        |       |
-        v       v
-     Update   Open new GitHub Issue
-     existing with violation report
-     Issue
-```
-
 ```mermaid
 flowchart TD
     A([External scheduler<br/>cron / Cloud Scheduler]) --> B[POST /schedule/dependency-check]

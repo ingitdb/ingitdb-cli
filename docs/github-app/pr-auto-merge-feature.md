@@ -21,69 +21,6 @@ has its own permissions regardless of PR origin.
 
 ## Flow
 
-```
-User opens PR (from branch or fork)
-        |
-        v
-GitHub sends pull_request webhook to App server
-        |
-        v
-App creates a Check Run: "inGitDB Validation" (status: in_progress)
-        |
-        v
-App reads and classifies all changed files:
-  - inGitDB files  (under tracked collection dirs)
-  - out-of-scope files (everything else not in allowed_dirs)
-        |
-        +---------------------------+
-        |                           |
-  has inGitDB files?          has out-of-scope files?
-        |                           |
-        v                           v
-Run ingitdb validate          (noted; will block auto-merge
-on inGitDB files only          and affect comment wording)
-        |
-    +---+---+
-    |       |
-  FAIL    PASS
-        |
-        v
-Compose PR comment (always posted):
-  - List out-of-scope files if any ("cannot auto-merge")
-  - Report inGitDB validation: passed / failed / none present
-        |
-        v
-Did inGitDB validation fail?
-        |
-    +---+---+
-    |       |
-   YES      NO
-    |       |
-    v       v
-Update    Has out-of-scope files?
-Check Run     |
-to failure +--+--+
-(no notify)|     |
-          YES    NO (all files are inGitDB/allowed)
-           |     |
-           v     v
-      Notify   Check permissions in .ingitdb.yaml:
-      reviewers - Is auto_merge enabled for these collections?
-      (with      - Is the PR author allowed to write these records?
-      validation     |
-      status)    +---+---+
-                 |       |
-             DENIED   ALLOWED
-                 |       |
-                 v       v
-           Update     App merges the PR
-           Check Run  Update Check Run to success
-           to failure Post merge confirmation comment
-           Post comment
-           with reason
-           Notify reviewers
-```
-
 ```mermaid
 flowchart TD
     A([User opens PR<br/>branch or fork]) --> B[GitHub sends pull_request webhook]
