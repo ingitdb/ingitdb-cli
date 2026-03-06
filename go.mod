@@ -3,7 +3,6 @@ module github.com/ingitdb/ingitdb-cli
 go 1.26.0
 
 require (
-	github.com/google/go-github/v72 v72.0.0
 	github.com/google/go-github/v84 v84.0.0
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/stretchr/testify v1.11.1
@@ -14,11 +13,9 @@ require (
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/go-querystring v1.2.0 // indirect
-	github.com/ingr-io/ingr-go v0.0.1 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
-	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/net v0.51.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect

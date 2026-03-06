@@ -251,7 +251,7 @@ go test -timeout=10s ./pkg/dalgo2ghingitdb/...
 
 | Package | Purpose |
 |---|---|
-| `github.com/google/go-github/v72` | GitHub REST API client |
+| `github.com/google/go-github/v84` | GitHub REST API client |
 | `github.com/dal-go/dalgo` | DALgo database abstraction |
 | `gopkg.in/yaml.v3` | YAML encoding and decoding |
 | `encoding/json` | JSON encoding and decoding |

@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/google/go-github/v72/github"
+	"github.com/google/go-github/v84/github"
 )
 
 // Config defines connection settings for reading an inGitDB repository from GitHub.
