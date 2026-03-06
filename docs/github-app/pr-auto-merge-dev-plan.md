@@ -85,7 +85,7 @@ Concrete implementations are injected; tests supply fakes or recorded fixtures.
 - [ ] Wire `--github-app` flag into `ingitdb serve`; load `INGITDB_GITHUB_APP_ID`,
   `INGITDB_GITHUB_APP_INSTALLATION_ID`, `INGITDB_GITHUB_APP_PRIVATE_KEY_PATH` from env
 - [ ] `pkg/repocache`: clone a repo ref to a temp dir; reuse an existing clone if the same
-  owner/repo/ref is already cached; evict by LRU or TTL
+  owner/repo/ref is already cached; evict by LRU based on total clone size on disk
 
 **Acceptance:** A `pull_request.opened` webhook is received, signature verified, and logged with
 the PR number and head SHA. App auth produces a valid installation token.
@@ -210,7 +210,7 @@ repository under the `ingitdb` org. Gated behind `//go:build integration`; requi
 credentials in the environment. Not run in normal CI; run before releases and on a nightly
 schedule.
 
-### HTTP fixture recording
+### HTTP fixture recording (proposal)
 
 For tests that need realistic GitHub API responses without live credentials, use
 [`go-vcr`](https://github.com/dnaeon/go-vcr) (cassette-based HTTP recording).
@@ -245,13 +245,15 @@ func TestPRValidationFlow(t *testing.T) {
 - Cassette filenames mirror test names for easy discovery.
 - A `make update-cassettes` target re-records all cassettes (requires integration credentials).
 
+**Open decision:** Should cassettes live in `testdata/cassettes/` per package or in a shared
+top-level directory?
+
 ---
 
 ## Open Decisions
 
 | # | Decision | Status |
 |---|---|---|
-| 1 | `repocache` eviction policy: LRU by size, TTL, or both? | Open |
-| 2 | App posts a single updating comment or a new comment per event? | Lean toward update to avoid noise |
-| 3 | Cassette storage: `testdata/cassettes/` per package or a shared top-level dir? | Open |
-| 4 | How to handle PRs targeting non-default branches (e.g., release branches)? | Open |
+| 1 | `repocache` eviction policy | LRU by size |
+| 2 | App posts a single updating comment or a new comment per event? | Single updating comment |
+| 3 | How to handle PRs targeting non-default branches (e.g., release branches)? | Needs clarification: what specific problem arises with non-default target branches? |
