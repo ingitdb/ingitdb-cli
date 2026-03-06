@@ -133,15 +133,15 @@ For each record, evaluate configured validators:
 
 ```mermaid
 flowchart TD
-    A([External scheduler\ncron / Cloud Scheduler]) --> B[POST /schedule/dependency-check]
-    B --> C[Read records in\nconfigured collections]
-    C --> D[Evaluate validators:\ncross-collection refs\nexternal source refs]
-    D --> E{Violations\nfound?}
+    A([External scheduler<br/>cron / Cloud Scheduler]) --> B[POST /schedule/dependency-check]
+    B --> C[Read records in<br/>configured collections]
+    C --> D[Evaluate validators:<br/>cross-collection refs<br/>external source refs]
+    D --> E{Violations<br/>found?}
     E -- No --> F([Done — no action])
-    E -- Yes --> G[Group violations\nby collection and record]
-    G --> H{Open issue\nalready exists?}
-    H -- Yes --> I[Update existing issue\nwith new report]
-    H -- No --> J[Open new GitHub Issue\nwith violation report]
+    E -- Yes --> G[Group violations<br/>by collection and record]
+    G --> H{Open issue<br/>already exists?}
+    H -- Yes --> I[Update existing issue<br/>with new report]
+    H -- No --> J[Open new GitHub Issue<br/>with violation report]
     I --> K([Done])
     J --> K
 ```

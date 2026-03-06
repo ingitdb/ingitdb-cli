@@ -86,18 +86,18 @@ to failure +--+--+
 
 ```mermaid
 flowchart TD
-    A([User opens PR\nbranch or fork]) --> B[GitHub sends pull_request webhook]
-    B --> C[App creates Check Run\nstatus: in_progress]
-    C --> D[Classify changed files:\ninGitDB files vs out-of-scope files]
-    D --> E[Run ingitdb validate\non inGitDB files only\nincremental mode]
-    E --> F[Compose PR comment:\n· list out-of-scope files if any\n· report inGitDB validation result]
-    F --> G{inGitDB validation\nfailed?}
-    G -- Yes --> H[Update Check Run: failure\nPost comment\nNo reviewer notification]
-    G -- No --> I{Any out-of-scope\nfiles?}
-    I -- Yes --> J[Update Check Run: failure\nPost comment\nNotify reviewers\nwith validation status]
-    I -- No --> K{Permissions:\nauto_merge enabled?\nauthor allowed?}
-    K -- Denied --> L[Update Check Run: failure\nPost comment with reason\nNotify reviewers]
-    K -- Allowed --> M([App merges PR\nCheck Run: success\nPost confirmation])
+    A([User opens PR<br/>branch or fork]) --> B[GitHub sends pull_request webhook]
+    B --> C[App creates Check Run<br/>status: in_progress]
+    C --> D[Classify changed files:<br/>inGitDB files vs out-of-scope files]
+    D --> E[Run ingitdb validate<br/>on inGitDB files only<br/>incremental mode]
+    E --> F[Compose PR comment:<br/>· list out-of-scope files if any<br/>· report inGitDB validation result]
+    F --> G{inGitDB validation<br/>failed?}
+    G -- Yes --> H[Update Check Run: failure<br/>Post comment<br/>No reviewer notification]
+    G -- No --> I{Any out-of-scope<br/>files?}
+    I -- Yes --> J[Update Check Run: failure<br/>Post comment<br/>Notify reviewers<br/>with validation status]
+    I -- No --> K{Permissions:<br/>auto_merge enabled?<br/>author allowed?}
+    K -- Denied --> L[Update Check Run: failure<br/>Post comment with reason<br/>Notify reviewers]
+    K -- Allowed --> M([App merges PR<br/>Check Run: success<br/>Post confirmation])
 ```
 
 **Validation details:**
@@ -294,17 +294,17 @@ broader scopes if no specific reviewer is configured.
 
 ```mermaid
 flowchart TD
-    A([PR needs review]) --> B{Collection defines\nreviewer_field?}
-    B -- Yes --> C[Read reviewer_field\nfrom each touched record\nAdd those logins]
-    B -- No --> D{Subcollection path\nconfigured in\ngithub_app.reviewers?}
+    A([PR needs review]) --> B{Collection defines<br/>reviewer_field?}
+    B -- Yes --> C[Read reviewer_field<br/>from each touched record<br/>Add those logins]
+    B -- No --> D{Subcollection path<br/>configured in<br/>github_app.reviewers?}
     C --> D
     D -- Yes --> E[Add subcollection reviewers]
-    D -- No --> F{Collection path\nconfigured?}
+    D -- No --> F{Collection path<br/>configured?}
     E --> F
     F -- Yes --> G[Add collection reviewers]
-    F -- No --> H[Add DB-level\ndefault reviewers]
+    F -- No --> H[Add DB-level<br/>default reviewers]
     G --> H
-    H --> I([Request review\non PR via GitHub API])
+    H --> I([Request review<br/>on PR via GitHub API])
 ```
 
 ### Configuration example
