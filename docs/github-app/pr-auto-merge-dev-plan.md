@@ -248,12 +248,3 @@ func TestPRValidationFlow(t *testing.T) {
 **Open decision:** Should cassettes live in `testdata/cassettes/` per package or in a shared
 top-level directory?
 
----
-
-## Open Decisions
-
-| # | Decision | Status |
-|---|---|---|
-| 1 | `repocache` eviction policy | LRU by size |
-| 2 | App posts a single updating comment or a new comment per event? | Single updating comment |
-| 3 | How to handle PRs targeting non-default branches (e.g., release branches)? | Needs clarification: what specific problem arises with non-default target branches? |
