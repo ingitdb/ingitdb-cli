@@ -3,7 +3,7 @@ module github.com/ingitdb/ingitdb-cli
 go 1.26.0
 
 require (
-	github.com/google/go-github/v72 v72.0.0
+	github.com/google/go-github/v84 v84.0.0
 	github.com/google/go-github/v84 v84.0.0
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/stretchr/testify v1.11.1
