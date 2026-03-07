@@ -1,81 +1,8 @@
-# 🖥️ Architecture of ingitdb CLI
+# CLI Architecture
 
-## 📂 Overview
+For the **storage format and data model** specification, see [STORAGE_FORMAT.md](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/STORAGE_FORMAT.md) in [ingitdb-specs](https://github.com/ingitdb/ingitdb-specs).
 
-inGitDB is a database system where a Git repository is the datastore. Records are YAML or JSON files; schema is declared in YAML config files placed alongside the data. The `ingitdb` CLI reads, validates, queries, and maintains this data.
-
-## 📂 Data Model
-
-A database is a directory tree inside a Git repository:
-
-```
-<db-root>/
-├── .ingitdb/                              # DB-level config
-│   ├── root-collections.yaml             #   collection ID → path map
-│   └── settings.yaml                     #   default_namespace, languages
-└── <group>/
-    └── <collection>/
-        ├── .collection/
-        │   ├── definition.yaml               # Collection schema
-        │   ├── subcollections/              # Subcollection definitions
-        │   │   └── <name>.yaml
-        │   └── views/                       # View definitions
-        │       └── <name>.yaml
-        └── $views/
-            └── <view-name>/
-                └── <partition>.md         # Materialized view output files
-```
-
-**`.ingitdb/root-collections.yaml`** — DB-level config: flat map of collection IDs to
-filesystem paths. **`.ingitdb/settings.yaml`** — optional settings: `default_namespace`
-and supported languages.
-
-```yaml
-# .ingitdb/root-collections.yaml
-companies: demo-dbs/test-db/companies
-todo.*: demo-dbs/todo
-agile.*: demo-dbs/agile-ledger
-```
-
-```yaml
-# .ingitdb/settings.yaml
-languages:
-  - required: en
-  - required: fr
-  - optional: ru
-```
-
-**`.definition.yaml`** — Collection schema: titles (i18n), column definitions, record file format.
-
-```yaml
-titles:
-  en: Tasks
-data_dir: $records
-record_file:
-  name: "$records/{key}.json"
-  type: "[]map[string]any" # or "map[string]any" (single record) or "map[string]map[string]any" (keyed dict)
-  format: json # or yaml
-columns:
-  title:
-    type: string
-    required: true
-    min_length: 1
-    max_length: 100
-    titles:
-      en: Task title
-  status:
-    type: string
-    required: true
-    foreign_key: statuses # value must be a valid record ID in the 'statuses' collection
-```
-
-**Column types:** `string`, `int`, `float`, `bool`, `date`, `time`, `datetime`, `map[locale]string`, `any`
-
-**Record files** live in the collection's `data_dir`. A file holds either one record (`map[string]any`) or an array of records (`[]map[string]any`), as declared in `record_file.type`.
-
-**View definitions** (`.collection/views/<name>.yaml`) declare how to partition and render records into materialized view files under `$views/`.
-
-## 🏗️ Component Architecture
+## Component Architecture
 
 ```
 CLI (cmd/ingitdb)
@@ -106,9 +33,9 @@ CLI (cmd/ingitdb)
     └── cmd/ingitdb/main.go   ← wiring: assembles commands, injects dependencies, handles exit
 ```
 
-The **Scanner** (see `docs/components/scanner.md`) orchestrates the full pipeline: it walks the filesystem and invokes the Validator and Views Builder in sequence.
+The **Scanner** (see `docs/components/scanner.md` in [ingitdb-specs](https://github.com/ingitdb/ingitdb-specs)) orchestrates the full pipeline: it walks the filesystem and invokes the Validator and Views Builder in sequence.
 
-## 📂 Package Map
+## Package Map
 
 | Package                 | Responsibility                                                                                                                                                                    |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -119,7 +46,7 @@ The **Scanner** (see `docs/components/scanner.md`) orchestrates the full pipelin
 | `cmd/ingitdb/commands`  | One file per CLI command. Each exports a single `*cli.Command` constructor. Subcommands are unexported functions named after the subcommand (parent-prefixed on name collisions). |
 | `cmd/ingitdb`           | CLI entry point only: assembles the `commands` slice, injects dependencies, and handles process exit.                                                                             |
 
-## 🔁 Key Design Decisions
+## Key Design Decisions
 
 **Commands package.** Each top-level CLI command lives in its own file under `cmd/ingitdb/commands/` and exposes a single exported constructor (e.g. `Validate(...)`, `List()`, `Find()`). Subcommands are unexported functions whose names match the subcommand name; when the same subcommand name appears under multiple parents (e.g. `view` in both `list` and `delete`), the function is prefixed with the parent name (`listView`, `deleteView`). `cmd/ingitdb/main.go` is reduced to wiring and process-level concerns.
 

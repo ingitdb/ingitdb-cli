@@ -284,18 +284,29 @@ See the [CLI reference](docs/cli/) for flags and examples.
 | ------------------------------------------------------------- | -------------------------------------------------------------------- |
 | [Documentation](docs/README.md)                               | Full docs index — start here                                         |
 | [CLI reference](docs/cli/)                                    | Every subcommand, flag, and exit code                                |
-| [Features](docs/features/README.md)                           | What inGitDB can do today and what is coming                         |
-| [GitHub Direct Access](docs/features/github-direct-access.md) | Read and write records in remote GitHub repositories without cloning |
-| [Architecture](docs/ARCHITECTURE.md)                          | Data model, package map, and key design decisions                    |
-| [Roadmap](docs/ROADMAP.md)                                    | Nine delivery phases from Validator to GraphQL                       |
+| [Architecture](docs/ARCHITECTURE.md)                          | CLI component architecture and package map                           |
 | [Contributing](docs/CONTRIBUTING.md)                          | How to open issues and submit pull requests                          |
-| [Competitors](docs/COMPETITORS.md)                            | Honest feature comparison with related tools                         |
+
+## 📐 Specification
+
+Storage format, schema definitions, roadmap, and system-level feature specs are maintained in the
+[ingitdb-specs](https://github.com/ingitdb/ingitdb-specs) repository.
+
+| Document | Description |
+| -------- | ----------- |
+| [Storage Format](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/STORAGE_FORMAT.md) | Directory layout, collection schema, column types, record files |
+| [Features](https://github.com/ingitdb/ingitdb-specs/tree/main/docs/features/) | What inGitDB can do today and what is coming |
+| [GitHub Direct Access](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/features/github-direct-access.md) | Read and write records in remote GitHub repositories without cloning |
+| [Roadmap](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/ROADMAP.md) | Nine delivery phases from Validator to GraphQL |
+| [Competitors](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/COMPETITORS.md) | Honest feature comparison with related tools |
+
+> When working locally, ingitdb-specs is at `../ingitdb-specs/`
 
 ## 🤝 Get involved
 
 inGitDB is small enough that every contribution makes a visible difference. The best way to start
 is to point the CLI at a directory of YAML files and run `ingitdb validate`, then check the
-[Roadmap](docs/ROADMAP.md) to see what is being built next.
+[Roadmap](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/ROADMAP.md) to see what is being built next.
 
 To contribute:
 

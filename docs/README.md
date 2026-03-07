@@ -16,18 +16,27 @@ trade-off for your project, read on — and consider contributing.
 
 ### 📂 Developer docs
 
-- [Architecture](ARCHITECTURE.md) — data model, package map, key design decisions
-- [Components](components/README.md) — building blocks: Scanner, Validator, Views Builder, Watcher, and more
+- [Architecture](ARCHITECTURE.md) — CLI component architecture and package map
+- [Components (readme-builders)](components/readme-builders/) — README generation component (CLI-specific)
 - [Contributing](CONTRIBUTING.md) — how to open issues and submit pull requests
 - [Coding Standards](CODING_STANDARDS.md) — conventions every contributor should follow
-- [Guidelines](GUIDELINES.md) — broader design and process guidelines
 - [CI](CI.md) — continuous integration setup and checks
 
-### 📂 Project docs
+### 📂 Specification (ingitdb-specs)
 
-- [Roadmap](ROADMAP.md) — nine delivery phases from Validator to GraphQL
-- [Backlog](BACKLOG.md) — concrete tasks with acceptance criteria, ordered by dependency
-- [Competitors](COMPETITORS.md) — honest feature comparison with related projects
+Storage format, schema definitions, roadmap, and system-level feature specs live in the
+[ingitdb-specs](https://github.com/ingitdb/ingitdb-specs) repository:
+
+- [Storage Format](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/STORAGE_FORMAT.md) — directory layout, collection schema, column types, record files
+- [Schema Reference](https://github.com/ingitdb/ingitdb-specs/tree/main/docs/schema/) — `.definition.yaml`, views, triggers, subcollections, subscribers
+- [Features](https://github.com/ingitdb/ingitdb-specs/tree/main/docs/features/) — feature specifications with status
+- [Components](https://github.com/ingitdb/ingitdb-specs/tree/main/docs/components/) — Validator, Scanner, Views Builder, Watcher, Triggers, MCP Server, and more
+- [Roadmap](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/ROADMAP.md) — nine delivery phases from Validator to GraphQL
+- [Backlog](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/BACKLOG.md) — concrete tasks with acceptance criteria
+- [Competitors](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/COMPETITORS.md) — honest feature comparison with related projects
+- [Guidelines](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/GUIDELINES.md) — design and process guidelines
+
+> When working locally, ingitdb-specs is at `../../ingitdb-specs/`
 
 ---
 
@@ -49,20 +58,26 @@ A one-line description of each document, grouped by purpose.
 
 | Document                                | What it covers                                                                             |
 | --------------------------------------- | ------------------------------------------------------------------------------------------ |
-| [Architecture](ARCHITECTURE.md)         | Filesystem layout, package responsibilities, and key design decisions                      |
-| [Components](components/README.md)      | Scanner, Validator, Views Builder, README Builder, Watcher, Triggers, MCP Server, and more |
+| [Architecture](ARCHITECTURE.md)         | CLI component architecture, package map, and key design decisions                          |
+| [Components (readme-builders)](components/readme-builders/) | README generation component (CLI-specific output)                   |
 | [Contributing](CONTRIBUTING.md)         | Bug reports, feature suggestions, pull request workflow                                    |
 | [Coding Standards](CODING_STANDARDS.md) | Go conventions enforced in this codebase                                                   |
-| [Guidelines](GUIDELINES.md)             | Design and process guidelines that apply project-wide                                      |
 | [CI](CI.md)                             | What the CI pipeline runs and how to satisfy it locally                                    |
 
-### 📂 Project docs
+### 📂 Specification (ingitdb-specs)
 
-| Document                      | What it covers                                                               |
-| ----------------------------- | ---------------------------------------------------------------------------- |
-| [Roadmap](ROADMAP.md)         | Nine delivery phases from schema validation to GraphQL and migration tooling |
-| [Backlog](BACKLOG.md)         | Actionable tasks with acceptance criteria and implementation notes           |
-| [Competitors](COMPETITORS.md) | Feature matrix comparing inGitDB to related tools                            |
+Spec-level docs live in [ingitdb-specs](https://github.com/ingitdb/ingitdb-specs/tree/main/docs/):
+
+| Document | What it covers |
+| -------- | -------------- |
+| [Storage Format](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/STORAGE_FORMAT.md) | Directory layout, collection schema, column types, record files |
+| [Schema Reference](https://github.com/ingitdb/ingitdb-specs/tree/main/docs/schema/) | `.definition.yaml`, views, triggers, subcollections, subscribers |
+| [Features](https://github.com/ingitdb/ingitdb-specs/tree/main/docs/features/) | Feature specifications with status |
+| [Components](https://github.com/ingitdb/ingitdb-specs/tree/main/docs/components/) | Validator, Scanner, Views Builder, Watcher, MCP Server, and more |
+| [Roadmap](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/ROADMAP.md) | Nine delivery phases from schema validation to GraphQL |
+| [Backlog](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/BACKLOG.md) | Actionable tasks with acceptance criteria and implementation notes |
+| [Competitors](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/COMPETITORS.md) | Feature matrix comparing inGitDB to related tools |
+| [Guidelines](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/GUIDELINES.md) | Design and process guidelines that apply project-wide |
 
 ---
 
@@ -118,8 +133,8 @@ in `pkg/dalgo2ingitdb`.
 ## 🙋 Get Involved
 
 The best way to understand inGitDB is to point it at a directory of YAML files and run
-`ingitdb validate`. From there, check the [Roadmap](ROADMAP.md) to see what is being built and
-the [Backlog](BACKLOG.md) for tasks that are ready to be picked up.
+`ingitdb validate`. From there, check the [Roadmap](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/ROADMAP.md) to see what is being built and
+the [Backlog](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/BACKLOG.md) for tasks that are ready to be picked up.
 
 To contribute:
 
