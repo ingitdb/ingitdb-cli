@@ -253,6 +253,7 @@ languages:
 | [`truncate`](docs/cli/commands/truncate.md)       | 🟡 planned | Remove all records from a collection, keeping its schema |
 | [`query`](docs/cli/commands/query.md)             | 🟡 planned | Query and format records from a collection               |
 | [`materialize`](docs/cli/commands/materialize.md) | 🟡 planned | Build materialized views into `$views/`                  |
+| [`diff`](docs/cli/commands/diff.md)               | 🟡 planned | Show record-level changes between two git refs           |
 | [`pull`](docs/cli/commands/pull.md)               | 🟡 planned | Pull remote changes and rebuild views                    |
 | [`watch`](docs/cli/commands/watch.md)             | 🟡 planned | Stream record change events to stdout                    |
 | [`serve`](docs/cli/commands/serve.md)             | 🟡 planned | Start MCP, HTTP API, or file-watcher server              |
@@ -297,6 +298,7 @@ Storage format, schema definitions, roadmap, and system-level feature specs are 
 | [Storage Format](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/STORAGE_FORMAT.md) | Directory layout, collection schema, column types, record files |
 | [Features](https://github.com/ingitdb/ingitdb-specs/tree/main/docs/features/) | What inGitDB can do today and what is coming |
 | [GitHub Direct Access](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/features/github-direct-access.md) | Read and write records in remote GitHub repositories without cloning |
+| [Diff](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/features/diff.md) | Record-level diff between two git refs with field-level detail, commit annotations, and JSON/YAML output |
 | [Roadmap](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/ROADMAP.md) | Nine delivery phases from Validator to GraphQL |
 | [Competitors](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/COMPETITORS.md) | Honest feature comparison with related tools |
 
