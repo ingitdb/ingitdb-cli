@@ -32,11 +32,19 @@ The codebase has two main packages:
   sub-package that reads and validates a database directory against its schema.
 - **`pkg/dalgo2ingitdb/`** — DALgo (Database Abstraction Layer) integration, implementing `dal.DB`, read-only and
   read-write transactions for CRUD access.
-- **`cmd/ingitdb/`** — CLI entry point using `github.com/urfave/cli/v3` for subcommand and flag parsing. The `run()`
+- **`cmd/ingitdb/`** — CLI entry point using `github.com/spf13/cobra` for subcommand and flag parsing. The `run()`
   function is dependency-injected for testability (accepts `homeDir`, `readDefinition`, `fatal`, `logf` as parameters).
 - **`cmd/watcher/`** — Obsolete file watcher, to be folded into `ingitdb watch`.
 
 Test data lives in `test-ingitdb/` and `.ingitdb.yaml` at the repo root points to it.
+
+## Agent Execution
+
+When a spec or plan prescribes a **specific agent count or parallel execution model** (e.g. "8 parallel
+agents", "separate worktrees", "run batches simultaneously"), treat that as a hard requirement — not an
+implementation suggestion. Do **not** collapse parallel batches into a single agent without explicit
+permission from the user. If the execution environment makes the prescribed model impractical, use the
+`ask_user` tool to confirm before simplifying.
 
 ## Code Conventions
 
