@@ -82,8 +82,7 @@ func (r readonlyTx) GetMulti(ctx context.Context, records []dal.Record) error {
 }
 
 func (r readonlyTx) ExecuteQueryToRecordsReader(ctx context.Context, query dal.Query) (dal.RecordsReader, error) {
-	//TODO implement me
-	panic("implement me")
+	return executeQueryToRecordsReader(ctx, r, query)
 }
 
 func (r readonlyTx) ExecuteQueryToRecordsetReader(ctx context.Context, query dal.Query, options ...recordset.Option) (dal.RecordsetReader, error) {

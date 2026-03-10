@@ -1,0 +1,31 @@
+# query-command-prd implementation log
+
+## 2026-03-10
+
+### [START] Implementation begins
+
+### [MILESTONE 1] Backend: slice reader + query engine
+- Created `pkg/dalgo2fsingitdb/slice_records_reader.go`
+- Created `pkg/dalgo2fsingitdb/tx_query.go` with full WHERE/ORDER BY/LIMIT support
+- Updated `pkg/dalgo2fsingitdb/tx_readonly.go`: `ExecuteQueryToRecordsReader` now delegates to engine
+
+### [MILESTONE 2] Command layer
+- Created `cmd/ingitdb/commands/query_parser.go` (parseWhereExpr, parseOrderBy, parseFields, projectRecord)
+- Created `cmd/ingitdb/commands/query_output.go` (writeCSV, writeJSON, writeYAML, writeMarkdown)
+- Rewrote `cmd/ingitdb/commands/query.go` with full flag set and action
+- Updated `cmd/ingitdb/main.go` to pass deps to `commands.Query()`
+
+### [MILESTONE 3] Tests
+- Updated `pkg/dalgo2fsingitdb/tx_readonly_test.go` (removed stale panic test)
+- Rewrote `cmd/ingitdb/commands/query_test.go`
+- Created `cmd/ingitdb/commands/query_parser_test.go`
+- Created `cmd/ingitdb/commands/query_output_test.go`
+- Created `pkg/dalgo2fsingitdb/tx_query_test.go`
+
+### [MILESTONE 4] Docs
+- Rewrote `docs/cli/commands/query.md`
+
+### [DONE] All tests pass, smoke tests verified
+- `go build ./...` ✓
+- `go test ./...` ✓ (19 packages)
+- Manual smoke tests against demo-dbs/test-db/countries ✓

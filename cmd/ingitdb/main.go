@@ -53,7 +53,7 @@ func run(
 		Commands: []*cli.Command{
 			commands.Version(version, commit, date),
 			commands.Validate(homeDir, getWd, readDefinition, datavalidator.NewValidator(), nil, logf),
-			commands.Query(),
+			commands.Query(homeDir, getWd, readDefinition, newDB, logf),
 			commands.Materialize(homeDir, getWd, readDefinition, materializer.NewViewBuilder(materializer.NewFileRecordsReader(), func(f string, a ...any) { logf(fmt.Sprintf(f, a...)) }), logf),
 			commands.CI(homeDir, getWd, readDefinition, materializer.NewViewBuilder(materializer.NewFileRecordsReader(), func(f string, a ...any) { logf(fmt.Sprintf(f, a...)) }), logf),
 			commands.Pull(),

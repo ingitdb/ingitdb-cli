@@ -43,13 +43,6 @@ func TestReadonlyTx_Panics(t *testing.T) {
 			},
 		},
 		{
-			name: "execute_query_records_reader",
-			fn: func() {
-				_, err := tx.ExecuteQueryToRecordsReader(ctx, query)
-				_ = err
-			},
-		},
-		{
 			name: "execute_query_recordset_reader",
 			fn: func() {
 				_, err := tx.ExecuteQueryToRecordsetReader(ctx, query, options...)
