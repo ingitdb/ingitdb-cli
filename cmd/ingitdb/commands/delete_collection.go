@@ -1,28 +1,21 @@
 package commands
 
 import (
-	"context"
+	"fmt"
 
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 )
 
-func deleteCollection() *cli.Command {
-	return &cli.Command{
-		Name:  "collection",
-		Usage: "Delete a collection and all its records",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "path",
-				Usage: "path to the database directory",
-			},
-			&cli.StringFlag{
-				Name:     "collection",
-				Usage:    "collection id to delete (e.g. countries/ie/counties)",
-				Required: true,
-			},
-		},
-		Action: func(_ context.Context, _ *cli.Command) error {
-			return cli.Exit("not yet implemented", 1)
+func deleteCollection() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "collection",
+		Short: "Delete a collection and all its records",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			return fmt.Errorf("not yet implemented")
 		},
 	}
+	addPathFlag(cmd)
+	addCollectionFlag(cmd, true)
+	return cmd
 }
+

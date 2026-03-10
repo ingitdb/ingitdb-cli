@@ -7,7 +7,7 @@ import (
 	"path"
 	"sort"
 
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
@@ -19,56 +19,41 @@ func List(
 	homeDir func() (string, error),
 	getWd func() (string, error),
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
-) *cli.Command {
-	return &cli.Command{
-		Name:     "list",
-		Usage:    "List database objects (collections, views, or subscribers)",
-		Commands: []*cli.Command{collections(homeDir, getWd, readDefinition), listView(), subscribers()},
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "List database objects (collections, views, or subscribers)",
 	}
+	cmd.AddCommand(collections(homeDir, getWd, readDefinition), listView(), subscribers())
+	return cmd
 }
 
 func collections(
 	homeDir func() (string, error),
 	getWd func() (string, error),
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
-) *cli.Command {
-	return &cli.Command{
-		Name:  "collections",
-		Usage: "List collections in the database",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "path",
-				Usage: "path to the database directory",
-			},
-			&cli.StringFlag{
-				Name:  "github",
-				Usage: "GitHub source as owner/repo[@branch|tag|commit]",
-			},
-			&cli.StringFlag{
-				Name:  "token",
-				Usage: "GitHub personal access token (or set GITHUB_TOKEN env var)",
-			},
-			&cli.StringFlag{
-				Name:  "in",
-				Usage: "regular expression for the starting-point path",
-			},
-			&cli.StringFlag{
-				Name:  "filter-name",
-				Usage: "pattern to filter collection names (e.g. *substr*)",
-			},
-		},
-		Action: func(ctx context.Context, cmd *cli.Command) error {
-			githubValue := cmd.String("github")
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "collections",
+		Short: "List collections in the database",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			ctx := cmd.Context()
+			githubValue, _ := cmd.Flags().GetString("github")
 			if githubValue != "" {
 				return listCollectionsGitHub(ctx, githubValue, githubToken(cmd))
 			}
 			return listCollectionsLocal(cmd, homeDir, getWd, readDefinition)
 		},
 	}
+	addPathFlag(cmd)
+	addGitHubFlags(cmd)
+	cmd.Flags().String("in", "", "regular expression for the starting-point path")
+	cmd.Flags().String("filter-name", "", "pattern to filter collection names")
+	return cmd
 }
 
 func listCollectionsLocal(
-	cmd *cli.Command,
+	cmd *cobra.Command,
 	homeDir func() (string, error),
 	getWd func() (string, error),
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
@@ -133,50 +118,31 @@ func listCollectionsGitHub(ctx context.Context, githubValue, token string) error
 
 // listView is named with the parent prefix because "view" also appears as a
 // subcommand of delete.
-func listView() *cli.Command {
-	return &cli.Command{
-		Name:  "view",
-		Usage: "List views in the database",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "path",
-				Usage: "path to the database directory",
-			},
-			&cli.StringFlag{
-				Name:  "in",
-				Usage: "regular expression for the starting-point path",
-			},
-			&cli.StringFlag{
-				Name:  "filter-name",
-				Usage: "pattern to filter view names (e.g. *substr*)",
-			},
-		},
-		Action: func(_ context.Context, _ *cli.Command) error {
-			return cli.Exit("not yet implemented", 1)
+func listView() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "view",
+		Short: "List views in the database",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			return fmt.Errorf("not yet implemented")
 		},
 	}
+	addPathFlag(cmd)
+	cmd.Flags().String("in", "", "regular expression for the starting-point path")
+	cmd.Flags().String("filter-name", "", "pattern to filter view names (e.g. *substr*)")
+	return cmd
 }
 
-func subscribers() *cli.Command {
-	return &cli.Command{
-		Name:  "subscribers",
-		Usage: "List subscribers in the database",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "path",
-				Usage: "path to the database directory",
-			},
-			&cli.StringFlag{
-				Name:  "in",
-				Usage: "regular expression for the starting-point path",
-			},
-			&cli.StringFlag{
-				Name:  "filter-name",
-				Usage: "pattern to filter subscriber names (e.g. *substr*)",
-			},
-		},
-		Action: func(_ context.Context, _ *cli.Command) error {
-			return cli.Exit("not yet implemented", 1)
+func subscribers() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "subscribers",
+		Short: "List subscribers in the database",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			return fmt.Errorf("not yet implemented")
 		},
 	}
+	addPathFlag(cmd)
+	cmd.Flags().String("in", "", "regular expression for the starting-point path")
+	cmd.Flags().String("filter-name", "", "pattern to filter subscriber names (e.g. *substr*)")
+	return cmd
 }
+

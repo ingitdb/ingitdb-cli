@@ -1,28 +1,22 @@
 package commands
 
 import (
-	"context"
+	"fmt"
 
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 )
 
-func deleteView() *cli.Command {
-	return &cli.Command{
-		Name:  "view",
-		Usage: "Delete a view definition and its materialised files",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "path",
-				Usage: "path to the database directory",
-			},
-			&cli.StringFlag{
-				Name:     "view",
-				Usage:    "view id to delete",
-				Required: true,
-			},
-		},
-		Action: func(_ context.Context, _ *cli.Command) error {
-			return cli.Exit("not yet implemented", 1)
+func deleteView() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "view",
+		Short: "Delete a view definition and its materialised files",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			return fmt.Errorf("not yet implemented")
 		},
 	}
+	addPathFlag(cmd)
+	cmd.Flags().String("view", "", "view id to delete")
+	_ = cmd.MarkFlagRequired("view")
+	return cmd
 }
+

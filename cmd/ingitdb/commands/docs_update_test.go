@@ -8,9 +8,24 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spf13/cobra"
+
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
-	"github.com/urfave/cli/v3"
 )
+
+// runCobraSubcommand runs cmd as a subcommand with the given args using a
+// temporary root cobra command. Suitable for test cases that previously built
+// a cli.Command app wrapper.
+func runCobraSubcommand(cmd *cobra.Command, args ...string) error {
+	root := &cobra.Command{
+		Use:           "ingitdb",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+	}
+	root.AddCommand(cmd)
+	root.SetArgs(args)
+	return root.ExecuteContext(context.Background())
+}
 
 func TestDocsUpdate(t *testing.T) {
 	// Setup a temporary directory acting as our test DB
@@ -35,7 +50,7 @@ func TestDocsUpdate(t *testing.T) {
 		fakeLogs = append(fakeLogs, strings.Join(msgs, " "))
 	}
 
-	readDefinition := func(path string, opts ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+	readDefinition := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
 		return &ingitdb.Definition{
 			Collections: map[string]*ingitdb.CollectionDef{
 				"test_collection": {
@@ -54,23 +69,9 @@ func TestDocsUpdate(t *testing.T) {
 	cmd := docsUpdate(homeDir, getWd, readDefinition, logf)
 
 	t.Run("without flags error", func(t *testing.T) {
-		app := &cli.Command{
-			Commands:  []*cli.Command{cmd},
-			Writer:    os.Stdout,
-			ErrWriter: os.Stderr,
-		}
-		cli.OsExiter = func(code int) {
-			// Do nothing to prevent os.Exit from terminating the test
-		}
-		defer func() {
-			cli.OsExiter = os.Exit // Restore old exiter
-		}()
-		err := app.Run(context.Background(), []string{"ingitdb", "update"})
+		err := runCobraSubcommand(cmd, "update")
 		if err == nil {
 			t.Fatalf("expected error when no flags passed")
-		}
-		if _, ok := err.(cli.ExitCoder); !ok {
-			t.Fatalf("expected exit error, got %v", err)
 		}
 		if !strings.Contains(err.Error(), "either --collection or --view flag must be provided") {
 			t.Fatalf("expected error about missing flag, got %v", err)
@@ -78,17 +79,16 @@ func TestDocsUpdate(t *testing.T) {
 	})
 
 	t.Run("with collection glob", func(t *testing.T) {
-		app := &cli.Command{Commands: []*cli.Command{cmd}}
-		err := app.Run(context.Background(), []string{"ingitdb", "update", "--path", tempDir, "--collection", "test_collection"})
+		err := runCobraSubcommand(cmd, "update", "--path", tempDir, "--collection", "test_collection")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
 		// Verify that a README was created
 		readmePath := filepath.Join(colDir, "README.md")
-		content, err := os.ReadFile(readmePath)
-		if err != nil {
-			t.Fatalf("expected README.md to be created: %v", err)
+		content, readErr := os.ReadFile(readmePath)
+		if readErr != nil {
+			t.Fatalf("expected README.md to be created: %v", readErr)
 		}
 
 		if !strings.Contains(string(content), "# Test Collection") {
@@ -97,7 +97,7 @@ func TestDocsUpdate(t *testing.T) {
 
 		// Run again to verify "unchanged" status
 		fakeLogs = []string{}
-		err = app.Run(context.Background(), []string{"ingitdb", "update", "--path", tempDir, "--collection", "test_collection"})
+		err = runCobraSubcommand(cmd, "update", "--path", tempDir, "--collection", "test_collection")
 		if err != nil {
 			t.Fatalf("unexpected error on second run: %v", err)
 		}
@@ -114,3 +114,4 @@ func TestDocsUpdate(t *testing.T) {
 		}
 	})
 }
+

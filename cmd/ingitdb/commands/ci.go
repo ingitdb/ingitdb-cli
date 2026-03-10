@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/materializer"
@@ -17,12 +17,13 @@ func CI(
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	viewBuilder materializer.ViewBuilder,
 	logf func(...any),
-) *cli.Command {
-	mat := Materialize(homeDir, getWd, readDefinition, viewBuilder, logf)
-	return &cli.Command{
-		Name:   "ci",
-		Usage:  "Run CI checks for the database (currently: materialize views)",
-		Flags:  mat.Flags,
-		Action: mat.Action,
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "ci",
+		Short: "Run CI checks for the database (currently: materialize views)",
+		RunE:  materializeRunE(homeDir, getWd, readDefinition, viewBuilder, logf),
 	}
+	addMaterializeFlags(cmd)
+	return cmd
 }
+

@@ -5,8 +5,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/urfave/cli/v3"
-
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
@@ -208,28 +206,18 @@ func TestRun_InvalidCommand(t *testing.T) {
 		}
 	}()
 
-	// Mock both exit and cli.OsExiter to prevent the test from actually exiting
+	// Mock exit to prevent the test from actually exiting
 	oldExit := exit
-	oldOsExiter := cli.OsExiter
 	exitCalled := false
-	osExiterCalled := false
 	var exitCode int
-	var osExiterCode int
 	exit = func(code int) {
 		exitCalled = true
 		exitCode = code
 		t.Logf("exit called with code %d", code)
 	}
-	cli.OsExiter = func(code int) {
-		osExiterCalled = true
-		osExiterCode = code
-		t.Logf("cli.OsExiter called with code %d", code)
-	}
 	t.Cleanup(func() {
-		t.Logf("cleanup: exitCalled=%v, exitCode=%d, osExiterCalled=%v, osExiterCode=%d",
-			exitCalled, exitCode, osExiterCalled, osExiterCode)
+		t.Logf("cleanup: exitCalled=%v, exitCode=%d", exitCalled, exitCode)
 		exit = oldExit
-		cli.OsExiter = oldOsExiter
 	})
 
 	args := []string{"ingitdb", "nonexistent-command"}
@@ -250,28 +238,16 @@ func TestRun_InvalidCommand(t *testing.T) {
 	t.Log("calling run()")
 	run(args, homeDir, getWd, readDefinition, fatal, logf)
 	t.Log("run() returned")
-	// urfave/cli returns an ExitCoder for invalid commands, which calls cli.OsExiter
+	// cobra calls fatal with "unknown command" error
 	_ = fatalCalled
 	_ = capturedErr
 	_ = exitCalled
 	_ = exitCode
-	_ = osExiterCalled
-	_ = osExiterCode
 }
 
 func TestRun_ExitCoderWithNonZeroCode(t *testing.T) {
-	// Use validate command with invalid flag to trigger ExitCoder error with non-zero code
+	// With cobra, an unknown flag causes fatal to be called with the parse error.
 	args := []string{"ingitdb", "validate", "--invalid-flag"}
-	osExiterCalled := false
-	var osExiterCode int
-	oldOsExiter := cli.OsExiter
-	cli.OsExiter = func(code int) {
-		osExiterCalled = true
-		osExiterCode = code
-	}
-	t.Cleanup(func() {
-		cli.OsExiter = oldOsExiter
-	})
 
 	exitCalled := false
 	var exitCode int
@@ -296,25 +272,15 @@ func TestRun_ExitCoderWithNonZeroCode(t *testing.T) {
 	logf := func(...any) {}
 
 	run(args, homeDir, getWd, readDefinition, fatal, logf)
-	// The invalid flag causes an error, which should be handled by the exit path
-	// Either cli.OsExiter or exit should be called (or fatal if it's not an ExitCoder)
-	if !exitCalled && !osExiterCalled && !fatalCalled {
-		t.Fatal("one of exit, cli.OsExiter, or fatal should be called for invalid flag")
+	// cobra calls fatal for unknown flags
+	if !exitCalled && !fatalCalled {
+		t.Fatal("either exit or fatal should be called for invalid flag")
 	}
 	_ = exitCode
-	_ = osExiterCode
 }
 
 func TestRun_ExitCoderWithZeroCode(t *testing.T) {
-	// Mock cli.OsExiter to prevent urfave/cli from calling os.Exit
-	oldOsExiter := cli.OsExiter
-	cli.OsExiter = func(int) {}
-	t.Cleanup(func() {
-		cli.OsExiter = oldOsExiter
-	})
-
-	// Test the case where an ExitCoder error with exit code 0 is returned
-	// This can happen with help output
+	// With cobra, --help prints help to stdout and returns nil (no fatal/exit call).
 	args := []string{"ingitdb", "validate", "--help"}
 	exitCalled := false
 	oldExit := exit
@@ -338,19 +304,17 @@ func TestRun_ExitCoderWithZeroCode(t *testing.T) {
 
 	run(args, homeDir, getWd, readDefinition, fatal, logf)
 	if exitCalled {
-		t.Fatal("exit should not be called when ExitCoder has code 0")
+		t.Fatal("exit should not be called for --help")
 	}
 	if fatalCalled {
-		t.Fatal("fatal should not be called when ExitCoder has code 0")
+		t.Fatal("fatal should not be called for --help")
 	}
 }
 
 func TestRun_NonExitCoderError(t *testing.T) {
 	t.Parallel()
 
-	// This test is tricky because urfave/cli wraps most errors as ExitCoders
-	// We need to create a scenario where app.Run returns a non-ExitCoder error
-	// One way is to make readDefinition return a custom error type
+	// With cobra, errors from commands propagate to fatal directly.
 	args := []string{"ingitdb", "validate", "--path=/some/path"}
 	fatalCalled := false
 	var fatalErr error

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/dal-go/dalgo/dal"
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
@@ -17,37 +17,14 @@ func createRecord(
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	newDB func(string, *ingitdb.Definition) (dal.DB, error),
 	logf func(...any),
-) *cli.Command {
-	return &cli.Command{
-		Name:  "record",
-		Usage: "Create a new record in a collection",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "path",
-				Usage: "path to the database directory (default: current directory)",
-			},
-			&cli.StringFlag{
-				Name:  "github",
-				Usage: "GitHub source as owner/repo[@branch|tag|commit]",
-			},
-			&cli.StringFlag{
-				Name:  "token",
-				Usage: "GitHub personal access token (or set GITHUB_TOKEN env var)",
-			},
-			&cli.StringFlag{
-				Name:     "id",
-				Usage:    "record ID in the format collection/path/key (e.g. todo.countries/ie)",
-				Required: true,
-			},
-			&cli.StringFlag{
-				Name:     "data",
-				Usage:    "record data as YAML or JSON (e.g. '{title: \"Ireland\"}')",
-				Required: true,
-			},
-		},
-		Action: func(ctx context.Context, cmd *cli.Command) error {
-			id := cmd.String("id")
-			dataStr := cmd.String("data")
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "record",
+		Short: "Create a new record in a collection",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			ctx := cmd.Context()
+			id, _ := cmd.Flags().GetString("id")
+			dataStr, _ := cmd.Flags().GetString("data")
 			rctx, err := resolveRecordContext(ctx, cmd, id, homeDir, getWd, readDefinition, newDB)
 			if err != nil {
 				return err
@@ -70,4 +47,12 @@ func createRecord(
 			return buildLocalViews(ctx, rctx)
 		},
 	}
+	addPathFlag(cmd)
+	addGitHubFlags(cmd)
+	cmd.Flags().String("id", "", "record ID in the format collection/path/key (e.g. todo.countries/ie)")
+	_ = cmd.MarkFlagRequired("id")
+	cmd.Flags().String("data", "", "record data as YAML or JSON (e.g. '{title: \"Ireland\"}')")
+	_ = cmd.MarkFlagRequired("data")
+	return cmd
 }
+

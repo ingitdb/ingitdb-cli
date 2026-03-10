@@ -21,7 +21,7 @@ func TestUpdateRecord_GitHub_ParseError(t *testing.T) {
 		return nil, errors.New("unused")
 	}
 	cmd := updateRecord(homeDir, getWd, readDefinition, newDB, func(...any) {})
-	err := runCLICommand(cmd, "--id=test.items/x", "--set={name: X}", "--github=invalid")
+	err := runCobraCommand(cmd, "--id=test.items/x", "--set={name: X}", "--github=invalid")
 	if err == nil {
 		t.Fatal("expected error for invalid GitHub spec")
 	}
@@ -49,7 +49,7 @@ func TestUpdateRecord_GitHub_ReadDefinitionError(t *testing.T) {
 		return nil, errors.New("unused")
 	}
 	cmd := updateRecord(homeDir, getWd, readDefinition, newDB, func(...any) {})
-	err := runCLICommand(cmd, "--id=test.items/x", "--set={name: X}", "--github=owner/repo")
+	err := runCobraCommand(cmd, "--id=test.items/x", "--set={name: X}", "--github=owner/repo")
 	if err == nil {
 		t.Fatal("expected error when reading remote definition fails")
 	}
@@ -88,7 +88,7 @@ func TestUpdateRecord_GitHub_DBOpenError(t *testing.T) {
 		return nil, errors.New("unused")
 	}
 	cmd := updateRecord(homeDir, getWd, readDefinition, newDB, func(...any) {})
-	err := runCLICommand(cmd, "--id=test.items/x", "--set={name: X}", "--github=owner/repo")
+	err := runCobraCommand(cmd, "--id=test.items/x", "--set={name: X}", "--github=owner/repo")
 	if err == nil {
 		t.Fatal("expected error when DB open fails")
 	}
@@ -127,7 +127,7 @@ func TestUpdateRecord_GitHub_CollectionNotFound(t *testing.T) {
 		return nil, errors.New("unused")
 	}
 	cmd := updateRecord(homeDir, getWd, readDefinition, newDB, func(...any) {})
-	err := runCLICommand(cmd, "--id=test.items/x", "--set={name: X}", "--github=owner/repo")
+	err := runCobraCommand(cmd, "--id=test.items/x", "--set={name: X}", "--github=owner/repo")
 	if err == nil {
 		t.Fatal("expected error when collection not found in definition")
 	}

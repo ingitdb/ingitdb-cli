@@ -21,7 +21,7 @@ import (
 	"github.com/dal-go/dalgo/dal"
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2fsingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 )
 
 // ============================================================
@@ -42,10 +42,10 @@ func TestDocs_ReturnsCommand(t *testing.T) {
 	if cmd == nil {
 		t.Fatal("Docs() returned nil")
 	}
-	if cmd.Name != "docs" {
-		t.Errorf("expected name 'docs', got %q", cmd.Name)
+	if cmd.Use != "docs" {
+		t.Errorf("expected name 'docs', got %q", cmd.Name())
 	}
-	if len(cmd.Commands) == 0 {
+	if len(cmd.Commands()) == 0 {
 		t.Fatal("expected at least one subcommand")
 	}
 }
@@ -65,7 +65,7 @@ func TestDocsUpdate_ViewGlobNotImplemented(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := docsUpdate(homeDir, getWd, readDef, logf)
-	err := runCLICommand(cmd, "--view=something")
+	err := runCobraCommand(cmd, "--view=something")
 	if err == nil {
 		t.Fatal("expected error when --view is specified")
 	}
@@ -86,7 +86,7 @@ func TestDocsUpdate_GetWdError(t *testing.T) {
 
 	cmd := docsUpdate(homeDir, getWd, readDef, logf)
 	// No --path → getWd is called
-	err := runCLICommand(cmd, "--collection=test_col")
+	err := runCobraCommand(cmd, "--collection=test_col")
 	if err == nil {
 		t.Fatal("expected error when getWd fails")
 	}
@@ -104,7 +104,7 @@ func TestDocsUpdate_ExpandHomeError(t *testing.T) {
 
 	cmd := docsUpdate(homeDir, getWd, readDef, logf)
 	// --path=~ triggers expandHome, which fails because homeDir returns error
-	err := runCLICommand(cmd, "--collection=test_col", "--path=~")
+	err := runCobraCommand(cmd, "--collection=test_col", "--path=~")
 	if err == nil {
 		t.Fatal("expected error when expandHome fails")
 	}
@@ -122,7 +122,7 @@ func TestDocsUpdate_ReadDefinitionError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := docsUpdate(homeDir, getWd, readDef, logf)
-	err := runCLICommand(cmd, "--collection=test_col", "--path="+dir)
+	err := runCobraCommand(cmd, "--collection=test_col", "--path="+dir)
 	if err == nil {
 		t.Fatal("expected error when readDefinition fails")
 	}
@@ -156,7 +156,7 @@ func TestDocsUpdate_RunDocsUpdateError(t *testing.T) {
 	// To trigger the cli.Exit(err.Error(), 1) we need runDocsUpdate to return an error.
 	// The simplest way: use a glob that causes docsbuilder to return an error.
 	// UpdateDocs returns an error when the README write fails (dir doesn't exist).
-	err := runCLICommand(cmd, "--collection=test.items", "--path="+dir)
+	err := runCobraCommand(cmd, "--collection=test.items", "--path="+dir)
 	// If the collection dir doesn't exist, docsbuilder may fail or succeed with errors.
 	// Either way, this exercises the path.
 	_ = err
@@ -177,7 +177,7 @@ func TestDocsUpdate_DefaultPath(t *testing.T) {
 
 	cmd := docsUpdate(homeDir, getWd, readDef, logf)
 	// No --path flag → uses getWd (covers `dirPath = wd` branch)
-	err := runCLICommand(cmd, "--collection=*")
+	err := runCobraCommand(cmd, "--collection=*")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -199,7 +199,7 @@ func TestCollections_ViaGitHub_ParseError(t *testing.T) {
 	cmd := List(homeDir, getWd, readDef)
 	// invalid GitHub spec triggers listCollectionsGitHub via the `if githubValue != ""`
 	// branch in the collections action.
-	err := runCLICommand(cmd, "collections", "--github=invalid-no-slash")
+	err := runCobraCommand(cmd, "collections", "--github=invalid-no-slash")
 	if err == nil {
 		t.Fatal("expected error for invalid GitHub spec via CLI")
 	}
@@ -248,7 +248,7 @@ func TestMaterialize_DefaultPath(t *testing.T) {
 
 	cmd := Materialize(homeDir, getWd, readDef, viewBuilder, logf)
 	// No --path → uses getWd, covers `dirPath = wd` branch in Materialize action.
-	err := runCLICommand(cmd)
+	err := runCobraCommand(cmd)
 	if err != nil {
 		t.Fatalf("Materialize with default path: %v", err)
 	}
@@ -271,7 +271,7 @@ func TestReadCollection_ResolvePathError(t *testing.T) {
 
 	cmd := Read(homeDir, getWd, readDef, newDB, logf)
 	// No --path → resolveDBPath calls getWd → error
-	err := runCLICommand(cmd, "collection", "--collection=test.items")
+	err := runCobraCommand(cmd, "collection", "--collection=test.items")
 	if err == nil {
 		t.Fatal("expected error when resolveDBPath fails")
 	}
@@ -297,7 +297,7 @@ func TestReadCollection_ReadFileError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Read(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd, "collection", "--path="+dir, "--collection=test.items")
+	err := runCobraCommand(cmd, "collection", "--path="+dir, "--collection=test.items")
 	if err == nil {
 		t.Fatal("expected error when collection def file does not exist")
 	}
@@ -449,7 +449,7 @@ func TestRebase_BaseRefEmpty_NoEnvVars(t *testing.T) {
 
 	cmd := Rebase(getWd, readDef, logf)
 	// No --base_ref flag and no env vars → return cli.Exit(...)
-	err := runCLICommand(cmd)
+	err := runCobraCommand(cmd)
 	if err == nil {
 		t.Fatal("expected error when baseRef is not provided")
 	}
@@ -478,7 +478,7 @@ func TestRebase_BaseRefFromBASE_REF(t *testing.T) {
 
 	cmd := Rebase(getWd, readDef, logf)
 	// This will fail on `git rebase base-branch` but covers the baseRef = os.Getenv("BASE_REF") line.
-	_ = runCLICommand(cmd)
+	_ = runCobraCommand(cmd)
 	// Check that logf was called with the "rebasing on top of …" message.
 	found := false
 	for _, m := range logMessages {
@@ -510,7 +510,7 @@ func TestRebase_BaseRefFromGITHUB_BASE_REF(t *testing.T) {
 	}
 
 	cmd := Rebase(getWd, readDef, logf)
-	_ = runCLICommand(cmd)
+	_ = runCobraCommand(cmd)
 	found := false
 	for _, m := range logMessages {
 		if strings.Contains(m, "rebasing on top of github-base") {
@@ -533,7 +533,7 @@ func TestRebase_GetWdError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Rebase(getWd, readDef, logf)
-	err := runCLICommand(cmd, "--base_ref=main")
+	err := runCobraCommand(cmd, "--base_ref=main")
 	if err == nil {
 		t.Fatal("expected error when getWd fails")
 	}
@@ -585,7 +585,7 @@ func TestRebase_NonReadmeConflicts(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Rebase(getWd, readDef, logf)
-	err := runCLICommand(cmd, "--base_ref=base")
+	err := runCobraCommand(cmd, "--base_ref=base")
 	// Should fail because data.txt conflict is not a README → hasNonReadmeConflicts = true
 	if err == nil {
 		// Rebase succeeded without conflict — that is also acceptable if git
@@ -625,19 +625,21 @@ func TestServe_HTTPBranch(t *testing.T) {
 
 	cmd := Serve(homeDir, getWd, readDef, newDB, logf)
 
-	// Use localhost domains (no auth required) and a pre-cancelled context via
-	// the test helper so serveHTTP returns quickly.
-	app := &cli.Command{
-		Commands: []*cli.Command{cmd},
-		ExitErrHandler: func(_ context.Context, _ *cli.Command, err error) {
-			// swallow to prevent os.Exit
-		},
-	}
+	// Use localhost domains (no auth required) and a pre-cancelled context
+	// so serveHTTP returns quickly.
 	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // cancel immediately so serveHTTP closes quickly
+	cancel() // cancel immediately
 
-	err := app.Run(ctx, []string{"app", "serve", "--http", "--http-port=0",
+	root := &cobra.Command{
+		Use:           "app",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+	}
+	root.AddCommand(cmd)
+	root.SetArgs([]string{"serve", "--http", "--http-port=0",
 		"--api-domains=localhost", "--mcp-domains=localhost"})
+
+	err := root.ExecuteContext(ctx)
 	// serveHTTP returns nil when ctx is cancelled and localhost mode is used.
 	if err != nil {
 		t.Logf("serve --http returned: %v (acceptable)", err)
@@ -670,13 +672,15 @@ func TestServe_MCPBranch(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cancel immediately so serveMCP returns nil via <-ctx.Done()
 
-	app := &cli.Command{
-		Commands: []*cli.Command{cmd},
-		ExitErrHandler: func(_ context.Context, _ *cli.Command, err error) {
-			// swallow
-		},
+	root := &cobra.Command{
+		Use:           "app",
+		SilenceUsage:  true,
+		SilenceErrors: true,
 	}
-	err := app.Run(ctx, []string{"app", "serve", "--mcp", "--path=" + dir})
+	root.AddCommand(cmd)
+	root.SetArgs([]string{"serve", "--mcp", "--path=" + dir})
+
+	err := root.ExecuteContext(ctx)
 	if err != nil {
 		t.Fatalf("serve --mcp returned unexpected error: %v", err)
 	}
@@ -723,7 +727,7 @@ func TestValidate_DefaultPath_CoversResolveDBPath(t *testing.T) {
 
 	cmd := Validate(homeDir, getWd, readDef, nil, nil, logf)
 	// No --path → resolveDBPath calls getWd → dirPath = wd (covers the uncovered line)
-	err := runCLICommand(cmd)
+	err := runCobraCommand(cmd)
 	if err != nil {
 		t.Fatalf("Validate with default path: %v", err)
 	}
@@ -745,7 +749,7 @@ func TestValidate_OnlyRecords_ReadDefError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Validate(homeDir, getWd, readDef, nil, nil, logf)
-	err := runCLICommand(cmd, "--path="+dir, "--only=records")
+	err := runCobraCommand(cmd, "--path="+dir, "--only=records")
 	if err == nil {
 		t.Fatal("expected error when readDefinition fails with --only=records")
 	}
@@ -793,7 +797,7 @@ func TestUpdate_WithViewBuilder(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Update(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd, "record", "--path="+dir, "--id=test.items/item", "--set={name: NewName}")
+	err := runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/item", "--set={name: NewName}")
 	if err != nil {
 		t.Fatalf("Update with view builder: %v", err)
 	}
@@ -824,7 +828,7 @@ func TestCreate_WithViewBuilder(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Create(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd, "record", "--path="+dir, "--id=test.items/newrecord", "--data={name: NewRecord}")
+	err := runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/newrecord", "--data={name: NewRecord}")
 	if err != nil {
 		t.Fatalf("Create with view builder: %v", err)
 	}

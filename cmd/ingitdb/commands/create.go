@@ -2,7 +2,7 @@ package commands
 
 import (
 	"github.com/dal-go/dalgo/dal"
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
@@ -14,11 +14,13 @@ func Create(
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	newDB func(string, *ingitdb.Definition) (dal.DB, error),
 	logf func(...any),
-) *cli.Command {
-	return &cli.Command{
-		Name:     "create",
-		Aliases:  []string{"c"},
-		Usage:    "Create database objects",
-		Commands: []*cli.Command{createRecord(homeDir, getWd, readDefinition, newDB, logf)},
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "create",
+		Aliases: []string{"c"},
+		Short:   "Create database objects",
 	}
+	cmd.AddCommand(createRecord(homeDir, getWd, readDefinition, newDB, logf))
+	return cmd
 }
+

@@ -3,7 +3,7 @@ package commands
 import (
 	"context"
 
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
@@ -28,15 +28,17 @@ func testDef(dirPath string) *ingitdb.Definition {
 	}
 }
 
-// runCLICommand wraps cmd in an app and runs it with the given subcommand arguments.
-func runCLICommand(cmd *cli.Command, args ...string) error {
-	app := &cli.Command{
-		Commands: []*cli.Command{cmd},
-		// Prevent os.Exit in tests by providing a custom ExitErrHandler
-		ExitErrHandler: func(_ context.Context, _ *cli.Command, err error) {
-			// Do nothing - just return the error without calling os.Exit
-		},
+// runCobraCommand wraps cmd in a root cobra command and runs it with the given
+// subcommand arguments. This is the cobra replacement for runCLICommand.
+func runCobraCommand(cmd *cobra.Command, args ...string) error {
+	root := &cobra.Command{
+		Use:           "app",
+		SilenceUsage:  true,
+		SilenceErrors: true,
 	}
-	argv := append([]string{"app", cmd.Name}, args...)
-	return app.Run(context.Background(), argv)
+	root.AddCommand(cmd)
+	argv := append([]string{cmd.Use}, args...)
+	root.SetArgs(argv)
+	return root.ExecuteContext(context.Background())
 }
+

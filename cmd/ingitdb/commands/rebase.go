@@ -1,37 +1,28 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
+	"github.com/spf13/cobra"
+
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
-	"github.com/urfave/cli/v3"
 )
 
 func Rebase(
 	getWd func() (string, error),
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	logf func(...any),
-) *cli.Command {
-	return &cli.Command{
-		Name:  "rebase",
-		Usage: "Rebase current branch on top of the base ref",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "base_ref",
-				Usage: "Base reference to rebase on top of (defaults to BASE_REF or GITHUB_BASE_REF env var)",
-			},
-			&cli.StringFlag{
-				Name:  "resolve",
-				Usage: "comma-separated list of file names to resolve conflicts for (e.g. 'readme,views')",
-			},
-		},
-		Action: func(ctx context.Context, cmd *cli.Command) error {
-			baseRef := cmd.String("base_ref")
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "rebase",
+		Short: "Rebase current branch on top of the base ref",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			ctx := cmd.Context()
+			baseRef, _ := cmd.Flags().GetString("base_ref")
 			if baseRef == "" {
 				baseRef = os.Getenv("BASE_REF")
 				if baseRef == "" {
@@ -40,7 +31,7 @@ func Rebase(
 			}
 
 			if baseRef == "" {
-				return cli.Exit("base ref not provided. Use --base_ref or set BASE_REF / GITHUB_BASE_REF environment variables", 1)
+				return fmt.Errorf("base ref not provided. Use --base_ref or set BASE_REF / GITHUB_BASE_REF environment variables")
 			}
 
 			wd, err := getWd()
@@ -60,10 +51,10 @@ func Rebase(
 				diffCmd.Dir = wd
 				diffOut, diffErr := diffCmd.Output()
 				if diffErr != nil {
-					return cli.Exit(fmt.Sprintf("rebase failed:\n%s\nfailed to check conflicts: %v", rebaseOut, diffErr), 1)
+					return fmt.Errorf("rebase failed:\n%s\nfailed to check conflicts: %v", rebaseOut, diffErr)
 				}
 
-				resolveStr := cmd.String("resolve")
+				resolveStr, _ := cmd.Flags().GetString("resolve")
 				resolveItems := make(map[string]bool)
 				if resolveStr != "" {
 					for _, p := range strings.Split(resolveStr, ",") {
@@ -85,29 +76,30 @@ func Rebase(
 				}
 
 				if hasNonReadmeConflicts || len(actualConflictedFiles) == 0 {
-					return cli.Exit(fmt.Sprintf("rebase failed with unresolved conflicts in files other than README.md:\n%s\nOutput:\n%s", strings.Join(actualConflictedFiles, "\n"), rebaseOut), 1)
+					return fmt.Errorf("rebase failed with unresolved conflicts in files other than README.md:\n%s\nOutput:\n%s",
+						strings.Join(actualConflictedFiles, "\n"), rebaseOut)
 				}
 
 				logf("only README.md files are in conflict. resolving via docs update...")
 
 				validateOpt := ingitdb.Validate()
-				def, err := readDefinition(wd, validateOpt)
-				if err != nil {
-					return cli.Exit(fmt.Sprintf("failed to read database definition: %v", err), 1)
+				def, readErr := readDefinition(wd, validateOpt)
+				if readErr != nil {
+					return fmt.Errorf("failed to read database definition: %v", readErr)
 				}
 
-				err = runDocsUpdate(ctx, wd, def, "", resolveStr, logf)
-				if err != nil {
-					return cli.Exit(fmt.Sprintf("failed to resolve docs:\n%v", err), 1)
+				docsErr := runDocsUpdate(ctx, wd, def, "", resolveStr, logf)
+				if docsErr != nil {
+					return fmt.Errorf("failed to resolve docs:\n%v", docsErr)
 				}
 
 				logf("README.md conflicts resolved. checking git status...")
 
 				// Commit if rebase stopped
 				msgFile := filepath.Join(wd, ".git", "rebase-merge", "message")
-				msgBytes, err := os.ReadFile(msgFile)
+				msgBytes, readMsgErr := os.ReadFile(msgFile)
 				commitMsg := "chore(ingitdb): resolved README.md conflicts"
-				if err == nil {
+				if readMsgErr == nil {
 					commitMsg = "chore(ingitdb): " + string(msgBytes)
 				} else {
 					msgFileApply := filepath.Join(wd, ".git", "rebase-apply", "msg")
@@ -118,8 +110,8 @@ func Rebase(
 
 				cCmd := exec.CommandContext(ctx, "git", "commit", "--no-verify", "-m", commitMsg)
 				cCmd.Dir = wd
-				if out, err := cCmd.CombinedOutput(); err != nil {
-					return cli.Exit(fmt.Sprintf("failed to commit resolved files:\n%s\n%v", out, err), 1)
+				if out, commitErr := cCmd.CombinedOutput(); commitErr != nil {
+					return fmt.Errorf("failed to commit resolved files:\n%s\n%v", out, commitErr)
 				}
 
 				// Continue rebase
@@ -130,7 +122,7 @@ func Rebase(
 				contCmd.Env = env
 				contOut, contErr := contCmd.CombinedOutput()
 				if contErr != nil {
-					return cli.Exit(fmt.Sprintf("failed to continue rebase:\n%s", contOut), 1)
+					return fmt.Errorf("failed to continue rebase:\n%s", contOut)
 				}
 			}
 
@@ -138,5 +130,8 @@ func Rebase(
 			return nil
 		},
 	}
-
+	cmd.Flags().String("base_ref", "", "Base reference to rebase on top of (defaults to BASE_REF or GITHUB_BASE_REF env var)")
+	cmd.Flags().String("resolve", "", "comma-separated list of file names to resolve conflicts for (e.g. 'readme,views')")
+	return cmd
 }
+

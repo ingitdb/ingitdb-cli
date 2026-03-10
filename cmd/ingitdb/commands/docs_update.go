@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/docsbuilder"
@@ -18,36 +18,22 @@ func docsUpdate(
 	getWd func() (string, error),
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	logf func(...any),
-) *cli.Command {
-	return &cli.Command{
-		Name:  "update",
-		Usage: "Update documentation files based on metadata",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "path",
-				Usage: "path to the database directory",
-			},
-			&cli.StringFlag{
-				Name:  "collection",
-				Usage: "collection path or glob pattern (e.g. 'teams', 'agile.teams/*', 'agile.teams/**')",
-			},
-			&cli.StringFlag{
-				Name:  "view",
-				Usage: "Planned: view path to update. Do not use for now.",
-			},
-		},
-		Action: func(ctx context.Context, cmd *cli.Command) error {
-			collectionGlob := cmd.String("collection")
-			viewGlob := cmd.String("view")
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "update",
+		Short: "Update documentation files based on metadata",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			collectionGlob, _ := cmd.Flags().GetString("collection")
+			viewGlob, _ := cmd.Flags().GetString("view")
 
 			if collectionGlob == "" && viewGlob == "" {
-				return cli.Exit("either --collection or --view flag must be provided", 1)
+				return fmt.Errorf("either --collection or --view flag must be provided")
 			}
 			if viewGlob != "" {
-				return cli.Exit("--view is not implemented yet", 1)
+				return fmt.Errorf("--view is not implemented yet")
 			}
 
-			dirPath := cmd.String("path")
+			dirPath, _ := cmd.Flags().GetString("path")
 			if dirPath == "" {
 				wd, err := getWd()
 				if err != nil {
@@ -61,6 +47,7 @@ func docsUpdate(
 			}
 			dirPath = expanded
 
+			ctx := cmd.Context()
 			validateOpt := ingitdb.Validate()
 			def, err := readDefinition(dirPath, validateOpt)
 			if err != nil {
@@ -69,12 +56,16 @@ func docsUpdate(
 
 			err = runDocsUpdate(ctx, dirPath, def, collectionGlob, "", logf)
 			if err != nil {
-				return cli.Exit(err.Error(), 1)
+				return err
 			}
 
 			return nil
 		},
 	}
+	addPathFlag(cmd)
+	cmd.Flags().String("collection", "", "collection path or glob pattern (e.g. 'teams', 'agile.teams/*', 'agile.teams/**')")
+	cmd.Flags().String("view", "", "Planned: view path to update. Do not use for now.")
+	return cmd
 }
 
 func runDocsUpdate(ctx context.Context, dirPath string, def *ingitdb.Definition, collectionGlob string, resolveStr string, logf func(...any)) error {

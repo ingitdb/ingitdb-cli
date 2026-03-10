@@ -1,12 +1,11 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
@@ -17,22 +16,11 @@ func Truncate(
 	getWd func() (string, error),
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	logf func(...any),
-) *cli.Command {
-	return &cli.Command{
-		Name:  "truncate",
-		Usage: "Remove all records from a collection",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "path",
-				Usage: "path to the database directory",
-			},
-			&cli.StringFlag{
-				Name:     "collection",
-				Usage:    "collection id to truncate (e.g. todo.tags)",
-				Required: true,
-			},
-		},
-		Action: func(_ context.Context, cmd *cli.Command) error {
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "truncate",
+		Short: "Remove all records from a collection",
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			_ = logf
 			dirPath, resolveErr := resolveDBPath(cmd, homeDir, getWd)
 			if resolveErr != nil {
@@ -43,7 +31,7 @@ func Truncate(
 				return fmt.Errorf("failed to read database definition: %w", readErr)
 			}
 
-			collectionID := cmd.String("collection")
+			collectionID, _ := cmd.Flags().GetString("collection")
 			colDef, ok := def.Collections[collectionID]
 			if !ok {
 				return fmt.Errorf("collection not found: %s", collectionID)
@@ -58,6 +46,9 @@ func Truncate(
 			return nil
 		},
 	}
+	addPathFlag(cmd)
+	addCollectionFlag(cmd, true)
+	return cmd
 }
 
 // truncateCollection removes all record files from the given collection.

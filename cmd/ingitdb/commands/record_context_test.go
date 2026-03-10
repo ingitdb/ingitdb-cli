@@ -207,7 +207,7 @@ func TestResolveGitHubRecordContext_CollectionNotFound(t *testing.T) {
 	// but reading the record will fail since fakeDB is nil). The important
 	// thing is that resolveGitHubRecordContext reaches the success return.
 	// The error comes later from the DAL operation itself.
-	_ = runCLICommand(cmd, "--id=test.items/r1", "--github=owner/repo")
+	_ = runCobraCommand(cmd, "--id=test.items/r1", "--github=owner/repo")
 }
 
 // TestResolveLocalRecordContext_ResolvePathError verifies that
@@ -228,7 +228,7 @@ func TestResolveLocalRecordContext_ResolvePathError(t *testing.T) {
 
 	cmd := readRecord(homeDir, getWd, readDef, newDB, logf)
 	// No --path → resolveDBPath calls getWd → error
-	err := runCLICommand(cmd, "--id=test.items/r1")
+	err := runCobraCommand(cmd, "--id=test.items/r1")
 	if err == nil {
 		t.Fatal("expected error when resolveDBPath fails")
 	}

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/dal-go/dalgo/dal"
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
@@ -15,32 +15,14 @@ func deleteRecord(
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	newDB func(string, *ingitdb.Definition) (dal.DB, error),
 	logf func(...any),
-) *cli.Command {
-	return &cli.Command{
-		Name:  "record",
-		Usage: "Delete a single record by its ID",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "path",
-				Usage: "path to the database directory (default: current directory)",
-			},
-			&cli.StringFlag{
-				Name:  "github",
-				Usage: "GitHub source as owner/repo[@branch|tag|commit]",
-			},
-			&cli.StringFlag{
-				Name:  "token",
-				Usage: "GitHub personal access token (or set GITHUB_TOKEN env var)",
-			},
-			&cli.StringFlag{
-				Name:     "id",
-				Usage:    "record ID in the format collection/path/key (e.g. todo.tags/ie)",
-				Required: true,
-			},
-		},
-		Action: func(ctx context.Context, cmd *cli.Command) error {
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "record",
+		Short: "Delete a single record by its ID",
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			_ = logf
-			id := cmd.String("id")
+			ctx := cmd.Context()
+			id, _ := cmd.Flags().GetString("id")
 			rctx, err := resolveRecordContext(ctx, cmd, id, homeDir, getWd, readDefinition, newDB)
 			if err != nil {
 				return err
@@ -55,4 +37,10 @@ func deleteRecord(
 			return buildLocalViews(ctx, rctx)
 		},
 	}
+	addPathFlag(cmd)
+	addGitHubFlags(cmd)
+	cmd.Flags().String("id", "", "record ID in the format collection/path/key (e.g. todo.tags/ie)")
+	_ = cmd.MarkFlagRequired("id")
+	return cmd
 }
+

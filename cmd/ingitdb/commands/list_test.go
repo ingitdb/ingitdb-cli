@@ -25,10 +25,10 @@ func TestList_ReturnsCommand(t *testing.T) {
 		t.Fatal("List() returned nil")
 		return
 	}
-	if cmd.Name != "list" {
-		t.Errorf("expected name 'list', got %q", cmd.Name)
+	if cmd.Use != "list" {
+		t.Errorf("expected name 'list', got %q", cmd.Name())
 	}
-	if len(cmd.Commands) == 0 {
+	if len(cmd.Commands()) == 0 {
 		t.Fatal("expected subcommands")
 	}
 }
@@ -57,7 +57,7 @@ func TestListCollectionsLocal_Success(t *testing.T) {
 	}
 
 	cmd := List(homeDir, getWd, readDef)
-	err := runCLICommand(cmd, "collections", "--path="+dir)
+	err := runCobraCommand(cmd, "collections", "--path="+dir)
 	if err != nil {
 		t.Fatalf("ListCollections: %v", err)
 	}
@@ -74,7 +74,7 @@ func TestListCollectionsLocal_ReadDefError(t *testing.T) {
 	}
 
 	cmd := List(homeDir, getWd, readDef)
-	err := runCLICommand(cmd, "collections", "--path="+dir)
+	err := runCobraCommand(cmd, "collections", "--path="+dir)
 	if err == nil {
 		t.Fatal("expected error when readDefinition fails")
 	}
@@ -90,7 +90,7 @@ func TestListCollectionsLocal_ResolvePathError(t *testing.T) {
 	}
 
 	cmd := List(homeDir, getWd, readDef)
-	err := runCLICommand(cmd, "collections")
+	err := runCobraCommand(cmd, "collections")
 	if err == nil {
 		t.Fatal("expected error when getWd fails")
 	}
@@ -106,7 +106,7 @@ func TestListView_NotYetImplemented(t *testing.T) {
 	}
 
 	cmd := List(homeDir, getWd, readDef)
-	err := runCLICommand(cmd, "view")
+	err := runCobraCommand(cmd, "view")
 	if err == nil {
 		t.Fatal("expected error for not-yet-implemented command")
 	}
@@ -122,7 +122,7 @@ func TestSubscribers_NotYetImplemented(t *testing.T) {
 	}
 
 	cmd := List(homeDir, getWd, readDef)
-	err := runCLICommand(cmd, "subscribers")
+	err := runCobraCommand(cmd, "subscribers")
 	if err == nil {
 		t.Fatal("expected error for not-yet-implemented command")
 	}
@@ -148,8 +148,8 @@ func TestListCollectionsGitHub_Success(t *testing.T) {
 	}
 
 	// Find the collections subcommand
-	for _, subcmd := range cmd.Commands {
-		if subcmd.Name == "collections" {
+	for _, subcmd := range cmd.Commands() {
+		if subcmd.Use == "collections" {
 			// Successfully found the command
 			return
 		}

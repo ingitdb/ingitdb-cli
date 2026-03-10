@@ -23,7 +23,7 @@ func TestCreateRecord_GitHub_ParseError(t *testing.T) {
 		return nil, errors.New("unused")
 	}
 	cmd := createRecord(homeDir, getWd, readDefinition, newDB, func(...any) {})
-	err := runCLICommand(cmd, "--id=test.items/x", "--data={name: X}", "--github=invalid")
+	err := runCobraCommand(cmd, "--id=test.items/x", "--data={name: X}", "--github=invalid")
 	if err == nil {
 		t.Fatal("expected error for invalid GitHub spec")
 	}
@@ -52,7 +52,7 @@ func TestCreateRecord_GitHub_ReadDefinitionError(t *testing.T) {
 		return nil, errors.New("unused")
 	}
 	cmd := createRecord(homeDir, getWd, readDefinition, newDB, func(...any) {})
-	err := runCLICommand(cmd, "--id=test.items/x", "--data={name: X}", "--github=owner/repo")
+	err := runCobraCommand(cmd, "--id=test.items/x", "--data={name: X}", "--github=owner/repo")
 	if err == nil {
 		t.Fatal("expected error when reading remote definition fails")
 	}
@@ -91,7 +91,7 @@ func TestCreateRecord_GitHub_DBOpenError(t *testing.T) {
 		return nil, errors.New("unused")
 	}
 	cmd := createRecord(homeDir, getWd, readDefinition, newDB, func(...any) {})
-	err := runCLICommand(cmd, "--id=test.items/x", "--data={name: X}", "--github=owner/repo")
+	err := runCobraCommand(cmd, "--id=test.items/x", "--data={name: X}", "--github=owner/repo")
 	if err == nil {
 		t.Fatal("expected error when DB open fails")
 	}
@@ -110,7 +110,7 @@ func TestCreateRecord_InvalidDataYAML(t *testing.T) {
 	}
 
 	cmd := createRecord(homeDir, getWd, readDef, newDB, func(...any) {})
-	err := runCLICommand(cmd, "--path="+dir, "--id=test.items/x", "--data=: invalid yaml :")
+	err := runCobraCommand(cmd, "--path="+dir, "--id=test.items/x", "--data=: invalid yaml :")
 	if err == nil {
 		t.Fatal("expected error for invalid YAML data")
 	}

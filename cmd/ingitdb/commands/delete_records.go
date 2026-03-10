@@ -1,36 +1,23 @@
 package commands
 
 import (
-	"context"
+	"fmt"
 
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 )
 
-func deleteRecords() *cli.Command {
-	return &cli.Command{
-		Name:  "records",
-		Usage: "Delete individual records from a collection",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "path",
-				Usage: "path to the database directory",
-			},
-			&cli.StringFlag{
-				Name:     "collection",
-				Usage:    "collection to delete records from",
-				Required: true,
-			},
-			&cli.StringFlag{
-				Name:  "in",
-				Usage: "regular expression scoping deletion to a sub-path",
-			},
-			&cli.StringFlag{
-				Name:  "filter-name",
-				Usage: "pattern to match record names to delete",
-			},
-		},
-		Action: func(_ context.Context, _ *cli.Command) error {
-			return cli.Exit("not yet implemented", 1)
+func deleteRecords() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "records",
+		Short: "Delete individual records from a collection",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			return fmt.Errorf("not yet implemented")
 		},
 	}
+	addPathFlag(cmd)
+	addCollectionFlag(cmd, true)
+	cmd.Flags().String("in", "", "regular expression scoping deletion to a sub-path")
+	cmd.Flags().String("filter-name", "", "pattern to match record names to delete")
+	return cmd
 }
+

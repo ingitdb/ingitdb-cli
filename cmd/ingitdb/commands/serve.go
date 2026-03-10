@@ -1,10 +1,10 @@
 package commands
 
 import (
-	"context"
+	"fmt"
 
 	"github.com/dal-go/dalgo/dal"
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
@@ -16,56 +16,37 @@ func Serve(
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	newDB func(string, *ingitdb.Definition) (dal.DB, error),
 	logf func(...any),
-) *cli.Command {
-	return &cli.Command{
-		Name:  "serve",
-		Usage: "Start one or more servers (MCP, HTTP API, watcher)",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "path",
-				Usage: "path to the database directory",
-			},
-			&cli.BoolFlag{
-				Name:  "mcp",
-				Usage: "enable MCP server over stdio",
-			},
-			&cli.BoolFlag{
-				Name:  "http",
-				Usage: "enable HTTP API server",
-			},
-			&cli.StringFlag{
-				Name:  "http-port",
-				Value: "8080",
-				Usage: "port for HTTP server",
-			},
-			&cli.StringSliceFlag{
-				Name:  "api-domains",
-				Usage: "domains that route to the API handler",
-			},
-			&cli.StringSliceFlag{
-				Name:  "mcp-domains",
-				Usage: "domains that route to the MCP handler",
-			},
-			&cli.BoolFlag{
-				Name:  "watcher",
-				Usage: "enable file watcher",
-			},
-		},
-		Action: func(ctx context.Context, cmd *cli.Command) error {
-			if cmd.Bool("mcp") {
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "serve",
+		Short: "Start one or more servers (MCP, HTTP API, watcher)",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			ctx := cmd.Context()
+			mcpFlag, _ := cmd.Flags().GetBool("mcp")
+			if mcpFlag {
 				dirPath, err := resolveDBPath(cmd, homeDir, getWd)
 				if err != nil {
 					return err
 				}
 				return serveMCP(ctx, dirPath, readDefinition, newDB, logf)
 			}
-			if cmd.Bool("http") {
-				port := cmd.String("http-port")
-				apiDomains := cmd.StringSlice("api-domains")
-				mcpDomains := cmd.StringSlice("mcp-domains")
+			httpFlag, _ := cmd.Flags().GetBool("http")
+			if httpFlag {
+				port, _ := cmd.Flags().GetString("http-port")
+				apiDomains, _ := cmd.Flags().GetStringArray("api-domains")
+				mcpDomains, _ := cmd.Flags().GetStringArray("mcp-domains")
 				return serveHTTP(ctx, port, apiDomains, mcpDomains, logf)
 			}
-			return cli.Exit("no server mode specified; use --mcp, --http, or --watcher", 1)
+			return fmt.Errorf("no server mode specified; use --mcp, --http, or --watcher")
 		},
 	}
+	addPathFlag(cmd)
+	cmd.Flags().Bool("mcp", false, "enable MCP server over stdio")
+	cmd.Flags().Bool("http", false, "enable HTTP API server")
+	cmd.Flags().String("http-port", "8080", "port for HTTP server")
+	cmd.Flags().StringArray("api-domains", nil, "domains that route to the API handler")
+	cmd.Flags().StringArray("mcp-domains", nil, "domains that route to the MCP handler")
+	cmd.Flags().Bool("watcher", false, "enable file watcher")
+	return cmd
 }
+

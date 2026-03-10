@@ -1,12 +1,11 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
 
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/datavalidator"
@@ -20,30 +19,13 @@ func Validate(
 	dataVal datavalidator.DataValidator,
 	incVal datavalidator.IncrementalValidator,
 	logf func(...any),
-) *cli.Command {
-	return &cli.Command{
-		Name:  "validate",
-		Usage: "Validate an inGitDB database directory",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "path",
-				Usage: "path to the database directory (default: current directory)",
-			},
-			&cli.StringFlag{
-				Name:  "from-commit",
-				Usage: "validate only records changed since this commit",
-			},
-			&cli.StringFlag{
-				Name:  "to-commit",
-				Usage: "validate only records up to this commit",
-			},
-			&cli.StringFlag{
-				Name:  "only",
-				Usage: `validate only "definition" or "records" (default: both)`,
-			},
-		},
-		Action: func(ctx context.Context, cmd *cli.Command) error {
-			dirPath := cmd.String("path")
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "validate",
+		Short: "Validate an inGitDB database directory",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			ctx := cmd.Context()
+			dirPath, _ := cmd.Flags().GetString("path")
 			if dirPath == "" {
 				wd, err := getWd()
 				if err != nil {
@@ -59,13 +41,13 @@ func Validate(
 			logf("inGitDB db path: ", dirPath)
 
 			// Validate --only flag
-			onlyVal := cmd.String("only")
+			onlyVal, _ := cmd.Flags().GetString("only")
 			if onlyVal != "" && onlyVal != "definition" && onlyVal != "records" {
 				return fmt.Errorf("invalid --only value: %q (must be \"definition\", \"records\", or empty)", onlyVal)
 			}
 
-			fromCommit := cmd.String("from-commit")
-			toCommit := cmd.String("to-commit")
+			fromCommit, _ := cmd.Flags().GetString("from-commit")
+			toCommit, _ := cmd.Flags().GetString("to-commit")
 
 			if fromCommit != "" || toCommit != "" {
 				if incVal == nil {
@@ -130,6 +112,11 @@ func Validate(
 			return nil
 		},
 	}
+	addPathFlag(cmd)
+	cmd.Flags().String("from-commit", "", "validate only records changed since this commit")
+	cmd.Flags().String("to-commit", "", "validate only records up to this commit")
+	cmd.Flags().String("only", "", `validate only "definition" or "records" (default: both)`)
+	return cmd
 }
 
 func expandHome(path string, homeDir func() (string, error)) (string, error) {
@@ -143,15 +130,3 @@ func expandHome(path string, homeDir func() (string, error)) (string, error) {
 	return path, nil
 }
 
-// resolveDBPath returns the database directory path from the --path flag or the working directory.
-func resolveDBPath(cmd *cli.Command, homeDir func() (string, error), getWd func() (string, error)) (string, error) {
-	dirPath := cmd.String("path")
-	if dirPath == "" {
-		wd, err := getWd()
-		if err != nil {
-			return "", fmt.Errorf("failed to get working directory: %w", err)
-		}
-		dirPath = wd
-	}
-	return expandHome(dirPath, homeDir)
-}

@@ -3,12 +3,10 @@ package commands
 import (
 	"context"
 	"fmt"
-	"os"
 	"path"
 	"sort"
 	"strings"
 
-	"github.com/urfave/cli/v3"
 	"gopkg.in/yaml.v3"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ghingitdb"
@@ -20,15 +18,6 @@ type githubRepoSpec struct {
 	Owner string
 	Repo  string
 	Ref   string
-}
-
-// githubToken returns the GitHub token from the --token flag or GITHUB_TOKEN env var.
-func githubToken(cmd *cli.Command) string {
-	token := cmd.String("token")
-	if token == "" {
-		token = os.Getenv("GITHUB_TOKEN")
-	}
-	return token
 }
 
 // newGitHubConfig builds a dalgo2ghingitdb.Config from a repo spec and token.

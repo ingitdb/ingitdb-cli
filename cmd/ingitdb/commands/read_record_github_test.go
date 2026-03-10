@@ -10,7 +10,7 @@ import (
 	"github.com/dal-go/dalgo/dal"
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ghingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 )
 
 type fakeFileReader struct {
@@ -123,68 +123,72 @@ func TestReadRecord_GitHubWithPathUnsupported(t *testing.T) {
 		return nil, errors.New("unused")
 	}
 	cmd := readRecord(homeDir, getWd, readDefinition, newDB, func(...any) {})
-	err := runCLICommand(cmd, "--id=todo.tags/active", "--github=ingitdb/ingitdb-cli", "--path=/tmp/cache")
+	err := runCobraCommand(cmd, "--id=todo.tags/active", "--github=ingitdb/ingitdb-cli", "--path=/tmp/cache")
 	if err == nil {
 		t.Fatal("expected error for --github with --path")
 	}
 }
 
 func TestGithubToken_FromFlag(t *testing.T) {
-	app := &cli.Command{
-		Flags: []cli.Flag{
-			&cli.StringFlag{Name: "token"},
-		},
-		Action: func(ctx context.Context, cmd *cli.Command) error {
-			token := githubToken(cmd)
-			if token != "test-token" {
-				t.Fatalf("expected test-token, got %s", token)
-			}
+	t.Parallel()
+
+	var gotToken string
+	cmd := &cobra.Command{
+		Use: "test",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			gotToken = githubToken(cmd)
 			return nil
 		},
 	}
-	err := app.Run(context.Background(), []string{"app", "--token=test-token"})
+	cmd.Flags().String("token", "", "")
+	err := runCobraCommand(cmd, "--token=test-token")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+	if gotToken != "test-token" {
+		t.Fatalf("expected test-token, got %s", gotToken)
 	}
 }
 
 func TestGithubToken_FromEnv(t *testing.T) {
 	t.Setenv("GITHUB_TOKEN", "env-token")
-	app := &cli.Command{
-		Flags: []cli.Flag{
-			&cli.StringFlag{Name: "token"},
-		},
-		Action: func(ctx context.Context, cmd *cli.Command) error {
-			token := githubToken(cmd)
-			if token != "env-token" {
-				t.Fatalf("expected env-token, got %s", token)
-			}
+
+	var gotToken string
+	cmd := &cobra.Command{
+		Use: "test",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			gotToken = githubToken(cmd)
 			return nil
 		},
 	}
-	err := app.Run(context.Background(), []string{"app"})
+	cmd.Flags().String("token", "", "")
+	err := runCobraCommand(cmd)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+	if gotToken != "env-token" {
+		t.Fatalf("expected env-token, got %s", gotToken)
 	}
 }
 
 func TestGithubToken_FlagTakesPrecedence(t *testing.T) {
 	t.Setenv("GITHUB_TOKEN", "env-token")
-	app := &cli.Command{
-		Flags: []cli.Flag{
-			&cli.StringFlag{Name: "token"},
-		},
-		Action: func(ctx context.Context, cmd *cli.Command) error {
-			token := githubToken(cmd)
-			if token != "flag-token" {
-				t.Fatalf("expected flag-token, got %s", token)
-			}
+
+	var gotToken string
+	cmd := &cobra.Command{
+		Use: "test",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			gotToken = githubToken(cmd)
 			return nil
 		},
 	}
-	err := app.Run(context.Background(), []string{"app", "--token=flag-token"})
+	cmd.Flags().String("token", "", "")
+	err := runCobraCommand(cmd, "--token=flag-token")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+	if gotToken != "flag-token" {
+		t.Fatalf("expected flag-token, got %s", gotToken)
 	}
 }
 
@@ -378,7 +382,7 @@ func TestReadRecord_GitHub_ParseError(t *testing.T) {
 		return nil, errors.New("unused")
 	}
 	cmd := readRecord(homeDir, getWd, readDefinition, newDB, func(...any) {})
-	err := runCLICommand(cmd, "--id=test.items/x", "--github=invalid")
+	err := runCobraCommand(cmd, "--id=test.items/x", "--github=invalid")
 	if err == nil {
 		t.Fatal("expected error for invalid GitHub spec")
 	}
@@ -406,7 +410,7 @@ func TestReadRecord_GitHub_ReadDefinitionError(t *testing.T) {
 		return nil, errors.New("unused")
 	}
 	cmd := readRecord(homeDir, getWd, readDefinition, newDB, func(...any) {})
-	err := runCLICommand(cmd, "--id=test.items/x", "--github=owner/repo")
+	err := runCobraCommand(cmd, "--id=test.items/x", "--github=owner/repo")
 	if err == nil {
 		t.Fatal("expected error when reading remote definition fails")
 	}
@@ -445,7 +449,7 @@ func TestReadRecord_GitHub_DBOpenError(t *testing.T) {
 		return nil, errors.New("unused")
 	}
 	cmd := readRecord(homeDir, getWd, readDefinition, newDB, func(...any) {})
-	err := runCLICommand(cmd, "--id=test.items/x", "--github=owner/repo")
+	err := runCobraCommand(cmd, "--id=test.items/x", "--github=owner/repo")
 	if err == nil {
 		t.Fatal("expected error when DB open fails")
 	}

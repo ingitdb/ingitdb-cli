@@ -1,12 +1,11 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
@@ -16,22 +15,11 @@ func readCollection(
 	getWd func() (string, error),
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	logf func(...any),
-) *cli.Command {
-	return &cli.Command{
-		Name:  "collection",
-		Usage: "Output the definition YAML of a collection",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "path",
-				Usage: "path to the database directory (default: current directory)",
-			},
-			&cli.StringFlag{
-				Name:     "collection",
-				Usage:    "collection ID (alphanumeric and dot only, e.g. countries or todo.countries)",
-				Required: true,
-			},
-		},
-		Action: func(_ context.Context, cmd *cli.Command) error {
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "collection",
+		Short: "Output the definition YAML of a collection",
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			dirPath, err := resolveDBPath(cmd, homeDir, getWd)
 			if err != nil {
 				return err
@@ -43,9 +31,10 @@ func readCollection(
 				return fmt.Errorf("failed to read database definition: %w", err)
 			}
 
-			colDef := def.Collections[cmd.String("collection")]
+			colID, _ := cmd.Flags().GetString("collection")
+			colDef := def.Collections[colID]
 			if colDef == nil {
-				return fmt.Errorf("collection %q not found", cmd.String("collection"))
+				return fmt.Errorf("collection %q not found", colID)
 			}
 
 			defPath := filepath.Join(colDef.DirPath, ingitdb.SchemaDir, colDef.ID+".yaml")
@@ -57,4 +46,8 @@ func readCollection(
 			return nil
 		},
 	}
+	addPathFlag(cmd)
+	addCollectionFlag(cmd, true)
+	return cmd
 }
+

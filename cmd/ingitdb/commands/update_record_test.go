@@ -39,7 +39,7 @@ func TestUpdate_Success(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Update(homeDir, getWd, readDef, newDB, logf)
-	if err = runCLICommand(cmd, "record", "--path="+dir, "--id=test.items/item", "--set={name: New}"); err != nil {
+	if err = runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/item", "--set={name: New}"); err != nil {
 		t.Fatalf("Update: %v", err)
 	}
 
@@ -71,7 +71,7 @@ func TestUpdate_NotFound(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Update(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd, "record", "--path="+dir, "--id=test.items/ghost", "--set={name: X}")
+	err := runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/ghost", "--set={name: X}")
 	if err == nil {
 		t.Fatal("expected error for not-found record")
 	}
@@ -103,7 +103,7 @@ func TestUpdate_InvalidSetYAML(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Update(homeDir, getWd, readDef, newDB, logf)
-	err = runCLICommand(cmd, "record", "--path="+dir, "--id=test.items/item", "--set=: invalid yaml :")
+	err = runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/item", "--set=: invalid yaml :")
 	if err == nil {
 		t.Fatal("expected error for invalid YAML in --set")
 	}
@@ -125,7 +125,7 @@ func TestUpdate_ReadDefinitionError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Update(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd, "record", "--path="+dir, "--id=test.items/item", "--set={name: X}")
+	err := runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/item", "--set={name: X}")
 	if err == nil {
 		t.Fatal("expected error when read definition fails")
 	}
@@ -146,7 +146,7 @@ func TestUpdate_InvalidID(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Update(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd, "record", "--path="+dir, "--id=invalid", "--set={name: X}")
+	err := runCobraCommand(cmd, "record", "--path="+dir, "--id=invalid", "--set={name: X}")
 	if err == nil {
 		t.Fatal("expected error for invalid ID format")
 	}
@@ -167,7 +167,7 @@ func TestUpdate_DBOpenError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Update(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd, "record", "--path="+dir, "--id=test.items/item", "--set={name: X}")
+	err := runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/item", "--set={name: X}")
 	if err == nil {
 		t.Fatal("expected error when DB open fails")
 	}

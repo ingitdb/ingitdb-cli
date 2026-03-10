@@ -39,7 +39,7 @@ func TestReadRecord_Success(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Read(homeDir, getWd, readDef, newDB, logf)
-	if err = runCLICommand(cmd, "record", "--path="+dir, "--id=test.items/r1"); err != nil {
+	if err = runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/r1"); err != nil {
 		t.Fatalf("ReadRecord: %v", err)
 	}
 }
@@ -59,7 +59,7 @@ func TestReadRecord_NotFound(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Read(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd, "record", "--path="+dir, "--id=test.items/ghost")
+	err := runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/ghost")
 	if err == nil {
 		t.Fatal("expected error for not-found record")
 	}
@@ -91,7 +91,7 @@ func TestReadRecord_JSONFormat(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Read(homeDir, getWd, readDef, newDB, logf)
-	if err = runCLICommand(cmd, "record", "--path="+dir, "--id=test.items/r1", "--format=json"); err != nil {
+	if err = runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/r1", "--format=json"); err != nil {
 		t.Fatalf("ReadRecord with JSON format: %v", err)
 	}
 }
@@ -122,7 +122,7 @@ func TestReadRecord_InvalidFormat(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Read(homeDir, getWd, readDef, newDB, logf)
-	err = runCLICommand(cmd, "record", "--path="+dir, "--id=test.items/r1", "--format=xml")
+	err = runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/r1", "--format=xml")
 	if err == nil {
 		t.Fatal("expected error for invalid format")
 	}
@@ -144,7 +144,7 @@ func TestReadRecord_ReadDefinitionError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Read(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd, "record", "--path="+dir, "--id=test.items/r1")
+	err := runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/r1")
 	if err == nil {
 		t.Fatal("expected error when read definition fails")
 	}
@@ -165,7 +165,7 @@ func TestReadRecord_InvalidID(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Read(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd, "record", "--path="+dir, "--id=invalid")
+	err := runCobraCommand(cmd, "record", "--path="+dir, "--id=invalid")
 	if err == nil {
 		t.Fatal("expected error for invalid ID format")
 	}
@@ -186,7 +186,7 @@ func TestReadRecord_DBOpenError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Read(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd, "record", "--path="+dir, "--id=test.items/r1")
+	err := runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/r1")
 	if err == nil {
 		t.Fatal("expected error when DB open fails")
 	}

@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/dal-go/dalgo/dal"
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
@@ -19,45 +19,14 @@ func Query(
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	newDB func(string, *ingitdb.Definition) (dal.DB, error),
 	logf func(...any),
-) *cli.Command {
-	return &cli.Command{
-		Name:                  "query",
-		Usage:                 "Query records from a collection",
-		DisableSliceFlagSeparator: true,
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:     "collection",
-				Aliases:  []string{"c"},
-				Usage:    "collection ID to query",
-				Required: true,
-			},
-			&cli.StringFlag{
-				Name:    "fields",
-				Aliases: []string{"f"},
-				Usage:   `fields to select: * = all, $id = record key, field1,field2 = specific fields`,
-				Value:   "*",
-			},
-			&cli.StringSliceFlag{
-				Name:    "where",
-				Aliases: []string{"w"},
-				Usage:   `filter expression (repeatable): field>value, field==value, etc.`,
-			},
-			&cli.StringFlag{
-				Name:  "order-by",
-				Usage: `comma-separated fields; prefix '-' = descending`,
-			},
-			&cli.StringFlag{
-				Name:  "format",
-				Usage: "output format: csv (default), json, yaml, md",
-				Value: "csv",
-			},
-			&cli.StringFlag{
-				Name:  "path",
-				Usage: "path to the database directory (default: current directory)",
-			},
-		},
-		Action: func(ctx context.Context, cmd *cli.Command) error {
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "query",
+		Short: "Query records from a collection",
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			_ = logf
+
+			ctx := cmd.Context()
 
 			// 1. Resolve DB path.
 			dirPath, err := resolveDBPath(cmd, homeDir, getWd)
@@ -72,7 +41,7 @@ func Query(
 			}
 
 			// 3. Validate collection exists.
-			colID := cmd.String("collection")
+			colID, _ := cmd.Flags().GetString("collection")
 			colDef, ok := def.Collections[colID]
 			if !ok {
 				return fmt.Errorf("collection %q not found in definition", colID)
@@ -80,10 +49,11 @@ func Query(
 			_ = colDef
 
 			// 4. Parse --fields.
-			fields := parseFields(cmd.String("fields"))
+			fieldsVal, _ := cmd.Flags().GetString("fields")
+			fields := parseFields(fieldsVal)
 
 			// 5. Parse --where conditions.
-			whereExprs := cmd.StringSlice("where")
+			whereExprs, _ := cmd.Flags().GetStringArray("where")
 			conditions := make([]dal.Condition, 0, len(whereExprs))
 			for _, expr := range whereExprs {
 				cond, parseErr := parseWhereExpr(expr)
@@ -94,7 +64,8 @@ func Query(
 			}
 
 			// 6. Parse --order-by.
-			orderExprs, err := parseOrderBy(cmd.String("order-by"))
+			orderByVal, _ := cmd.Flags().GetString("order-by")
+			orderExprs, err := parseOrderBy(orderByVal)
 			if err != nil {
 				return fmt.Errorf("invalid --order-by: %w", err)
 			}
@@ -143,7 +114,8 @@ func Query(
 			}
 
 			// 11. Write output.
-			format := strings.ToLower(cmd.String("format"))
+			format, _ := cmd.Flags().GetString("format")
+			format = strings.ToLower(format)
 			switch format {
 			case "csv", "":
 				return writeCSV(os.Stdout, rows, columns)
@@ -158,4 +130,12 @@ func Query(
 			}
 		},
 	}
+	addPathFlag(cmd)
+	addCollectionFlag(cmd, true)
+	cmd.Flags().StringP("fields", "f", "*", `fields to select: * = all, $id = record key, field1,field2 = specific fields`)
+	cmd.Flags().StringArrayP("where", "w", nil, `filter expression (repeatable): field>value, field==value, etc.`)
+	cmd.Flags().String("order-by", "", `comma-separated fields; prefix '-' = descending`)
+	addFormatFlag(cmd, "csv")
+	return cmd
 }
+

@@ -22,10 +22,10 @@ func TestTruncate_ReturnsCommand(t *testing.T) {
 	if cmd == nil {
 		t.Fatal("Truncate() returned nil")
 	}
-	if cmd.Name != "truncate" {
-		t.Errorf("expected name 'truncate', got %q", cmd.Name)
+	if cmd.Use != "truncate" {
+		t.Errorf("expected name 'truncate', got %q", cmd.Name())
 	}
-	if cmd.Action == nil {
+	if cmd.RunE == nil {
 		t.Fatal("expected Action to be set")
 	}
 }
@@ -76,7 +76,7 @@ func TestTruncate_SingleRecord_Success(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Truncate(homeDir, getWd, readDef, logf)
-	err := runCLICommand(cmd, "--path="+tmpDir, "--collection=test.items")
+	err := runCobraCommand(cmd, "--path="+tmpDir, "--collection=test.items")
 	if err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
@@ -133,7 +133,7 @@ func TestTruncate_MapOfRecords_Success(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Truncate(homeDir, getWd, readDef, logf)
-	err := runCLICommand(cmd, "--path="+tmpDir, "--collection=test.tags")
+	err := runCobraCommand(cmd, "--path="+tmpDir, "--collection=test.tags")
 	if err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
@@ -165,7 +165,7 @@ func TestTruncate_CollectionNotFound(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Truncate(homeDir, getWd, readDef, logf)
-	err := runCLICommand(cmd, "--path="+tmpDir, "--collection=nonexistent.col")
+	err := runCobraCommand(cmd, "--path="+tmpDir, "--collection=nonexistent.col")
 	if err == nil {
 		t.Fatal("expected error for non-existent collection")
 	}
@@ -209,7 +209,7 @@ func TestTruncate_RecordsDirNotExist(t *testing.T) {
 
 	cmd := Truncate(homeDir, getWd, readDef, logf)
 	// Should succeed with 0 records removed when $records/ doesn't exist.
-	err := runCLICommand(cmd, "--path="+tmpDir, "--collection=test.items")
+	err := runCobraCommand(cmd, "--path="+tmpDir, "--collection=test.items")
 	if err != nil {
 		t.Fatalf("expected no error when records dir doesn't exist, got: %v", err)
 	}
@@ -269,7 +269,7 @@ func TestTruncate_PreservesCollectionDefinition(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Truncate(homeDir, getWd, readDef, logf)
-	err := runCLICommand(cmd, "--path="+tmpDir, "--collection=test.items")
+	err := runCobraCommand(cmd, "--path="+tmpDir, "--collection=test.items")
 	if err != nil {
 		t.Fatalf("truncate: %v", err)
 	}

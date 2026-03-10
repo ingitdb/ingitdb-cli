@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -10,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
-	"github.com/urfave/cli/v3"
 )
 
 func TestRebaseCommand(t *testing.T) {
@@ -100,13 +98,7 @@ func TestRebaseCommand(t *testing.T) {
 
 	cmd := Rebase(getWd, readDefinition, logf)
 
-	app := &cli.Command{
-		Commands:  []*cli.Command{cmd},
-		Writer:    os.Stdout,
-		ErrWriter: os.Stderr,
-	}
-
-	err := app.Run(context.Background(), []string{"ingitdb", "rebase", "--base_ref", "base_branch", "--resolve", "readme"})
+	err := runCobraCommand(cmd, "--base_ref", "base_branch", "--resolve", "readme")
 	if err != nil {
 		t.Fatalf("unexpected error running rebase: %v", err)
 	}

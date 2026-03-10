@@ -44,10 +44,10 @@ func TestValidate_ReturnsCommand(t *testing.T) {
 	if cmd == nil {
 		t.Fatal("Validate() returned nil")
 	}
-	if cmd.Name != "validate" {
-		t.Errorf("expected name 'validate', got %q", cmd.Name)
+	if cmd.Use != "validate" {
+		t.Errorf("expected name 'validate', got %q", cmd.Name())
 	}
-	if cmd.Action == nil {
+	if cmd.RunE == nil {
 		t.Fatal("expected Action to be set")
 	}
 }
@@ -67,7 +67,7 @@ func TestValidate_Success(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Validate(homeDir, getWd, readDef, dataVal, nil, logf)
-	err := runCLICommand(cmd, "--path="+dir)
+	err := runCobraCommand(cmd, "--path="+dir)
 	if err != nil {
 		t.Fatalf("Validate: %v", err)
 	}
@@ -85,7 +85,7 @@ func TestValidate_NoDataValidator(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Validate(homeDir, getWd, readDef, nil, nil, logf)
-	err := runCLICommand(cmd, "--path="+dir)
+	err := runCobraCommand(cmd, "--path="+dir)
 	if err != nil {
 		t.Fatalf("Validate with no dataValidator: %v", err)
 	}
@@ -112,7 +112,7 @@ func TestValidate_DataValidationErrors(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Validate(homeDir, getWd, readDef, dataVal, nil, logf)
-	err := runCLICommand(cmd, "--path="+dir)
+	err := runCobraCommand(cmd, "--path="+dir)
 	if err == nil {
 		t.Fatal("expected error when data validation has errors")
 	}
@@ -133,7 +133,7 @@ func TestValidate_DataValidationError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Validate(homeDir, getWd, readDef, dataVal, nil, logf)
-	err := runCLICommand(cmd, "--path="+dir)
+	err := runCobraCommand(cmd, "--path="+dir)
 	if err == nil {
 		t.Fatal("expected error when data validation fails")
 	}
@@ -151,7 +151,7 @@ func TestValidate_IncrementalNotImplemented(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Validate(homeDir, getWd, readDef, nil, nil, logf)
-	err := runCLICommand(cmd, "--path="+dir, "--from-commit=abc123")
+	err := runCobraCommand(cmd, "--path="+dir, "--from-commit=abc123")
 	if err == nil {
 		t.Fatal("expected error when incremental validator is nil")
 	}
@@ -172,7 +172,7 @@ func TestValidate_IncrementalSuccess(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Validate(homeDir, getWd, readDef, nil, incVal, logf)
-	err := runCLICommand(cmd, "--path="+dir, "--from-commit=abc123", "--to-commit=def456")
+	err := runCobraCommand(cmd, "--path="+dir, "--from-commit=abc123", "--to-commit=def456")
 	if err != nil {
 		t.Fatalf("Validate incremental: %v", err)
 	}
@@ -198,7 +198,7 @@ func TestValidate_IncrementalErrors(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Validate(homeDir, getWd, readDef, nil, incVal, logf)
-	err := runCLICommand(cmd, "--path="+dir, "--from-commit=abc123")
+	err := runCobraCommand(cmd, "--path="+dir, "--from-commit=abc123")
 	if err == nil {
 		t.Fatal("expected error when incremental validation has errors")
 	}
@@ -219,7 +219,7 @@ func TestValidate_IncrementalValidationError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Validate(homeDir, getWd, readDef, nil, incVal, logf)
-	err := runCLICommand(cmd, "--path="+dir, "--from-commit=abc123")
+	err := runCobraCommand(cmd, "--path="+dir, "--from-commit=abc123")
 	if err == nil {
 		t.Fatal("expected error when incremental validation fails")
 	}
@@ -238,7 +238,7 @@ func TestValidate_IncrementalReadDefError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Validate(homeDir, getWd, readDef, nil, incVal, logf)
-	err := runCLICommand(cmd, "--path="+dir, "--from-commit=abc123")
+	err := runCobraCommand(cmd, "--path="+dir, "--from-commit=abc123")
 	if err == nil {
 		t.Fatal("expected error when readDefinition fails for incremental")
 	}
@@ -256,7 +256,7 @@ func TestValidate_ReadDefinitionError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Validate(homeDir, getWd, readDef, nil, nil, logf)
-	err := runCLICommand(cmd, "--path="+dir)
+	err := runCobraCommand(cmd, "--path="+dir)
 	if err == nil {
 		t.Fatal("expected error when readDefinition fails")
 	}
@@ -273,7 +273,7 @@ func TestValidate_GetWdError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Validate(homeDir, getWd, readDef, nil, nil, logf)
-	err := runCLICommand(cmd)
+	err := runCobraCommand(cmd)
 	if err == nil {
 		t.Fatal("expected error when getWd fails")
 	}
@@ -290,7 +290,7 @@ func TestValidate_ExpandHomeError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Validate(homeDir, getWd, readDef, nil, nil, logf)
-	err := runCLICommand(cmd, "--path=~")
+	err := runCobraCommand(cmd, "--path=~")
 	if err == nil {
 		t.Fatal("expected error when expandHome fails")
 	}
@@ -364,7 +364,7 @@ func TestValidate_OnlyInvalid(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Validate(homeDir, getWd, readDef, nil, nil, logf)
-	err := runCLICommand(cmd, "--path="+dir, "--only=invalid")
+	err := runCobraCommand(cmd, "--path="+dir, "--only=invalid")
 	if err == nil {
 		t.Fatal("expected error for invalid --only value")
 	}
@@ -390,7 +390,7 @@ func TestValidate_OnlyDefinition(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Validate(homeDir, getWd, readDef, dataVal, nil, logf)
-	err := runCLICommand(cmd, "--path="+dir, "--only=definition")
+	err := runCobraCommand(cmd, "--path="+dir, "--only=definition")
 	if err != nil {
 		t.Fatalf("Validate with --only=definition: %v", err)
 	}
@@ -426,7 +426,7 @@ func TestValidate_OnlyRecords(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Validate(homeDir, getWd, readDef, dataVal, nil, logf)
-	err := runCLICommand(cmd, "--path="+dir, "--only=records")
+	err := runCobraCommand(cmd, "--path="+dir, "--only=records")
 	if err != nil {
 		t.Fatalf("Validate with --only=records: %v", err)
 	}
@@ -471,7 +471,7 @@ func TestValidate_CompletionMessage(t *testing.T) {
 	}
 
 	cmd := Validate(homeDir, getWd, readDef, dataVal, nil, logf)
-	err := runCLICommand(cmd, "--path="+dir)
+	err := runCobraCommand(cmd, "--path="+dir)
 	if err != nil {
 		t.Fatalf("Validate: %v", err)
 	}
@@ -532,7 +532,7 @@ func TestValidate_CompletionMessagePartialFailure(t *testing.T) {
 	}
 
 	cmd := Validate(homeDir, getWd, readDef, dataVal, nil, logf)
-	err := runCLICommand(cmd, "--path="+dir)
+	err := runCobraCommand(cmd, "--path="+dir)
 	if err != nil {
 		t.Fatalf("Validate: %v", err)
 	}
@@ -582,7 +582,7 @@ func TestValidate_OnlyRecordsSkipsDefinitionValidation(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Validate(homeDir, getWd, readDef, dataVal, nil, logf)
-	err := runCLICommand(cmd, "--path="+dir, "--only=records")
+	err := runCobraCommand(cmd, "--path="+dir, "--only=records")
 	if err != nil {
 		t.Fatalf("Validate with --only=records: %v", err)
 	}
@@ -613,7 +613,7 @@ func TestValidate_OnlyDefinitionSkipsRecordValidation(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Validate(homeDir, getWd, readDef, dataVal, nil, logf)
-	err := runCLICommand(cmd, "--path="+dir, "--only=definition")
+	err := runCobraCommand(cmd, "--path="+dir, "--only=definition")
 	if err != nil {
 		t.Fatalf("Validate with --only=definition: %v", err)
 	}

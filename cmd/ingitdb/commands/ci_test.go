@@ -21,10 +21,10 @@ func TestCI_ReturnsCommand(t *testing.T) {
 	if cmd == nil {
 		t.Fatal("CI() returned nil")
 	}
-	if cmd.Name != "ci" {
-		t.Errorf("expected name 'ci', got %q", cmd.Name)
+	if cmd.Use != "ci" {
+		t.Errorf("expected name 'ci', got %q", cmd.Name())
 	}
-	if cmd.Action == nil {
+	if cmd.RunE == nil {
 		t.Fatal("expected Action to be set")
 	}
 }
@@ -40,7 +40,7 @@ func TestCI_NotYetImplemented(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := CI(homeDir, getWd, readDef, nil, logf)
-	err := runCLICommand(cmd)
+	err := runCobraCommand(cmd)
 	if err == nil {
 		t.Fatal("expected error when viewBuilder is nil")
 	}
@@ -74,7 +74,7 @@ func TestCI_Success(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := CI(homeDir, getWd, readDef, viewBuilder, logf)
-	err := runCLICommand(cmd, "--path="+dir)
+	err := runCobraCommand(cmd, "--path="+dir)
 	if err != nil {
 		t.Fatalf("CI: %v", err)
 	}
@@ -104,7 +104,7 @@ func TestCI_BuildViewsError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := CI(homeDir, getWd, readDef, viewBuilder, logf)
-	err := runCLICommand(cmd, "--path="+dir)
+	err := runCobraCommand(cmd, "--path="+dir)
 	if err == nil {
 		t.Fatal("expected error when BuildViews fails")
 	}
@@ -122,7 +122,7 @@ func TestCI_GetWdError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := CI(homeDir, getWd, readDef, viewBuilder, logf)
-	err := runCLICommand(cmd)
+	err := runCobraCommand(cmd)
 	if err == nil {
 		t.Fatal("expected error when getWd fails")
 	}

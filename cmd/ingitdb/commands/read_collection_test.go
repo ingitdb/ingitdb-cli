@@ -35,7 +35,7 @@ func TestReadCollection_Success(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Read(homeDir, getWd, readDef, newDB, logf)
-	if err := runCLICommand(cmd, "collection", "--path="+dir, "--collection=test.items"); err != nil {
+	if err := runCobraCommand(cmd, "collection", "--path="+dir, "--collection=test.items"); err != nil {
 		t.Fatalf("ReadCollection: %v", err)
 	}
 }
@@ -55,7 +55,7 @@ func TestReadCollection_CollectionNotFound(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Read(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd, "collection", "--path="+dir, "--collection=no.such.collection")
+	err := runCobraCommand(cmd, "collection", "--path="+dir, "--collection=no.such.collection")
 	if err == nil {
 		t.Fatal("expected error for unknown collection")
 	}
@@ -76,7 +76,7 @@ func TestReadCollection_SlashNormalizedCollectionIDRejected(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Read(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd, "collection", "--path="+dir, "--collection=test/items")
+	err := runCobraCommand(cmd, "collection", "--path="+dir, "--collection=test/items")
 	if err == nil {
 		t.Fatal("expected error for slash-normalized collection ID")
 	}
@@ -97,7 +97,7 @@ func TestReadCollection_DefinitionError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Read(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd, "collection", "--path="+dir, "--collection=test.items")
+	err := runCobraCommand(cmd, "collection", "--path="+dir, "--collection=test.items")
 	if err == nil {
 		t.Fatal("expected error when readDefinition fails")
 	}

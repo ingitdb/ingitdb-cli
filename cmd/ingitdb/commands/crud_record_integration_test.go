@@ -43,21 +43,21 @@ func TestCRUDRecord_UpdatesTagsReadme(t *testing.T) {
 	logf := func(...any) {}
 
 	createCmd := Create(homeDir, getWd, readDef, newDB, logf)
-	if err := runCLICommand(createCmd, "record", "--path="+tmpDir, "--id=todo.tags/urgent", "--data={title: Urgent}"); err != nil {
+	if err := runCobraCommand(createCmd, "record", "--path="+tmpDir, "--id=todo.tags/urgent", "--data={title: Urgent}"); err != nil {
 		t.Fatalf("Create record: %v", err)
 	}
 	assertTagTitle(t, dstTodoDir, "urgent", "Urgent")
 	assertReadmeContains(t, dstTodoDir, "**Urgent**")
 
 	updateCmd := Update(homeDir, getWd, readDef, newDB, logf)
-	if err := runCLICommand(updateCmd, "record", "--path="+tmpDir, "--id=todo.tags/urgent", "--set={titles: {en: Updated}}"); err != nil {
+	if err := runCobraCommand(updateCmd, "record", "--path="+tmpDir, "--id=todo.tags/urgent", "--set={titles: {en: Updated}}"); err != nil {
 		t.Fatalf("Update record: %v", err)
 	}
 	assertTagTitle(t, dstTodoDir, "urgent", "Updated")
 	assertReadmeContains(t, dstTodoDir, "**Updated**")
 
 	deleteCmd := Delete(homeDir, getWd, readDef, newDB, logf)
-	if err := runCLICommand(deleteCmd, "record", "--path="+tmpDir, "--id=todo.tags/urgent"); err != nil {
+	if err := runCobraCommand(deleteCmd, "record", "--path="+tmpDir, "--id=todo.tags/urgent"); err != nil {
 		t.Fatalf("Delete record: %v", err)
 	}
 	assertTagMissing(t, dstTodoDir, "urgent")

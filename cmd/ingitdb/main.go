@@ -2,12 +2,11 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 
 	"github.com/dal-go/dalgo/dal"
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/commands"
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2fsingitdb"
@@ -46,45 +45,44 @@ func run(
 	newDB := func(rootDirPath string, def *ingitdb.Definition) (dal.DB, error) {
 		return dalgo2fsingitdb.NewLocalDBWithDef(rootDirPath, def)
 	}
-	app := &cli.Command{
-		Name:      "ingitdb",
-		Usage:     "Git-backed database CLI",
-		ErrWriter: os.Stderr,
-		Commands: []*cli.Command{
-			commands.Version(version, commit, date),
-			commands.Validate(homeDir, getWd, readDefinition, datavalidator.NewValidator(), nil, logf),
-			commands.Query(homeDir, getWd, readDefinition, newDB, logf),
-			commands.Materialize(homeDir, getWd, readDefinition, materializer.NewViewBuilder(materializer.NewFileRecordsReader(), func(f string, a ...any) { logf(fmt.Sprintf(f, a...)) }), logf),
-			commands.CI(homeDir, getWd, readDefinition, materializer.NewViewBuilder(materializer.NewFileRecordsReader(), func(f string, a ...any) { logf(fmt.Sprintf(f, a...)) }), logf),
-			commands.Pull(),
-			commands.Setup(),
-			commands.Resolve(),
-			commands.Rebase(getWd, readDefinition, logf),
-			commands.Watch(),
-			commands.Docs(homeDir, getWd, readDefinition, logf),
-			commands.Serve(homeDir, getWd, readDefinition, newDB, logf),
-			commands.List(homeDir, getWd, readDefinition),
-			commands.Find(),
-			commands.Create(homeDir, getWd, readDefinition, newDB, logf),
-			commands.Read(homeDir, getWd, readDefinition, newDB, logf),
-			commands.Update(homeDir, getWd, readDefinition, newDB, logf),
-			commands.Delete(homeDir, getWd, readDefinition, newDB, logf),
-			commands.Truncate(homeDir, getWd, readDefinition, logf),
-			commands.Migrate(),
-		},
-	}
 
-	err := app.Run(context.Background(), args)
-	if err == nil {
-		return
+	viewBuilderLogf := func(f string, a ...any) { logf(fmt.Sprintf(f, a...)) }
+	vb := materializer.NewViewBuilder(materializer.NewFileRecordsReader(), viewBuilderLogf)
+
+	rootCmd := &cobra.Command{
+		Use:           "ingitdb",
+		Short:         "Git-backed database CLI",
+		SilenceUsage:  true,
+		SilenceErrors: true,
 	}
-	var exitErr cli.ExitCoder
-	if errors.As(err, &exitErr) {
-		code := exitErr.ExitCode()
-		if code != 0 {
-			exit(code)
-		}
-		return
+	rootCmd.SetErr(os.Stderr)
+
+	rootCmd.AddCommand(
+		commands.Version(version, commit, date),
+		commands.Validate(homeDir, getWd, readDefinition, datavalidator.NewValidator(), nil, logf),
+		commands.Query(homeDir, getWd, readDefinition, newDB, logf),
+		commands.Materialize(homeDir, getWd, readDefinition, vb, logf),
+		commands.CI(homeDir, getWd, readDefinition, vb, logf),
+		commands.Pull(),
+		commands.Setup(),
+		commands.Resolve(),
+		commands.Rebase(getWd, readDefinition, logf),
+		commands.Watch(),
+		commands.Docs(homeDir, getWd, readDefinition, logf),
+		commands.Serve(homeDir, getWd, readDefinition, newDB, logf),
+		commands.List(homeDir, getWd, readDefinition),
+		commands.Find(),
+		commands.Create(homeDir, getWd, readDefinition, newDB, logf),
+		commands.Read(homeDir, getWd, readDefinition, newDB, logf),
+		commands.Update(homeDir, getWd, readDefinition, newDB, logf),
+		commands.Delete(homeDir, getWd, readDefinition, newDB, logf),
+		commands.Truncate(homeDir, getWd, readDefinition, logf),
+		commands.Migrate(),
+	)
+
+	rootCmd.SetArgs(args[1:])
+	if err := rootCmd.ExecuteContext(context.Background()); err != nil {
+		fatal(err)
 	}
-	fatal(err)
 }
+

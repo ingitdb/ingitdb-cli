@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/dal-go/dalgo/dal"
+	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v3"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2fsingitdb"
@@ -46,21 +47,24 @@ func TestQuery_ReturnsCommand(t *testing.T) {
 	if cmd == nil {
 		t.Fatal("Query() returned nil")
 	}
-	if cmd.Name != "query" {
-		t.Errorf("expected name 'query', got %q", cmd.Name)
+	if cmd.Use != "query" {
+		t.Errorf("expected name 'query', got %q", cmd.Name())
 	}
-	if cmd.Action == nil {
+	if cmd.RunE == nil {
 		t.Fatal("expected Action to be set")
 	}
 
 	// Verify all expected flags are present.
 	flagNames := make(map[string]bool)
-	for _, f := range cmd.Flags {
-		for _, name := range f.Names() {
-			flagNames[name] = true
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		flagNames[f.Name] = true
+	})
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		if f.Shorthand != "" {
+			flagNames[f.Shorthand] = true
 		}
-	}
-	for _, required := range []string{"collection", "c", "fields", "f", "where", "w", "order-by", "format", "path"} {
+	})
+	for _, required := range []string{"collection", "fields", "where", "order-by", "format", "path"} {
 		if !flagNames[required] {
 			t.Errorf("expected flag %q to be present", required)
 		}
@@ -77,7 +81,7 @@ func TestQuery_MissingCollection(t *testing.T) {
 		func(string, *ingitdb.Definition) (dal.DB, error) { return nil, nil },
 		func(...any) {},
 	)
-	err := runCLICommand(cmd) // no --collection flag
+	err := runCobraCommand(cmd) // no --collection flag
 	if err == nil {
 		t.Fatal("expected error when --collection is missing")
 	}
@@ -95,7 +99,7 @@ func TestQuery_UnknownCollection(t *testing.T) {
 		func(string, *ingitdb.Definition) (dal.DB, error) { return nil, nil },
 		func(...any) {},
 	)
-	err := runCLICommand(cmd, "--collection=nonexistent")
+	err := runCobraCommand(cmd, "--collection=nonexistent")
 	if err == nil {
 		t.Fatal("expected error for unknown collection")
 	}
@@ -120,7 +124,7 @@ func TestQuery_Integration_CSV(t *testing.T) {
 		testQueryNewDB(t),
 		func(...any) {},
 	)
-	err := runCLICommand(cmd, "--collection=test.items", "--fields=$id")
+	err := runCobraCommand(cmd, "--collection=test.items", "--fields=$id")
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
 	}
@@ -138,7 +142,7 @@ func TestQuery_Integration_InvalidWhereExpr(t *testing.T) {
 		testQueryNewDB(t),
 		func(...any) {},
 	)
-	err := runCLICommand(cmd, "--collection=test.items", "--where=badexpr")
+	err := runCobraCommand(cmd, "--collection=test.items", "--where=badexpr")
 	if err == nil {
 		t.Fatal("expected error for malformed where expression")
 	}
@@ -156,7 +160,7 @@ func TestQuery_Integration_InvalidFormat(t *testing.T) {
 		testQueryNewDB(t),
 		func(...any) {},
 	)
-	err := runCLICommand(cmd, "--collection=test.items", "--format=xml")
+	err := runCobraCommand(cmd, "--collection=test.items", "--format=xml")
 	if err == nil {
 		t.Fatal("expected error for unknown format")
 	}
@@ -186,7 +190,7 @@ func TestQuery_Integration_UppercaseFormat(t *testing.T) {
 				newDB,
 				func(...any) {},
 			)
-			err := runCLICommand(cmd, "--collection=test.items", "--fields=$id", "--format="+format)
+			err := runCobraCommand(cmd, "--collection=test.items", "--fields=$id", "--format="+format)
 			if err != nil {
 				t.Errorf("format %q should be accepted, got error: %v", format, err)
 			}
@@ -213,7 +217,7 @@ func TestQuery_Integration_Where(t *testing.T) {
 		testQueryNewDB(t),
 		func(...any) {},
 	)
-	err := runCLICommand(cmd, "--collection=test.items", "--fields=$id,name", "--where=name==Alpha")
+	err := runCobraCommand(cmd, "--collection=test.items", "--fields=$id,name", "--where=name==Alpha")
 	if err != nil {
 		t.Fatalf("query with where failed: %v", err)
 	}

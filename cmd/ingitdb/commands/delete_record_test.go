@@ -40,7 +40,7 @@ func TestDeleteRecord_Success(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Delete(homeDir, getWd, readDef, newDB, logf)
-	if err = runCLICommand(cmd, "record", "--path="+dir, "--id=test.items/bye"); err != nil {
+	if err = runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/bye"); err != nil {
 		t.Fatalf("delete record: %v", err)
 	}
 	if _, statErr := os.Stat(path); !errors.Is(statErr, os.ErrNotExist) {
@@ -63,7 +63,7 @@ func TestDeleteRecord_NotFound(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Delete(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd, "record", "--path="+dir, "--id=test.items/ghost")
+	err := runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/ghost")
 	if err == nil {
 		t.Fatal("expected error for not-found record")
 	}
@@ -85,7 +85,7 @@ func TestDeleteRecord_ReadDefinitionError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Delete(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd, "record", "--path="+dir, "--id=test.items/item")
+	err := runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/item")
 	if err == nil {
 		t.Fatal("expected error when read definition fails")
 	}
@@ -106,7 +106,7 @@ func TestDeleteRecord_InvalidID(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Delete(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd, "record", "--path="+dir, "--id=invalid")
+	err := runCobraCommand(cmd, "record", "--path="+dir, "--id=invalid")
 	if err == nil {
 		t.Fatal("expected error for invalid ID format")
 	}
@@ -127,7 +127,7 @@ func TestDeleteRecord_DBOpenError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Delete(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd, "record", "--path="+dir, "--id=test.items/item")
+	err := runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/item")
 	if err == nil {
 		t.Fatal("expected error when DB open fails")
 	}

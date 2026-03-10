@@ -2,7 +2,7 @@ package commands
 
 import (
 	"github.com/dal-go/dalgo/dal"
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
@@ -14,14 +14,16 @@ func Read(
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	newDB func(string, *ingitdb.Definition) (dal.DB, error),
 	logf func(...any),
-) *cli.Command {
-	return &cli.Command{
-		Name:    "read",
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "read",
 		Aliases: []string{"r"},
-		Usage:   "Read database objects",
-		Commands: []*cli.Command{
-			readRecord(homeDir, getWd, readDefinition, newDB, logf),
-			readCollection(homeDir, getWd, readDefinition, logf),
-		},
+		Short:   "Read database objects",
 	}
+	cmd.AddCommand(
+		readRecord(homeDir, getWd, readDefinition, newDB, logf),
+		readCollection(homeDir, getWd, readDefinition, logf),
+	)
+	return cmd
 }
+

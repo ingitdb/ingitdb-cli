@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
@@ -12,12 +12,12 @@ func Docs(
 	getWd func() (string, error),
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	logf func(...any),
-) *cli.Command {
-	return &cli.Command{
-		Name:  "docs",
-		Usage: "Manage documentation",
-		Commands: []*cli.Command{
-			docsUpdate(homeDir, getWd, readDefinition, logf),
-		},
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "docs",
+		Short: "Manage documentation",
 	}
+	cmd.AddCommand(docsUpdate(homeDir, getWd, readDefinition, logf))
+	return cmd
 }
+

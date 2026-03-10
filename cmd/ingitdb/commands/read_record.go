@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/dal-go/dalgo/dal"
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
@@ -19,38 +19,17 @@ func readRecord(
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	newDB func(string, *ingitdb.Definition) (dal.DB, error),
 	logf func(...any),
-) *cli.Command {
-	return &cli.Command{
-		Name:  "record",
-		Usage: "Read a single record from a collection",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "path",
-				Usage: "path to the database directory (default: current directory)",
-			},
-			&cli.StringFlag{
-				Name:  "github",
-				Usage: "GitHub source as owner/repo[@branch|tag|commit] (public read-only)",
-			},
-			&cli.StringFlag{
-				Name:  "token",
-				Usage: "GitHub personal access token (or set GITHUB_TOKEN env var)",
-			},
-			&cli.StringFlag{
-				Name:     "id",
-				Usage:    "record ID in the format collection/path/key (e.g. countries/ie)",
-				Required: true,
-			},
-			&cli.StringFlag{
-				Name:  "format",
-				Usage: "output format: yaml or json",
-				Value: "yaml",
-			},
-		},
-		Action: func(ctx context.Context, cmd *cli.Command) error {
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "record",
+		Short: "Read a single record from a collection",
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			_ = logf
-			id := cmd.String("id")
-			if cmd.String("github") != "" && cmd.String("path") != "" {
+			ctx := cmd.Context()
+			id, _ := cmd.Flags().GetString("id")
+			githubVal, _ := cmd.Flags().GetString("github")
+			pathVal, _ := cmd.Flags().GetString("path")
+			if githubVal != "" && pathVal != "" {
 				return fmt.Errorf("--path with --github is not supported yet")
 			}
 			rctx, err := resolveRecordContext(ctx, cmd, id, homeDir, getWd, readDefinition, newDB)
@@ -69,7 +48,7 @@ func readRecord(
 			if !record.Exists() {
 				return fmt.Errorf("record not found: %s", id)
 			}
-			format := cmd.String("format")
+			format, _ := cmd.Flags().GetString("format")
 			switch format {
 			case "yaml", "yml":
 				out, marshalErr := yaml.Marshal(data)
@@ -89,4 +68,11 @@ func readRecord(
 			return nil
 		},
 	}
+	addPathFlag(cmd)
+	addGitHubFlags(cmd)
+	cmd.Flags().String("id", "", "record ID in the format collection/path/key (e.g. countries/ie)")
+	_ = cmd.MarkFlagRequired("id")
+	addFormatFlag(cmd, "yaml")
+	return cmd
 }
+

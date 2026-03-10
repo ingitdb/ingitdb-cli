@@ -26,10 +26,10 @@ func TestServe_ReturnsCommand(t *testing.T) {
 	if cmd == nil {
 		t.Fatal("Serve() returned nil")
 	}
-	if cmd.Name != "serve" {
-		t.Errorf("expected name 'serve', got %q", cmd.Name)
+	if cmd.Use != "serve" {
+		t.Errorf("expected name 'serve', got %q", cmd.Name())
 	}
-	if cmd.Action == nil {
+	if cmd.RunE == nil {
 		t.Fatal("expected Action to be set")
 	}
 }
@@ -48,7 +48,7 @@ func TestServe_NoModeSpecified(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Serve(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd)
+	err := runCobraCommand(cmd)
 	if err == nil {
 		t.Fatal("expected error when no server mode is specified")
 	}
@@ -68,7 +68,7 @@ func TestServe_ResolvePathError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Serve(homeDir, getWd, readDef, newDB, logf)
-	err := runCLICommand(cmd, "--mcp")
+	err := runCobraCommand(cmd, "--mcp")
 	if err == nil {
 		t.Fatal("expected error when getWd fails")
 	}

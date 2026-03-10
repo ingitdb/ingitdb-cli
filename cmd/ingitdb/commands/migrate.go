@@ -1,51 +1,29 @@
 package commands
 
 import (
-	"context"
+	"fmt"
 
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 )
 
 // Migrate returns the migrate command.
-func Migrate() *cli.Command {
-	return &cli.Command{
-		Name:  "migrate",
-		Usage: "Migrate data between schema versions",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:     "from",
-				Usage:    "source schema version",
-				Required: true,
-			},
-			&cli.StringFlag{
-				Name:     "to",
-				Usage:    "target schema version",
-				Required: true,
-			},
-			&cli.StringFlag{
-				Name:     "target",
-				Usage:    "migration target",
-				Required: true,
-			},
-			&cli.StringFlag{
-				Name:  "path",
-				Usage: "path to the database directory",
-			},
-			&cli.StringFlag{
-				Name:  "format",
-				Usage: "output format",
-			},
-			&cli.StringFlag{
-				Name:  "collections",
-				Usage: "comma-separated list of collections to migrate",
-			},
-			&cli.StringFlag{
-				Name:  "output-dir",
-				Usage: "directory for migration output",
-			},
-		},
-		Action: func(_ context.Context, _ *cli.Command) error {
-			return cli.Exit("not yet implemented", 1)
+func Migrate() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "migrate",
+		Short: "Migrate data between schema versions",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			return fmt.Errorf("not yet implemented")
 		},
 	}
+	cmd.Flags().String("from", "", "source schema version")
+	_ = cmd.MarkFlagRequired("from")
+	cmd.Flags().String("to", "", "target schema version")
+	_ = cmd.MarkFlagRequired("to")
+	cmd.Flags().String("target", "", "migration target")
+	_ = cmd.MarkFlagRequired("target")
+	addPathFlag(cmd)
+	addFormatFlag(cmd, "")
+	cmd.Flags().String("collections", "", "comma-separated list of collections to migrate")
+	cmd.Flags().String("output-dir", "", "directory for migration output")
+	return cmd
 }

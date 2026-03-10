@@ -38,10 +38,10 @@ func TestMaterialize_ReturnsCommand(t *testing.T) {
 		t.Fatal("Materialize() returned nil")
 		return
 	}
-	if cmd.Name != "materialize" {
-		t.Errorf("expected name 'materialize', got %q", cmd.Name)
+	if cmd.Use != "materialize" {
+		t.Errorf("expected name 'materialize', got %q", cmd.Name())
 	}
-	if cmd.Action == nil {
+	if cmd.RunE == nil {
 		t.Fatal("expected Action to be set")
 	}
 }
@@ -57,7 +57,7 @@ func TestMaterialize_NotYetImplemented(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Materialize(homeDir, getWd, readDef, nil, logf)
-	err := runCLICommand(cmd)
+	err := runCobraCommand(cmd)
 	if err == nil {
 		t.Fatal("expected error when viewBuilder is nil")
 	}
@@ -91,7 +91,7 @@ func TestMaterialize_Success(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Materialize(homeDir, getWd, readDef, viewBuilder, logf)
-	err := runCLICommand(cmd, "--path="+dir)
+	err := runCobraCommand(cmd, "--path="+dir)
 	if err != nil {
 		t.Fatalf("Materialize: %v", err)
 	}
@@ -121,7 +121,7 @@ func TestMaterialize_BuildViewsError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Materialize(homeDir, getWd, readDef, viewBuilder, logf)
-	err := runCLICommand(cmd, "--path="+dir)
+	err := runCobraCommand(cmd, "--path="+dir)
 	if err == nil {
 		t.Fatal("expected error when BuildViews fails")
 	}
@@ -140,7 +140,7 @@ func TestMaterialize_ReadDefinitionError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Materialize(homeDir, getWd, readDef, viewBuilder, logf)
-	err := runCLICommand(cmd, "--path="+dir)
+	err := runCobraCommand(cmd, "--path="+dir)
 	if err == nil {
 		t.Fatal("expected error when readDefinition fails")
 	}
@@ -158,7 +158,7 @@ func TestMaterialize_GetWdError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Materialize(homeDir, getWd, readDef, viewBuilder, logf)
-	err := runCLICommand(cmd)
+	err := runCobraCommand(cmd)
 	if err == nil {
 		t.Fatal("expected error when getWd fails")
 	}
@@ -176,7 +176,7 @@ func TestMaterialize_ExpandHomeError(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Materialize(homeDir, getWd, readDef, viewBuilder, logf)
-	err := runCLICommand(cmd, "--path=~")
+	err := runCobraCommand(cmd, "--path=~")
 	if err == nil {
 		t.Fatal("expected error when expandHome fails")
 	}
@@ -208,7 +208,7 @@ func TestMaterialize_RecordsDelimiterPassedToBuilder(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Materialize(homeDir, getWd, readDef, viewBuilder, logf)
-	err := runCLICommand(cmd, "--path="+dir, "--records-delimiter=1")
+	err := runCobraCommand(cmd, "--path="+dir, "--records-delimiter=1")
 	if err != nil {
 		t.Fatalf("Materialize: %v", err)
 	}
@@ -248,7 +248,7 @@ func TestMaterialize_RecordsDelimiterPreservedFromViewDef(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Materialize(homeDir, getWd, readDef, viewBuilder, logf)
-	err := runCLICommand(cmd, "--path="+dir)
+	err := runCobraCommand(cmd, "--path="+dir)
 	if err != nil {
 		t.Fatalf("Materialize: %v", err)
 	}
@@ -286,7 +286,7 @@ func TestMaterialize_RecordsDelimiterFlagOverridesViewDef(t *testing.T) {
 	logf := func(...any) {}
 
 	cmd := Materialize(homeDir, getWd, readDef, viewBuilder, logf)
-	err := runCLICommand(cmd, "--path="+dir, "--records-delimiter=-1")
+	err := runCobraCommand(cmd, "--path="+dir, "--records-delimiter=-1")
 	if err != nil {
 		t.Fatalf("Materialize: %v", err)
 	}

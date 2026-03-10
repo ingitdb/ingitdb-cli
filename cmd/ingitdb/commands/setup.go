@@ -1,24 +1,20 @@
 package commands
 
 import (
-	"context"
+	"fmt"
 
-	"github.com/urfave/cli/v3"
+	"github.com/spf13/cobra"
 )
 
 // Setup returns the setup command.
-func Setup() *cli.Command {
-	return &cli.Command{
-		Name:  "setup",
-		Usage: "Set up a new inGitDB database",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "path",
-				Usage: "path to the database directory",
-			},
-		},
-		Action: func(_ context.Context, _ *cli.Command) error {
-			return cli.Exit("not yet implemented", 1)
+func Setup() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "setup",
+		Short: "Set up a new inGitDB database",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			return fmt.Errorf("not yet implemented")
 		},
 	}
+	addPathFlag(cmd)
+	return cmd
 }
