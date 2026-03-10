@@ -69,7 +69,7 @@ func run(
 			commands.Read(homeDir, getWd, readDefinition, newDB, logf),
 			commands.Update(homeDir, getWd, readDefinition, newDB, logf),
 			commands.Delete(homeDir, getWd, readDefinition, newDB, logf),
-			commands.Truncate(),
+			commands.Truncate(homeDir, getWd, readDefinition, logf),
 			commands.Migrate(),
 		},
 	}
