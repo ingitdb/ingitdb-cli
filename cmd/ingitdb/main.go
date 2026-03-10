@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/charmbracelet/fang"
 	"github.com/dal-go/dalgo/dal"
 	"github.com/spf13/cobra"
 
@@ -81,8 +82,7 @@ func run(
 	)
 
 	rootCmd.SetArgs(args[1:])
-	if err := rootCmd.ExecuteContext(context.Background()); err != nil {
+	if err := fang.Execute(context.Background(), rootCmd); err != nil {
 		fatal(err)
 	}
 }
-
