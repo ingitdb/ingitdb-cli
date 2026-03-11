@@ -33,7 +33,7 @@ func (m homeModel) renderRecords(width, height int) string {
 func (m homeModel) renderCollectionList(width, height int) string {
 	var sb strings.Builder
 
-	title := sectionTitleStyle.Width(width - 4).Render("Collections")
+	title := sectionTitleStyle.Width(width).Render("Collections")
 	sb.WriteString(title)
 	sb.WriteByte('\n')
 

@@ -16,4 +16,10 @@ columns:
     type: string
   flag:
     type: string
+columns_order:
+  - flag
+  - titles
+  - population
+  - area_km2
+  - currency
 default_view: {}
