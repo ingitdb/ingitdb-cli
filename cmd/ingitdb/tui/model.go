@@ -101,7 +101,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			if m.currentScreen == screenHome {
 				// If data panel dropdown is open, route enter to homeModel.
-				if m.home.focus == panelData && m.home.preview != nil && m.home.preview.localeDropdownOpen {
+				if m.home.panels.IsFocused(panelData) && m.home.preview != nil && m.home.preview.localeDropdownOpen {
 					updated, cmd := m.home.Update(msg)
 					m.home = updated
 					return m, cmd

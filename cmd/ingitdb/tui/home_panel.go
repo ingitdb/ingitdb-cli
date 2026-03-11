@@ -39,11 +39,11 @@ func (m homeModel) renderCollectionList(width, height int) string {
 
 	// Filter input line.
 	filterCursor := ""
-	if m.focus == panelCollections {
+	if m.panels.IsFocused(panelCollections) {
 		filterCursor = "█"
 	}
 	filterLine := "  Filter: " + m.filterValue + filterCursor
-	if m.focus == panelCollections {
+	if m.panels.IsFocused(panelCollections) {
 		filterLine = selectedItemStyle.Render(filterLine)
 	} else {
 		filterLine = mutedStyle.Render(filterLine)
@@ -67,7 +67,7 @@ func (m homeModel) renderCollectionList(width, height int) string {
 		label := fmt.Sprintf(" %-*s", width-2, entry.id)
 		pathLabel := mutedStyle.Render(fmt.Sprintf("  %s", relPath))
 		var row string
-		if i == m.cursor && m.focus == panelCollections {
+		if i == m.cursor && m.panels.IsFocused(panelCollections) {
 			row = selectedItemStyle.Width(width).Render(label) + "\n" + pathLabel
 		} else {
 			row = itemStyle.Render(label) + "\n" + pathLabel
@@ -79,7 +79,7 @@ func (m homeModel) renderCollectionList(width, height int) string {
 	// Add button at the bottom.
 	addIdx := len(m.filteredCollections)
 	var btnLabel string
-	if addIdx == m.cursor && m.focus == panelCollections {
+	if addIdx == m.cursor && m.panels.IsFocused(panelCollections) {
 		btnLabel = selectedItemStyle.Render(" " + addBtnText)
 	} else {
 		btnLabel = addButtonStyle.Render(" " + addBtnText)

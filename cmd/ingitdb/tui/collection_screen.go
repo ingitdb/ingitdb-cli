@@ -50,6 +50,9 @@ type collectionModel struct {
 	// locale dropdown state
 	localeDropdownOpen   bool
 	localeDropdownCursor int
+
+	// panel focus management
+	panels panelNav // tracks which panel has keyboard focus
 }
 
 func newCollectionModel(colDef *ingitdb.CollectionDef, db dal.DB, width, height int) collectionModel {
@@ -61,6 +64,7 @@ func newCollectionModel(colDef *ingitdb.CollectionDef, db dal.DB, width, height 
 		loading:     true,
 		schemaLines: buildSchemaLines(colDef),
 		columns:     orderedColumns(colDef),
+		panels:      panelNav{count: 2, focus: 1}, // right (data) panel focused by default
 	}
 }
 
@@ -96,6 +100,10 @@ func (m collectionModel) Update(msg tea.Msg) (collectionModel, tea.Cmd) {
 	case tea.KeyPressMsg:
 		_, innerH := m.panelInnerDims()
 		_ = innerH
+		// Panel navigation takes priority.
+		if m.panels.HandleKey(msg.String()) {
+			return m, nil
+		}
 		switch msg.String() {
 		case "up", "k":
 			if m.localeDropdownOpen {
@@ -143,14 +151,14 @@ func (m collectionModel) Update(msg tea.Msg) (collectionModel, tea.Cmd) {
 				m.localeDropdownOpen = false
 			}
 		case "right":
-			if !m.localeDropdownOpen && len(m.columns) > 0 && m.colCursor < len(m.columns)-1 {
+			if !m.localeDropdownOpen && m.panels.IsFocused(1) && len(m.columns) > 0 && m.colCursor < len(m.columns)-1 {
 				m.colCursor++
 				_, rightW := collectionPanelWidths(m.width)
 				innerW := rightW - 4
 				m.colOffset = computeColOffset(m.colCursor, m.colOffset, m.colWidths, innerW)
 			}
 		case "left":
-			if !m.localeDropdownOpen && m.colCursor > 0 {
+			if !m.localeDropdownOpen && m.panels.IsFocused(1) && m.colCursor > 0 {
 				m.colCursor--
 				_, rightW := collectionPanelWidths(m.width)
 				innerW := rightW - 4
@@ -173,12 +181,11 @@ func (m collectionModel) View() string {
 
 	// In lipgloss v2, Width() is the total outer (border-box) width.
 	// Content area = Width - border(2) - padding(2) = leftW/rightW - 4 = inner widths.
-	// Collection screen: data panel (right) focused by default, schema panel (left) unfocused.
-	left := panelStyle.Width(leftW).Height(innerH).Render(leftContent)
-	right := focusedPanelStyle.Width(rightW).Height(innerH).Render(rightContent)
+	left := m.panels.Style(0).Width(leftW).Height(innerH).Render(leftContent)
+	right := m.panels.Style(1).Width(rightW).Height(innerH).Render(rightContent)
 
 	panels := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
-	help := helpStyle.Render(" ↑/↓ row  ←/→ column  l locale  enter select  esc back  q quit")
+	help := helpStyle.Render(" ↑/↓ row  ←/→ column  ctrl+←/→ panels  l locale  enter select  esc back  q quit")
 	return lipgloss.JoinVertical(lipgloss.Left, panels, help)
 }
 

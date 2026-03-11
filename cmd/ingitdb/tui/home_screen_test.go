@@ -190,7 +190,7 @@ func TestPreviewPanelHeightsEqualCollectionList(t *testing.T) {
 
 	m := newHomeModel("/repo", def, nil, termW, termH)
 	// Focus on data panel with cursor on first collection
-	m.focus = panelData
+	m.panels.focus = panelData
 	m.cursor = 0
 
 	// Layout: 1/4 left | 1/2 middle | 1/4 right
@@ -283,8 +283,8 @@ func TestPanelFocusInitialization(t *testing.T) {
 
 	m := newHomeModel("/repo", def, nil, 120, 40)
 
-	if m.focus != panelCollections {
-		t.Errorf("initial focus = %d, want panelCollections (%d)", m.focus, panelCollections)
+	if !m.panels.IsFocused(panelCollections) {
+		t.Errorf("initial focus = %d, want panelCollections (%d)", m.panels.focus, panelCollections)
 	}
 }
 
@@ -298,8 +298,8 @@ func TestPanelFocusInitializationOnly(t *testing.T) {
 	}
 
 	m := newHomeModel("/repo", def, nil, 120, 40)
-	if m.focus != panelCollections {
-		t.Errorf("initial focus = %d, want panelCollections (%d)", m.focus, panelCollections)
+	if !m.panels.IsFocused(panelCollections) {
+		t.Errorf("initial focus = %d, want panelCollections (%d)", m.panels.focus, panelCollections)
 	}
 	if m.recordCursor != 0 {
 		t.Errorf("initial recordCursor = %d, want 0", m.recordCursor)
@@ -332,12 +332,12 @@ func TestPanelFocusStateIndependence(t *testing.T) {
 	}
 
 	// Switching focus doesn't affect cursor positions
-	m.focus = panelData
+	m.panels.focus = panelData
 	if m.cursor != 5 || m.recordCursor != 3 {
 		t.Errorf("focus change affected cursors: collections=%d records=%d", m.cursor, m.recordCursor)
 	}
 
-	m.focus = panelSchema
+	m.panels.focus = panelSchema
 	if m.cursor != 5 || m.recordCursor != 3 {
 		t.Errorf("focus change affected cursors: collections=%d records=%d", m.cursor, m.recordCursor)
 	}

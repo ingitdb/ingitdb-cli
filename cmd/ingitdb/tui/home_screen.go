@@ -17,12 +17,10 @@ const (
 	addBtnText = "+ Add collection"
 )
 
-type panelFocus int
-
 const (
-	panelCollections panelFocus = iota
-	panelData
-	panelSchema
+	panelCollections = 0
+	panelData        = 1
+	panelSchema      = 2
 )
 
 // homeModel is the main screen showing collection list and preview panels.
@@ -38,9 +36,9 @@ type homeModel struct {
 	height              int
 
 	// panel focus management
-	focus        panelFocus // which panel is active
-	recordCursor int        // selected record in data panel
-	recordOffset int        // scroll offset in data panel
+	panels       panelNav // tracks which panel has keyboard focus
+	recordCursor int      // selected record in data panel
+	recordOffset int      // scroll offset in data panel
 
 	// preview for the currently selected collection
 	preview   *collectionModel
@@ -64,7 +62,7 @@ func newHomeModel(dbPath string, def *ingitdb.Definition, newDB func(string, *in
 		def:         def,
 		newDB:       newDB,
 		collections: entries,
-		focus:       panelCollections,
+		panels:      panelNav{count: 3, focus: panelCollections},
 		width:       width,
 		height:      height,
 	}
@@ -159,7 +157,7 @@ func (m homeModel) Update(msg tea.Msg) (homeModel, tea.Cmd) {
 
 	case tea.KeyPressMsg:
 		// When the data panel's locale dropdown is open, route all keys to the preview.
-		if m.focus == panelData && m.preview != nil && m.preview.localeDropdownOpen {
+		if m.panels.IsFocused(panelData) && m.preview != nil && m.preview.localeDropdownOpen {
 			updated, cmd := m.preview.Update(msg)
 			m.preview = &updated
 			return m, cmd
@@ -167,7 +165,7 @@ func (m homeModel) Update(msg tea.Msg) (homeModel, tea.Cmd) {
 
 		switch msg.String() {
 		case "backspace":
-			if m.focus == panelCollections && len(m.filterValue) > 0 {
+			if m.panels.IsFocused(panelCollections) && len(m.filterValue) > 0 {
 				runes := []rune(m.filterValue)
 				m.filterValue = string(runes[:len(runes)-1])
 				m.filteredCollections = m.applyFilter()
@@ -179,13 +177,13 @@ func (m homeModel) Update(msg tea.Msg) (homeModel, tea.Cmd) {
 			}
 
 		case "up", "k":
-			if m.focus == panelCollections {
+			if m.panels.IsFocused(panelCollections) {
 				if m.cursor > 0 {
 					m.cursor--
 					cmd := m.refreshPreview()
 					return m, cmd
 				}
-			} else if m.focus == panelData && m.preview != nil && len(m.preview.records) > 0 {
+			} else if m.panels.IsFocused(panelData) && m.preview != nil && len(m.preview.records) > 0 {
 				if m.recordCursor > 0 {
 					m.recordCursor--
 					if m.recordCursor < m.recordOffset {
@@ -200,13 +198,13 @@ func (m homeModel) Update(msg tea.Msg) (homeModel, tea.Cmd) {
 			}
 
 		case "down", "j":
-			if m.focus == panelCollections {
+			if m.panels.IsFocused(panelCollections) {
 				if m.cursor < len(m.filteredCollections) {
 					m.cursor++
 					cmd := m.refreshPreview()
 					return m, cmd
 				}
-			} else if m.focus == panelData && m.preview != nil && len(m.preview.records) > 0 {
+			} else if m.panels.IsFocused(panelData) && m.preview != nil && len(m.preview.records) > 0 {
 				if m.recordCursor < len(m.preview.records)-1 {
 					m.recordCursor++
 					_, innerH := m.panelInnerDims()
@@ -221,13 +219,13 @@ func (m homeModel) Update(msg tea.Msg) (homeModel, tea.Cmd) {
 			}
 
 		case "home":
-			if m.focus == panelData && m.preview != nil && len(m.preview.records) > 0 {
+			if m.panels.IsFocused(panelData) && m.preview != nil && len(m.preview.records) > 0 {
 				m.recordCursor = 0
 				m.recordOffset = 0
 			}
 
 		case "end":
-			if m.focus == panelData && m.preview != nil && len(m.preview.records) > 0 {
+			if m.panels.IsFocused(panelData) && m.preview != nil && len(m.preview.records) > 0 {
 				m.recordCursor = len(m.preview.records) - 1
 				_, innerH := m.panelInnerDims()
 				visibleRows := innerH - 4 // title + header + separator + total line
@@ -239,49 +237,32 @@ func (m homeModel) Update(msg tea.Msg) (homeModel, tea.Cmd) {
 				}
 			}
 
-		case "left":
-			switch m.focus {
-			case panelData:
-				m.focus = panelCollections
-			case panelSchema:
-				m.focus = panelData
-			case panelCollections:
-				// already at leftmost panel
-			}
-
-		case "right":
-			switch m.focus {
-			case panelCollections:
-				m.focus = panelData
-			case panelData:
-				m.focus = panelSchema
-			case panelSchema:
-				// already at rightmost panel
-			}
+		case "ctrl+left", "ctrl+right":
+			m.panels.HandleKey(msg.String())
 
 		case "l", "L":
-			if m.focus == panelData && m.preview != nil && len(m.preview.locales) > 1 {
+			if m.panels.IsFocused(panelData) && m.preview != nil && len(m.preview.locales) > 1 {
 				updated, cmd := m.preview.Update(msg)
 				m.preview = &updated
 				return m, cmd
 			}
 
 		case "esc":
-			if m.focus == panelData && m.preview != nil && m.preview.localeDropdownOpen {
+			if m.panels.IsFocused(panelData) && m.preview != nil && m.preview.localeDropdownOpen {
 				updated, _ := m.preview.Update(msg)
 				m.preview = &updated
 				return m, nil
 			}
 
 		case "enter":
-			if m.focus == panelData && m.preview != nil && m.preview.localeDropdownOpen {
+			if m.panels.IsFocused(panelData) && m.preview != nil && m.preview.localeDropdownOpen {
 				updated, _ := m.preview.Update(msg)
 				m.preview = &updated
 				return m, nil
 			}
 
 		default:
-			if m.focus == panelCollections {
+			if m.panels.IsFocused(panelCollections) {
 				key := msg.String()
 				runes := []rune(key)
 				if len(runes) == 1 && runes[0] >= 32 && runes[0] != 127 {
@@ -351,22 +332,13 @@ func (m homeModel) View() string {
 
 	// Left panel: collections list
 	leftContent := m.renderCollectionList(leftInner, contentH)
-	var leftPanel string
-	if m.focus == panelCollections {
-		leftPanel = focusedPanelStyle.Width(leftPanelW).Height(innerH).Render(leftContent)
-	} else {
-		leftPanel = panelStyle.Width(leftPanelW).Height(innerH).Render(leftContent)
-	}
+	leftPanel := m.panels.Style(panelCollections).Width(leftPanelW).Height(innerH).Render(leftContent)
 
 	// Middle panel: data table or welcome
 	var middlePanel string
 	if m.cursor < len(m.filteredCollections) && m.preview != nil {
 		middleContent := m.renderRecords(middleInner, contentH)
-		if m.focus == panelData {
-			middlePanel = focusedPanelStyle.Width(middlePanelW).Height(innerH).Render(middleContent)
-		} else {
-			middlePanel = panelStyle.Width(middlePanelW).Height(innerH).Render(middleContent)
-		}
+		middlePanel = m.panels.Style(panelData).Width(middlePanelW).Height(innerH).Render(middleContent)
 	} else {
 		welcomeContent := m.renderWelcome(middleInner, contentH)
 		middlePanel = panelStyle.Width(middlePanelW).Height(innerH).Render(welcomeContent)
@@ -376,17 +348,13 @@ func (m homeModel) View() string {
 	var rightPanel string
 	if m.cursor < len(m.filteredCollections) && m.preview != nil {
 		schemaContent := m.renderSchema(rightInner, contentH)
-		if m.focus == panelSchema {
-			rightPanel = focusedPanelStyle.Width(rightPanelW).Height(innerH).Render(schemaContent)
-		} else {
-			rightPanel = panelStyle.Width(rightPanelW).Height(innerH).Render(schemaContent)
-		}
+		rightPanel = m.panels.Style(panelSchema).Width(rightPanelW).Height(innerH).Render(schemaContent)
 	} else {
 		rightPanel = panelStyle.Width(rightPanelW).Height(innerH).Render("")
 	}
 
 	panels := lipgloss.JoinHorizontal(lipgloss.Top, leftPanel, middlePanel, rightPanel)
-	help := helpStyle.Render(" ↑/↓ navigate  ← → panels  l locale  home end  q quit")
+	help := helpStyle.Render(" ↑/↓ navigate  ctrl+←/→ panels  l locale  home end  q quit")
 	return lipgloss.JoinVertical(lipgloss.Left, panels, help)
 }
 
