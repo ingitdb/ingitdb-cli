@@ -2,6 +2,7 @@ package tui
 
 import (
 "fmt"
+"path/filepath"
 "sort"
 "strings"
 
@@ -118,7 +119,11 @@ start = m.cursor - maxVisible + 1
 
 for i := start; i < len(m.collections) && i < start+maxVisible; i++ {
 entry := m.collections[i]
-relPath := shortenPath(entry.dirPath, width-4)
+rel, err := filepath.Rel(m.dbPath, entry.dirPath)
+if err != nil {
+rel = entry.dirPath
+}
+relPath := shortenPath(rel, width-4)
 label := fmt.Sprintf(" %-*s", width-2, entry.id)
 pathLabel := mutedStyle.Render(fmt.Sprintf("  [%s]", relPath))
 var row string
@@ -198,6 +203,16 @@ sb.WriteString(w)
 lineLen += wl
 }
 return sb.String()
+}
+
+// collectionRelPath returns dirPath relative to dbPath.
+// If filepath.Rel returns an error the absolute dirPath is returned unchanged.
+func collectionRelPath(dbPath, dirPath string) string {
+rel, err := filepath.Rel(dbPath, dirPath)
+if err != nil {
+return dirPath
+}
+return rel
 }
 
 func shortenPath(p string, maxLen int) string {
