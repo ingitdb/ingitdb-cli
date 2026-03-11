@@ -40,6 +40,10 @@ recordKeys   []string
 recordCursor int
 recordOffset int
 columns      []string
+
+// locale handling for map[locale]string columns
+locale  string   // currently selected locale (e.g. "en")
+locales []string // available locales sorted by full language name
 }
 
 func newCollectionModel(colDef *ingitdb.CollectionDef, db dal.DB, width, height int) collectionModel {
@@ -68,6 +72,17 @@ case recordsLoadedMsg:
 m.loading = false
 m.records = msg.records
 m.recordKeys = msg.keys
+m.locales = discoverLocales(m.records, m.colDef)
+if len(m.locales) > 0 {
+m.locale = m.locales[0]
+for _, loc := range m.locales {
+if loc == "en" {
+m.locale = "en"
+break
+}
+}
+m.columns = buildDisplayColumns(m.colDef, m.locale)
+}
 
 case tea.KeyPressMsg:
 _, innerH := m.panelInnerDims()
@@ -82,10 +97,24 @@ m.recordOffset = m.recordCursor
 case "down", "j":
 if m.recordCursor < len(m.records)-1 {
 m.recordCursor++
-visibleRows := innerH - 3 // header + separator + total line
+visibleRows := innerH - 4 // title + header + separator + total line
 if m.recordCursor >= m.recordOffset+visibleRows {
 m.recordOffset = m.recordCursor - visibleRows + 1
 }
+}
+case "l":
+if len(m.locales) > 1 {
+idx := localeIndex(m.locales, m.locale)
+idx = (idx + 1) % len(m.locales)
+m.locale = m.locales[idx]
+m.columns = buildDisplayColumns(m.colDef, m.locale)
+}
+case "L":
+if len(m.locales) > 1 {
+idx := localeIndex(m.locales, m.locale)
+idx = (idx - 1 + len(m.locales)) % len(m.locales)
+m.locale = m.locales[idx]
+m.columns = buildDisplayColumns(m.colDef, m.locale)
 }
 }
 }
@@ -155,10 +184,11 @@ colWidths[i] = uniseg.StringWidth(c)
 }
 for _, row := range m.records {
 for i, c := range cols {
-			v := replaceRegionalIndicators(fmt.Sprintf("%v", row[c]))
-			if w := uniseg.StringWidth(v); w > colWidths[i] {
-				colWidths[i] = w
-			}
+	raw := m.cellValue(row, c)
+	v := replaceRegionalIndicators(raw)
+	if w := uniseg.StringWidth(v); w > colWidths[i] {
+		colWidths[i] = w
+	}
 }
 }
 for i := range colWidths {
@@ -168,6 +198,22 @@ colWidths[i] = 30
 }
 
 var sb strings.Builder
+
+// Title row: collection name (left) + locale selector (right).
+titleText := sectionTitleStyle.Render(m.colDef.ID)
+if m.locale != "" {
+localeLabel := columnKeyStyle.Render("[" + m.locale + "]")
+titleW := lipgloss.Width(titleText)
+localeW := lipgloss.Width(localeLabel)
+gap := width - titleW - localeW
+if gap < 1 {
+gap = 1
+}
+sb.WriteString(titleText + strings.Repeat(" ", gap) + localeLabel)
+} else {
+sb.WriteString(titleText)
+}
+sb.WriteByte('\n')
 
 // Header row.
 headerCells := make([]string, len(cols))
@@ -186,7 +232,7 @@ sb.WriteString(mutedStyle.Render(strings.Join(seps, "─┼─")))
 sb.WriteByte('\n')
 
 // Visible data rows.
-visibleRows := height - 3
+visibleRows := height - 4 // title + header + separator + total line
 if visibleRows < 1 {
 visibleRows = 1
 }
@@ -198,7 +244,11 @@ end = len(m.records)
 numericCol := make([]bool, len(cols))
 if len(m.records) > 0 {
 for i, c := range cols {
+if m.isL10NDisplayCol(c) {
+numericCol[i] = false
+} else {
 numericCol[i] = isNumeric(m.records[0][c])
+}
 }
 }
 
@@ -206,10 +256,11 @@ for ri := m.recordOffset; ri < end; ri++ {
 row := m.records[ri]
 cells := make([]string, len(cols))
 for i, c := range cols {
-			v := replaceRegionalIndicators(fmt.Sprintf("%v", row[c]))
-			if uniseg.StringWidth(v) > colWidths[i] {
-				v = truncateToWidth(v, colWidths[i]-1) + "…"
-			}
+	raw := m.cellValue(row, c)
+	v := replaceRegionalIndicators(raw)
+	if uniseg.StringWidth(v) > colWidths[i] {
+		v = truncateToWidth(v, colWidths[i]-1) + "…"
+	}
 if numericCol[i] {
 cells[i] = padLeft(v, colWidths[i])
 } else {
@@ -331,6 +382,149 @@ left = 24
 }
 right = totalWidth - left
 return
+}
+
+// buildDisplayColumns returns display column names, expanding L10N columns
+// to "field.locale" format for the selected locale.
+func buildDisplayColumns(colDef *ingitdb.CollectionDef, locale string) []string {
+base := orderedColumns(colDef)
+result := make([]string, 0, len(base))
+for _, name := range base {
+col := colDef.Columns[name]
+if col.Type == ingitdb.ColumnTypeL10N {
+result = append(result, name+"."+locale)
+} else {
+result = append(result, name)
+}
+}
+return result
+}
+
+// discoverLocales scans all records for map[locale]string columns and returns
+// the set of available locale codes sorted by full language name.
+func discoverLocales(records []map[string]any, colDef *ingitdb.CollectionDef) []string {
+l10nFields := make([]string, 0)
+for name, col := range colDef.Columns {
+if col.Type == ingitdb.ColumnTypeL10N {
+l10nFields = append(l10nFields, name)
+}
+}
+if len(l10nFields) == 0 {
+return nil
+}
+localeSet := make(map[string]bool)
+for _, rec := range records {
+for _, field := range l10nFields {
+val, ok := rec[field]
+if !ok {
+continue
+}
+localeMap, ok := val.(map[string]any)
+if !ok {
+continue
+}
+for k := range localeMap {
+localeSet[k] = true
+}
+}
+}
+locales := make([]string, 0, len(localeSet))
+for k := range localeSet {
+locales = append(locales, k)
+}
+names := localeLanguageNames()
+sort.Slice(locales, func(i, j int) bool {
+ni, oki := names[locales[i]]
+if !oki {
+ni = locales[i]
+}
+nj, okj := names[locales[j]]
+if !okj {
+nj = locales[j]
+}
+return ni < nj
+})
+return locales
+}
+
+// localeLanguageNames returns a map from locale code to full language name
+// used for sorting locales alphabetically by language name.
+func localeLanguageNames() map[string]string {
+return map[string]string{
+"ar": "Arabic",
+"cs": "Czech",
+"da": "Danish",
+"de": "German",
+"en": "English",
+"es": "Spanish",
+"fi": "Finnish",
+"fr": "French",
+"hi": "Hindi",
+"it": "Italian",
+"ja": "Japanese",
+"ko": "Korean",
+"nb": "Norwegian",
+"nl": "Dutch",
+"pl": "Polish",
+"pt": "Portuguese",
+"ru": "Russian",
+"sv": "Swedish",
+"tr": "Turkish",
+"uk": "Ukrainian",
+"zh": "Chinese",
+}
+}
+
+// localeIndex returns the index of locale in locales, or 0 if not found.
+func localeIndex(locales []string, locale string) int {
+for i, l := range locales {
+if l == locale {
+return i
+}
+}
+return 0
+}
+
+// cellValue extracts the display value for a column from a record row.
+// For L10N columns (display name "field.locale"), it extracts the nested locale value.
+func (m collectionModel) cellValue(row map[string]any, displayCol string) string {
+dotIdx := strings.Index(displayCol, ".")
+if dotIdx > 0 {
+baseField := displayCol[:dotIdx]
+locale := displayCol[dotIdx+1:]
+col, ok := m.colDef.Columns[baseField]
+if ok && col.Type == ingitdb.ColumnTypeL10N {
+val, exists := row[baseField]
+if !exists {
+return ""
+}
+localeMap, ok := val.(map[string]any)
+if !ok {
+return ""
+}
+localeVal, exists := localeMap[locale]
+if !exists {
+return ""
+}
+return fmt.Sprintf("%v", localeVal)
+}
+}
+return fmt.Sprintf("%v", row[displayCol])
+}
+
+// isL10NDisplayCol returns true if the display column name corresponds to an
+// expanded L10N column (i.e. "field.locale" where field has type map[locale]string).
+func (m collectionModel) isL10NDisplayCol(displayCol string) bool {
+dotIdx := strings.Index(displayCol, ".")
+if dotIdx <= 0 {
+return false
+}
+baseField := displayCol[:dotIdx]
+col, ok := m.colDef.Columns[baseField]
+if !ok {
+return false
+}
+return col.Type == ingitdb.ColumnTypeL10N
 }
 
 func padRight(s string, width int) string {

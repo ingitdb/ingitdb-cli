@@ -200,6 +200,13 @@ func (m homeModel) Update(msg tea.Msg) (homeModel, tea.Cmd) {
 					cmd := m.refreshPreview()
 					return m, cmd
 				}
+			} else if m.preview != nil {
+				key := msg.String()
+				if key == "l" || key == "L" {
+					updated, cmd := m.preview.Update(msg)
+					m.preview = &updated
+					return m, cmd
+				}
 			}
 		}
 	}
