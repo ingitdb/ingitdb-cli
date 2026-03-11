@@ -20,6 +20,17 @@ func resolveDBPath(
 	getWd func() (string, error),
 ) (string, error) {
 	dirPath, _ := cmd.Flags().GetString("path")
+	return ResolveDBPathArgs(dirPath, homeDir, getWd)
+}
+
+// ResolveDBPathArgs resolves a database directory path from an explicit dirPath
+// string (e.g. from a --path flag already read by the caller), falling back to
+// getWd when dirPath is empty. Home-directory expansion ("~") is applied via homeDir.
+func ResolveDBPathArgs(
+	dirPath string,
+	homeDir func() (string, error),
+	getWd func() (string, error),
+) (string, error) {
 	if dirPath == "" {
 		wd, err := getWd()
 		if err != nil {

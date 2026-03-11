@@ -59,9 +59,11 @@ func run(
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runTUI(cmd.Context(), getWd, readDefinition, newDB)
+			dirPath, _ := cmd.Flags().GetString("path")
+			return runTUI(cmd.Context(), dirPath, homeDir, getWd, readDefinition, newDB)
 		},
 	}
+	rootCmd.Flags().String("path", "", "path to the database directory (default: current directory)")
 	rootCmd.SetErr(os.Stderr)
 
 	rootCmd.AddCommand(
@@ -97,8 +99,11 @@ func run(
 // if so, launches the interactive terminal UI.
 // Returns nil without launching the TUI when stdout is not a real TTY so that
 // scripts and tests are unaffected.
+// dirPath may be empty, in which case the current working directory is used.
 func runTUI(
 	ctx context.Context,
+	dirPath string,
+	homeDir func() (string, error),
 	getWd func() (string, error),
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	newDB func(string, *ingitdb.Definition) (dal.DB, error),
@@ -107,9 +112,9 @@ func runTUI(
 		return nil
 	}
 
-	dbPath, err := getWd()
+	dbPath, err := commands.ResolveDBPathArgs(dirPath, homeDir, getWd)
 	if err != nil {
-		return fmt.Errorf("failed to get working directory: %w", err)
+		return fmt.Errorf("failed to resolve database path: %w", err)
 	}
 	def, err := readDefinition(dbPath)
 	if err != nil {
