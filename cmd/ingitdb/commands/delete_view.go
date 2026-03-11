@@ -19,4 +19,3 @@ func deleteView() *cobra.Command {
 	_ = cmd.MarkFlagRequired("view")
 	return cmd
 }
-

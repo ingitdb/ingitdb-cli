@@ -134,4 +134,3 @@ func Rebase(
 	cmd.Flags().String("resolve", "", "comma-separated list of file names to resolve conflicts for (e.g. 'readme,views')")
 	return cmd
 }
-

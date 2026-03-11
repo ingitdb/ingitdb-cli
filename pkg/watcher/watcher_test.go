@@ -331,10 +331,10 @@ func TestWatcher_Watch_DeliverEvents(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name       string
-		events     []watcher.RecordEvent
-		wantCount  int
-		wantFirst  watcher.RecordEvent
+		name      string
+		events    []watcher.RecordEvent
+		wantCount int
+		wantFirst watcher.RecordEvent
 	}{
 		{
 			name:      "no events",

@@ -1,147 +1,147 @@
 package tui
 
 import (
-"context"
-"fmt"
-"sort"
-"strings"
+	"context"
+	"fmt"
+	"sort"
+	"strings"
 
-tea "charm.land/bubbletea/v2"
-"charm.land/lipgloss/v2"
-"github.com/dal-go/dalgo/dal"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+	"github.com/dal-go/dalgo/dal"
 	"github.com/rivo/uniseg"
 
-"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
 // recordsLoadedMsg carries all records loaded from disk for a collection.
 type recordsLoadedMsg struct {
-records []map[string]any
-keys    []string
-err     error
+	records []map[string]any
+	keys    []string
+	err     error
 }
 
 // collectionModel renders the collection detail screen:
 // narrow left column (schema) + wide right panel (records).
 type collectionModel struct {
-colDef  *ingitdb.CollectionDef
-db      dal.DB
-width   int
-height  int
-loading bool
+	colDef  *ingitdb.CollectionDef
+	db      dal.DB
+	width   int
+	height  int
+	loading bool
 
-// left panel: schema lines + scroll
-schemaLines  []string
-schemaOffset int
+	// left panel: schema lines + scroll
+	schemaLines  []string
+	schemaOffset int
 
-// right panel: records + scroll
-records      []map[string]any
-recordKeys   []string
-recordCursor int
-recordOffset int
-columns      []string
+	// right panel: records + scroll
+	records      []map[string]any
+	recordKeys   []string
+	recordCursor int
+	recordOffset int
+	columns      []string
 
-// locale handling for map[locale]string columns
-locale  string   // currently selected locale (e.g. "en")
-locales []string // available locales sorted by full language name
+	// locale handling for map[locale]string columns
+	locale  string   // currently selected locale (e.g. "en")
+	locales []string // available locales sorted by full language name
 }
 
 func newCollectionModel(colDef *ingitdb.CollectionDef, db dal.DB, width, height int) collectionModel {
-return collectionModel{
-colDef:      colDef,
-db:          db,
-width:       width,
-height:      height,
-loading:     true,
-schemaLines: buildSchemaLines(colDef),
-columns:     orderedColumns(colDef),
-}
+	return collectionModel{
+		colDef:      colDef,
+		db:          db,
+		width:       width,
+		height:      height,
+		loading:     true,
+		schemaLines: buildSchemaLines(colDef),
+		columns:     orderedColumns(colDef),
+	}
 }
 
 func (m collectionModel) Init() tea.Cmd {
-return loadRecordsCmd(m.db, m.colDef)
+	return loadRecordsCmd(m.db, m.colDef)
 }
 
 func (m collectionModel) Update(msg tea.Msg) (collectionModel, tea.Cmd) {
-switch msg := msg.(type) {
-case tea.WindowSizeMsg:
-m.width = msg.Width
-m.height = msg.Height
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
 
-case recordsLoadedMsg:
-m.loading = false
-m.records = msg.records
-m.recordKeys = msg.keys
-m.locales = discoverLocales(m.records, m.colDef)
-if len(m.locales) > 0 {
-m.locale = m.locales[0]
-for _, loc := range m.locales {
-if loc == "en" {
-m.locale = "en"
-break
-}
-}
-m.columns = buildDisplayColumns(m.colDef, m.locale)
-}
+	case recordsLoadedMsg:
+		m.loading = false
+		m.records = msg.records
+		m.recordKeys = msg.keys
+		m.locales = discoverLocales(m.records, m.colDef)
+		if len(m.locales) > 0 {
+			m.locale = m.locales[0]
+			for _, loc := range m.locales {
+				if loc == "en" {
+					m.locale = "en"
+					break
+				}
+			}
+			m.columns = buildDisplayColumns(m.colDef, m.locale)
+		}
 
-case tea.KeyPressMsg:
-_, innerH := m.panelInnerDims()
-switch msg.String() {
-case "up", "k":
-if m.recordCursor > 0 {
-m.recordCursor--
-if m.recordCursor < m.recordOffset {
-m.recordOffset = m.recordCursor
-}
-}
-case "down", "j":
-if m.recordCursor < len(m.records)-1 {
-m.recordCursor++
-visibleRows := innerH - 4 // title + header + separator + total line
-if m.recordCursor >= m.recordOffset+visibleRows {
-m.recordOffset = m.recordCursor - visibleRows + 1
-}
-}
-case "l":
-if len(m.locales) > 1 {
-idx := localeIndex(m.locales, m.locale)
-idx = (idx + 1) % len(m.locales)
-m.locale = m.locales[idx]
-m.columns = buildDisplayColumns(m.colDef, m.locale)
-}
-case "L":
-if len(m.locales) > 1 {
-idx := localeIndex(m.locales, m.locale)
-idx = (idx - 1 + len(m.locales)) % len(m.locales)
-m.locale = m.locales[idx]
-m.columns = buildDisplayColumns(m.colDef, m.locale)
-}
-}
-}
-return m, nil
+	case tea.KeyPressMsg:
+		_, innerH := m.panelInnerDims()
+		switch msg.String() {
+		case "up", "k":
+			if m.recordCursor > 0 {
+				m.recordCursor--
+				if m.recordCursor < m.recordOffset {
+					m.recordOffset = m.recordCursor
+				}
+			}
+		case "down", "j":
+			if m.recordCursor < len(m.records)-1 {
+				m.recordCursor++
+				visibleRows := innerH - 4 // title + header + separator + total line
+				if m.recordCursor >= m.recordOffset+visibleRows {
+					m.recordOffset = m.recordCursor - visibleRows + 1
+				}
+			}
+		case "l":
+			if len(m.locales) > 1 {
+				idx := localeIndex(m.locales, m.locale)
+				idx = (idx + 1) % len(m.locales)
+				m.locale = m.locales[idx]
+				m.columns = buildDisplayColumns(m.colDef, m.locale)
+			}
+		case "L":
+			if len(m.locales) > 1 {
+				idx := localeIndex(m.locales, m.locale)
+				idx = (idx - 1 + len(m.locales)) % len(m.locales)
+				m.locale = m.locales[idx]
+				m.columns = buildDisplayColumns(m.colDef, m.locale)
+			}
+		}
+	}
+	return m, nil
 }
 
 func (m collectionModel) View() string {
-leftW, rightW := collectionPanelWidths(m.width)
-leftInner := leftW - 4
-rightInner := rightW - 4
-_, innerH := m.panelInnerDims()
+	leftW, rightW := collectionPanelWidths(m.width)
+	leftInner := leftW - 4
+	rightInner := rightW - 4
+	_, innerH := m.panelInnerDims()
 
-contentH := innerH - 2 // panel border consumes 2 rows
-leftContent := m.renderSchema(leftInner, contentH)
-rightContent := m.renderRecords(rightInner, contentH)
+	contentH := innerH - 2 // panel border consumes 2 rows
+	leftContent := m.renderSchema(leftInner, contentH)
+	rightContent := m.renderRecords(rightInner, contentH)
 
-left := focusedPanelStyle.Width(leftInner).Height(innerH).Render(leftContent)
-right := panelStyle.Width(rightInner).Height(innerH).Render(rightContent)
+	left := focusedPanelStyle.Width(leftInner).Height(innerH).Render(leftContent)
+	right := panelStyle.Width(rightInner).Height(innerH).Render(rightContent)
 
-panels := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
-help := helpStyle.Render(" ↑/↓ navigate records  esc back  q quit")
-return lipgloss.JoinVertical(lipgloss.Left, panels, help)
+	panels := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
+	help := helpStyle.Render(" ↑/↓ navigate records  esc back  q quit")
+	return lipgloss.JoinVertical(lipgloss.Left, panels, help)
 }
 
 func (m collectionModel) panelInnerDims() (width, height int) {
-leftW, _ := collectionPanelWidths(m.width)
-return leftW - 4, m.height - 2 // header + help bar
+	leftW, _ := collectionPanelWidths(m.width)
+	return leftW - 4, m.height - 2 // header + help bar
 }
 
 func (m collectionModel) renderSchema(width, height int) string {
@@ -167,364 +167,364 @@ func (m collectionModel) renderSchema(width, height int) string {
 }
 
 func (m collectionModel) renderRecords(width, height int) string {
-if m.loading {
-return mutedStyle.Render("Loading records…")
-}
-if len(m.records) == 0 {
-return mutedStyle.Render("(no records)")
-}
-cols := m.columns
-if len(cols) == 0 {
-return mutedStyle.Render("(no columns defined)")
-}
-
-colWidths := make([]int, len(cols))
-for i, c := range cols {
-colWidths[i] = uniseg.StringWidth(c)
-}
-for _, row := range m.records {
-for i, c := range cols {
-	raw := m.cellValue(row, c)
-	v := replaceRegionalIndicators(raw)
-	if w := uniseg.StringWidth(v); w > colWidths[i] {
-		colWidths[i] = w
+	if m.loading {
+		return mutedStyle.Render("Loading records…")
 	}
-}
-}
-for i := range colWidths {
-if colWidths[i] > 30 {
-colWidths[i] = 30
-}
-}
-
-var sb strings.Builder
-
-// Title row: collection name (left) + locale selector (right).
-titleText := sectionTitleStyle.Render(m.colDef.ID)
-if m.locale != "" {
-localeLabel := columnKeyStyle.Render("[" + m.locale + "]")
-titleW := lipgloss.Width(titleText)
-localeW := lipgloss.Width(localeLabel)
-gap := width - titleW - localeW
-if gap < 1 {
-gap = 1
-}
-sb.WriteString(titleText + strings.Repeat(" ", gap) + localeLabel)
-} else {
-sb.WriteString(titleText)
-}
-sb.WriteByte('\n')
-
-// Header row.
-headerCells := make([]string, len(cols))
-for i, c := range cols {
-headerCells[i] = columnKeyStyle.Render(padRight(c, colWidths[i]))
-}
-sb.WriteString(strings.Join(headerCells, " │ "))
-sb.WriteByte('\n')
-
-// Separator.
-seps := make([]string, len(cols))
-for i, w := range colWidths {
-seps[i] = strings.Repeat("─", w)
-}
-sb.WriteString(mutedStyle.Render(strings.Join(seps, "─┼─")))
-sb.WriteByte('\n')
-
-// Visible data rows.
-visibleRows := height - 4 // title + header + separator + total line
-if visibleRows < 1 {
-visibleRows = 1
-}
-end := m.recordOffset + visibleRows
-if end > len(m.records) {
-end = len(m.records)
-}
-// Detect which columns are numeric (check first record).
-numericCol := make([]bool, len(cols))
-if len(m.records) > 0 {
-for i, c := range cols {
-if m.isL10NDisplayCol(c) {
-numericCol[i] = false
-} else {
-numericCol[i] = isNumeric(m.records[0][c])
-}
-}
-}
-
-for ri := m.recordOffset; ri < end; ri++ {
-row := m.records[ri]
-cells := make([]string, len(cols))
-for i, c := range cols {
-	raw := m.cellValue(row, c)
-	v := replaceRegionalIndicators(raw)
-	if uniseg.StringWidth(v) > colWidths[i] {
-		v = truncateToWidth(v, colWidths[i]-1) + "…"
+	if len(m.records) == 0 {
+		return mutedStyle.Render("(no records)")
 	}
-if numericCol[i] {
-cells[i] = padLeft(v, colWidths[i])
-} else {
-cells[i] = padRight(v, colWidths[i])
-}
-}
-line := strings.Join(cells, " │ ")
-if ri == m.recordCursor {
-line = selectedItemStyle.Render(line)
-}
-sb.WriteString(line)
-sb.WriteByte('\n')
-}
+	cols := m.columns
+	if len(cols) == 0 {
+		return mutedStyle.Render("(no columns defined)")
+	}
 
-total := fmt.Sprintf("\n%d record(s)", len(m.records))
-sb.WriteString(mutedStyle.Render(total))
-return sb.String()
+	colWidths := make([]int, len(cols))
+	for i, c := range cols {
+		colWidths[i] = uniseg.StringWidth(c)
+	}
+	for _, row := range m.records {
+		for i, c := range cols {
+			raw := m.cellValue(row, c)
+			v := replaceRegionalIndicators(raw)
+			if w := uniseg.StringWidth(v); w > colWidths[i] {
+				colWidths[i] = w
+			}
+		}
+	}
+	for i := range colWidths {
+		if colWidths[i] > 30 {
+			colWidths[i] = 30
+		}
+	}
+
+	var sb strings.Builder
+
+	// Title row: collection name (left) + locale selector (right).
+	titleText := sectionTitleStyle.Render(m.colDef.ID)
+	if m.locale != "" {
+		localeLabel := columnKeyStyle.Render("[" + m.locale + "]")
+		titleW := lipgloss.Width(titleText)
+		localeW := lipgloss.Width(localeLabel)
+		gap := width - titleW - localeW
+		if gap < 1 {
+			gap = 1
+		}
+		sb.WriteString(titleText + strings.Repeat(" ", gap) + localeLabel)
+	} else {
+		sb.WriteString(titleText)
+	}
+	sb.WriteByte('\n')
+
+	// Header row.
+	headerCells := make([]string, len(cols))
+	for i, c := range cols {
+		headerCells[i] = columnKeyStyle.Render(padRight(c, colWidths[i]))
+	}
+	sb.WriteString(strings.Join(headerCells, " │ "))
+	sb.WriteByte('\n')
+
+	// Separator.
+	seps := make([]string, len(cols))
+	for i, w := range colWidths {
+		seps[i] = strings.Repeat("─", w)
+	}
+	sb.WriteString(mutedStyle.Render(strings.Join(seps, "─┼─")))
+	sb.WriteByte('\n')
+
+	// Visible data rows.
+	visibleRows := height - 4 // title + header + separator + total line
+	if visibleRows < 1 {
+		visibleRows = 1
+	}
+	end := m.recordOffset + visibleRows
+	if end > len(m.records) {
+		end = len(m.records)
+	}
+	// Detect which columns are numeric (check first record).
+	numericCol := make([]bool, len(cols))
+	if len(m.records) > 0 {
+		for i, c := range cols {
+			if m.isL10NDisplayCol(c) {
+				numericCol[i] = false
+			} else {
+				numericCol[i] = isNumeric(m.records[0][c])
+			}
+		}
+	}
+
+	for ri := m.recordOffset; ri < end; ri++ {
+		row := m.records[ri]
+		cells := make([]string, len(cols))
+		for i, c := range cols {
+			raw := m.cellValue(row, c)
+			v := replaceRegionalIndicators(raw)
+			if uniseg.StringWidth(v) > colWidths[i] {
+				v = truncateToWidth(v, colWidths[i]-1) + "…"
+			}
+			if numericCol[i] {
+				cells[i] = padLeft(v, colWidths[i])
+			} else {
+				cells[i] = padRight(v, colWidths[i])
+			}
+		}
+		line := strings.Join(cells, " │ ")
+		if ri == m.recordCursor {
+			line = selectedItemStyle.Render(line)
+		}
+		sb.WriteString(line)
+		sb.WriteByte('\n')
+	}
+
+	total := fmt.Sprintf("\n%d record(s)", len(m.records))
+	sb.WriteString(mutedStyle.Render(total))
+	return sb.String()
 }
 
 // buildSchemaLines pre-renders schema as a slice of styled strings.
 func buildSchemaLines(colDef *ingitdb.CollectionDef) []string {
-var lines []string
+	var lines []string
 
-lines = append(lines, sectionTitleStyle.Render("Schema"))
-lines = append(lines, columnKeyStyle.Render("id: ")+colDef.ID)
+	lines = append(lines, sectionTitleStyle.Render("Schema"))
+	lines = append(lines, columnKeyStyle.Render("id: ")+colDef.ID)
 
-if rf := colDef.RecordFile; rf != nil {
-lines = append(lines, columnKeyStyle.Render("format: ")+string(rf.Format))
-lines = append(lines, columnKeyStyle.Render("file: ")+rf.Name)
-}
+	if rf := colDef.RecordFile; rf != nil {
+		lines = append(lines, columnKeyStyle.Render("format: ")+string(rf.Format))
+		lines = append(lines, columnKeyStyle.Render("file: ")+rf.Name)
+	}
 
-lines = append(lines, "")
-lines = append(lines, sectionTitleStyle.Render("Columns"))
+	lines = append(lines, "")
+	lines = append(lines, sectionTitleStyle.Render("Columns"))
 
-for _, name := range orderedColumns(colDef) {
-col := colDef.Columns[name]
-lines = append(lines, columnKeyStyle.Render(name))
-lines = append(lines, columnTypeStyle.Render(fmt.Sprintf("  type: %s", col.Type)))
-if col.Required {
-lines = append(lines, columnTypeStyle.Render("  required"))
-}
-}
+	for _, name := range orderedColumns(colDef) {
+		col := colDef.Columns[name]
+		lines = append(lines, columnKeyStyle.Render(name))
+		lines = append(lines, columnTypeStyle.Render(fmt.Sprintf("  type: %s", col.Type)))
+		if col.Required {
+			lines = append(lines, columnTypeStyle.Render("  required"))
+		}
+	}
 
-if len(colDef.SubCollections) > 0 {
-lines = append(lines, "")
-lines = append(lines, sectionTitleStyle.Render("Sub-collections"))
-subs := make([]string, 0, len(colDef.SubCollections))
-for id := range colDef.SubCollections {
-subs = append(subs, id)
-}
-sort.Strings(subs)
-for _, id := range subs {
-lines = append(lines, itemStyle.Render("  "+id))
-}
-}
+	if len(colDef.SubCollections) > 0 {
+		lines = append(lines, "")
+		lines = append(lines, sectionTitleStyle.Render("Sub-collections"))
+		subs := make([]string, 0, len(colDef.SubCollections))
+		for id := range colDef.SubCollections {
+			subs = append(subs, id)
+		}
+		sort.Strings(subs)
+		for _, id := range subs {
+			lines = append(lines, itemStyle.Render("  "+id))
+		}
+	}
 
-return lines
+	return lines
 }
 
 // loadRecordsCmd returns a Tea command that reads all records for the collection.
 func loadRecordsCmd(db dal.DB, colDef *ingitdb.CollectionDef) tea.Cmd {
-return func() tea.Msg {
-colID := colDef.ID
-qb := dal.NewQueryBuilder(dal.From(dal.NewRootCollectionRef(colID, "")))
-q := qb.SelectIntoRecord(func() dal.Record {
-key := dal.NewKeyWithID(colID, "")
-return dal.NewRecordWithData(key, map[string]any{})
-})
+	return func() tea.Msg {
+		colID := colDef.ID
+		qb := dal.NewQueryBuilder(dal.From(dal.NewRootCollectionRef(colID, "")))
+		q := qb.SelectIntoRecord(func() dal.Record {
+			key := dal.NewKeyWithID(colID, "")
+			return dal.NewRecordWithData(key, map[string]any{})
+		})
 
-var (
-records []map[string]any
-keys    []string
-)
-err := db.RunReadonlyTransaction(context.Background(), func(ctx context.Context, tx dal.ReadTransaction) error {
-reader, txErr := tx.ExecuteQueryToRecordsReader(ctx, q)
-if txErr != nil {
-return txErr
-}
-defer func() { _ = reader.Close() }()
-for {
-rec, nextErr := reader.Next()
-if nextErr != nil {
-break
-}
-data := rec.Data().(map[string]any)
-keys = append(keys, fmt.Sprintf("%v", rec.Key().ID))
-records = append(records, data)
-}
-return nil
-})
-return recordsLoadedMsg{records: records, keys: keys, err: err}
-}
+		var (
+			records []map[string]any
+			keys    []string
+		)
+		err := db.RunReadonlyTransaction(context.Background(), func(ctx context.Context, tx dal.ReadTransaction) error {
+			reader, txErr := tx.ExecuteQueryToRecordsReader(ctx, q)
+			if txErr != nil {
+				return txErr
+			}
+			defer func() { _ = reader.Close() }()
+			for {
+				rec, nextErr := reader.Next()
+				if nextErr != nil {
+					break
+				}
+				data := rec.Data().(map[string]any)
+				keys = append(keys, fmt.Sprintf("%v", rec.Key().ID))
+				records = append(records, data)
+			}
+			return nil
+		})
+		return recordsLoadedMsg{records: records, keys: keys, err: err}
+	}
 }
 
 // orderedColumns returns columns in ColumnsOrder, then any remaining sorted.
 func orderedColumns(colDef *ingitdb.CollectionDef) []string {
-seen := make(map[string]bool)
-result := make([]string, 0, len(colDef.Columns))
-for _, c := range colDef.ColumnsOrder {
-if _, ok := colDef.Columns[c]; ok {
-result = append(result, c)
-seen[c] = true
-}
-}
-remaining := make([]string, 0)
-for c := range colDef.Columns {
-if !seen[c] {
-remaining = append(remaining, c)
-}
-}
-sort.Strings(remaining)
-return append(result, remaining...)
+	seen := make(map[string]bool)
+	result := make([]string, 0, len(colDef.Columns))
+	for _, c := range colDef.ColumnsOrder {
+		if _, ok := colDef.Columns[c]; ok {
+			result = append(result, c)
+			seen[c] = true
+		}
+	}
+	remaining := make([]string, 0)
+	for c := range colDef.Columns {
+		if !seen[c] {
+			remaining = append(remaining, c)
+		}
+	}
+	sort.Strings(remaining)
+	return append(result, remaining...)
 }
 
 func collectionPanelWidths(totalWidth int) (left, right int) {
-left = totalWidth / 4
-if left < 24 {
-left = 24
-}
-right = totalWidth - left
-return
+	left = totalWidth / 4
+	if left < 24 {
+		left = 24
+	}
+	right = totalWidth - left
+	return
 }
 
 // buildDisplayColumns returns display column names, expanding L10N columns
 // to "field.locale" format for the selected locale.
 func buildDisplayColumns(colDef *ingitdb.CollectionDef, locale string) []string {
-base := orderedColumns(colDef)
-result := make([]string, 0, len(base))
-for _, name := range base {
-col := colDef.Columns[name]
-if col.Type == ingitdb.ColumnTypeL10N {
-result = append(result, name+"."+locale)
-} else {
-result = append(result, name)
-}
-}
-return result
+	base := orderedColumns(colDef)
+	result := make([]string, 0, len(base))
+	for _, name := range base {
+		col := colDef.Columns[name]
+		if col.Type == ingitdb.ColumnTypeL10N {
+			result = append(result, name+"."+locale)
+		} else {
+			result = append(result, name)
+		}
+	}
+	return result
 }
 
 // discoverLocales scans all records for map[locale]string columns and returns
 // the set of available locale codes sorted by full language name.
 func discoverLocales(records []map[string]any, colDef *ingitdb.CollectionDef) []string {
-l10nFields := make([]string, 0)
-for name, col := range colDef.Columns {
-if col.Type == ingitdb.ColumnTypeL10N {
-l10nFields = append(l10nFields, name)
-}
-}
-if len(l10nFields) == 0 {
-return nil
-}
-localeSet := make(map[string]bool)
-for _, rec := range records {
-for _, field := range l10nFields {
-val, ok := rec[field]
-if !ok {
-continue
-}
-localeMap, ok := val.(map[string]any)
-if !ok {
-continue
-}
-for k := range localeMap {
-localeSet[k] = true
-}
-}
-}
-locales := make([]string, 0, len(localeSet))
-for k := range localeSet {
-locales = append(locales, k)
-}
-names := localeLanguageNames()
-sort.Slice(locales, func(i, j int) bool {
-ni, oki := names[locales[i]]
-if !oki {
-ni = locales[i]
-}
-nj, okj := names[locales[j]]
-if !okj {
-nj = locales[j]
-}
-return ni < nj
-})
-return locales
+	l10nFields := make([]string, 0)
+	for name, col := range colDef.Columns {
+		if col.Type == ingitdb.ColumnTypeL10N {
+			l10nFields = append(l10nFields, name)
+		}
+	}
+	if len(l10nFields) == 0 {
+		return nil
+	}
+	localeSet := make(map[string]bool)
+	for _, rec := range records {
+		for _, field := range l10nFields {
+			val, ok := rec[field]
+			if !ok {
+				continue
+			}
+			localeMap, ok := val.(map[string]any)
+			if !ok {
+				continue
+			}
+			for k := range localeMap {
+				localeSet[k] = true
+			}
+		}
+	}
+	locales := make([]string, 0, len(localeSet))
+	for k := range localeSet {
+		locales = append(locales, k)
+	}
+	names := localeLanguageNames()
+	sort.Slice(locales, func(i, j int) bool {
+		ni, oki := names[locales[i]]
+		if !oki {
+			ni = locales[i]
+		}
+		nj, okj := names[locales[j]]
+		if !okj {
+			nj = locales[j]
+		}
+		return ni < nj
+	})
+	return locales
 }
 
 // localeLanguageNames returns a map from locale code to full language name
 // used for sorting locales alphabetically by language name.
 func localeLanguageNames() map[string]string {
-return map[string]string{
-"ar": "Arabic",
-"cs": "Czech",
-"da": "Danish",
-"de": "German",
-"en": "English",
-"es": "Spanish",
-"fi": "Finnish",
-"fr": "French",
-"hi": "Hindi",
-"it": "Italian",
-"ja": "Japanese",
-"ko": "Korean",
-"nb": "Norwegian",
-"nl": "Dutch",
-"pl": "Polish",
-"pt": "Portuguese",
-"ru": "Russian",
-"sv": "Swedish",
-"tr": "Turkish",
-"uk": "Ukrainian",
-"zh": "Chinese",
-}
+	return map[string]string{
+		"ar": "Arabic",
+		"cs": "Czech",
+		"da": "Danish",
+		"de": "German",
+		"en": "English",
+		"es": "Spanish",
+		"fi": "Finnish",
+		"fr": "French",
+		"hi": "Hindi",
+		"it": "Italian",
+		"ja": "Japanese",
+		"ko": "Korean",
+		"nb": "Norwegian",
+		"nl": "Dutch",
+		"pl": "Polish",
+		"pt": "Portuguese",
+		"ru": "Russian",
+		"sv": "Swedish",
+		"tr": "Turkish",
+		"uk": "Ukrainian",
+		"zh": "Chinese",
+	}
 }
 
 // localeIndex returns the index of locale in locales, or 0 if not found.
 func localeIndex(locales []string, locale string) int {
-for i, l := range locales {
-if l == locale {
-return i
-}
-}
-return 0
+	for i, l := range locales {
+		if l == locale {
+			return i
+		}
+	}
+	return 0
 }
 
 // cellValue extracts the display value for a column from a record row.
 // For L10N columns (display name "field.locale"), it extracts the nested locale value.
 func (m collectionModel) cellValue(row map[string]any, displayCol string) string {
-dotIdx := strings.Index(displayCol, ".")
-if dotIdx > 0 {
-baseField := displayCol[:dotIdx]
-locale := displayCol[dotIdx+1:]
-col, ok := m.colDef.Columns[baseField]
-if ok && col.Type == ingitdb.ColumnTypeL10N {
-val, exists := row[baseField]
-if !exists {
-return ""
-}
-localeMap, ok := val.(map[string]any)
-if !ok {
-return ""
-}
-localeVal, exists := localeMap[locale]
-if !exists {
-return ""
-}
-return fmt.Sprintf("%v", localeVal)
-}
-}
-return fmt.Sprintf("%v", row[displayCol])
+	dotIdx := strings.Index(displayCol, ".")
+	if dotIdx > 0 {
+		baseField := displayCol[:dotIdx]
+		locale := displayCol[dotIdx+1:]
+		col, ok := m.colDef.Columns[baseField]
+		if ok && col.Type == ingitdb.ColumnTypeL10N {
+			val, exists := row[baseField]
+			if !exists {
+				return ""
+			}
+			localeMap, ok := val.(map[string]any)
+			if !ok {
+				return ""
+			}
+			localeVal, exists := localeMap[locale]
+			if !exists {
+				return ""
+			}
+			return fmt.Sprintf("%v", localeVal)
+		}
+	}
+	return fmt.Sprintf("%v", row[displayCol])
 }
 
 // isL10NDisplayCol returns true if the display column name corresponds to an
 // expanded L10N column (i.e. "field.locale" where field has type map[locale]string).
 func (m collectionModel) isL10NDisplayCol(displayCol string) bool {
-dotIdx := strings.Index(displayCol, ".")
-if dotIdx <= 0 {
-return false
-}
-baseField := displayCol[:dotIdx]
-col, ok := m.colDef.Columns[baseField]
-if !ok {
-return false
-}
-return col.Type == ingitdb.ColumnTypeL10N
+	dotIdx := strings.Index(displayCol, ".")
+	if dotIdx <= 0 {
+		return false
+	}
+	baseField := displayCol[:dotIdx]
+	col, ok := m.colDef.Columns[baseField]
+	if !ok {
+		return false
+	}
+	return col.Type == ingitdb.ColumnTypeL10N
 }
 
 func padRight(s string, width int) string {
@@ -544,57 +544,57 @@ func padLeft(s string, width int) string {
 }
 
 func isNumeric(v any) bool {
-switch v.(type) {
-case int, int8, int16, int32, int64,
-uint, uint8, uint16, uint32, uint64,
-float32, float64:
-return true
-}
-return false
+	switch v.(type) {
+	case int, int8, int16, int32, int64,
+		uint, uint8, uint16, uint32, uint64,
+		float32, float64:
+		return true
+	}
+	return false
 }
 
 // truncateToWidth truncates s to fit within maxWidth terminal columns.
 func truncateToWidth(s string, maxWidth int) string {
-var (
-result  strings.Builder
-w       int
-cluster string
-rest    = s
-width   int
-)
-for rest != "" {
-cluster, rest, width, _ = uniseg.FirstGraphemeClusterInString(rest, -1)
-if w+width > maxWidth {
-break
-}
-result.WriteString(cluster)
-w += width
-}
-return result.String()
+	var (
+		result  strings.Builder
+		w       int
+		cluster string
+		rest    = s
+		width   int
+	)
+	for rest != "" {
+		cluster, rest, width, _ = uniseg.FirstGraphemeClusterInString(rest, -1)
+		if w+width > maxWidth {
+			break
+		}
+		result.WriteString(cluster)
+		w += width
+	}
+	return result.String()
 }
 
 // replaceRegionalIndicators converts Regional Indicator Symbol pairs (flag emoji,
 // e.g. 🇺🇸) into their two-letter ASCII country codes (e.g. "US") so they
 // render predictably in terminals that lack emoji support.
 func replaceRegionalIndicators(s string) string {
-const base = 0x1F1E6 // U+1F1E6 = 🇦  maps to 'A'
-runes := []rune(s)
-var b strings.Builder
-for i := 0; i < len(runes); i++ {
-r := runes[i]
-if r >= 0x1F1E6 && r <= 0x1F1FF {
-// First indicator of a pair.
-if i+1 < len(runes) && runes[i+1] >= 0x1F1E6 && runes[i+1] <= 0x1F1FF {
-b.WriteByte(byte('A' + (r - base)))
-b.WriteByte(byte('A' + (runes[i+1] - base)))
-i++ // consume second indicator
-continue
-}
-// Lone indicator — keep as letter.
-b.WriteByte(byte('A' + (r - base)))
-continue
-}
-b.WriteRune(r)
-}
-return b.String()
+	const base = 0x1F1E6 // U+1F1E6 = 🇦  maps to 'A'
+	runes := []rune(s)
+	var b strings.Builder
+	for i := 0; i < len(runes); i++ {
+		r := runes[i]
+		if r >= 0x1F1E6 && r <= 0x1F1FF {
+			// First indicator of a pair.
+			if i+1 < len(runes) && runes[i+1] >= 0x1F1E6 && runes[i+1] <= 0x1F1FF {
+				b.WriteByte(byte('A' + (r - base)))
+				b.WriteByte(byte('A' + (runes[i+1] - base)))
+				i++ // consume second indicator
+				continue
+			}
+			// Lone indicator — keep as letter.
+			b.WriteByte(byte('A' + (r - base)))
+			continue
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
 }

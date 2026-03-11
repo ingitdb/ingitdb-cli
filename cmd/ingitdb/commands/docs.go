@@ -20,4 +20,3 @@ func Docs(
 	cmd.AddCommand(docsUpdate(homeDir, getWd, readDefinition, logf))
 	return cmd
 }
-

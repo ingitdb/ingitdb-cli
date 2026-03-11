@@ -55,4 +55,3 @@ func createRecord(
 	_ = cmd.MarkFlagRequired("data")
 	return cmd
 }
-

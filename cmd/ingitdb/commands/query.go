@@ -138,4 +138,3 @@ func Query(
 	addFormatFlag(cmd, "csv")
 	return cmd
 }
-

@@ -23,4 +23,3 @@ func Create(
 	cmd.AddCommand(createRecord(homeDir, getWd, readDefinition, newDB, logf))
 	return cmd
 }
-

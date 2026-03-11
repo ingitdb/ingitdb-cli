@@ -26,4 +26,3 @@ func Read(
 	)
 	return cmd
 }
-

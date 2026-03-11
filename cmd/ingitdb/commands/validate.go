@@ -129,4 +129,3 @@ func expandHome(path string, homeDir func() (string, error)) (string, error) {
 	}
 	return path, nil
 }
-

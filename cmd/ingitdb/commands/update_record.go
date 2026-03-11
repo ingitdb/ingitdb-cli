@@ -63,4 +63,3 @@ func updateRecord(
 	_ = cmd.MarkFlagRequired("set")
 	return cmd
 }
-

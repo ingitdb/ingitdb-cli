@@ -1004,4 +1004,3 @@ func TestServeMCP_RegisterToolsError(t *testing.T) {
 		t.Fatal("expected error when registerMCPTools fails")
 	}
 }
-

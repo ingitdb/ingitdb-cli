@@ -18,4 +18,3 @@ func deleteCollection() *cobra.Command {
 	addCollectionFlag(cmd, true)
 	return cmd
 }
-

@@ -88,7 +88,7 @@ columns:
 
 				return root
 			},
-			opts:    []ingitdb.ReadOption{ingitdb.Validate()},
+			opts:            []ingitdb.ReadOption{ingitdb.Validate()},
 			wantErr:         "",
 			wantCollections: 1,
 		},

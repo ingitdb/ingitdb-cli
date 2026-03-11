@@ -41,4 +41,3 @@ func runCobraCommand(cmd *cobra.Command, args ...string) error {
 	root.SetArgs(argv)
 	return root.ExecuteContext(context.Background())
 }
-

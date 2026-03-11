@@ -50,4 +50,3 @@ func readCollection(
 	addCollectionFlag(cmd, true)
 	return cmd
 }
-

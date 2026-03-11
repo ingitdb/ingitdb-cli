@@ -1112,55 +1112,55 @@ func TestResolveNamespaceImports_PublicMethod_DirectoryNotFound(t *testing.T) {
 var _ = ingitdb.NewReadOptions
 
 func TestReadSettingsFromFile_NonNotExistReadError(t *testing.T) {
-t.Parallel()
+	t.Parallel()
 
-ioErr := errors.New("disk I/O error")
-readFile := func(string) ([]byte, error) { return nil, ioErr }
+	ioErr := errors.New("disk I/O error")
+	readFile := func(string) ([]byte, error) { return nil, ioErr }
 
-_, err := readSettingsFromFile("dir", ingitdb.NewReadOptions(), readFile)
-if err == nil {
-t.Fatal("expected error, got nil")
-}
-if !errors.Is(err, ioErr) {
-t.Errorf("expected wrapped ioErr, got %v", err)
-}
+	_, err := readSettingsFromFile("dir", ingitdb.NewReadOptions(), readFile)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if !errors.Is(err, ioErr) {
+		t.Errorf("expected wrapped ioErr, got %v", err)
+	}
 }
 
 func TestReadRootCollectionsFromFile_NonNotExistReadError(t *testing.T) {
-t.Parallel()
+	t.Parallel()
 
-ioErr := errors.New("disk I/O error")
-readFile := func(string) ([]byte, error) { return nil, ioErr }
+	ioErr := errors.New("disk I/O error")
+	readFile := func(string) ([]byte, error) { return nil, ioErr }
 
-_, err := readRootCollectionsFromFile("dir", ingitdb.NewReadOptions(), readFile)
-if err == nil {
-t.Fatal("expected error, got nil")
-}
-if !errors.Is(err, ioErr) {
-t.Errorf("expected wrapped ioErr, got %v", err)
-}
+	_, err := readRootCollectionsFromFile("dir", ingitdb.NewReadOptions(), readFile)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if !errors.Is(err, ioErr) {
+		t.Errorf("expected wrapped ioErr, got %v", err)
+	}
 }
 
 func TestReadRootConfigFromFile_RootCollectionsReadError(t *testing.T) {
-t.Parallel()
+	t.Parallel()
 
-ioErr := errors.New("disk I/O error")
-call := 0
-readFile := func(string) ([]byte, error) {
-call++
-if call == 1 {
-// First call: settings file — not found (no error)
-return nil, &os.PathError{Op: "open", Path: "x", Err: os.ErrNotExist}
-}
-// Second call: root-collections file — real I/O error
-return nil, ioErr
-}
+	ioErr := errors.New("disk I/O error")
+	call := 0
+	readFile := func(string) ([]byte, error) {
+		call++
+		if call == 1 {
+			// First call: settings file — not found (no error)
+			return nil, &os.PathError{Op: "open", Path: "x", Err: os.ErrNotExist}
+		}
+		// Second call: root-collections file — real I/O error
+		return nil, ioErr
+	}
 
-_, err := readRootConfigFromFile("dir", ingitdb.NewReadOptions(), readFile)
-if err == nil {
-t.Fatal("expected error, got nil")
-}
-if !errors.Is(err, ioErr) {
-t.Errorf("expected wrapped ioErr, got %v", err)
-}
+	_, err := readRootConfigFromFile("dir", ingitdb.NewReadOptions(), readFile)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if !errors.Is(err, ioErr) {
+		t.Errorf("expected wrapped ioErr, got %v", err)
+	}
 }

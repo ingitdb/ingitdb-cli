@@ -43,4 +43,3 @@ func deleteRecord(
 	_ = cmd.MarkFlagRequired("id")
 	return cmd
 }
-

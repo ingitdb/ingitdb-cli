@@ -355,7 +355,7 @@ func TestBuildFKViews_NoDefaultView_BuildViewsIntegration(t *testing.T) {
 
 	writer := &capturingWriter{}
 	builder := SimpleViewBuilder{
-		DefReader:     fakeViewDefReader{views: map[string]*ingitdb.ViewDef{"custom": nonDefaultView}},
+		DefReader: fakeViewDefReader{views: map[string]*ingitdb.ViewDef{"custom": nonDefaultView}},
 		RecordsReader: fakeRecordsReader{records: []ingitdb.IRecordEntry{
 			ingitdb.NewMapRecordEntry("acme", map[string]any{"$ID": "acme", "name": "Acme", "country": "gb"}),
 		}},
@@ -491,7 +491,6 @@ func TestBuildFKViews_FKColumnExcludedFromOutput(t *testing.T) {
 		t.Errorf("INGR header missing 'name': %s", firstLine)
 	}
 }
-
 
 // abort processing of other FK values; other files are still written and the error is returned.
 func TestBuildFKViews_ErrorAccumulation(t *testing.T) {

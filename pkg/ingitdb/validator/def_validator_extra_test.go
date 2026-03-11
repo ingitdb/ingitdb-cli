@@ -307,21 +307,21 @@ func TestLoadViews_SkipsNonYamlFiles(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestReadCollectionDef_SharedLayout_TwoCollections(t *testing.T) {
-t.Parallel()
+	t.Parallel()
 
-root := t.TempDir()
+	root := t.TempDir()
 
-// .ingitdb/root-collections.yaml pointing to the two named subdirs.
-ingitdbDir := filepath.Join(root, ".ingitdb")
-if err := os.MkdirAll(ingitdbDir, 0o755); err != nil {
-t.Fatalf("setup: mkdir .ingitdb: %v", err)
-}
-rootCols := "recipes: cooking/.collections/recipes\ningredients: cooking/.collections/ingredients\n"
-if err := os.WriteFile(filepath.Join(ingitdbDir, "root-collections.yaml"), []byte(rootCols), 0o644); err != nil {
-t.Fatalf("setup: write root-collections.yaml: %v", err)
-}
+	// .ingitdb/root-collections.yaml pointing to the two named subdirs.
+	ingitdbDir := filepath.Join(root, ".ingitdb")
+	if err := os.MkdirAll(ingitdbDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir .ingitdb: %v", err)
+	}
+	rootCols := "recipes: cooking/.collections/recipes\ningredients: cooking/.collections/ingredients\n"
+	if err := os.WriteFile(filepath.Join(ingitdbDir, "root-collections.yaml"), []byte(rootCols), 0o644); err != nil {
+		t.Fatalf("setup: write root-collections.yaml: %v", err)
+	}
 
-colDef := `columns:
+	colDef := `columns:
   id:
     type: string
   title:
@@ -332,7 +332,7 @@ record_file:
   format: yaml
 data_dir: recipes
 `
-ingredientsDef := `columns:
+	ingredientsDef := `columns:
   id:
     type: string
   name:
@@ -343,75 +343,75 @@ record_file:
   format: yaml
 `
 
-// Create .collections/recipes/definition.yaml
-recipesDir := filepath.Join(root, "cooking", ".collections", "recipes")
-if err := os.MkdirAll(recipesDir, 0o755); err != nil {
-t.Fatalf("setup: mkdir recipes schema dir: %v", err)
-}
-if err := os.WriteFile(filepath.Join(recipesDir, "definition.yaml"), []byte(colDef), 0o644); err != nil {
-t.Fatalf("setup: write recipes definition: %v", err)
-}
+	// Create .collections/recipes/definition.yaml
+	recipesDir := filepath.Join(root, "cooking", ".collections", "recipes")
+	if err := os.MkdirAll(recipesDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir recipes schema dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(recipesDir, "definition.yaml"), []byte(colDef), 0o644); err != nil {
+		t.Fatalf("setup: write recipes definition: %v", err)
+	}
 
-// Create .collections/ingredients/definition.yaml (no data_dir = data in cooking/)
-ingredientsDir := filepath.Join(root, "cooking", ".collections", "ingredients")
-if err := os.MkdirAll(ingredientsDir, 0o755); err != nil {
-t.Fatalf("setup: mkdir ingredients schema dir: %v", err)
-}
-if err := os.WriteFile(filepath.Join(ingredientsDir, "definition.yaml"), []byte(ingredientsDef), 0o644); err != nil {
-t.Fatalf("setup: write ingredients definition: %v", err)
-}
+	// Create .collections/ingredients/definition.yaml (no data_dir = data in cooking/)
+	ingredientsDir := filepath.Join(root, "cooking", ".collections", "ingredients")
+	if err := os.MkdirAll(ingredientsDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir ingredients schema dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(ingredientsDir, "definition.yaml"), []byte(ingredientsDef), 0o644); err != nil {
+		t.Fatalf("setup: write ingredients definition: %v", err)
+	}
 
-def, err := ReadDefinition(root)
-if err != nil {
-t.Fatalf("ReadDefinition() unexpected error: %v", err)
-}
-if len(def.Collections) != 2 {
-t.Fatalf("expected 2 collections, got %d", len(def.Collections))
-}
+	def, err := ReadDefinition(root)
+	if err != nil {
+		t.Fatalf("ReadDefinition() unexpected error: %v", err)
+	}
+	if len(def.Collections) != 2 {
+		t.Fatalf("expected 2 collections, got %d", len(def.Collections))
+	}
 
-recipes, ok := def.Collections["recipes"]
-if !ok {
-t.Fatal("expected 'recipes' collection")
-}
-if recipes.ID != "recipes" {
-t.Errorf("recipes ID = %q, want 'recipes'", recipes.ID)
-}
-// data_dir="recipes" → DirPath should be cooking/recipes relative to root
-wantRecipesDirPath := filepath.Join(root, "cooking", "recipes")
-if recipes.DirPath != wantRecipesDirPath {
-t.Errorf("recipes DirPath = %q, want %q", recipes.DirPath, wantRecipesDirPath)
-}
+	recipes, ok := def.Collections["recipes"]
+	if !ok {
+		t.Fatal("expected 'recipes' collection")
+	}
+	if recipes.ID != "recipes" {
+		t.Errorf("recipes ID = %q, want 'recipes'", recipes.ID)
+	}
+	// data_dir="recipes" → DirPath should be cooking/recipes relative to root
+	wantRecipesDirPath := filepath.Join(root, "cooking", "recipes")
+	if recipes.DirPath != wantRecipesDirPath {
+		t.Errorf("recipes DirPath = %q, want %q", recipes.DirPath, wantRecipesDirPath)
+	}
 
-ingredients, ok := def.Collections["ingredients"]
-if !ok {
-t.Fatal("expected 'ingredients' collection")
-}
-// no data_dir → DirPath should be cooking/
-wantIngredientsDirPath := filepath.Join(root, "cooking")
-if ingredients.DirPath != wantIngredientsDirPath {
-t.Errorf("ingredients DirPath = %q, want %q", ingredients.DirPath, wantIngredientsDirPath)
-}
+	ingredients, ok := def.Collections["ingredients"]
+	if !ok {
+		t.Fatal("expected 'ingredients' collection")
+	}
+	// no data_dir → DirPath should be cooking/
+	wantIngredientsDirPath := filepath.Join(root, "cooking")
+	if ingredients.DirPath != wantIngredientsDirPath {
+		t.Errorf("ingredients DirPath = %q, want %q", ingredients.DirPath, wantIngredientsDirPath)
+	}
 }
 
 func TestReadCollectionDef_SharedLayout_WithViewAndSubcollection(t *testing.T) {
-t.Parallel()
+	t.Parallel()
 
-root := t.TempDir()
+	root := t.TempDir()
 
-ingitdbDir := filepath.Join(root, ".ingitdb")
-if err := os.MkdirAll(ingitdbDir, 0o755); err != nil {
-t.Fatalf("setup: mkdir .ingitdb: %v", err)
-}
-if err := os.WriteFile(filepath.Join(ingitdbDir, "root-collections.yaml"),
-[]byte("recipes: cooking/.collections/recipes\n"), 0o644); err != nil {
-t.Fatalf("setup: write root-collections.yaml: %v", err)
-}
+	ingitdbDir := filepath.Join(root, ".ingitdb")
+	if err := os.MkdirAll(ingitdbDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir .ingitdb: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(ingitdbDir, "root-collections.yaml"),
+		[]byte("recipes: cooking/.collections/recipes\n"), 0o644); err != nil {
+		t.Fatalf("setup: write root-collections.yaml: %v", err)
+	}
 
-recipesDir := filepath.Join(root, "cooking", ".collections", "recipes")
-if err := os.MkdirAll(recipesDir, 0o755); err != nil {
-t.Fatalf("setup: mkdir recipes: %v", err)
-}
-colDef := `columns:
+	recipesDir := filepath.Join(root, "cooking", ".collections", "recipes")
+	if err := os.MkdirAll(recipesDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir recipes: %v", err)
+	}
+	colDef := `columns:
   id:
     type: string
 record_file:
@@ -419,53 +419,53 @@ record_file:
   type: "map[string]any"
   format: yaml
 `
-if err := os.WriteFile(filepath.Join(recipesDir, "definition.yaml"), []byte(colDef), 0o644); err != nil {
-t.Fatalf("setup: write recipes definition: %v", err)
-}
+	if err := os.WriteFile(filepath.Join(recipesDir, "definition.yaml"), []byte(colDef), 0o644); err != nil {
+		t.Fatalf("setup: write recipes definition: %v", err)
+	}
 
-// Named view in $views/
-viewsDir := filepath.Join(recipesDir, ingitdb.SharedViewsDir)
-if err := os.MkdirAll(viewsDir, 0o755); err != nil {
-t.Fatalf("setup: mkdir $views: %v", err)
-}
-if err := os.WriteFile(filepath.Join(viewsDir, "by_cuisine.yaml"), []byte("order_by: id asc\n"), 0o644); err != nil {
-t.Fatalf("setup: write view: %v", err)
-}
+	// Named view in $views/
+	viewsDir := filepath.Join(recipesDir, ingitdb.SharedViewsDir)
+	if err := os.MkdirAll(viewsDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir $views: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(viewsDir, "by_cuisine.yaml"), []byte("order_by: id asc\n"), 0o644); err != nil {
+		t.Fatalf("setup: write view: %v", err)
+	}
 
-// Subcollection: recipes/ingredients_of_recipe/definition.yaml
-subDir := filepath.Join(recipesDir, "ingredients_of_recipe")
-if err := os.MkdirAll(subDir, 0o755); err != nil {
-t.Fatalf("setup: mkdir subcollection: %v", err)
-}
-if err := os.WriteFile(filepath.Join(subDir, "definition.yaml"), []byte(colDef), 0o644); err != nil {
-t.Fatalf("setup: write subcollection definition: %v", err)
-}
+	// Subcollection: recipes/ingredients_of_recipe/definition.yaml
+	subDir := filepath.Join(recipesDir, "ingredients_of_recipe")
+	if err := os.MkdirAll(subDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir subcollection: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(subDir, "definition.yaml"), []byte(colDef), 0o644); err != nil {
+		t.Fatalf("setup: write subcollection definition: %v", err)
+	}
 
-def, err := ReadDefinition(root)
-if err != nil {
-t.Fatalf("ReadDefinition() unexpected error: %v", err)
-}
-recipes := def.Collections["recipes"]
-if recipes == nil {
-t.Fatal("expected 'recipes' collection")
-}
+	def, err := ReadDefinition(root)
+	if err != nil {
+		t.Fatalf("ReadDefinition() unexpected error: %v", err)
+	}
+	recipes := def.Collections["recipes"]
+	if recipes == nil {
+		t.Fatal("expected 'recipes' collection")
+	}
 
-// View loaded from $views/
-if _, ok := recipes.Views["by_cuisine"]; !ok {
-t.Errorf("expected view 'by_cuisine', got views: %v", recipes.Views)
-}
+	// View loaded from $views/
+	if _, ok := recipes.Views["by_cuisine"]; !ok {
+		t.Errorf("expected view 'by_cuisine', got views: %v", recipes.Views)
+	}
 
-// Subcollection discovered
-if _, ok := recipes.SubCollections["ingredients_of_recipe"]; !ok {
-t.Errorf("expected subcollection 'ingredients_of_recipe', got: %v", recipes.SubCollections)
-}
+	// Subcollection discovered
+	if _, ok := recipes.SubCollections["ingredients_of_recipe"]; !ok {
+		t.Errorf("expected subcollection 'ingredients_of_recipe', got: %v", recipes.SubCollections)
+	}
 }
 
 func TestReadCollectionDef_SharedLayout_ConflictError(t *testing.T) {
-t.Parallel()
+	t.Parallel()
 
-root := t.TempDir()
-colDef := `columns:
+	root := t.TempDir()
+	colDef := `columns:
   id:
     type: string
 record_file:
@@ -474,24 +474,24 @@ record_file:
   format: yaml
 `
 
-// Create BOTH .collection/definition.yaml and definition.yaml in the same dir.
-colDir := filepath.Join(root, "col")
-oldSchemaDir := filepath.Join(colDir, ingitdb.SchemaDir)
-if err := os.MkdirAll(oldSchemaDir, 0o755); err != nil {
-t.Fatalf("setup: mkdir .collection: %v", err)
-}
-if err := os.WriteFile(filepath.Join(oldSchemaDir, "definition.yaml"), []byte(colDef), 0o644); err != nil {
-t.Fatalf("setup: write old layout def: %v", err)
-}
-if err := os.WriteFile(filepath.Join(colDir, "definition.yaml"), []byte(colDef), 0o644); err != nil {
-t.Fatalf("setup: write new layout def: %v", err)
-}
+	// Create BOTH .collection/definition.yaml and definition.yaml in the same dir.
+	colDir := filepath.Join(root, "col")
+	oldSchemaDir := filepath.Join(colDir, ingitdb.SchemaDir)
+	if err := os.MkdirAll(oldSchemaDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir .collection: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(oldSchemaDir, "definition.yaml"), []byte(colDef), 0o644); err != nil {
+		t.Fatalf("setup: write old layout def: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(colDir, "definition.yaml"), []byte(colDef), 0o644); err != nil {
+		t.Fatalf("setup: write new layout def: %v", err)
+	}
 
-_, err := newDefLoader().readCollectionDef(root, "col", "", "col", nil, ingitdb.NewReadOptions())
-if err == nil {
-t.Fatal("expected conflict error, got nil")
-}
-if !strings.Contains(err.Error(), "both") {
-t.Errorf("error = %q, want substring 'both'", err.Error())
-}
+	_, err := newDefLoader().readCollectionDef(root, "col", "", "col", nil, ingitdb.NewReadOptions())
+	if err == nil {
+		t.Fatal("expected conflict error, got nil")
+	}
+	if !strings.Contains(err.Error(), "both") {
+		t.Errorf("error = %q, want substring 'both'", err.Error())
+	}
 }

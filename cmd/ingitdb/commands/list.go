@@ -145,4 +145,3 @@ func subscribers() *cobra.Command {
 	cmd.Flags().String("filter-name", "", "pattern to filter subscriber names (e.g. *substr*)")
 	return cmd
 }
-

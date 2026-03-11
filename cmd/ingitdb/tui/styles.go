@@ -1,79 +1,79 @@
 package tui
 
 import (
-"image/color"
+	"image/color"
 
-"charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2"
 )
 
 var (
-colorPrimary   = lipgloss.Color("#7C3AED")
-colorMuted     = lipgloss.Color("#6B7280")
-colorSelected  = lipgloss.Color("#7C3AED")
-colorBorder    = lipgloss.Color("#374151")
-colorHighlight = lipgloss.Color("#EDE9FE")
-colorText      = lipgloss.Color("#F9FAFB")
-colorAccent    = lipgloss.Color("#A78BFA")
-colorGreen     = lipgloss.Color("#34D399")
+	colorPrimary   = lipgloss.Color("#7C3AED")
+	colorMuted     = lipgloss.Color("#6B7280")
+	colorSelected  = lipgloss.Color("#7C3AED")
+	colorBorder    = lipgloss.Color("#374151")
+	colorHighlight = lipgloss.Color("#EDE9FE")
+	colorText      = lipgloss.Color("#F9FAFB")
+	colorAccent    = lipgloss.Color("#A78BFA")
+	colorGreen     = lipgloss.Color("#34D399")
 
-// white is a plain color.Color used for the header text.
-white color.Color = lipgloss.Color("#FFFFFF")
+	// white is a plain color.Color used for the header text.
+	white color.Color = lipgloss.Color("#FFFFFF")
 )
 
 var (
-headerStyle = lipgloss.NewStyle().
-Bold(true).
-Foreground(white).
-Background(colorPrimary).
-Padding(0, 2)
+	headerStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(white).
+			Background(colorPrimary).
+			Padding(0, 2)
 
-titleStyle = lipgloss.NewStyle().
-Bold(true).
-Foreground(colorAccent)
+	titleStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(colorAccent)
 
-mutedStyle = lipgloss.NewStyle().
-Foreground(colorMuted)
+	mutedStyle = lipgloss.NewStyle().
+			Foreground(colorMuted)
 
-selectedItemStyle = lipgloss.NewStyle().
-Bold(true).
-Foreground(colorSelected).
-Background(colorHighlight)
+	selectedItemStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(colorSelected).
+				Background(colorHighlight)
 
-itemStyle = lipgloss.NewStyle().
-Foreground(colorText)
+	itemStyle = lipgloss.NewStyle().
+			Foreground(colorText)
 
-panelStyle = lipgloss.NewStyle().
-Border(lipgloss.RoundedBorder()).
-BorderForeground(colorBorder).
-Padding(0, 1)
+	panelStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(colorBorder).
+			Padding(0, 1)
 
-focusedPanelStyle = lipgloss.NewStyle().
-Border(lipgloss.RoundedBorder()).
-BorderForeground(colorPrimary).
-Padding(0, 1)
+	focusedPanelStyle = lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(colorPrimary).
+				Padding(0, 1)
 
-addButtonStyle = lipgloss.NewStyle().
-Foreground(colorGreen).
-Bold(true)
+	addButtonStyle = lipgloss.NewStyle().
+			Foreground(colorGreen).
+			Bold(true)
 
-linkStyle = lipgloss.NewStyle().
-Foreground(colorAccent).
-Underline(true)
+	linkStyle = lipgloss.NewStyle().
+			Foreground(colorAccent).
+			Underline(true)
 
-sectionTitleStyle = lipgloss.NewStyle().
-Bold(true).
-Foreground(colorAccent).
-BorderBottom(true).
-BorderStyle(lipgloss.NormalBorder()).
-BorderForeground(colorBorder)
+	sectionTitleStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(colorAccent).
+				BorderBottom(true).
+				BorderStyle(lipgloss.NormalBorder()).
+				BorderForeground(colorBorder)
 
-columnKeyStyle = lipgloss.NewStyle().
-Foreground(colorAccent).
-Bold(true)
+	columnKeyStyle = lipgloss.NewStyle().
+			Foreground(colorAccent).
+			Bold(true)
 
-columnTypeStyle = lipgloss.NewStyle().
-Foreground(colorMuted)
+	columnTypeStyle = lipgloss.NewStyle().
+			Foreground(colorMuted)
 
-helpStyle = lipgloss.NewStyle().
-Foreground(colorMuted)
+	helpStyle = lipgloss.NewStyle().
+			Foreground(colorMuted)
 )

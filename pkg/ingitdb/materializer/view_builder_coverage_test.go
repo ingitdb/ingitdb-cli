@@ -346,11 +346,11 @@ func TestSimpleViewBuilder_BuildView_NonDefaultView(t *testing.T) {
 		DirPath: "/db/people",
 	}
 	view := &ingitdb.ViewDef{
-		ID:       "names",
+		ID:        "names",
 		IsDefault: false,
-		Columns:  []string{"name"},
-		OrderBy:  "name asc",
-		FileName: "names.json",
+		Columns:   []string{"name"},
+		OrderBy:   "name asc",
+		FileName:  "names.json",
 	}
 
 	result, err := builder.BuildView(context.Background(), "/db", "/db", col, &ingitdb.Definition{}, view)
@@ -686,8 +686,8 @@ func TestCompareAny(t *testing.T) {
 
 		// fallback string comparison (mismatched types)
 		{name: "mixed_types_fallback_equal", a: true, b: true, want: 0},
-		{name: "string_vs_int_fallback_less", a: "10", b: 20, want: -1},   // "10" < "20" lexicographically
-		{name: "fallback_greater", a: true, b: false, want: 1},             // "true" > "false" lexicographically
+		{name: "string_vs_int_fallback_less", a: "10", b: 20, want: -1}, // "10" < "20" lexicographically
+		{name: "fallback_greater", a: true, b: false, want: 1},          // "true" > "false" lexicographically
 	}
 
 	for _, tc := range tests {

@@ -27,12 +27,12 @@ func TestRecordPatternForKey(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name              string
-		fileName          string
-		dirPath           string
-		wantErr           bool
-		wantPatternPath   string
-		samplePaths       map[string]string // filePath -> expectedKey
+		name            string
+		fileName        string
+		dirPath         string
+		wantErr         bool
+		wantPatternPath string
+		samplePaths     map[string]string // filePath -> expectedKey
 	}{
 		{
 			name:            "simple pattern",
@@ -74,9 +74,9 @@ func TestRecordPatternForKey(t *testing.T) {
 			wantErr:         false,
 			wantPatternPath: "/data/countries/*/*.yaml",
 			samplePaths: map[string]string{
-				"/data/countries/us/us.yaml":   "us",
-				"/data/countries/uk/uk.yaml":   "uk",
-				"/data/countries/fr/fr.yaml":   "fr",
+				"/data/countries/us/us.yaml": "us",
+				"/data/countries/uk/uk.yaml": "uk",
+				"/data/countries/fr/fr.yaml": "fr",
 			},
 		},
 		{

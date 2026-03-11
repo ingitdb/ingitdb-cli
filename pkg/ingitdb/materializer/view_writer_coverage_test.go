@@ -348,9 +348,9 @@ func TestIsMarkdownCommentLine_Valid(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name  string
-		line  string
-		want  bool
+		name string
+		line string
+		want bool
 	}{
 		{"standard comment", "[//]: # (comment)", true},
 		{"comment with spaces", "  [//]: # (comment)  ", true},

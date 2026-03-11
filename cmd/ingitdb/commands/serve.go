@@ -49,4 +49,3 @@ func Serve(
 	cmd.Flags().Bool("watcher", false, "enable file watcher")
 	return cmd
 }
-

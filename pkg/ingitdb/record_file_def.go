@@ -10,9 +10,9 @@ import (
 type RecordType string
 
 const (
-	SingleRecord   RecordType = "map[string]any"
-	ListOfRecords  RecordType = "[]map[string]any"
-	MapOfRecords RecordType = "map[$record_id]map[$field_name]any"
+	SingleRecord  RecordType = "map[string]any"
+	ListOfRecords RecordType = "[]map[string]any"
+	MapOfRecords  RecordType = "map[$record_id]map[$field_name]any"
 )
 
 type RecordFileDef struct {

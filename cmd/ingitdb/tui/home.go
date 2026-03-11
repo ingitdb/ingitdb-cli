@@ -49,13 +49,13 @@ func newHomeModel(dbPath string, def *ingitdb.Definition, newDB func(string, *in
 	}
 	sort.Slice(entries, func(i, j int) bool { return entries[i].id < entries[j].id })
 	m := homeModel{
-		dbPath:         dbPath,
-		def:            def,
-		newDB:          newDB,
-		collections:    entries,
-		filterFocused:  true,
-		width:          width,
-		height:         height,
+		dbPath:        dbPath,
+		def:           def,
+		newDB:         newDB,
+		collections:   entries,
+		filterFocused: true,
+		width:         width,
+		height:        height,
 	}
 	m.filteredCollections = m.applyFilter()
 	if len(m.filteredCollections) > 0 && newDB != nil {

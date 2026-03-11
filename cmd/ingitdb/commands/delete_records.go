@@ -20,4 +20,3 @@ func deleteRecords() *cobra.Command {
 	cmd.Flags().String("filter-name", "", "pattern to match record names to delete")
 	return cmd
 }
-

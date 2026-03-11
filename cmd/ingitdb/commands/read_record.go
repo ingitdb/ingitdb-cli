@@ -75,4 +75,3 @@ func readRecord(
 	addFormatFlag(cmd, "yaml")
 	return cmd
 }
-

@@ -155,8 +155,8 @@ func TestResolveGitHubRecordContext_CollectionNotFound(t *testing.T) {
 	// succeed as well. Because the def returned by the mock reader already has
 	// the collection, we patch the factory-level result to a def WITHOUT it.
 	reader := &fakeFileReader{files: map[string][]byte{
-		".ingitdb/root-collections.yaml":                 []byte("test.items: data/items\n"),
-		"data/items/.collection/test.items.yaml":         []byte("record_file:\n  name: \"{key}.yaml\"\n  format: yaml\ncolumns:\n  name:\n    type: string\n"),
+		".ingitdb/root-collections.yaml":         []byte("test.items: data/items\n"),
+		"data/items/.collection/test.items.yaml": []byte("record_file:\n  name: \"{key}.yaml\"\n  format: yaml\ncolumns:\n  name:\n    type: string\n"),
 	}}
 	mockReaderFactory := NewMockGitHubFileReaderFactory(ctrl)
 	mockReaderFactory.EXPECT().NewGitHubFileReader(gomock.Any()).Return(reader, nil).AnyTimes()

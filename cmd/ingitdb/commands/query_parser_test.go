@@ -175,9 +175,9 @@ func TestProjectRecord(t *testing.T) {
 	}
 
 	tests := []struct {
-		name   string
-		fields []string
-		wantID bool
+		name     string
+		fields   []string
+		wantID   bool
 		wantKeys []string
 	}{
 		{

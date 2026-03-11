@@ -77,7 +77,6 @@ func TestFormatBatchFileName(t *testing.T) {
 	}
 }
 
-
 func TestFormatExportBatch_TSV(t *testing.T) {
 	t.Parallel()
 

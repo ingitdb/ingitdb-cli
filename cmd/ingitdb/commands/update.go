@@ -23,4 +23,3 @@ func Update(
 	cmd.AddCommand(updateRecord(homeDir, getWd, readDefinition, newDB, logf))
 	return cmd
 }
-
