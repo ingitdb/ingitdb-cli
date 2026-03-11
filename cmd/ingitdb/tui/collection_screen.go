@@ -38,6 +38,11 @@ type collectionModel struct {
 	recordOffset int
 	columns      []string
 
+	// cell selection and horizontal scroll
+	colCursor int   // selected column index
+	colOffset int   // first visible column index (horizontal scroll)
+	colWidths []int // cached column display widths (for navigation)
+
 	// locale handling for map[locale]string columns
 	locale  string   // currently selected locale (e.g. "en")
 	locales []string // available locales sorted by full language name
@@ -84,6 +89,9 @@ func (m collectionModel) Update(msg tea.Msg) (collectionModel, tea.Cmd) {
 			}
 			m.columns = buildDisplayColumns(m.colDef, m.locale)
 		}
+		m.colWidths = m.computeColWidths()
+		m.colCursor = 0
+		m.colOffset = 0
 
 	case tea.KeyPressMsg:
 		_, innerH := m.panelInnerDims()
@@ -126,10 +134,27 @@ func (m collectionModel) Update(msg tea.Msg) (collectionModel, tea.Cmd) {
 				m.locale = m.locales[m.localeDropdownCursor]
 				m.columns = buildDisplayColumns(m.colDef, m.locale)
 				m.localeDropdownOpen = false
+				m.colWidths = m.computeColWidths()
+				m.colCursor = 0
+				m.colOffset = 0
 			}
 		case "esc":
 			if m.localeDropdownOpen {
 				m.localeDropdownOpen = false
+			}
+		case "right":
+			if !m.localeDropdownOpen && len(m.columns) > 0 && m.colCursor < len(m.columns)-1 {
+				m.colCursor++
+				_, rightW := collectionPanelWidths(m.width)
+				innerW := rightW - 4
+				m.colOffset = computeColOffset(m.colCursor, m.colOffset, m.colWidths, innerW)
+			}
+		case "left":
+			if !m.localeDropdownOpen && m.colCursor > 0 {
+				m.colCursor--
+				_, rightW := collectionPanelWidths(m.width)
+				innerW := rightW - 4
+				m.colOffset = computeColOffset(m.colCursor, m.colOffset, m.colWidths, innerW)
 			}
 		}
 	}
@@ -153,7 +178,7 @@ func (m collectionModel) View() string {
 	right := focusedPanelStyle.Width(rightW).Height(innerH).Render(rightContent)
 
 	panels := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
-	help := helpStyle.Render(" ↑/↓ navigate  l locale  enter select  esc back  q quit")
+	help := helpStyle.Render(" ↑/↓ row  ←/→ column  l locale  enter select  esc back  q quit")
 	return lipgloss.JoinVertical(lipgloss.Left, panels, help)
 }
 

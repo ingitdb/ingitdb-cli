@@ -23,31 +23,23 @@ func (m collectionModel) renderRecords(width, height int) string {
 		return mutedStyle.Render("(no columns defined)")
 	}
 
-	colWidths := make([]int, len(cols))
-	for i, c := range cols {
-		colWidths[i] = uniseg.StringWidth(c)
+	// Use cached widths when available; recompute otherwise.
+	colWidths := m.colWidths
+	if len(colWidths) != len(cols) {
+		colWidths = m.computeColWidths()
 	}
-	for _, row := range m.records {
-		for i, c := range cols {
-			raw := m.cellValue(row, c)
-			v := replaceRegionalIndicators(raw)
-			if w := uniseg.StringWidth(v); w > colWidths[i] {
-				colWidths[i] = w
-			}
-		}
+
+	// Determine which columns are visible given the horizontal scroll offset.
+	colOffset := m.colOffset
+	if colOffset >= len(cols) {
+		colOffset = 0
 	}
-	for i := range colWidths {
-		if colWidths[i] > 30 {
-			colWidths[i] = 30
-		}
-	}
+	visIdx := visibleColumns(colOffset, colWidths, width)
 
 	// Build all content lines as a slice so the dropdown can be overlaid.
 	var lines []string
 
 	// Line 0: collection name (top-left) + locale selector (top-right).
-	// Use a plain bold style here — sectionTitleStyle has BorderBottom which
-	// would push the locale label onto the underline row, not the title row.
 	titleStr := lipgloss.NewStyle().Bold(true).Foreground(colorAccent).Render(m.colDef.ID)
 	if m.locale != "" {
 		arrow := " ▼"
@@ -66,26 +58,40 @@ func (m collectionModel) renderRecords(width, height int) string {
 		lines = append(lines, titleStr)
 	}
 
-	// Line 1: title underline (drawn manually, matching sectionTitleStyle).
+	// Line 1: title underline.
 	borderW := width
 	if borderW < 1 {
 		borderW = 1
 	}
 	lines = append(lines, mutedStyle.Render(strings.Repeat("─", borderW)))
 
-	// Line 2: column headers.
-	headerCells := make([]string, len(cols))
-	for i, c := range cols {
-		headerCells[i] = columnKeyStyle.Render(padRight(c, colWidths[i]))
+	// Line 2: column headers (visible columns only, no wrapping).
+	headerCells := make([]string, len(visIdx))
+	for vi, i := range visIdx {
+		headerCells[vi] = columnKeyStyle.Render(padRight(cols[i], colWidths[i]))
 	}
-	lines = append(lines, strings.Join(headerCells, " │ "))
+	headerLine := strings.Join(headerCells, " │ ")
+	if colOffset > 0 {
+		headerLine = mutedStyle.Render("◀ ") + headerLine
+	}
+	if visIdx[len(visIdx)-1] < len(cols)-1 {
+		headerLine = headerLine + mutedStyle.Render(" ▶")
+	}
+	lines = append(lines, headerLine)
 
-	// Line 3: separator.
-	seps := make([]string, len(cols))
-	for i, w := range colWidths {
-		seps[i] = strings.Repeat("─", w)
+	// Line 3: separator (visible columns only).
+	seps := make([]string, len(visIdx))
+	for vi, i := range visIdx {
+		seps[vi] = strings.Repeat("─", colWidths[i])
 	}
-	lines = append(lines, mutedStyle.Render(strings.Join(seps, "─┼─")))
+	sepLine := strings.Join(seps, "─┼─")
+	if colOffset > 0 {
+		sepLine = "──" + sepLine
+	}
+	if visIdx[len(visIdx)-1] < len(cols)-1 {
+		sepLine = sepLine + "──"
+	}
+	lines = append(lines, mutedStyle.Render(sepLine))
 
 	// Data rows (lines 4+).
 	visibleRows := height - 4 // title + border + header + separator
@@ -108,22 +114,31 @@ func (m collectionModel) renderRecords(width, height int) string {
 	}
 	for ri := m.recordOffset; ri < end; ri++ {
 		row := m.records[ri]
-		cells := make([]string, len(cols))
-		for i, c := range cols {
+		cells := make([]string, len(visIdx))
+		for vi, i := range visIdx {
+			c := cols[i]
 			raw := m.cellValue(row, c)
 			v := replaceRegionalIndicators(raw)
 			if uniseg.StringWidth(v) > colWidths[i] {
 				v = truncateToWidth(v, colWidths[i]-1) + "…"
 			}
+			var cell string
 			if numericCol[i] {
-				cells[i] = padLeft(v, colWidths[i])
+				cell = padLeft(v, colWidths[i])
 			} else {
-				cells[i] = padRight(v, colWidths[i])
+				cell = padRight(v, colWidths[i])
 			}
+			if ri == m.recordCursor && i == m.colCursor {
+				cell = selectedItemStyle.Render(cell)
+			}
+			cells[vi] = cell
 		}
 		line := strings.Join(cells, " │ ")
-		if ri == m.recordCursor {
-			line = selectedItemStyle.Render(line)
+		if colOffset > 0 {
+			line = "  " + line
+		}
+		if visIdx[len(visIdx)-1] < len(cols)-1 {
+			line = line + "  "
 		}
 		lines = append(lines, line)
 	}
@@ -238,6 +253,91 @@ func stripAnsi(s string) string {
 		b.WriteRune(r)
 	}
 	return b.String()
+}
+
+// computeColWidths calculates the display width for each column, capped at 30,
+// considering both column names and all record values.
+func (m collectionModel) computeColWidths() []int {
+	cols := m.columns
+	if len(cols) == 0 {
+		return nil
+	}
+	widths := make([]int, len(cols))
+	for i, c := range cols {
+		widths[i] = uniseg.StringWidth(c)
+	}
+	for _, row := range m.records {
+		for i, c := range cols {
+			raw := m.cellValue(row, c)
+			v := replaceRegionalIndicators(raw)
+			if w := uniseg.StringWidth(v); w > widths[i] {
+				widths[i] = w
+			}
+		}
+	}
+	for i := range widths {
+		if widths[i] > 30 {
+			widths[i] = 30
+		}
+	}
+	return widths
+}
+
+// visibleColumns returns the slice of column indices that fit within width,
+// starting from colOffset. At least one column is always included.
+func visibleColumns(colOffset int, colWidths []int, width int) []int {
+	if len(colWidths) == 0 {
+		return nil
+	}
+	result := []int{}
+	used := 0
+	for i := colOffset; i < len(colWidths); i++ {
+		extra := 0
+		if len(result) > 0 {
+			extra = 3 // " │ "
+		}
+		// Always include the first column even if it exceeds width.
+		if len(result) > 0 && used+extra+colWidths[i] > width {
+			break
+		}
+		used += extra + colWidths[i]
+		result = append(result, i)
+	}
+	return result
+}
+
+// computeColOffset adjusts the horizontal scroll offset so that colCursor
+// remains visible within the given panel width.
+func computeColOffset(colCursor, curOffset int, colWidths []int, width int) int {
+	n := len(colWidths)
+	if n == 0 {
+		return 0
+	}
+	if colCursor < 0 {
+		colCursor = 0
+	}
+	if colCursor >= n {
+		colCursor = n - 1
+	}
+
+	// Snap left if cursor moved before current offset.
+	offset := curOffset
+	if colCursor < offset {
+		return colCursor
+	}
+
+	// Advance offset until colCursor is within the visible range.
+	for offset < colCursor {
+		vis := visibleColumns(offset, colWidths, width)
+		if len(vis) == 0 {
+			break
+		}
+		if colCursor <= vis[len(vis)-1] {
+			break
+		}
+		offset++
+	}
+	return offset
 }
 
 // buildDisplayColumns returns display column names, expanding L10N columns
