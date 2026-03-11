@@ -6,9 +6,8 @@ package tui
 import (
 	"fmt"
 
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/dal-go/dalgo/dal"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
@@ -33,10 +32,6 @@ type Model struct {
 	currentScreen screen
 	home          homeModel
 	collection    *collectionModel
-
-	// generic full-screen viewport for error display
-	errVP    *viewport.Model
-	errTitle string
 }
 
 // New creates the root model. width/height are the initial terminal dimensions.
@@ -74,7 +69,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
@@ -136,7 +131,7 @@ func (m Model) delegateUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) View() string {
+func (m Model) View() tea.View {
 	header := m.renderHeader()
 	var body string
 	switch m.currentScreen {
@@ -147,7 +142,10 @@ func (m Model) View() string {
 			body = m.collection.View()
 		}
 	}
-	return lipgloss.JoinVertical(lipgloss.Left, header, body)
+	content := lipgloss.JoinVertical(lipgloss.Left, header, body)
+	v := tea.NewView(content)
+	v.AltScreen = true
+	return v
 }
 
 func (m Model) renderHeader() string {
