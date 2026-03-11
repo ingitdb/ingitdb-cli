@@ -41,7 +41,7 @@ func New(
 	newDB func(string, *ingitdb.Definition) (dal.DB, error),
 	width, height int,
 ) Model {
-	home := newHomeModel(dbPath, def, width, height)
+	home := newHomeModel(dbPath, def, newDB, width, height)
 	return Model{
 		dbPath:        dbPath,
 		def:           def,
@@ -54,7 +54,7 @@ func New(
 }
 
 func (m Model) Init() tea.Cmd {
-	return nil
+	return m.home.Init()
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -91,6 +91,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case recordsLoadedMsg:
+		if m.currentScreen == screenHome {
+			updated, cmd := m.home.Update(msg)
+			m.home = updated
+			return m, cmd
+		}
 		if m.collection != nil {
 			updated, cmd := m.collection.Update(msg)
 			m.collection = &updated

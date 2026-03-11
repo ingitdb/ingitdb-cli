@@ -9,6 +9,7 @@ import (
 tea "charm.land/bubbletea/v2"
 "charm.land/lipgloss/v2"
 "github.com/dal-go/dalgo/dal"
+	"github.com/rivo/uniseg"
 
 "github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
@@ -97,8 +98,9 @@ leftInner := leftW - 4
 rightInner := rightW - 4
 _, innerH := m.panelInnerDims()
 
-leftContent := m.renderSchema(leftInner, innerH)
-rightContent := m.renderRecords(rightInner, innerH)
+contentH := innerH - 2 // panel border consumes 2 rows
+leftContent := m.renderSchema(leftInner, contentH)
+rightContent := m.renderRecords(rightInner, contentH)
 
 left := focusedPanelStyle.Width(leftInner).Height(innerH).Render(leftContent)
 right := panelStyle.Width(rightInner).Height(innerH).Render(rightContent)
@@ -110,21 +112,29 @@ return lipgloss.JoinVertical(lipgloss.Left, panels, help)
 
 func (m collectionModel) panelInnerDims() (width, height int) {
 leftW, _ := collectionPanelWidths(m.width)
-return leftW - 4, m.height - 5
+return leftW - 4, m.height - 2 // header + help bar
 }
 
 func (m collectionModel) renderSchema(width, height int) string {
-lines := m.schemaLines
-end := m.schemaOffset + height
-if end > len(lines) {
-end = len(lines)
-}
-visible := lines[m.schemaOffset:end]
-// Pad to fill height.
-for len(visible) < height {
-visible = append(visible, "")
-}
-return strings.Join(visible[:height], "\n")
+	// Expand logical lines: sectionTitleStyle embeds \n for its
+	// bottom border; split to physical lines so we slice exactly height rows.
+	var physical []string
+	for _, l := range m.schemaLines {
+		physical = append(physical, strings.Split(l, "\n")...)
+	}
+	start := m.schemaOffset
+	if start > len(physical) {
+		start = len(physical)
+	}
+	end := start + height
+	if end > len(physical) {
+		end = len(physical)
+	}
+	visible := physical[start:end]
+	for len(visible) < height {
+		visible = append(visible, "")
+	}
+	return strings.Join(visible, "\n")
 }
 
 func (m collectionModel) renderRecords(width, height int) string {
@@ -141,14 +151,14 @@ return mutedStyle.Render("(no columns defined)")
 
 colWidths := make([]int, len(cols))
 for i, c := range cols {
-colWidths[i] = len(c)
+colWidths[i] = uniseg.StringWidth(c)
 }
 for _, row := range m.records {
 for i, c := range cols {
-v := fmt.Sprintf("%v", row[c])
-if len(v) > colWidths[i] {
-colWidths[i] = len(v)
-}
+			v := replaceRegionalIndicators(fmt.Sprintf("%v", row[c]))
+			if w := uniseg.StringWidth(v); w > colWidths[i] {
+				colWidths[i] = w
+			}
 }
 }
 for i := range colWidths {
@@ -184,15 +194,27 @@ end := m.recordOffset + visibleRows
 if end > len(m.records) {
 end = len(m.records)
 }
+// Detect which columns are numeric (check first record).
+numericCol := make([]bool, len(cols))
+if len(m.records) > 0 {
+for i, c := range cols {
+numericCol[i] = isNumeric(m.records[0][c])
+}
+}
+
 for ri := m.recordOffset; ri < end; ri++ {
 row := m.records[ri]
 cells := make([]string, len(cols))
 for i, c := range cols {
-v := fmt.Sprintf("%v", row[c])
-if len(v) > colWidths[i] {
-v = v[:colWidths[i]-1] + "…"
-}
+			v := replaceRegionalIndicators(fmt.Sprintf("%v", row[c]))
+			if uniseg.StringWidth(v) > colWidths[i] {
+				v = truncateToWidth(v, colWidths[i]-1) + "…"
+			}
+if numericCol[i] {
+cells[i] = padLeft(v, colWidths[i])
+} else {
 cells[i] = padRight(v, colWidths[i])
+}
 }
 line := strings.Join(cells, " │ ")
 if ri == m.recordCursor {
@@ -312,8 +334,73 @@ return
 }
 
 func padRight(s string, width int) string {
-if len(s) >= width {
-return s
+	w := uniseg.StringWidth(s)
+	if w >= width {
+		return s
+	}
+	return s + strings.Repeat(" ", width-w)
 }
-return s + strings.Repeat(" ", width-len(s))
+
+func padLeft(s string, width int) string {
+	w := uniseg.StringWidth(s)
+	if w >= width {
+		return s
+	}
+	return strings.Repeat(" ", width-w) + s
+}
+
+func isNumeric(v any) bool {
+switch v.(type) {
+case int, int8, int16, int32, int64,
+uint, uint8, uint16, uint32, uint64,
+float32, float64:
+return true
+}
+return false
+}
+
+// truncateToWidth truncates s to fit within maxWidth terminal columns.
+func truncateToWidth(s string, maxWidth int) string {
+var (
+result  strings.Builder
+w       int
+cluster string
+rest    = s
+width   int
+)
+for rest != "" {
+cluster, rest, width, _ = uniseg.FirstGraphemeClusterInString(rest, -1)
+if w+width > maxWidth {
+break
+}
+result.WriteString(cluster)
+w += width
+}
+return result.String()
+}
+
+// replaceRegionalIndicators converts Regional Indicator Symbol pairs (flag emoji,
+// e.g. 🇺🇸) into their two-letter ASCII country codes (e.g. "US") so they
+// render predictably in terminals that lack emoji support.
+func replaceRegionalIndicators(s string) string {
+const base = 0x1F1E6 // U+1F1E6 = 🇦  maps to 'A'
+runes := []rune(s)
+var b strings.Builder
+for i := 0; i < len(runes); i++ {
+r := runes[i]
+if r >= 0x1F1E6 && r <= 0x1F1FF {
+// First indicator of a pair.
+if i+1 < len(runes) && runes[i+1] >= 0x1F1E6 && runes[i+1] <= 0x1F1FF {
+b.WriteByte(byte('A' + (r - base)))
+b.WriteByte(byte('A' + (runes[i+1] - base)))
+i++ // consume second indicator
+continue
+}
+// Lone indicator — keep as letter.
+b.WriteByte(byte('A' + (r - base)))
+continue
+}
+b.WriteRune(r)
+}
+return b.String()
 }

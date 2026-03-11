@@ -118,7 +118,7 @@ func TestRenderCollectionList_ShowsRelativePath(t *testing.T) {
 		},
 	}
 
-	m := newHomeModel(dbPath, def, 120, 30)
+	m := newHomeModel(dbPath, def, nil, 120, 30)
 
 	// renderCollectionList is called with a reasonable width and height.
 	rendered := m.renderCollectionList(60, 20)
@@ -130,4 +130,126 @@ func TestRenderCollectionList_ShowsRelativePath(t *testing.T) {
 	if strings.Contains(rendered, collDirPath) {
 		t.Errorf("renderCollectionList output contains absolute path %q; should show relative path instead; got:\n%s", collDirPath, rendered)
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Panel height consistency
+// ---------------------------------------------------------------------------
+
+func TestPanelHeightsMatch(t *testing.T) {
+t.Parallel()
+
+def := &ingitdb.Definition{
+Collections: map[string]*ingitdb.CollectionDef{
+"users": {
+ID:      "users",
+DirPath: "/repo/users",
+Columns: map[string]*ingitdb.ColumnDef{
+"name": {Type: "string"},
+},
+},
+},
+}
+
+m := newHomeModel("/repo", def, nil, 120, 40)
+rendered := m.View()
+// All lines in JoinHorizontal output should have the same width pattern;
+// more importantly the panel block (excluding help line) should not have
+// ragged rows. Count lines — they should equal m.height - 1 (the help
+// line is separate).
+lines := strings.Split(rendered, "\n")
+// The total rendered height should be consistent. With height=40 the
+// panel outer height = 40-5 = 35, and help = 1, so total ~36.
+// The key assertion: no panel should create extra rows.
+if len(lines) > m.height {
+t.Errorf("rendered output has %d lines, expected at most %d (terminal height)", len(lines), m.height)
+}
+}
+
+func TestPreviewPanelHeightsEqualCollectionList(t *testing.T) {
+t.Parallel()
+
+def := &ingitdb.Definition{
+Collections: map[string]*ingitdb.CollectionDef{
+"users": {
+ID:      "users",
+DirPath: "/repo/users",
+Columns: map[string]*ingitdb.ColumnDef{
+"name":  {Type: "string"},
+"email": {Type: "string"},
+},
+RecordFile: &ingitdb.RecordFileDef{
+Format: "yaml",
+Name:   "record.yaml",
+},
+},
+},
+}
+
+const termW, termH = 120, 40
+
+m := newHomeModel("/repo", def, nil, termW, termH)
+// Cursor on first collection (not filter), no newDB so no preview.
+m.filterFocused = false
+m.cursor = 0
+
+leftWidth, rightWidth := m.panelWidths()
+leftInner := leftWidth - 4
+rightInner := rightWidth - 4
+innerH := termH - 5
+contentH := innerH - 2
+
+leftContent := m.renderCollectionList(leftInner, contentH)
+leftPanel := focusedPanelStyle.Width(leftInner).Height(innerH).Render(leftContent)
+
+rightContent := m.renderWelcome(rightInner, contentH)
+rightPanel := panelStyle.Width(rightInner).Height(innerH).Render(rightContent)
+
+leftLines := strings.Count(leftPanel, "\n") + 1
+rightLines := strings.Count(rightPanel, "\n") + 1
+
+if leftLines != rightLines {
+t.Errorf("left panel height (%d) != right panel height (%d)", leftLines, rightLines)
+}
+if leftLines != innerH {
+t.Errorf("left panel height (%d) != expected outer height (%d)", leftLines, innerH)
+}
+}
+
+func TestSchemaPanelDoesNotOverflow(t *testing.T) {
+t.Parallel()
+
+colDef := &ingitdb.CollectionDef{
+ID: "users",
+Columns: map[string]*ingitdb.ColumnDef{
+"name":  {Type: "string", Required: true},
+"email": {Type: "string"},
+"age":   {Type: "integer"},
+},
+RecordFile: &ingitdb.RecordFileDef{
+Format: "yaml",
+Name:   "record.yaml",
+},
+}
+
+schemaLines := buildSchemaLines(colDef)
+
+const innerH = 35
+contentH := innerH - 2 // panel border
+
+col := collectionModel{
+colDef:      colDef,
+schemaLines: schemaLines,
+}
+content := col.renderSchema(30, contentH)
+contentLines := strings.Count(content, "\n") + 1
+if contentLines != contentH {
+t.Errorf("renderSchema produced %d lines, want exactly %d", contentLines, contentH)
+}
+
+panel := focusedPanelStyle.Width(30).Height(innerH).Render(content)
+panelLines := strings.Count(panel, "\n") + 1
+if panelLines != innerH {
+t.Errorf("schema panel height %d != expected outer height %d", panelLines, innerH)
+}
 }
