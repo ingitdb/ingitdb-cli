@@ -38,14 +38,6 @@ The codebase has two main packages:
 
 Test data lives in `test-ingitdb/` and `.ingitdb.yaml` at the repo root points to it.
 
-## Agent Execution
-
-When a spec or plan prescribes a **specific agent count or parallel execution model** (e.g. "8 parallel
-agents", "separate worktrees", "run batches simultaneously"), treat that as a hard requirement — not an
-implementation suggestion. Do **not** collapse parallel batches into a single agent without explicit
-permission from the user. If the execution environment makes the prescribed model impractical, use the
-`ask_user` tool to confirm before simplifying.
-
 ## Code Conventions
 
 - **No nested calls**: never write `f2(f1())`; assign the intermediate result first.
