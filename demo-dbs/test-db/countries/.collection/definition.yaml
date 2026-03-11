@@ -19,7 +19,7 @@ columns:
 columns_order:
   - flag
   - titles
+  - currency
   - population
   - area_km2
-  - currency
 default_view: {}
