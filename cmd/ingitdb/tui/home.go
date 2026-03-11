@@ -18,7 +18,15 @@ const (
 	addBtnText = "+ Add collection"
 )
 
-// homeModel is the main screen showing collection list and welcome/preview panel.
+type panelFocus int
+
+const (
+	panelCollections panelFocus = iota
+	panelData
+	panelSchema
+)
+
+// homeModel is the main screen showing collection list and preview panels.
 type homeModel struct {
 	dbPath              string
 	def                 *ingitdb.Definition
@@ -26,12 +34,16 @@ type homeModel struct {
 	collections         []collectionEntry // sorted list of all collections
 	filteredCollections []collectionEntry // subset of collections matching filterValue
 	filterValue         string
-	filterFocused       bool
 	cursor              int // 0..len(filteredCollections) inclusive (+1 for add button)
 	width               int
 	height              int
 
-	// right-panel preview for the currently selected collection
+	// panel focus management
+	focus        panelFocus // which panel is active
+	recordCursor int        // selected record in data panel
+	recordOffset int        // scroll offset in data panel
+
+	// preview for the currently selected collection
 	preview   *collectionModel
 	previewID string
 }
@@ -49,13 +61,13 @@ func newHomeModel(dbPath string, def *ingitdb.Definition, newDB func(string, *in
 	}
 	sort.Slice(entries, func(i, j int) bool { return entries[i].id < entries[j].id })
 	m := homeModel{
-		dbPath:        dbPath,
-		def:           def,
-		newDB:         newDB,
-		collections:   entries,
-		filterFocused: true,
-		width:         width,
-		height:        height,
+		dbPath:      dbPath,
+		def:         def,
+		newDB:       newDB,
+		collections: entries,
+		focus:       panelCollections,
+		width:       width,
+		height:      height,
 	}
 	m.filteredCollections = m.applyFilter()
 	if len(m.filteredCollections) > 0 && newDB != nil {
@@ -147,13 +159,16 @@ func (m homeModel) Update(msg tea.Msg) (homeModel, tea.Cmd) {
 		}
 
 	case tea.KeyPressMsg:
-		switch msg.String() {
-		case "tab", "shift+tab":
-			m.filterFocused = !m.filterFocused
-			return m, nil
+		// When the data panel's locale dropdown is open, route all keys to the preview.
+		if m.focus == panelData && m.preview != nil && m.preview.localeDropdownOpen {
+			updated, cmd := m.preview.Update(msg)
+			m.preview = &updated
+			return m, cmd
+		}
 
+		switch msg.String() {
 		case "backspace":
-			if m.filterFocused && len(m.filterValue) > 0 {
+			if m.focus == panelCollections && len(m.filterValue) > 0 {
 				runes := []rune(m.filterValue)
 				m.filterValue = string(runes[:len(runes)-1])
 				m.filteredCollections = m.applyFilter()
@@ -165,30 +180,109 @@ func (m homeModel) Update(msg tea.Msg) (homeModel, tea.Cmd) {
 			}
 
 		case "up", "k":
-			if m.filterFocused {
-				// already at filter, nothing above
-			} else if m.cursor == 0 {
-				m.filterFocused = true
-			} else {
-				m.cursor--
+			if m.focus == panelCollections {
+				if m.cursor > 0 {
+					m.cursor--
+					cmd := m.refreshPreview()
+					return m, cmd
+				}
+			} else if m.focus == panelData && m.preview != nil && len(m.preview.records) > 0 {
+				if m.recordCursor > 0 {
+					m.recordCursor--
+					if m.recordCursor < m.recordOffset {
+						m.recordOffset = m.recordCursor
+					}
+				} else if len(m.preview.locales) > 1 {
+					// At top row: give focus to locale selector dropdown.
+					updated, cmd := m.preview.Update(msg)
+					m.preview = &updated
+					return m, cmd
+				}
 			}
-			cmd := m.refreshPreview()
-			return m, cmd
 
 		case "down", "j":
-			if m.filterFocused {
-				if len(m.filteredCollections) > 0 {
-					m.filterFocused = false
-					m.cursor = 0
+			if m.focus == panelCollections {
+				if m.cursor < len(m.filteredCollections) {
+					m.cursor++
+					cmd := m.refreshPreview()
+					return m, cmd
 				}
-			} else if m.cursor < len(m.filteredCollections) {
-				m.cursor++
+			} else if m.focus == panelData && m.preview != nil && len(m.preview.records) > 0 {
+				if m.recordCursor < len(m.preview.records)-1 {
+					m.recordCursor++
+					_, innerH := m.panelInnerDims()
+					visibleRows := innerH - 4 // title + header + separator + total line
+					if visibleRows < 1 {
+						visibleRows = 1
+					}
+					if m.recordCursor >= m.recordOffset+visibleRows {
+						m.recordOffset = m.recordCursor - visibleRows + 1
+					}
+				}
 			}
-			cmd := m.refreshPreview()
-			return m, cmd
+
+		case "home":
+			if m.focus == panelData && m.preview != nil && len(m.preview.records) > 0 {
+				m.recordCursor = 0
+				m.recordOffset = 0
+			}
+
+		case "end":
+			if m.focus == panelData && m.preview != nil && len(m.preview.records) > 0 {
+				m.recordCursor = len(m.preview.records) - 1
+				_, innerH := m.panelInnerDims()
+				visibleRows := innerH - 4 // title + header + separator + total line
+				if visibleRows < 1 {
+					visibleRows = 1
+				}
+				if m.recordCursor >= visibleRows {
+					m.recordOffset = m.recordCursor - visibleRows + 1
+				}
+			}
+
+		case "left":
+			switch m.focus {
+			case panelData:
+				m.focus = panelCollections
+			case panelSchema:
+				m.focus = panelData
+			case panelCollections:
+				// already at leftmost panel
+			}
+
+		case "right":
+			switch m.focus {
+			case panelCollections:
+				m.focus = panelData
+			case panelData:
+				m.focus = panelSchema
+			case panelSchema:
+				// already at rightmost panel
+			}
+
+		case "l", "L":
+			if m.focus == panelData && m.preview != nil && len(m.preview.locales) > 1 {
+				updated, cmd := m.preview.Update(msg)
+				m.preview = &updated
+				return m, cmd
+			}
+
+		case "esc":
+			if m.focus == panelData && m.preview != nil && m.preview.localeDropdownOpen {
+				updated, _ := m.preview.Update(msg)
+				m.preview = &updated
+				return m, nil
+			}
+
+		case "enter":
+			if m.focus == panelData && m.preview != nil && m.preview.localeDropdownOpen {
+				updated, _ := m.preview.Update(msg)
+				m.preview = &updated
+				return m, nil
+			}
 
 		default:
-			if m.filterFocused {
+			if m.focus == panelCollections {
 				key := msg.String()
 				runes := []rune(key)
 				if len(runes) == 1 && runes[0] >= 32 && runes[0] != 127 {
@@ -198,13 +292,6 @@ func (m homeModel) Update(msg tea.Msg) (homeModel, tea.Cmd) {
 						m.cursor = len(m.filteredCollections)
 					}
 					cmd := m.refreshPreview()
-					return m, cmd
-				}
-			} else if m.preview != nil {
-				key := msg.String()
-				if key == "l" || key == "L" {
-					updated, cmd := m.preview.Update(msg)
-					m.preview = &updated
 					return m, cmd
 				}
 			}
@@ -223,64 +310,109 @@ func (m homeModel) SelectedCollection() *ingitdb.CollectionDef {
 	return nil
 }
 
+// panelInnerDims returns the available width and height for panel content.
+func (m homeModel) panelInnerDims() (width, height int) {
+	return m.width, m.height - 2 // header + help bar
+}
+
 func (m homeModel) View() string {
-	leftWidth, rightWidth := m.panelWidths()
-	leftInner := leftWidth - 4
-	rightInner := rightWidth - 4
-	innerH := m.height - 2 // header + help bar
+	_, innerH := m.panelInnerDims()
 	contentH := innerH - 2 // panel border consumes 2 rows
 
-	leftContent := m.renderCollectionList(leftInner, contentH)
-	left := focusedPanelStyle.Width(leftInner).Height(innerH).Render(leftContent)
+	// Layout: 1/4 left (collections) | 1/2 middle (data) | 1/4 right (schema)
+	leftWidth := m.width / 4
+	if leftWidth < 20 {
+		leftWidth = 20
+	}
+	rightWidth := m.width / 4
+	if rightWidth < 24 {
+		rightWidth = 24
+	}
+	middleWidth := m.width - leftWidth - rightWidth
 
-	var right string
-	if !m.filterFocused && m.cursor < len(m.filteredCollections) && m.preview != nil {
-		right = m.renderPreview(rightWidth, innerH)
-	} else {
-		rightContent := m.renderWelcome(rightInner, contentH)
-		right = panelStyle.Width(rightInner).Height(innerH).Render(rightContent)
+	leftInner := leftWidth - 4
+	if leftInner < 1 {
+		leftInner = 1
+	}
+	middleInner := middleWidth - 4
+	if middleInner < 1 {
+		middleInner = 1
+	}
+	rightInner := rightWidth - 4
+	if rightInner < 1 {
+		rightInner = 1
 	}
 
-	panels := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
-	help := helpStyle.Render(" ↑/↓ navigate  tab filter  enter open  q quit")
+	// leftPanelW/middlePanelW/rightPanelW are the Width() args for lipgloss.
+	// In lipgloss v2, Width() is the total outer (border-box) width.
+	// Content area = Width - border(2) - padding(2) = allocatedWidth - 4 = innerWidth.
+	leftPanelW := leftWidth
+	middlePanelW := middleWidth
+	rightPanelW := rightWidth
+
+	// Left panel: collections list
+	leftContent := m.renderCollectionList(leftInner, contentH)
+	var leftPanel string
+	if m.focus == panelCollections {
+		leftPanel = focusedPanelStyle.Width(leftPanelW).Height(innerH).Render(leftContent)
+	} else {
+		leftPanel = panelStyle.Width(leftPanelW).Height(innerH).Render(leftContent)
+	}
+
+	// Middle panel: data table or welcome
+	var middlePanel string
+	if m.cursor < len(m.filteredCollections) && m.preview != nil {
+		middleContent := m.renderRecords(middleInner, contentH)
+		if m.focus == panelData {
+			middlePanel = focusedPanelStyle.Width(middlePanelW).Height(innerH).Render(middleContent)
+		} else {
+			middlePanel = panelStyle.Width(middlePanelW).Height(innerH).Render(middleContent)
+		}
+	} else {
+		welcomeContent := m.renderWelcome(middleInner, contentH)
+		middlePanel = panelStyle.Width(middlePanelW).Height(innerH).Render(welcomeContent)
+	}
+
+	// Right panel: schema
+	var rightPanel string
+	if m.cursor < len(m.filteredCollections) && m.preview != nil {
+		schemaContent := m.renderSchema(rightInner, contentH)
+		if m.focus == panelSchema {
+			rightPanel = focusedPanelStyle.Width(rightPanelW).Height(innerH).Render(schemaContent)
+		} else {
+			rightPanel = panelStyle.Width(rightPanelW).Height(innerH).Render(schemaContent)
+		}
+	} else {
+		rightPanel = panelStyle.Width(rightPanelW).Height(innerH).Render("")
+	}
+
+	panels := lipgloss.JoinHorizontal(lipgloss.Top, leftPanel, middlePanel, rightPanel)
+	help := helpStyle.Render(" ↑/↓ navigate  ← → panels  l locale  home end  q quit")
 	return lipgloss.JoinVertical(lipgloss.Left, panels, help)
 }
 
-// renderPreview renders the schema and records panels for the preview collection
-// side by side within totalWidth.
-func (m homeModel) renderPreview(totalWidth, height int) string {
-	schemaOuter := totalWidth / 3
-	if schemaOuter < 24 {
-		schemaOuter = 24
+// renderSchema renders the schema panel content.
+func (m homeModel) renderSchema(width, height int) string {
+	if m.preview == nil {
+		return ""
 	}
-	recordsOuter := totalWidth - schemaOuter
-	schemaInner := schemaOuter - 4
-	if schemaInner < 1 {
-		schemaInner = 1
-	}
-	recordsInner := recordsOuter - 4
-	if recordsInner < 1 {
-		recordsInner = 1
-	}
-
-	contentH := height - 2 // panel border consumes 2 rows
-	schemaContent := m.preview.renderSchema(schemaInner, contentH)
-	recordsContent := m.preview.renderRecords(recordsInner, contentH)
-
-	schemaPanel := focusedPanelStyle.Width(schemaInner).Height(height).Render(schemaContent)
-	recordsPanel := panelStyle.Width(recordsInner).Height(height).Render(recordsContent)
-
-	return lipgloss.JoinHorizontal(lipgloss.Top, schemaPanel, recordsPanel)
+	return m.preview.renderSchema(width, height)
 }
 
-func (m homeModel) panelWidths() (left, right int) {
-	total := m.width
-	left = total / 3
-	if left < 30 {
-		left = 30
+// renderRecords renders the records panel content, using the home screen's record cursor.
+func (m homeModel) renderRecords(width, height int) string {
+	if m.preview == nil {
+		return ""
 	}
-	right = total - left
-	return
+	// Temporarily override the preview's record cursor with home screen's cursor
+	originalCursor := m.preview.recordCursor
+	originalOffset := m.preview.recordOffset
+	m.preview.recordCursor = m.recordCursor
+	m.preview.recordOffset = m.recordOffset
+	content := m.preview.renderRecords(width, height)
+	m.preview.recordCursor = originalCursor
+	m.preview.recordOffset = originalOffset
+	return content
 }
 
 func (m homeModel) renderCollectionList(width, height int) string {
@@ -292,11 +424,11 @@ func (m homeModel) renderCollectionList(width, height int) string {
 
 	// Filter input line.
 	filterCursor := ""
-	if m.filterFocused {
+	if m.focus == panelCollections {
 		filterCursor = "█"
 	}
 	filterLine := "  Filter: " + m.filterValue + filterCursor
-	if m.filterFocused {
+	if m.focus == panelCollections {
 		filterLine = selectedItemStyle.Render(filterLine)
 	} else {
 		filterLine = mutedStyle.Render(filterLine)
@@ -320,7 +452,7 @@ func (m homeModel) renderCollectionList(width, height int) string {
 		label := fmt.Sprintf(" %-*s", width-2, entry.id)
 		pathLabel := mutedStyle.Render(fmt.Sprintf("  %s", relPath))
 		var row string
-		if i == m.cursor && !m.filterFocused {
+		if i == m.cursor && m.focus == panelCollections {
 			row = selectedItemStyle.Width(width).Render(label) + "\n" + pathLabel
 		} else {
 			row = itemStyle.Render(label) + "\n" + pathLabel
@@ -332,7 +464,7 @@ func (m homeModel) renderCollectionList(width, height int) string {
 	// Add button at the bottom.
 	addIdx := len(m.filteredCollections)
 	var btnLabel string
-	if addIdx == m.cursor && !m.filterFocused {
+	if addIdx == m.cursor && m.focus == panelCollections {
 		btnLabel = selectedItemStyle.Render(" " + addBtnText)
 	} else {
 		btnLabel = addButtonStyle.Render(" " + addBtnText)

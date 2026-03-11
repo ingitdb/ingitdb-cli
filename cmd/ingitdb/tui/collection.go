@@ -44,6 +44,10 @@ type collectionModel struct {
 	// locale handling for map[locale]string columns
 	locale  string   // currently selected locale (e.g. "en")
 	locales []string // available locales sorted by full language name
+
+	// locale dropdown state
+	localeDropdownOpen   bool
+	localeDropdownCursor int
 }
 
 func newCollectionModel(colDef *ingitdb.CollectionDef, db dal.DB, width, height int) collectionModel {
@@ -86,35 +90,49 @@ func (m collectionModel) Update(msg tea.Msg) (collectionModel, tea.Cmd) {
 
 	case tea.KeyPressMsg:
 		_, innerH := m.panelInnerDims()
+		_ = innerH
 		switch msg.String() {
 		case "up", "k":
-			if m.recordCursor > 0 {
+			if m.localeDropdownOpen {
+				if m.localeDropdownCursor > 0 {
+					m.localeDropdownCursor--
+				}
+			} else if m.recordCursor > 0 {
 				m.recordCursor--
 				if m.recordCursor < m.recordOffset {
 					m.recordOffset = m.recordCursor
 				}
+			} else if len(m.locales) > 1 {
+				// At top row: give focus to locale selector dropdown.
+				m.localeDropdownOpen = true
+				m.localeDropdownCursor = localeIndex(m.locales, m.locale)
 			}
 		case "down", "j":
-			if m.recordCursor < len(m.records)-1 {
+			if m.localeDropdownOpen {
+				if m.localeDropdownCursor < len(m.locales)-1 {
+					m.localeDropdownCursor++
+				}
+			} else if m.recordCursor < len(m.records)-1 {
 				m.recordCursor++
 				visibleRows := innerH - 4 // title + header + separator + total line
 				if m.recordCursor >= m.recordOffset+visibleRows {
 					m.recordOffset = m.recordCursor - visibleRows + 1
 				}
 			}
-		case "l":
-			if len(m.locales) > 1 {
-				idx := localeIndex(m.locales, m.locale)
-				idx = (idx + 1) % len(m.locales)
-				m.locale = m.locales[idx]
-				m.columns = buildDisplayColumns(m.colDef, m.locale)
+		case "l", "L":
+			if len(m.locales) > 1 && !m.localeDropdownOpen {
+				m.localeDropdownOpen = true
+				m.localeDropdownCursor = localeIndex(m.locales, m.locale)
 			}
-		case "L":
-			if len(m.locales) > 1 {
-				idx := localeIndex(m.locales, m.locale)
-				idx = (idx - 1 + len(m.locales)) % len(m.locales)
-				m.locale = m.locales[idx]
+		case "enter":
+			if m.localeDropdownOpen {
+				m.locale = m.locales[m.localeDropdownCursor]
 				m.columns = buildDisplayColumns(m.colDef, m.locale)
+				m.localeDropdownOpen = false
+			}
+		case "esc":
+			if m.localeDropdownOpen {
+				m.localeDropdownOpen = false
 			}
 		}
 	}
@@ -131,11 +149,14 @@ func (m collectionModel) View() string {
 	leftContent := m.renderSchema(leftInner, contentH)
 	rightContent := m.renderRecords(rightInner, contentH)
 
-	left := focusedPanelStyle.Width(leftInner).Height(innerH).Render(leftContent)
-	right := panelStyle.Width(rightInner).Height(innerH).Render(rightContent)
+	// In lipgloss v2, Width() is the total outer (border-box) width.
+	// Content area = Width - border(2) - padding(2) = leftW/rightW - 4 = inner widths.
+	// Collection screen: data panel (right) focused by default, schema panel (left) unfocused.
+	left := panelStyle.Width(leftW).Height(innerH).Render(leftContent)
+	right := focusedPanelStyle.Width(rightW).Height(innerH).Render(rightContent)
 
 	panels := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
-	help := helpStyle.Render(" ↑/↓ navigate records  esc back  q quit")
+	help := helpStyle.Render(" ↑/↓ navigate  l locale  enter select  esc back  q quit")
 	return lipgloss.JoinVertical(lipgloss.Left, panels, help)
 }
 
@@ -197,42 +218,53 @@ func (m collectionModel) renderRecords(width, height int) string {
 		}
 	}
 
-	var sb strings.Builder
+	// Build all content lines as a slice so the dropdown can be overlaid.
+	var lines []string
 
-	// Title row: collection name (left) + locale selector (right).
-	titleText := sectionTitleStyle.Render(m.colDef.ID)
+	// Line 0: collection name (top-left) + locale selector (top-right).
+	// Use a plain bold style here — sectionTitleStyle has BorderBottom which
+	// would push the locale label onto the underline row, not the title row.
+	titleStr := lipgloss.NewStyle().Bold(true).Foreground(colorAccent).Render(m.colDef.ID)
 	if m.locale != "" {
-		localeLabel := columnKeyStyle.Render("[" + m.locale + "]")
-		titleW := lipgloss.Width(titleText)
+		arrow := " ▼"
+		if m.localeDropdownOpen {
+			arrow = " ▲"
+		}
+		localeLabel := columnKeyStyle.Render("[ " + m.locale + arrow + " ]")
+		titleW := lipgloss.Width(titleStr)
 		localeW := lipgloss.Width(localeLabel)
 		gap := width - titleW - localeW
 		if gap < 1 {
 			gap = 1
 		}
-		sb.WriteString(titleText + strings.Repeat(" ", gap) + localeLabel)
+		lines = append(lines, titleStr+strings.Repeat(" ", gap)+localeLabel)
 	} else {
-		sb.WriteString(titleText)
+		lines = append(lines, titleStr)
 	}
-	sb.WriteByte('\n')
 
-	// Header row.
+	// Line 1: title underline (drawn manually, matching sectionTitleStyle).
+	borderW := width
+	if borderW < 1 {
+		borderW = 1
+	}
+	lines = append(lines, mutedStyle.Render(strings.Repeat("─", borderW)))
+
+	// Line 2: column headers.
 	headerCells := make([]string, len(cols))
 	for i, c := range cols {
 		headerCells[i] = columnKeyStyle.Render(padRight(c, colWidths[i]))
 	}
-	sb.WriteString(strings.Join(headerCells, " │ "))
-	sb.WriteByte('\n')
+	lines = append(lines, strings.Join(headerCells, " │ "))
 
-	// Separator.
+	// Line 3: separator.
 	seps := make([]string, len(cols))
 	for i, w := range colWidths {
 		seps[i] = strings.Repeat("─", w)
 	}
-	sb.WriteString(mutedStyle.Render(strings.Join(seps, "─┼─")))
-	sb.WriteByte('\n')
+	lines = append(lines, mutedStyle.Render(strings.Join(seps, "─┼─")))
 
-	// Visible data rows.
-	visibleRows := height - 4 // title + header + separator + total line
+	// Data rows (lines 4+).
+	visibleRows := height - 4 // title + border + header + separator
 	if visibleRows < 1 {
 		visibleRows = 1
 	}
@@ -240,7 +272,6 @@ func (m collectionModel) renderRecords(width, height int) string {
 	if end > len(m.records) {
 		end = len(m.records)
 	}
-	// Detect which columns are numeric (check first record).
 	numericCol := make([]bool, len(cols))
 	if len(m.records) > 0 {
 		for i, c := range cols {
@@ -251,7 +282,6 @@ func (m collectionModel) renderRecords(width, height int) string {
 			}
 		}
 	}
-
 	for ri := m.recordOffset; ri < end; ri++ {
 		row := m.records[ri]
 		cells := make([]string, len(cols))
@@ -271,13 +301,119 @@ func (m collectionModel) renderRecords(width, height int) string {
 		if ri == m.recordCursor {
 			line = selectedItemStyle.Render(line)
 		}
-		sb.WriteString(line)
-		sb.WriteByte('\n')
+		lines = append(lines, line)
 	}
 
-	total := fmt.Sprintf("\n%d record(s)", len(m.records))
-	sb.WriteString(mutedStyle.Render(total))
+	// Blank line + record count (matches the old "\n%d record(s)" pattern).
+	lines = append(lines, "")
+	lines = append(lines, mutedStyle.Render(fmt.Sprintf("%d record(s)", len(m.records))))
+
+	// Build dropdown lines (if open); they will overlay the table, not push it down.
+	var dropLines []string
+	if m.localeDropdownOpen && len(m.locales) > 1 {
+		dropLines = m.buildLocaleDropdownLines()
+	}
+
+	// Merge: overlay the dropdown on the right side starting at line 1
+	// (just below the title row, aligned with the locale selector button).
+	const dropStart = 1
+	dropW := 0
+	if len(dropLines) > 0 {
+		dropW = lipgloss.Width(dropLines[0])
+	}
+
+	var sb strings.Builder
+	for i, line := range lines {
+		di := i - dropStart
+		if di >= 0 && di < len(dropLines) {
+			// Paint dropdown on the right; show plain table text on the left.
+			leftW := width - dropW
+			if leftW < 0 {
+				leftW = 0
+			}
+			plain := stripAnsi(line)
+			left := truncateToWidth(plain, leftW)
+			lw := uniseg.StringWidth(left)
+			if lw < leftW {
+				left += strings.Repeat(" ", leftW-lw)
+			}
+			sb.WriteString(left + dropLines[di])
+		} else {
+			sb.WriteString(line)
+		}
+		if i < len(lines)-1 {
+			sb.WriteByte('\n')
+		}
+	}
 	return sb.String()
+}
+
+// buildLocaleDropdownLines returns each line of the locale dropdown box as a
+// plain string (no trailing newline). The box is sized to fit the widest item.
+func (m collectionModel) buildLocaleDropdownLines() []string {
+	names := localeLanguageNames()
+
+	// Determine inner width from the widest item.
+	innerW := 0
+	for _, loc := range m.locales {
+		name, ok := names[loc]
+		if !ok {
+			name = loc
+		}
+		w := uniseg.StringWidth("► " + name + " (" + loc + ")")
+		if w > innerW {
+			innerW = w
+		}
+	}
+	if innerW < 10 {
+		innerW = 10
+	}
+
+	lines := make([]string, 0, len(m.locales)+2)
+	lines = append(lines, "┌"+strings.Repeat("─", innerW)+"┐")
+	for i, loc := range m.locales {
+		name, ok := names[loc]
+		if !ok {
+			name = loc
+		}
+		prefix := "  "
+		if i == m.localeDropdownCursor {
+			prefix = "► "
+		}
+		content := prefix + name + " (" + loc + ")"
+		cw := uniseg.StringWidth(content)
+		if cw < innerW {
+			content += strings.Repeat(" ", innerW-cw)
+		}
+		row := "│" + content + "│"
+		if i == m.localeDropdownCursor {
+			row = selectedItemStyle.Render(row)
+		}
+		lines = append(lines, row)
+	}
+	lines = append(lines, "└"+strings.Repeat("─", innerW)+"┘")
+	return lines
+}
+
+// stripAnsi removes ANSI escape sequences from s so visual-width calculations
+// and truncation work correctly on plain text.
+func stripAnsi(s string) string {
+	var b strings.Builder
+	inEsc := false
+	for _, r := range s {
+		if inEsc {
+			if (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') {
+				inEsc = false
+			}
+			continue
+		}
+		if r == '\x1b' {
+			inEsc = true
+			continue
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
 }
 
 // buildSchemaLines pre-renders schema as a slice of styled strings.

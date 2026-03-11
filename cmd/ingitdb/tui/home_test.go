@@ -189,30 +189,44 @@ func TestPreviewPanelHeightsEqualCollectionList(t *testing.T) {
 	const termW, termH = 120, 40
 
 	m := newHomeModel("/repo", def, nil, termW, termH)
-	// Cursor on first collection (not filter), no newDB so no preview.
-	m.filterFocused = false
+	// Focus on data panel with cursor on first collection
+	m.focus = panelData
 	m.cursor = 0
 
-	leftWidth, rightWidth := m.panelWidths()
+	// Layout: 1/4 left | 1/2 middle | 1/4 right
+	leftWidth := termW / 4
+	if leftWidth < 20 {
+		leftWidth = 20
+	}
+	rightWidth := termW / 4
+	if rightWidth < 24 {
+		rightWidth = 24
+	}
+	middleWidth := termW - leftWidth - rightWidth
+
 	leftInner := leftWidth - 4
-	rightInner := rightWidth - 4
-	innerH := termH - 5
+	middleInner := middleWidth - 4
+	innerH := termH - 2
 	contentH := innerH - 2
 
 	leftContent := m.renderCollectionList(leftInner, contentH)
-	leftPanel := focusedPanelStyle.Width(leftInner).Height(innerH).Render(leftContent)
+	// In lipgloss v2, Width() is border-box: pass the allocated column width.
+	leftPanel := focusedPanelStyle.Width(leftWidth).Height(innerH).Render(leftContent)
 
-	rightContent := m.renderWelcome(rightInner, contentH)
-	rightPanel := panelStyle.Width(rightInner).Height(innerH).Render(rightContent)
+	middleContent := m.renderWelcome(middleInner, contentH)
+	middlePanel := panelStyle.Width(middleWidth).Height(innerH).Render(middleContent)
+
+	rightPanel := panelStyle.Width(rightWidth).Height(innerH).Render("")
 
 	leftLines := strings.Count(leftPanel, "\n") + 1
+	middleLines := strings.Count(middlePanel, "\n") + 1
 	rightLines := strings.Count(rightPanel, "\n") + 1
 
-	if leftLines != rightLines {
-		t.Errorf("left panel height (%d) != right panel height (%d)", leftLines, rightLines)
+	if leftLines != middleLines || leftLines != rightLines {
+		t.Errorf("panel heights differ: left=%d middle=%d right=%d (expected %d)", leftLines, middleLines, rightLines, innerH)
 	}
 	if leftLines != innerH {
-		t.Errorf("left panel height (%d) != expected outer height (%d)", leftLines, innerH)
+		t.Errorf("panel height (%d) != expected outer height (%d)", leftLines, innerH)
 	}
 }
 
@@ -251,5 +265,114 @@ func TestSchemaPanelDoesNotOverflow(t *testing.T) {
 	panelLines := strings.Count(panel, "\n") + 1
 	if panelLines != innerH {
 		t.Errorf("schema panel height %d != expected outer height %d", panelLines, innerH)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Panel focus system tests
+// ---------------------------------------------------------------------------
+
+func TestPanelFocusInitialization(t *testing.T) {
+	t.Parallel()
+
+	def := &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"users": {ID: "users", DirPath: "/repo/users"},
+		},
+	}
+
+	m := newHomeModel("/repo", def, nil, 120, 40)
+
+	if m.focus != panelCollections {
+		t.Errorf("initial focus = %d, want panelCollections (%d)", m.focus, panelCollections)
+	}
+}
+
+func TestPanelFocusInitializationOnly(t *testing.T) {
+	t.Parallel()
+
+	def := &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"users": {ID: "users", DirPath: "/repo/users"},
+		},
+	}
+
+	m := newHomeModel("/repo", def, nil, 120, 40)
+	if m.focus != panelCollections {
+		t.Errorf("initial focus = %d, want panelCollections (%d)", m.focus, panelCollections)
+	}
+	if m.recordCursor != 0 {
+		t.Errorf("initial recordCursor = %d, want 0", m.recordCursor)
+	}
+	if m.recordOffset != 0 {
+		t.Errorf("initial recordOffset = %d, want 0", m.recordOffset)
+	}
+}
+
+func TestPanelFocusStateIndependence(t *testing.T) {
+	t.Parallel()
+
+	def := &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"users": {ID: "users", DirPath: "/repo/users"},
+		},
+	}
+
+	m := newHomeModel("/repo", def, nil, 120, 40)
+
+	// Each panel maintains its own cursor state
+	m.cursor = 5       // collections cursor
+	m.recordCursor = 3 // records cursor
+
+	if m.cursor != 5 {
+		t.Errorf("collections cursor = %d, want 5", m.cursor)
+	}
+	if m.recordCursor != 3 {
+		t.Errorf("records cursor = %d, want 3", m.recordCursor)
+	}
+
+	// Switching focus doesn't affect cursor positions
+	m.focus = panelData
+	if m.cursor != 5 || m.recordCursor != 3 {
+		t.Errorf("focus change affected cursors: collections=%d records=%d", m.cursor, m.recordCursor)
+	}
+
+	m.focus = panelSchema
+	if m.cursor != 5 || m.recordCursor != 3 {
+		t.Errorf("focus change affected cursors: collections=%d records=%d", m.cursor, m.recordCursor)
+	}
+}
+
+func TestRecordScrollCalculation(t *testing.T) {
+	t.Parallel()
+
+	m := homeModel{
+		width:  120,
+		height: 40,
+	}
+	m.preview = &collectionModel{
+		records: make([]map[string]any, 100), // 100 records
+	}
+
+	// Set record cursor to a high value
+	m.recordCursor = 50
+
+	// Calculate visible rows (innerH - 4 for title/header/separator/total)
+	_, innerH := m.panelInnerDims()
+	visibleRows := innerH - 4
+	if visibleRows < 1 {
+		visibleRows = 1
+	}
+
+	// Scroll offset should adjust to keep cursor visible
+	if m.recordCursor >= m.recordOffset+visibleRows {
+		m.recordOffset = m.recordCursor - visibleRows + 1
+	}
+
+	if m.recordOffset < 0 {
+		t.Errorf("recordOffset = %d (negative)", m.recordOffset)
+	}
+	if m.recordCursor < m.recordOffset {
+		t.Errorf("recordCursor=%d is before scroll offset=%d", m.recordCursor, m.recordOffset)
 	}
 }

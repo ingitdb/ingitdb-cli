@@ -74,15 +74,38 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q", "ctrl+c":
 			return m, tea.Quit
 
-		case "esc":
+		case "backspace":
 			if m.currentScreen == screenCollection {
 				m.currentScreen = screenHome
 				m.collection = nil
 			}
 			return m, nil
 
+		case "esc":
+			if m.currentScreen == screenCollection {
+				// If locale dropdown is open, close it instead of navigating back.
+				if m.collection != nil && m.collection.localeDropdownOpen {
+					updated, cmd := m.collection.Update(msg)
+					m.collection = &updated
+					return m, cmd
+				}
+				m.currentScreen = screenHome
+				m.collection = nil
+				return m, nil
+			}
+			// On home screen, route esc to homeModel for dropdown handling.
+			updated, cmd := m.home.Update(msg)
+			m.home = updated
+			return m, cmd
+
 		case "enter":
 			if m.currentScreen == screenHome {
+				// If data panel dropdown is open, route enter to homeModel.
+				if m.home.focus == panelData && m.home.preview != nil && m.home.preview.localeDropdownOpen {
+					updated, cmd := m.home.Update(msg)
+					m.home = updated
+					return m, cmd
+				}
 				colDef := m.home.SelectedCollection()
 				if colDef != nil {
 					return m.openCollection(colDef)
