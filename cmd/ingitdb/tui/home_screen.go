@@ -237,7 +237,7 @@ func (m homeModel) Update(msg tea.Msg) (homeModel, tea.Cmd) {
 				}
 			}
 
-		case "ctrl+left", "ctrl+right":
+		case "alt+left", "alt+right":
 			m.panels.HandleKey(msg.String())
 
 		case "l", "L":
@@ -354,7 +354,7 @@ func (m homeModel) View() string {
 	}
 
 	panels := lipgloss.JoinHorizontal(lipgloss.Top, leftPanel, middlePanel, rightPanel)
-	help := helpStyle.Render(" ↑/↓ navigate  ctrl+←/→ panels  l locale  home end  q quit")
+	help := helpStyle.Render(" ↑/↓ navigate  alt+←/→ panels  l locale  home end  q quit")
 	return lipgloss.JoinVertical(lipgloss.Left, panels, help)
 }
 

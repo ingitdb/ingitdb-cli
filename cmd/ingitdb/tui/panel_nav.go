@@ -6,21 +6,21 @@ import "charm.land/lipgloss/v2"
 type lipglossStyle = lipgloss.Style
 
 // panelNav tracks which of N side-by-side panels has keyboard focus and
-// handles ctrl+left / ctrl+right navigation between them.
+// handles alt+left / alt+right navigation between them.
 type panelNav struct {
 	count int // total number of panels
 	focus int // index of the focused panel (0 = leftmost)
 }
 
-// HandleKey processes ctrl+left / ctrl+right. Returns true if the key was consumed.
+// HandleKey processes alt+left / alt+right. Returns true if the key was consumed.
 func (p *panelNav) HandleKey(key string) bool {
 	switch key {
-	case "ctrl+left":
+	case "alt+left":
 		if p.focus > 0 {
 			p.focus--
 		}
 		return true
-	case "ctrl+right":
+	case "alt+right":
 		if p.focus < p.count-1 {
 			p.focus++
 		}

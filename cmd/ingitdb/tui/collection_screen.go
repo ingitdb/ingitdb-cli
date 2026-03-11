@@ -185,7 +185,7 @@ func (m collectionModel) View() string {
 	right := m.panels.Style(1).Width(rightW).Height(innerH).Render(rightContent)
 
 	panels := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
-	help := helpStyle.Render(" ↑/↓ row  ←/→ column  ctrl+←/→ panels  l locale  enter select  esc back  q quit")
+	help := helpStyle.Render(" ↑/↓ row  ←/→ column  alt+←/→ panels  l locale  enter select  esc back  q quit")
 	return lipgloss.JoinVertical(lipgloss.Left, panels, help)
 }
 
