@@ -4,11 +4,12 @@ go 1.26.0
 
 require (
 	charm.land/bubbletea/v2 v2.0.2
-	charm.land/fang/v2 v2.0.0
-	charm.land/lipgloss/v2 v2.0.1
+	charm.land/fang/v2 v2.0.1
+	charm.land/lipgloss/v2 v2.0.2
 	github.com/charmbracelet/x/term v0.2.2
 	github.com/google/go-github/v84 v84.0.0
 	github.com/julienschmidt/httprouter v1.3.0
+	github.com/rivo/uniseg v0.4.7
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
@@ -37,7 +38,6 @@ require (
 	github.com/muesli/mango-pflag v0.2.0 // indirect
 	github.com/muesli/roff v0.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/net v0.51.0 // indirect
