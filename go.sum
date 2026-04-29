@@ -38,6 +38,8 @@ github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6N
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/dal-go/dalgo v0.41.14 h1:5NPKgeY8oSFWJfA8itPHS9I7yoRLh0+m6mZfS5moNFQ=
 github.com/dal-go/dalgo v0.41.14/go.mod h1:mGR/cl9X6O2QCmu1FzrM8gVgFkkhdR33Ur3msnJJJXU=
+github.com/dal-go/dalgo v0.41.15 h1:quY9KMe7PSs59Zt+Zx8AUR0NDVB8CeQMm4wRXzlZfJs=
+github.com/dal-go/dalgo v0.41.15/go.mod h1:mGR/cl9X6O2QCmu1FzrM8gVgFkkhdR33Ur3msnJJJXU=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/gin-contrib/sse v0.1.0 h1:Y/yl/+YNO8GZSjAhjMsSuLt29uWRFHdHYUb5lYOV9qE=
