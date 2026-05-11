@@ -151,7 +151,16 @@ func readAllSingleRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
 		if recordKey == "" {
 			continue
 		}
-		data, found, readErr := readRecordFromFile(match, colDef.RecordFile.Format)
+		var (
+			data    map[string]any
+			found   bool
+			readErr error
+		)
+		if colDef.RecordFile.Format == ingitdb.RecordFormatMarkdown {
+			data, found, readErr = readMarkdownRecord(match, colDef)
+		} else {
+			data, found, readErr = readRecordFromFile(match, colDef.RecordFile.Format)
+		}
 		if readErr != nil {
 			return nil, readErr
 		}

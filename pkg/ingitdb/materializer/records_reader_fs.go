@@ -79,7 +79,7 @@ func (r FileRecordsReader) ReadRecords(
 			if err != nil {
 				return fmt.Errorf("failed to read record %s: %w", filePath, err)
 			}
-			data, err := dalgo2ingitdb.ParseRecordContent(content, col.RecordFile.Format)
+			data, err := dalgo2ingitdb.ParseRecordContentForCollection(content, col)
 			if err != nil {
 				return fmt.Errorf("failed to parse record %s: %w", filePath, err)
 			}

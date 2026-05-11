@@ -92,7 +92,7 @@ func (r readonlyTx) readSingleRecord(ctx context.Context, recordPath string, col
 	if !found {
 		return nil, false, nil
 	}
-	data, parseErr := dalgo2ingitdb.ParseRecordContent(content, colDef.RecordFile.Format)
+	data, parseErr := dalgo2ingitdb.ParseRecordContentForCollection(content, colDef)
 	if parseErr != nil {
 		return nil, false, parseErr
 	}
