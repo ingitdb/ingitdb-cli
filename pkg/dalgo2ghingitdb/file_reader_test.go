@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/go-github/v84/github"
+	"github.com/google/go-github/v86/github"
 )
 
 func TestConfig_Validate(t *testing.T) {
