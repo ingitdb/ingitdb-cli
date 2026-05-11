@@ -52,6 +52,39 @@ func TestParseRecordContent_JSON(t *testing.T) {
 	}
 }
 
+func TestParseRecordContent_TOML(t *testing.T) {
+	t.Parallel()
+
+	tomlContent := []byte(`name = "Bob"
+age = 40
+active = true
+`)
+	data, err := ParseRecordContent(tomlContent, ingitdb.RecordFormatTOML)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if data["name"] != "Bob" {
+		t.Errorf("expected name=Bob, got %v", data["name"])
+	}
+	// pelletier/go-toml/v2 decodes integers into int64.
+	if got, ok := data["age"].(int64); !ok || got != 40 {
+		t.Errorf("expected age=40 (int64), got %v (%T)", data["age"], data["age"])
+	}
+	if data["active"] != true {
+		t.Errorf("expected active=true, got %v", data["active"])
+	}
+}
+
+func TestParseRecordContent_TOML_Invalid(t *testing.T) {
+	t.Parallel()
+
+	bad := []byte("name = \nunterminated")
+	_, err := ParseRecordContent(bad, ingitdb.RecordFormatTOML)
+	if err == nil {
+		t.Fatal("expected error for invalid TOML, got nil")
+	}
+}
+
 func TestParseRecordContent_UnsupportedFormat(t *testing.T) {
 	t.Parallel()
 
