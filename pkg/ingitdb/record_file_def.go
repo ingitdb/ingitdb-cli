@@ -65,6 +65,10 @@ func (rfd RecordFileDef) Validate() error {
 		return fmt.Errorf("content_field is only valid for format %q, got %q",
 			RecordFormatMarkdown, rfd.Format)
 	}
+	if rfd.Format == RecordFormatINGR && rfd.RecordType == SingleRecord {
+		return fmt.Errorf("format %q does not support record type %q (use %q or %q)",
+			RecordFormatINGR, SingleRecord, ListOfRecords, MapOfRecords)
+	}
 	if rfd.ExcludeRegex != "" {
 		if _, err := regexp.Compile(rfd.ExcludeRegex); err != nil {
 			return fmt.Errorf("invalid exclude_regex %q: %w", rfd.ExcludeRegex, err)

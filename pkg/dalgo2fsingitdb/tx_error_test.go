@@ -598,7 +598,15 @@ func TestWriteMapOfRecordsFile_Success(t *testing.T) {
 		"id2": {"field": "value2"},
 	}
 
-	err := writeMapOfRecordsFile(path, "yaml", data)
+	colDef := &ingitdb.CollectionDef{
+		ID: "test",
+		RecordFile: &ingitdb.RecordFileDef{
+			Name:       "test.yaml",
+			Format:     ingitdb.RecordFormatYAML,
+			RecordType: ingitdb.MapOfRecords,
+		},
+	}
+	err := writeMapOfRecordsFile(path, colDef, data)
 	if err != nil {
 		t.Fatalf("writeMapOfRecordsFile: %v", err)
 	}

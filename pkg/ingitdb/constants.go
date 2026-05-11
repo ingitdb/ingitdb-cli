@@ -11,6 +11,7 @@ const (
 	RecordFormatJSON     RecordFormat = "json"
 	RecordFormatMarkdown RecordFormat = "markdown"
 	RecordFormatTOML     RecordFormat = "toml"
+	RecordFormatINGR     RecordFormat = "ingr"
 )
 
 // DefaultMarkdownContentField is the default name of the column that holds

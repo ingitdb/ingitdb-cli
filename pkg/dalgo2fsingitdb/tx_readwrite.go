@@ -42,7 +42,7 @@ func (r readwriteTx) Set(ctx context.Context, record dal.Record) error {
 			allRecords = make(map[string]map[string]any)
 		}
 		allRecords[recordKey] = dalgo2ingitdb.ApplyLocaleToWrite(data, colDef.Columns)
-		return writeMapOfRecordsFile(path, colDef.RecordFile.Format, allRecords)
+		return writeMapOfRecordsFile(path, colDef, allRecords)
 	default:
 		if colDef.RecordFile.Format == ingitdb.RecordFormatMarkdown {
 			return writeMarkdownRecord(path, colDef, data)
@@ -76,7 +76,7 @@ func (r readwriteTx) Delete(ctx context.Context, key *dal.Key) error {
 			return dal.ErrRecordNotFound
 		}
 		delete(allRecords, recordKey)
-		return writeMapOfRecordsFile(path, colDef.RecordFile.Format, allRecords)
+		return writeMapOfRecordsFile(path, colDef, allRecords)
 	default:
 		return deleteRecordFile(path)
 	}
@@ -124,7 +124,7 @@ func (r readwriteTx) Insert(ctx context.Context, record dal.Record, opts ...dal.
 		record.SetError(nil)
 		data := record.Data().(map[string]any)
 		allRecords[recordKey] = dalgo2ingitdb.ApplyLocaleToWrite(data, colDef.Columns)
-		return writeMapOfRecordsFile(path, colDef.RecordFile.Format, allRecords)
+		return writeMapOfRecordsFile(path, colDef, allRecords)
 	default:
 		_, statErr := os.Stat(path)
 		if statErr == nil {
