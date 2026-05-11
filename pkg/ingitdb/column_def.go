@@ -18,6 +18,11 @@ type ColumnDef struct {
 	// When writing, this column is stored as-is in the file; if the pair column contains an entry
 	// for the primary locale key, that entry is promoted here and removed from the pair column.
 	Locale string `yaml:"locale,omitempty"`
+	// Format is an optional, free-form hint about the column's logical content
+	// type. Well-known values include `markdown`, `html`, `json`, `jsonl`,
+	// `yaml`, `uri`, `email`, `pdf`. inGitDB does not validate the value;
+	// tooling may use it to choose a renderer or preview strategy.
+	Format string `yaml:"format,omitempty"`
 }
 
 func (v *ColumnDef) Validate() error {

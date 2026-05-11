@@ -37,7 +37,16 @@ func (r readonlyTx) Get(ctx context.Context, record dal.Record) error {
 	path := resolveRecordPath(colDef, recordKey)
 	switch colDef.RecordFile.RecordType {
 	case ingitdb.SingleRecord:
-		data, found, err := readRecordFromFile(path, colDef.RecordFile.Format)
+		var (
+			data  map[string]any
+			found bool
+			err   error
+		)
+		if colDef.RecordFile.Format == ingitdb.RecordFormatMarkdown {
+			data, found, err = readMarkdownRecord(path, colDef)
+		} else {
+			data, found, err = readRecordFromFile(path, colDef.RecordFile.Format)
+		}
 		if err != nil {
 			return err
 		}
