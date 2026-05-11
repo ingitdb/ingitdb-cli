@@ -7,6 +7,8 @@ import (
 
 	"github.com/dal-go/dalgo/dal"
 	"github.com/dal-go/dalgo/update"
+	"github.com/pelletier/go-toml/v2"
+
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 	"gopkg.in/yaml.v3"
@@ -244,18 +246,24 @@ func (r readwriteTx) ID() string {
 
 func encodeRecordContent(data map[string]any, format ingitdb.RecordFormat) ([]byte, error) {
 	switch format {
-	case "yaml", "yml":
+	case ingitdb.RecordFormatYAML, ingitdb.RecordFormatYML:
 		encoded, err := yaml.Marshal(data)
 		if err != nil {
 			return nil, fmt.Errorf("failed to encode YAML record: %w", err)
 		}
 		return encoded, nil
-	case "json":
+	case ingitdb.RecordFormatJSON:
 		encoded, err := json.MarshalIndent(data, "", "  ")
 		if err != nil {
 			return nil, fmt.Errorf("failed to encode JSON record: %w", err)
 		}
 		return append(encoded, '\n'), nil
+	case ingitdb.RecordFormatTOML:
+		encoded, err := toml.Marshal(data)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode TOML record: %w", err)
+		}
+		return encoded, nil
 	default:
 		return nil, fmt.Errorf("unsupported record format %q", format)
 	}

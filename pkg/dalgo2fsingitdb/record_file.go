@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/dal-go/dalgo/dal"
+	"github.com/pelletier/go-toml/v2"
+
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/markdown"
@@ -43,6 +45,10 @@ func readRecordFromFile(path string, format ingitdb.RecordFormat) (map[string]an
 	case ingitdb.RecordFormatJSON:
 		if err = yaml.Unmarshal(fileContent, &data); err != nil {
 			return nil, false, fmt.Errorf("failed to parse JSON file %s: %w", path, err)
+		}
+	case ingitdb.RecordFormatTOML:
+		if err = toml.Unmarshal(fileContent, &data); err != nil {
+			return nil, false, fmt.Errorf("failed to parse TOML file %s: %w", path, err)
 		}
 	default:
 		return nil, false, fmt.Errorf("unsupported record format %q", format)
@@ -129,17 +135,22 @@ func writeRecordToFile(path string, format ingitdb.RecordFormat, data map[string
 		err     error
 	)
 	switch format {
-	case "yaml", "yml":
+	case ingitdb.RecordFormatYAML, ingitdb.RecordFormatYML:
 		content, err = yaml.Marshal(data)
 		if err != nil {
 			return fmt.Errorf("failed to marshal data as YAML: %w", err)
 		}
-	case "json":
+	case ingitdb.RecordFormatJSON:
 		content, err = json.MarshalIndent(data, "", "  ")
 		if err != nil {
 			return fmt.Errorf("failed to marshal data as JSON: %w", err)
 		}
 		content = append(content, '\n')
+	case ingitdb.RecordFormatTOML:
+		content, err = toml.Marshal(data)
+		if err != nil {
+			return fmt.Errorf("failed to marshal data as TOML: %w", err)
+		}
 	default:
 		return fmt.Errorf("unsupported record format %q", format)
 	}

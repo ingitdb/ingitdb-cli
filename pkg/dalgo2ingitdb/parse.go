@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/pelletier/go-toml/v2"
+
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/markdown"
 	"gopkg.in/yaml.v3"
@@ -24,6 +26,11 @@ func ParseRecordContent(content []byte, format ingitdb.RecordFormat) (map[string
 		err := json.Unmarshal(content, &data)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse JSON record: %w", err)
+		}
+	case ingitdb.RecordFormatTOML:
+		err := toml.Unmarshal(content, &data)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse TOML record: %w", err)
 		}
 	default:
 		return nil, fmt.Errorf("unsupported record format %q", format)
