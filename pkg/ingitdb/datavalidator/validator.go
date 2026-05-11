@@ -50,9 +50,9 @@ func countRecords(colDef *ingitdb.CollectionDef) (int, error) {
 	exts := expectedRecordExtensions(colDef)
 	recordsSubDir := filepath.Join(collectionPath, "$records")
 	if info, err := os.Stat(recordsSubDir); err == nil && info.IsDir() {
-		return countEntries(recordsSubDir, exts)
+		return countEntries(recordsSubDir, exts, colDef.RecordFile)
 	}
-	return countEntries(collectionPath, exts)
+	return countEntries(collectionPath, exts, colDef.RecordFile)
 }
 
 // expectedRecordExtensions returns the file extensions that count as record
@@ -76,7 +76,7 @@ func expectedRecordExtensions(colDef *ingitdb.CollectionDef) map[string]struct{}
 	return map[string]struct{}{".yaml": {}, ".yml": {}, ".json": {}}
 }
 
-func countEntries(dirPath string, exts map[string]struct{}) (int, error) {
+func countEntries(dirPath string, exts map[string]struct{}, rfd *ingitdb.RecordFileDef) (int, error) {
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
 		return 0, err
@@ -89,6 +89,9 @@ func countEntries(dirPath string, exts map[string]struct{}) (int, error) {
 	for _, entry := range entries {
 		name := entry.Name()
 		if strings.HasPrefix(name, ".") || name == "$records" {
+			continue
+		}
+		if rfd != nil && rfd.IsExcluded(name) {
 			continue
 		}
 		if entry.IsDir() {

@@ -143,6 +143,9 @@ func readAllSingleRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
 
 	records := make([]dal.Record, 0, len(matches))
 	for _, match := range matches {
+		if colDef.RecordFile.IsExcluded(filepath.Base(match)) {
+			continue
+		}
 		relPath, relErr := filepath.Rel(basePath, match)
 		if relErr != nil {
 			return nil, relErr

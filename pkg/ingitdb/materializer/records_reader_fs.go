@@ -75,6 +75,9 @@ func (r FileRecordsReader) ReadRecords(
 			return fmt.Errorf("failed to glob records: %w", err)
 		}
 		for _, filePath := range matches {
+			if col.RecordFile.IsExcluded(filepath.Base(filePath)) {
+				continue
+			}
 			content, err := r.readFile(filePath)
 			if err != nil {
 				return fmt.Errorf("failed to read record %s: %w", filePath, err)
