@@ -143,6 +143,9 @@ func readAllSingleRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
 
 	records := make([]dal.Record, 0, len(matches))
 	for _, match := range matches {
+		if colDef.RecordFile.IsExcluded(filepath.Base(match)) {
+			continue
+		}
 		relPath, relErr := filepath.Rel(basePath, match)
 		if relErr != nil {
 			return nil, relErr
@@ -151,7 +154,16 @@ func readAllSingleRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
 		if recordKey == "" {
 			continue
 		}
-		data, found, readErr := readRecordFromFile(match, colDef.RecordFile.Format)
+		var (
+			data    map[string]any
+			found   bool
+			readErr error
+		)
+		if colDef.RecordFile.Format == ingitdb.RecordFormatMarkdown {
+			data, found, readErr = readMarkdownRecord(match, colDef)
+		} else {
+			data, found, readErr = readRecordFromFile(match, colDef.RecordFile.Format)
+		}
 		if readErr != nil {
 			return nil, readErr
 		}

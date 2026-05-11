@@ -2,6 +2,7 @@ package ingitdb
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/dal-go/dalgo/dal"
@@ -30,6 +31,16 @@ type RecordFileDef struct {
 	// (`DefaultMarkdownContentField`, `$content`) is used.
 	// It MUST only be set when Format is `markdown`.
 	ContentField string `yaml:"content_field,omitempty"`
+
+	// ExcludeRegex is an optional regular expression applied to the
+	// basename of each candidate record file. Files whose basename matches
+	// MUST be excluded from reads, validation, and record counts.
+	//
+	// Typical use: a record directory that legitimately contains a
+	// README.md or .gitkeep alongside `{key}.md` records can set
+	// `exclude_regex: '^README\.md$'` to keep those auxiliary files from
+	// being treated as records.
+	ExcludeRegex string `yaml:"exclude_regex,omitempty"`
 }
 
 func (rfd RecordFileDef) Validate() error {
@@ -54,7 +65,31 @@ func (rfd RecordFileDef) Validate() error {
 		return fmt.Errorf("content_field is only valid for format %q, got %q",
 			RecordFormatMarkdown, rfd.Format)
 	}
+	if rfd.ExcludeRegex != "" {
+		if _, err := regexp.Compile(rfd.ExcludeRegex); err != nil {
+			return fmt.Errorf("invalid exclude_regex %q: %w", rfd.ExcludeRegex, err)
+		}
+	}
 	return nil
+}
+
+// IsExcluded reports whether a filename's basename matches the configured
+// `exclude_regex`. Files for which IsExcluded returns true MUST be omitted
+// from reads, validation, and record counts.
+//
+// When ExcludeRegex is empty, IsExcluded always returns false. When the
+// regex fails to compile (caller skipped Validate()), IsExcluded returns
+// false rather than panicking — Validate() is the right place to surface
+// compile errors.
+func (rfd RecordFileDef) IsExcluded(filename string) bool {
+	if rfd.ExcludeRegex == "" {
+		return false
+	}
+	re, err := regexp.Compile(rfd.ExcludeRegex)
+	if err != nil {
+		return false
+	}
+	return re.MatchString(filename)
 }
 
 // ResolvedContentField returns the configured content_field name when set,

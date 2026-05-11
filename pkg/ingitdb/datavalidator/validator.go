@@ -23,7 +23,7 @@ func (sv *simpleValidator) Validate(_ context.Context, _ string, def *ingitdb.De
 
 	// Count records for each collection
 	for collectionKey, colDef := range def.Collections {
-		total, err := countRecords(colDef.DirPath)
+		total, err := countRecords(colDef)
 		if err != nil {
 			// Don't fail validation on count error, just set 0
 			total = 0
@@ -45,15 +45,38 @@ func (sv *simpleValidator) Validate(_ context.Context, _ string, def *ingitdb.De
 // countRecords counts the number of record keys in a collection directory.
 // When a $records/ subdirectory exists (used for per-key record files), it
 // counts entries inside that directory instead of at the collection root.
-func countRecords(collectionPath string) (int, error) {
+func countRecords(colDef *ingitdb.CollectionDef) (int, error) {
+	collectionPath := colDef.DirPath
+	exts := expectedRecordExtensions(colDef)
 	recordsSubDir := filepath.Join(collectionPath, "$records")
 	if info, err := os.Stat(recordsSubDir); err == nil && info.IsDir() {
-		return countEntries(recordsSubDir)
+		return countEntries(recordsSubDir, exts, colDef.RecordFile)
 	}
-	return countEntries(collectionPath)
+	return countEntries(collectionPath, exts, colDef.RecordFile)
 }
 
-func countEntries(dirPath string) (int, error) {
+// expectedRecordExtensions returns the file extensions that count as record
+// files for this collection.
+//
+// The authoritative source is the collection's `record_file.name` template
+// (e.g. `{key}.md`) — whatever extension it ends with is the single
+// extension that records use. This naturally extends to any future format
+// without needing changes here.
+//
+// When no `RecordFile` is declared (older test fixtures), the legacy
+// permissive set (`.yaml`, `.yml`, `.json`) is returned so existing
+// behavior is preserved.
+func expectedRecordExtensions(colDef *ingitdb.CollectionDef) map[string]struct{} {
+	if colDef.RecordFile != nil && colDef.RecordFile.Name != "" {
+		ext := strings.ToLower(filepath.Ext(colDef.RecordFile.Name))
+		if ext != "" {
+			return map[string]struct{}{ext: {}}
+		}
+	}
+	return map[string]struct{}{".yaml": {}, ".yml": {}, ".json": {}}
+}
+
+func countEntries(dirPath string, exts map[string]struct{}, rfd *ingitdb.RecordFileDef) (int, error) {
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
 		return 0, err
@@ -68,13 +91,16 @@ func countEntries(dirPath string) (int, error) {
 		if strings.HasPrefix(name, ".") || name == "$records" {
 			continue
 		}
+		if rfd != nil && rfd.IsExcluded(name) {
+			continue
+		}
 		if entry.IsDir() {
 			seen[name] = struct{}{}
-		} else {
-			ext := strings.ToLower(filepath.Ext(name))
-			if ext == ".yaml" || ext == ".json" {
-				seen[strings.TrimSuffix(name, filepath.Ext(name))] = struct{}{}
-			}
+			continue
+		}
+		ext := strings.ToLower(filepath.Ext(name))
+		if _, ok := exts[ext]; ok {
+			seen[strings.TrimSuffix(name, filepath.Ext(name))] = struct{}{}
 		}
 	}
 	return len(seen), nil

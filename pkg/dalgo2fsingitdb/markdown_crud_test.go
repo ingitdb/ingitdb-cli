@@ -418,3 +418,101 @@ func TestMarkdown_ResolvedContentField_Override(t *testing.T) {
 		t.Errorf("ResolvedContentField override: got %q, want %q", got, "body")
 	}
 }
+
+func TestMarkdown_ExcludeRegex_QuerySkipsMatching(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	def := makeMarkdownDef(t, dir, "")
+	def.Collections["test.notes"].RecordFile.ExcludeRegex = `^README\.md$`
+	db := openTestDB(t, dir, def)
+
+	ctx := context.Background()
+	// Insert a real record.
+	realKey := dal.NewKeyWithID("test.notes", "real")
+	realRec := dal.NewRecordWithData(realKey, map[string]any{
+		"title":                             "Real note",
+		ingitdb.DefaultMarkdownContentField: "body\n",
+	})
+	if err := db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+		return tx.Insert(ctx, realRec)
+	}); err != nil {
+		t.Fatalf("Insert real: %v", err)
+	}
+
+	// Drop a README.md right next to the records. It must NOT be returned
+	// by query.
+	readmePath := filepath.Join(dir, "$records", "README.md")
+	if err := os.WriteFile(readmePath, []byte("# README\nNot a record.\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile README: %v", err)
+	}
+
+	qb := dal.NewQueryBuilder(dal.From(dal.NewRootCollectionRef("test.notes", "")))
+	q := qb.SelectIntoRecord(func() dal.Record {
+		return dal.NewRecordWithData(dal.NewKeyWithID("test.notes", ""), map[string]any{})
+	})
+	var count int
+	err := db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
+		reader, qerr := tx.ExecuteQueryToRecordsReader(ctx, q)
+		if qerr != nil {
+			return qerr
+		}
+		defer func() { _ = reader.Close() }()
+		for {
+			_, nextErr := reader.Next()
+			if nextErr != nil {
+				break
+			}
+			count++
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("query: %v", err)
+	}
+	if count != 1 {
+		t.Errorf("query returned %d records, want 1 (README.md should be excluded)", count)
+	}
+}
+
+func TestMarkdown_ExcludeRegex_InvalidRegexRejected(t *testing.T) {
+	t.Parallel()
+	rfd := ingitdb.RecordFileDef{
+		Name:         "{key}.md",
+		Format:       ingitdb.RecordFormatMarkdown,
+		RecordType:   ingitdb.SingleRecord,
+		ExcludeRegex: "[unclosed",
+	}
+	err := rfd.Validate()
+	if err == nil {
+		t.Fatal("expected validation error for invalid regex, got nil")
+	}
+	if !strings.Contains(err.Error(), "exclude_regex") {
+		t.Errorf("error should mention exclude_regex, got: %v", err)
+	}
+}
+
+func TestMarkdown_IsExcluded(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name    string
+		pattern string
+		input   string
+		want    bool
+	}{
+		{"no pattern", "", "README.md", false},
+		{"matches", `^README\.md$`, "README.md", true},
+		{"doesnt match", `^README\.md$`, "prod001.md", false},
+		{"partial match still excludes", `^_`, "_draft.md", true},
+		{"invalid regex returns false (validate catches it elsewhere)", "[unclosed", "any.md", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			rfd := ingitdb.RecordFileDef{ExcludeRegex: tc.pattern}
+			if got := rfd.IsExcluded(tc.input); got != tc.want {
+				t.Errorf("IsExcluded(%q) with pattern %q: got %v, want %v",
+					tc.input, tc.pattern, got, tc.want)
+			}
+		})
+	}
+}

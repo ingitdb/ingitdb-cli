@@ -75,11 +75,14 @@ func (r FileRecordsReader) ReadRecords(
 			return fmt.Errorf("failed to glob records: %w", err)
 		}
 		for _, filePath := range matches {
+			if col.RecordFile.IsExcluded(filepath.Base(filePath)) {
+				continue
+			}
 			content, err := r.readFile(filePath)
 			if err != nil {
 				return fmt.Errorf("failed to read record %s: %w", filePath, err)
 			}
-			data, err := dalgo2ingitdb.ParseRecordContent(content, col.RecordFile.Format)
+			data, err := dalgo2ingitdb.ParseRecordContentForCollection(content, col)
 			if err != nil {
 				return fmt.Errorf("failed to parse record %s: %w", filePath, err)
 			}

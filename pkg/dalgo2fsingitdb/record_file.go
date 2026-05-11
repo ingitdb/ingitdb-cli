@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/dal-go/dalgo/dal"
+	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/markdown"
 	"gopkg.in/yaml.v3"
@@ -61,20 +62,11 @@ func readMarkdownRecord(path string, colDef *ingitdb.CollectionDef) (map[string]
 		}
 		return nil, false, fmt.Errorf("failed to read file %s: %w", path, err)
 	}
-	frontmatter, body, parseErr := markdown.Parse(fileContent)
+	data, parseErr := dalgo2ingitdb.ParseRecordContentForCollection(fileContent, colDef)
 	if parseErr != nil {
 		return nil, false, fmt.Errorf("failed to parse markdown file %s: %w", path, parseErr)
 	}
-	result := make(map[string]any, len(frontmatter)+1)
-	for key, value := range frontmatter {
-		if _, declared := colDef.Columns[key]; !declared {
-			continue
-		}
-		result[key] = value
-	}
-	contentField := colDef.RecordFile.ResolvedContentField()
-	result[contentField] = string(body)
-	return result, true, nil
+	return data, true, nil
 }
 
 // writeMarkdownRecord writes a Markdown record file. The content_field
