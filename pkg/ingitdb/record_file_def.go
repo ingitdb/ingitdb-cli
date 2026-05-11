@@ -24,6 +24,12 @@ type RecordFileDef struct {
 	// "[]map[string]any" - list of records
 	// "map[$record_id]map[$field_name]any" - all records in one file; top-level keys are record IDs, second level is field names
 	RecordType RecordType `yaml:"type"`
+
+	// ContentField is the name of the column that maps to the Markdown body
+	// in a `format: markdown` collection. When empty, the default
+	// (`DefaultMarkdownContentField`, `$content`) is used.
+	// It MUST only be set when Format is `markdown`.
+	ContentField string `yaml:"content_field,omitempty"`
 }
 
 func (rfd RecordFileDef) Validate() error {
@@ -39,7 +45,26 @@ func (rfd RecordFileDef) Validate() error {
 	default:
 		return fmt.Errorf("invalid record type %q", rfd.RecordType)
 	}
+	if rfd.Format == RecordFormatMarkdown {
+		if rfd.RecordType != SingleRecord {
+			return fmt.Errorf("format %q requires record type %q, got %q",
+				RecordFormatMarkdown, SingleRecord, rfd.RecordType)
+		}
+	} else if rfd.ContentField != "" {
+		return fmt.Errorf("content_field is only valid for format %q, got %q",
+			RecordFormatMarkdown, rfd.Format)
+	}
 	return nil
+}
+
+// ResolvedContentField returns the configured content_field name when set,
+// otherwise the default (`$content`). Only meaningful when Format is
+// `markdown`.
+func (rfd RecordFileDef) ResolvedContentField() string {
+	if rfd.ContentField != "" {
+		return rfd.ContentField
+	}
+	return DefaultMarkdownContentField
 }
 
 // RecordsBasePath returns "$records" when record_file.name contains {key},

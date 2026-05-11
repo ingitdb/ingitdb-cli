@@ -10,6 +10,7 @@ import (
 
 	"github.com/dal-go/dalgo/dal"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/markdown"
 	"gopkg.in/yaml.v3"
 )
 
@@ -23,6 +24,7 @@ func resolveRecordPath(colDef *ingitdb.CollectionDef, recordKey string) string {
 
 // readRecordFromFile reads a YAML or JSON file and returns its content as a map.
 // Returns (nil, false, nil) if the file does not exist.
+// For markdown-format collections use readMarkdownRecord instead.
 func readRecordFromFile(path string, format ingitdb.RecordFormat) (map[string]any, bool, error) {
 	fileContent, err := os.ReadFile(path)
 	if err != nil {
@@ -33,11 +35,11 @@ func readRecordFromFile(path string, format ingitdb.RecordFormat) (map[string]an
 	}
 	var data map[string]any
 	switch format {
-	case "yaml", "yml":
+	case ingitdb.RecordFormatYAML, ingitdb.RecordFormatYML:
 		if err = yaml.Unmarshal(fileContent, &data); err != nil {
 			return nil, false, fmt.Errorf("failed to parse YAML file %s: %w", path, err)
 		}
-	case "json":
+	case ingitdb.RecordFormatJSON:
 		if err = yaml.Unmarshal(fileContent, &data); err != nil {
 			return nil, false, fmt.Errorf("failed to parse JSON file %s: %w", path, err)
 		}
@@ -45,6 +47,82 @@ func readRecordFromFile(path string, format ingitdb.RecordFormat) (map[string]an
 		return nil, false, fmt.Errorf("unsupported record format %q", format)
 	}
 	return data, true, nil
+}
+
+// readMarkdownRecord reads a Markdown record file: parses YAML frontmatter,
+// filters frontmatter keys to columns declared in colDef, and exposes the
+// document body under the configured content_field column name.
+// Returns (nil, false, nil) if the file does not exist.
+func readMarkdownRecord(path string, colDef *ingitdb.CollectionDef) (map[string]any, bool, error) {
+	fileContent, err := os.ReadFile(path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, false, nil
+		}
+		return nil, false, fmt.Errorf("failed to read file %s: %w", path, err)
+	}
+	frontmatter, body, parseErr := markdown.Parse(fileContent)
+	if parseErr != nil {
+		return nil, false, fmt.Errorf("failed to parse markdown file %s: %w", path, parseErr)
+	}
+	result := make(map[string]any, len(frontmatter)+1)
+	for key, value := range frontmatter {
+		if _, declared := colDef.Columns[key]; !declared {
+			continue
+		}
+		result[key] = value
+	}
+	contentField := colDef.RecordFile.ResolvedContentField()
+	result[contentField] = string(body)
+	return result, true, nil
+}
+
+// writeMarkdownRecord writes a Markdown record file. The content_field
+// column value is written to the body byte-for-byte; all other columns
+// declared in the schema are written to YAML frontmatter in the order
+// defined by colDef.ColumnsOrder, with alphabetical fallback for columns
+// not in ColumnsOrder. Undeclared keys in data are passed through
+// (appended after declared columns, alphabetically).
+func writeMarkdownRecord(path string, colDef *ingitdb.CollectionDef, data map[string]any) error {
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("failed to create directory %s: %w", dir, err)
+	}
+	contentField := colDef.RecordFile.ResolvedContentField()
+	body := extractBody(data, contentField)
+	frontmatter := make(map[string]any, len(data))
+	for key, value := range data {
+		if key == contentField {
+			continue
+		}
+		frontmatter[key] = value
+	}
+	content, err := markdown.Serialize(frontmatter, colDef.ColumnsOrder, body)
+	if err != nil {
+		return fmt.Errorf("failed to serialize markdown record: %w", err)
+	}
+	if writeErr := os.WriteFile(path, content, 0o644); writeErr != nil {
+		return fmt.Errorf("failed to write file %s: %w", path, writeErr)
+	}
+	return nil
+}
+
+// extractBody pulls the content field's value out of data and converts it
+// to body bytes. A missing or nil value yields nil (empty body). A string
+// or []byte value is used verbatim. Any other type is rendered as text.
+func extractBody(data map[string]any, contentField string) []byte {
+	raw, ok := data[contentField]
+	if !ok || raw == nil {
+		return nil
+	}
+	switch v := raw.(type) {
+	case string:
+		return []byte(v)
+	case []byte:
+		return v
+	default:
+		return fmt.Appendf(nil, "%v", v)
+	}
 }
 
 // writeRecordToFile marshals data to the specified format and writes it to path.
