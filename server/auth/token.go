@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/go-github/v84/github"
+	"github.com/google/go-github/v86/github"
 )
 
 // ResolveTokenFromRequest resolves token from Authorization header first, then cookie.
