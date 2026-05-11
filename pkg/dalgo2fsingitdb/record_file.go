@@ -172,27 +172,44 @@ func deleteRecordFile(path string) error {
 // readMapOfRecordsFile reads a file whose top-level keys are record IDs and whose
 // values are field maps (map[$record_id]map[$field_name]any layout).
 // Returns (nil, false, nil) if the file does not exist.
+//
+// Dispatches to dalgo2ingitdb.ParseMapOfRecordsContent which understands
+// every supported format including INGR (where records are read from a
+// list and re-indexed by `$ID`).
 func readMapOfRecordsFile(path string, format ingitdb.RecordFormat) (map[string]map[string]any, bool, error) {
-	raw, found, err := readRecordFromFile(path, format)
-	if err != nil || !found {
-		return nil, found, err
-	}
-	result := make(map[string]map[string]any, len(raw))
-	for id, val := range raw {
-		fields, ok := val.(map[string]any)
-		if !ok {
-			return nil, false, fmt.Errorf("record %q in %s is not a map", id, path)
+	fileContent, err := os.ReadFile(path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, false, nil
 		}
-		result[id] = fields
+		return nil, false, fmt.Errorf("failed to read file %s: %w", path, err)
+	}
+	result, parseErr := dalgo2ingitdb.ParseMapOfRecordsContent(fileContent, format)
+	if parseErr != nil {
+		return nil, false, fmt.Errorf("failed to parse records file %s: %w", path, parseErr)
 	}
 	return result, true, nil
 }
 
 // writeMapOfRecordsFile writes a map[$record_id]map[$field_name]any dataset back to a file.
-func writeMapOfRecordsFile(path string, format ingitdb.RecordFormat, data map[string]map[string]any) error {
-	raw := make(map[string]any, len(data))
-	for id, fields := range data {
-		raw[id] = fields
+//
+// For yaml/json/toml the data is written as a top-level ID-keyed mapping
+// using the existing single-record writer. For INGR the data is flattened
+// into a record list with `$ID` injected, written through the ingr-io
+// RecordsWriter; the recordsetName is taken from the collection ID and
+// column order from the collection schema.
+func writeMapOfRecordsFile(path string, colDef *ingitdb.CollectionDef, data map[string]map[string]any) error {
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("failed to create directory %s: %w", dir, err)
 	}
-	return writeRecordToFile(path, format, raw)
+	content, err := dalgo2ingitdb.EncodeMapOfRecordsContent(
+		data, colDef.RecordFile.Format, colDef.ID, colDef.ColumnsOrder)
+	if err != nil {
+		return fmt.Errorf("failed to encode records for %s: %w", path, err)
+	}
+	if writeErr := os.WriteFile(path, content, 0o644); writeErr != nil {
+		return fmt.Errorf("failed to write file %s: %w", path, writeErr)
+	}
+	return nil
 }

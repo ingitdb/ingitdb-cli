@@ -50,11 +50,8 @@ func (r readwriteTx) Set(ctx context.Context, record dal.Record) error {
 			return fmt.Errorf("record data is not map[string]any")
 		}
 		allRecords[recordKey] = dalgo2ingitdb.ApplyLocaleToWrite(data, colDef.Columns)
-		toEncode := make(map[string]any, len(allRecords))
-		for k, v := range allRecords {
-			toEncode[k] = v
-		}
-		encoded, encodeErr := encodeRecordContent(toEncode, colDef.RecordFile.Format)
+		encoded, encodeErr := dalgo2ingitdb.EncodeMapOfRecordsContent(
+			allRecords, colDef.RecordFile.Format, colDef.ID, colDef.ColumnsOrder)
 		if encodeErr != nil {
 			return encodeErr
 		}
@@ -118,11 +115,8 @@ func (r readwriteTx) Insert(ctx context.Context, record dal.Record, opts ...dal.
 			return fmt.Errorf("record data is not map[string]any")
 		}
 		allRecords[recordKey] = dalgo2ingitdb.ApplyLocaleToWrite(data, colDef.Columns)
-		toEncode := make(map[string]any, len(allRecords))
-		for k, v := range allRecords {
-			toEncode[k] = v
-		}
-		encoded, encodeErr := encodeRecordContent(toEncode, colDef.RecordFile.Format)
+		encoded, encodeErr := dalgo2ingitdb.EncodeMapOfRecordsContent(
+			allRecords, colDef.RecordFile.Format, colDef.ID, colDef.ColumnsOrder)
 		if encodeErr != nil {
 			return encodeErr
 		}
