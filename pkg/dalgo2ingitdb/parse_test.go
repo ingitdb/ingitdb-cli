@@ -1,9 +1,9 @@
 package dalgo2ingitdb
 
 import (
-	"strings"
 	"testing"
 
+	"github.com/ingitdb/ingitdb-cli/internal/testutil"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
@@ -268,12 +268,7 @@ func TestParseRecordContentForCollection_Markdown_ContentFieldCollision_Default(
 	// reserved for the body. Must error.
 	content := []byte("---\ntitle: T\n$content: bogus\n---\nactual body\n")
 	_, err := ParseRecordContentForCollection(content, markdownColDef(""))
-	if err == nil {
-		t.Fatal("expected error for $content collision in frontmatter")
-	}
-	if !strings.Contains(err.Error(), "$content") || !strings.Contains(err.Error(), "collide") {
-		t.Fatalf("expected collision message mentioning $content, got: %v", err)
-	}
+	testutil.MustErrContain(t, err, "$content", "collide")
 }
 
 func TestParseRecordContentForCollection_Markdown_ContentFieldCollision_Override(t *testing.T) {
@@ -283,12 +278,7 @@ func TestParseRecordContentForCollection_Markdown_ContentFieldCollision_Override
 	// Must error on collision.
 	content := []byte("---\ntitle: T\nbody: bogus\n---\nactual body\n")
 	_, err := ParseRecordContentForCollection(content, markdownColDef("body"))
-	if err == nil {
-		t.Fatal("expected error for body collision in frontmatter")
-	}
-	if !strings.Contains(err.Error(), `"body"`) || !strings.Contains(err.Error(), "collide") {
-		t.Fatalf("expected collision message mentioning body, got: %v", err)
-	}
+	testutil.MustErrContain(t, err, `"body"`, "collide")
 }
 
 func TestParseRecordContentForCollection_Markdown_NoCollision(t *testing.T) {
