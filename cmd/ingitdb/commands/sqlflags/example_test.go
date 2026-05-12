@@ -65,7 +65,10 @@ func TestExampleVerbPipeline(t *testing.T) {
 	}
 
 	fieldsRaw, _ := cmd.Flags().GetString("fields")
-	fields := ParseFields(fieldsRaw)
+	fields, err := ParseFields(fieldsRaw)
+	if err != nil {
+		t.Fatalf("parse fields: %v", err)
+	}
 	if len(fields) != 2 || fields[0] != "$id" || fields[1] != "name" {
 		t.Errorf("unexpected fields: %v", fields)
 	}
