@@ -12,6 +12,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2fsingitdb"
+	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ghingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
@@ -380,4 +381,51 @@ func TestSelect_SetMode_MinAffected_Unmet(t *testing.T) {
 	if stdout != "" {
 		t.Errorf("stdout MUST be empty when threshold unmet, got: %s", stdout)
 	}
+}
+
+func TestSelect_PathAndGitHubMutuallyExclusive(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := selectTestDeps(t, dir)
+	_, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf, "--path="+dir, "--github=foo/bar", "--from=test.items")
+	if err == nil {
+		t.Fatal("expected error when both --path and --github supplied")
+	}
+	if !strings.Contains(err.Error(), "--path") || !strings.Contains(err.Error(), "--github") {
+		t.Errorf("error should mention --path and --github, got: %v", err)
+	}
+}
+
+func TestSelect_SetMode_GitHubFlagAccepted(t *testing.T) {
+	// Not parallel: replaces package-level gitHubFileReaderFactory.
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := selectTestDeps(t, dir)
+	// Smoke test: --from + --github parses and branches correctly before any
+	// network call. We inject a reader that returns a network-style error so
+	// the test is hermetic and confirms the GitHub branch is wired — not just
+	// that flag parsing succeeds.
+	origFactory := gitHubFileReaderFactory
+	gitHubFileReaderFactory = &stubFileReaderFactory{err: fmt.Errorf("github: network error")}
+	defer func() { gitHubFileReaderFactory = origFactory }()
+
+	_, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf, "--github=owner/repo", "--from=test.items")
+	if err == nil {
+		t.Fatal("expected error from injected GitHub factory failure")
+	}
+	if strings.Contains(err.Error(), "not yet implemented") {
+		t.Errorf("GitHub set-mode branch not wired: %v", err)
+	}
+	// Error must mention the injected message, confirming the GitHub path was taken.
+	if !strings.Contains(err.Error(), "github") && !strings.Contains(err.Error(), "network") {
+		t.Errorf("error should come from GitHub path, got: %v", err)
+	}
+}
+
+// stubFileReaderFactory returns an error from NewGitHubFileReader without any mock framework.
+type stubFileReaderFactory struct {
+	err error
+}
+
+func (s *stubFileReaderFactory) NewGitHubFileReader(_ dalgo2ghingitdb.Config) (dalgo2ghingitdb.FileReader, error) {
+	return nil, s.err
 }

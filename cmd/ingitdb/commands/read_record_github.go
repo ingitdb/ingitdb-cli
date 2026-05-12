@@ -145,6 +145,86 @@ func resolveRemoteCollectionPath(rootCollections map[string]string, id string) (
 	return collectionID, recordKey, collectionPath, nil
 }
 
+// readRemoteDefinitionForCollection reads the database root config from the
+// remote GitHub repository and returns a Definition containing the named
+// collection. Unlike readRemoteDefinitionForID, which uses an ID prefix to
+// discover the collection, this helper requires the caller to know the
+// collection ID up front — suitable for set-mode queries (--from=<collection>).
+func readRemoteDefinitionForCollection(ctx context.Context, spec githubRepoSpec, collectionID string) (*ingitdb.Definition, error) {
+	cfg := newGitHubConfig(spec, "")
+	reader, err := gitHubFileReaderFactory.NewGitHubFileReader(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("create github file reader: %w", err)
+	}
+	return readRemoteDefinitionForCollectionWithReader(ctx, collectionID, reader)
+}
+
+// readRemoteDefinitionForCollectionWithReader is the testable inner form: it
+// takes an injected FileReader so unit tests can stub I/O.
+func readRemoteDefinitionForCollectionWithReader(ctx context.Context, collectionID string, fileReader dalgo2ghingitdb.FileReader) (*ingitdb.Definition, error) {
+	rootCollectionsPath := path.Join(config.IngitDBDirName, config.RootCollectionsFileName)
+	rootCollectionsContent, found, err := fileReader.ReadFile(ctx, rootCollectionsPath)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, fmt.Errorf("file not found: %s", rootCollectionsPath)
+	}
+	var rootCollections map[string]string
+	err = yaml.Unmarshal(rootCollectionsContent, &rootCollections)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse %s: %w", rootCollectionsPath, err)
+	}
+
+	settingsPath := path.Join(config.IngitDBDirName, config.SettingsFileName)
+	settingsContent, settingsFound, settingsErr := fileReader.ReadFile(ctx, settingsPath)
+	if settingsErr != nil {
+		return nil, settingsErr
+	}
+	var settings config.Settings
+	if settingsFound {
+		if parseErr := yaml.Unmarshal(settingsContent, &settings); parseErr != nil {
+			return nil, fmt.Errorf("failed to parse %s: %w", settingsPath, parseErr)
+		}
+	}
+
+	rootConfig := config.RootConfig{
+		Settings:        settings,
+		RootCollections: rootCollections,
+	}
+	if validateErr := rootConfig.Validate(); validateErr != nil {
+		return nil, fmt.Errorf("invalid %s: %w", rootCollectionsPath, validateErr)
+	}
+
+	collectionPath, ok := rootConfig.RootCollections[collectionID]
+	if !ok {
+		return nil, fmt.Errorf("collection %q not found in root config", collectionID)
+	}
+	collectionPath = path.Clean(collectionPath)
+
+	collectionDefPath := path.Join(collectionPath, ingitdb.SchemaDir, collectionID+".yaml")
+	collectionDefContent, found, err := fileReader.ReadFile(ctx, collectionDefPath)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, fmt.Errorf("collection definition not found: %s", collectionDefPath)
+	}
+	colDef := &ingitdb.CollectionDef{}
+	err = yaml.Unmarshal(collectionDefContent, colDef)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse %s: %w", collectionDefPath, err)
+	}
+	colDef.ID = collectionID
+	colDef.DirPath = collectionPath
+	def := &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			collectionID: colDef,
+		},
+	}
+	return def, nil
+}
+
 // listCollectionsFromFileReader reads the root collections and lists all collections from a FileReader.
 func listCollectionsFromFileReader(fileReader dalgo2ghingitdb.FileReader) ([]string, error) {
 	ctx := context.Background()

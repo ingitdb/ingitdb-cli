@@ -130,8 +130,7 @@ func runSelectByID(
 
 // runSelectFromSet handles --from set mode: fetch every record from
 // the collection, apply WHERE conditions, project fields, and emit
-// the result. Order-by, limit, and min-affected are layered on in
-// later tasks.
+// the result. Supports both local (--path) and remote (--github) sources.
 func runSelectFromSet(
 	ctx context.Context,
 	cmd *cobra.Command,
@@ -143,14 +142,28 @@ func runSelectFromSet(
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	newDB func(string, *ingitdb.Definition) (dal.DB, error),
 ) error {
-	whereExprs, _ := cmd.Flags().GetStringArray("where")
-	conds := make([]sqlflags.Condition, 0, len(whereExprs))
-	for _, expr := range whereExprs {
-		c, err := sqlflags.ParseWhere(expr)
-		if err != nil {
-			return fmt.Errorf("invalid --where %q: %w", expr, err)
+	githubValue, _ := cmd.Flags().GetString("github")
+	pathValue, _ := cmd.Flags().GetString("path")
+
+	if githubValue != "" && pathValue != "" {
+		return fmt.Errorf("--path and --github are mutually exclusive")
+	}
+
+	if githubValue != "" {
+		spec, parseErr := parseGitHubRepoSpec(githubValue)
+		if parseErr != nil {
+			return parseErr
 		}
-		conds = append(conds, c)
+		def, readErr := readRemoteDefinitionForCollection(ctx, spec, from)
+		if readErr != nil {
+			return fmt.Errorf("failed to read remote definition: %w", readErr)
+		}
+		cfg := newGitHubConfig(spec, githubToken(cmd))
+		db, dbErr := gitHubDBFactory.NewGitHubDBWithDef(cfg, def)
+		if dbErr != nil {
+			return fmt.Errorf("failed to open github database: %w", dbErr)
+		}
+		return runSelectFromSetWithDB(ctx, cmd, from, fields, format, db)
 	}
 
 	dirPath, err := resolveDBPath(cmd, homeDir, getWd)
@@ -170,6 +183,28 @@ func runSelectFromSet(
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
+	return runSelectFromSetWithDB(ctx, cmd, from, fields, format, db)
+}
+
+// runSelectFromSetWithDB executes the set-mode query against a pre-opened DB.
+// Both local and GitHub paths call this after resolving their respective DBs.
+func runSelectFromSetWithDB(
+	ctx context.Context,
+	cmd *cobra.Command,
+	from string,
+	fields []string,
+	format string,
+	db dal.DB,
+) error {
+	whereExprs, _ := cmd.Flags().GetStringArray("where")
+	conds := make([]sqlflags.Condition, 0, len(whereExprs))
+	for _, expr := range whereExprs {
+		c, err := sqlflags.ParseWhere(expr)
+		if err != nil {
+			return fmt.Errorf("invalid --where %q: %w", expr, err)
+		}
+		conds = append(conds, c)
+	}
 
 	qb := dal.NewQueryBuilder(dal.From(dal.NewRootCollectionRef(from, "")))
 	q := qb.SelectIntoRecord(func() dal.Record {
@@ -178,7 +213,7 @@ func runSelectFromSet(
 	})
 
 	var rows []map[string]any
-	err = db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
+	err := db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
 		reader, qerr := tx.ExecuteQueryToRecordsReader(ctx, q)
 		if qerr != nil {
 			return qerr

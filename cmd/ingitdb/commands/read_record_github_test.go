@@ -505,3 +505,74 @@ func TestReadRemoteDefinitionForID_FactoryError(t *testing.T) {
 		t.Fatal("expected error when factory fails")
 	}
 }
+
+func TestReadRemoteDefinitionForCollectionWithReader(t *testing.T) {
+	t.Parallel()
+	reader := fakeFileReader{files: map[string][]byte{
+		".ingitdb/root-collections.yaml":                []byte("todo.tags: demo-dbs/todo/tags\n"),
+		"demo-dbs/todo/tags/.collection/todo.tags.yaml": []byte("record_file:\n  name: tags.json\n  type: map[string]map[string]any\n  format: json\ncolumns:\n  title:\n    type: string\n"),
+	}}
+	def, err := readRemoteDefinitionForCollectionWithReader(context.Background(), "todo.tags", reader)
+	if err != nil {
+		t.Fatalf("readRemoteDefinitionForCollectionWithReader: %v", err)
+	}
+	colDef := def.Collections["todo.tags"]
+	if colDef == nil {
+		t.Fatal("expected collection in definition")
+	}
+	if colDef.ID != "todo.tags" {
+		t.Fatalf("unexpected ID: %s", colDef.ID)
+	}
+	if colDef.DirPath != "demo-dbs/todo/tags" {
+		t.Fatalf("unexpected DirPath: %s", colDef.DirPath)
+	}
+}
+
+func TestReadRemoteDefinitionForCollectionWithReader_RootConfigNotFound(t *testing.T) {
+	t.Parallel()
+	reader := fakeFileReader{files: map[string][]byte{}}
+	_, err := readRemoteDefinitionForCollectionWithReader(context.Background(), "todo.tags", reader)
+	if err == nil {
+		t.Fatal("expected error when root config not found")
+	}
+}
+
+func TestReadRemoteDefinitionForCollectionWithReader_CollectionNotInRootConfig(t *testing.T) {
+	t.Parallel()
+	reader := fakeFileReader{files: map[string][]byte{
+		".ingitdb/root-collections.yaml": []byte("other.collection: some/path\n"),
+	}}
+	_, err := readRemoteDefinitionForCollectionWithReader(context.Background(), "todo.tags", reader)
+	if err == nil {
+		t.Fatal("expected error when collection not in root config")
+	}
+}
+
+func TestReadRemoteDefinitionForCollectionWithReader_CollectionDefNotFound(t *testing.T) {
+	t.Parallel()
+	reader := fakeFileReader{files: map[string][]byte{
+		".ingitdb/root-collections.yaml": []byte("todo.tags: demo-dbs/todo/tags\n"),
+	}}
+	_, err := readRemoteDefinitionForCollectionWithReader(context.Background(), "todo.tags", reader)
+	if err == nil {
+		t.Fatal("expected error when collection definition file not found")
+	}
+}
+
+func TestReadRemoteDefinitionForCollection_FactoryError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockFactory := NewMockGitHubFileReaderFactory(ctrl)
+	mockFactory.EXPECT().NewGitHubFileReader(gomock.Any()).Return(nil, errors.New("factory error"))
+
+	originalFactory := gitHubFileReaderFactory
+	gitHubFileReaderFactory = mockFactory
+	defer func() { gitHubFileReaderFactory = originalFactory }()
+
+	spec := githubRepoSpec{Owner: "owner", Repo: "repo"}
+	_, err := readRemoteDefinitionForCollection(context.Background(), spec, "todo.tags")
+	if err == nil {
+		t.Fatal("expected error when factory fails")
+	}
+}
