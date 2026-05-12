@@ -45,6 +45,7 @@ Replace the existing verb surface with select, insert, update, delete, drop in o
 - Interactive confirmation prompt for delete --all — the explicit --all flag is the confirmation; git commit history provides revert; scripts and TTYs behave the same
 - Stderr confirmation/summary messages for set-scope DML — operations are silent on success; git log is the audit trail and the message
 - drop --keep-data / schema-only drops — drop is drop, mirroring real SQL DROP TABLE semantics; partial drops add cognitive load without a demonstrated need
+- Preserving every legacy verb during migration — when a new SQL verb's name collides with an old top-level parent command (e.g. update, delete), the new verb's plan removes the legacy parent in the same release. Cobra structurally cannot host two top-level commands with the same Use name. Legacy subcommands without name collisions (read record, create record, query, find) may stay or be removed in a final cleanup plan.
 
 ## Key Assumptions to Validate
 
