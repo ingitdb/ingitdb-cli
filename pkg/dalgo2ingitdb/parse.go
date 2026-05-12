@@ -65,6 +65,12 @@ func ParseRecordContentForCollection(content []byte, colDef *ingitdb.CollectionD
 	}
 	result := make(map[string]any, len(frontmatter)+1)
 	for key, value := range frontmatter {
+		// $id is a metadata key used for record-key resolution; pass it
+		// through so callers (e.g. insert) can extract and strip it.
+		if key == "$id" {
+			result[key] = value
+			continue
+		}
 		if _, declared := colDef.Columns[key]; !declared {
 			continue
 		}

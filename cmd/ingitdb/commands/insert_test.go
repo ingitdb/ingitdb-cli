@@ -352,3 +352,83 @@ func TestInsert_RejectsExistingKey(t *testing.T) {
 		t.Errorf("original record was overwritten, got:\n%s", string(got))
 	}
 }
+
+// insertMarkdownTestDeps is like insertTestDeps but uses testMarkdownDef
+// so the test can target the test.notes markdown collection.
+func insertMarkdownTestDeps(t *testing.T, dir string) (
+	homeDir func() (string, error),
+	getWd func() (string, error),
+	readDef func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
+	newDB func(string, *ingitdb.Definition) (dal.DB, error),
+	logf func(...any),
+) {
+	t.Helper()
+	def := testMarkdownDef(dir)
+	homeDir = func() (string, error) { return "/tmp/home", nil }
+	getWd = func() (string, error) { return dir, nil }
+	readDef = func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) { return def, nil }
+	newDB = func(root string, d *ingitdb.Definition) (dal.DB, error) {
+		return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
+	}
+	logf = func(...any) {}
+	return
+}
+
+func TestInsert_MarkdownFromStdin(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertMarkdownTestDeps(t, dir)
+
+	mdContent := "---\ntitle: Hello World\ntags: [intro, demo]\n---\n\nThis is the body of the post.\n"
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf,
+		strings.NewReader(mdContent), false /* not TTY */, nil,
+		"--path="+dir, "--into=test.notes", "--key=hello",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+
+	// Read the stored file and verify it contains BOTH frontmatter
+	// (title) and the body (under the $content convention).
+	colDef := testMarkdownDef(dir).Collections["test.notes"]
+	stored, readErr := os.ReadFile(filepath.Join(dir, colDef.RecordFile.RecordsBasePath(), "hello.md"))
+	if readErr != nil {
+		t.Fatalf("read stored file: %v", readErr)
+	}
+	got := string(stored)
+	if !strings.Contains(got, "title: Hello World") {
+		t.Errorf("stored markdown should contain title from frontmatter:\n%s", got)
+	}
+	if !strings.Contains(got, "This is the body") {
+		t.Errorf("stored markdown should contain body:\n%s", got)
+	}
+}
+
+func TestInsert_MarkdownDollarIDFromFrontmatter(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertMarkdownTestDeps(t, dir)
+
+	// $id in markdown frontmatter provides the key; no --key flag.
+	mdContent := "---\n$id: from-frontmatter\ntitle: Auto-Keyed\n---\n\nBody here.\n"
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf,
+		strings.NewReader(mdContent), false, nil,
+		"--path="+dir, "--into=test.notes",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+
+	colDef := testMarkdownDef(dir).Collections["test.notes"]
+	stored, readErr := os.ReadFile(filepath.Join(dir, colDef.RecordFile.RecordsBasePath(), "from-frontmatter.md"))
+	if readErr != nil {
+		t.Fatalf("read stored file: %v", readErr)
+	}
+	// $id must NOT appear in the stored frontmatter (it's metadata).
+	if strings.Contains(string(stored), "$id:") {
+		t.Errorf("$id must be stripped from stored frontmatter, got:\n%s", string(stored))
+	}
+	if !strings.Contains(string(stored), "title: Auto-Keyed") {
+		t.Errorf("stored frontmatter should contain title:\n%s", string(stored))
+	}
+}
