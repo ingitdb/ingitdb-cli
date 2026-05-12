@@ -251,6 +251,30 @@ func TestSelect_SetMode_EmptyResult_JSON(t *testing.T) {
 	}
 }
 
+func TestSelect_SetMode_EmptyResult_MD(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := selectTestDeps(t, dir)
+	stdout, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf, "--path="+dir, "--from=test.items", "--fields=$id,title", "--format=md")
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	// Empty MD must still have the header + separator rows but no data rows.
+	if !strings.Contains(stdout, "$id") || !strings.Contains(stdout, "title") {
+		t.Errorf("empty MD output must include header columns, got:\n%s", stdout)
+	}
+	// Data row count: lines starting with "|" minus header (1) minus separator (1).
+	dataLines := 0
+	for _, line := range strings.Split(strings.TrimSpace(stdout), "\n") {
+		if strings.HasPrefix(line, "|") {
+			dataLines++
+		}
+	}
+	if dataLines > 2 {
+		t.Errorf("empty MD should have only header+separator (2 lines), got %d pipe lines:\n%s", dataLines, stdout)
+	}
+}
+
 func TestSelect_SetMode_INGR(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()

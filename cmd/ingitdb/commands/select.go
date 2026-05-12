@@ -174,11 +174,9 @@ func runSelectFromSet(
 	if err != nil {
 		return fmt.Errorf("failed to read database definition: %w", err)
 	}
-	colDef, ok := def.Collections[from]
-	if !ok {
+	if _, ok := def.Collections[from]; !ok {
 		return fmt.Errorf("collection %q not found in definition", from)
 	}
-	_ = colDef
 	db, err := newDB(dirPath, def)
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
