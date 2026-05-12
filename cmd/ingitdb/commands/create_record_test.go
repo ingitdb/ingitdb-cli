@@ -204,7 +204,10 @@ func TestCreate_StdinYAML(t *testing.T) {
 	if _, err := os.Stat(path); err != nil {
 		t.Fatalf("expected file %s to be created: %v", path, err)
 	}
-	content, _ := os.ReadFile(path)
+	content, readErr := os.ReadFile(path)
+	if readErr != nil {
+		t.Fatalf("ReadFile %s: %v", path, readErr)
+	}
 	if !strings.Contains(string(content), "Ireland") {
 		t.Fatalf("expected record to contain Ireland, got: %s", content)
 	}
@@ -238,10 +241,16 @@ func TestCreate_StdinMarkdown(t *testing.T) {
 	if _, err := os.Stat(path); err != nil {
 		t.Fatalf("expected file %s to be created: %v", path, err)
 	}
-	fileBytes, _ := os.ReadFile(path)
+	fileBytes, readErr := os.ReadFile(path)
+	if readErr != nil {
+		t.Fatalf("ReadFile %s: %v", path, readErr)
+	}
 	fileStr := string(fileBytes)
 	if !strings.Contains(fileStr, "title: Product 1") {
 		t.Fatalf("expected frontmatter title, got: %s", fileStr)
+	}
+	if !strings.Contains(fileStr, "category: software") {
+		t.Fatalf("expected frontmatter category, got: %s", fileStr)
 	}
 	if !strings.Contains(fileStr, "Body here.") {
 		t.Fatalf("expected body in record, got: %s", fileStr)
@@ -275,7 +284,10 @@ func TestCreate_StdinTOML(t *testing.T) {
 	if _, err := os.Stat(path); err != nil {
 		t.Fatalf("expected file %s to be created: %v", path, err)
 	}
-	content, _ := os.ReadFile(path)
+	content, readErr := os.ReadFile(path)
+	if readErr != nil {
+		t.Fatalf("ReadFile %s: %v", path, readErr)
+	}
 	if !strings.Contains(string(content), "Ireland") {
 		t.Fatalf("expected record to contain Ireland, got: %s", content)
 	}
