@@ -79,7 +79,7 @@ Replace the existing verb surface with select, insert, update, delete, drop in o
 - **Dependencies:**
   - [markdown-insert-ux](markdown-insert-ux.md) — its stdin/`--edit` behavior is inherited by the new `insert` verb; the two ideas must not contradict each other on input modes
 
-## Outstanding Questions
+## Open Questions
 
 None at this time. (The `===` strict-comparison scope question was resolved during the `shared-cli-flags` feature spec: schema-declared date/time/timestamp columns trigger YAML-type-aware strict comparison; otherwise dates are compared as strings. See `shared-cli-flags#req:strict-equality-yaml-types`.)
 

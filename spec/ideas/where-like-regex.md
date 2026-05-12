@@ -96,7 +96,7 @@ Pending direction selection. The smallest sensible MVP is one new --where operat
 - **Dependencies:**
   - [cli-sql-verbs](cli-sql-verbs.md) — must be specified first; this Idea modifies its descendant `shared-cli-flags` feature.
 
-## Outstanding Questions
+## Open Questions
 
 - Which of the five approaches wins? Author leans toward C (single `~=` regex operator) for simplicity, optionally combined with D's `^=`/`$=`/`*=` for ergonomic shortcuts. User decides at promote-to-spec time.
 - Case sensitivity default: case-sensitive (matches Go regex defaults, matches Postgres `LIKE`) or case-insensitive (matches MySQL default, matches casual user expectation)? Author leans case-sensitive with an explicit case-insensitive flag/modifier.
