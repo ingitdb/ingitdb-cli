@@ -796,7 +796,7 @@ func TestUpdate_WithViewBuilder(t *testing.T) {
 	}
 	logf := func(...any) {}
 
-	cmd := Update(homeDir, getWd, readDef, newDB, logf)
+	cmd := UpdateLegacy(homeDir, getWd, readDef, newDB, logf)
 	err := runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/item", "--set={name: NewName}")
 	if err != nil {
 		t.Fatalf("Update with view builder: %v", err)

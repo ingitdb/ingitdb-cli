@@ -49,7 +49,7 @@ func TestCRUDRecord_UpdatesTagsReadme(t *testing.T) {
 	assertTagTitle(t, dstTodoDir, "urgent", "Urgent")
 	assertReadmeContains(t, dstTodoDir, "**Urgent**")
 
-	updateCmd := Update(homeDir, getWd, readDef, newDB, logf)
+	updateCmd := UpdateLegacy(homeDir, getWd, readDef, newDB, logf)
 	if err := runCobraCommand(updateCmd, "record", "--path="+tmpDir, "--id=todo.tags/urgent", "--set={titles: {en: Updated}}"); err != nil {
 		t.Fatalf("Update record: %v", err)
 	}

@@ -7,8 +7,9 @@ import (
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
-// Update returns the update command group.
-func Update(
+// UpdateLegacy returns the legacy update command group (hosts `update record`).
+// Exported for the Task 5 regression test; not registered in main.go.
+func UpdateLegacy(
 	homeDir func() (string, error),
 	getWd func() (string, error),
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
