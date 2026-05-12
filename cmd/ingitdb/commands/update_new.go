@@ -11,6 +11,13 @@ import (
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
+// patchTarget pairs a record key with its data map, used as the unit
+// of work for set-mode patching.
+type patchTarget struct {
+	key  string
+	data map[string]any
+}
+
 // Update returns the `ingitdb update` command. Two modes inherited
 // from sqlflags: single-record (--id) and set (--from + --where|--all).
 // Patch operations: --set (repeatable assignment) and --unset
@@ -54,7 +61,7 @@ func Update(
 			case sqlflags.ModeID:
 				return runUpdateByID(cmd.Context(), cmd, id, setExprs, unsetExprs, homeDir, getWd, readDefinition, newDB)
 			case sqlflags.ModeFrom:
-				return fmt.Errorf("update --from: not yet implemented")
+				return runUpdateFromSet(cmd.Context(), cmd, from, setExprs, unsetExprs, homeDir, getWd, readDefinition, newDB)
 			default:
 				return fmt.Errorf("invalid mode")
 			}
@@ -178,4 +185,125 @@ func applyPatch(data map[string]any, sets []sqlflags.Assignment, unsets []string
 	for _, f := range unsets {
 		delete(data, f)
 	}
+}
+
+// runUpdateFromSet handles --from set mode: fetch all records, apply
+// WHERE filter (or --all), apply patch to each matching record in a
+// single transaction.
+func runUpdateFromSet(
+	ctx context.Context,
+	cmd *cobra.Command,
+	from string,
+	setExprs []string,
+	unsetExprs []string,
+	homeDir func() (string, error),
+	getWd func() (string, error),
+	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
+	newDB func(string, *ingitdb.Definition) (dal.DB, error),
+) error {
+	// Mutual exclusion: --where XOR --all.
+	whereExprs, _ := cmd.Flags().GetStringArray("where")
+	allFlag, _ := cmd.Flags().GetBool("all")
+	if len(whereExprs) > 0 && allFlag {
+		return fmt.Errorf("--where and --all are mutually exclusive")
+	}
+	if len(whereExprs) == 0 && !allFlag {
+		return fmt.Errorf("set mode requires one of --where or --all")
+	}
+
+	// Parse patches.
+	sets, err := parseSetExprs(setExprs)
+	if err != nil {
+		return err
+	}
+	unsets, err := parseUnsetExprs(unsetExprs)
+	if err != nil {
+		return err
+	}
+	if err := sqlflags.RejectSetUnsetSameField(sets, unsets); err != nil {
+		return err
+	}
+
+	// Parse --where conditions.
+	conds := make([]sqlflags.Condition, 0, len(whereExprs))
+	for _, e := range whereExprs {
+		c, parseErr := sqlflags.ParseWhere(e)
+		if parseErr != nil {
+			return fmt.Errorf("invalid --where %q: %w", e, parseErr)
+		}
+		conds = append(conds, c)
+	}
+
+	// Resolve collection (local or GitHub).
+	ictx, err := resolveInsertContext(ctx, cmd, from, homeDir, getWd, readDefinition, newDB)
+	if err != nil {
+		return err
+	}
+
+	// Fetch matching records via a read-only pass.
+	qb := dal.NewQueryBuilder(dal.From(dal.NewRootCollectionRef(from, "")))
+	q := qb.SelectIntoRecord(func() dal.Record {
+		k := dal.NewKeyWithID(from, "")
+		return dal.NewRecordWithData(k, map[string]any{})
+	})
+	var matches []patchTarget
+	err = ictx.db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
+		reader, qerr := tx.ExecuteQueryToRecordsReader(ctx, q)
+		if qerr != nil {
+			return qerr
+		}
+		defer func() { _ = reader.Close() }()
+		for {
+			rec, nextErr := reader.Next()
+			if nextErr != nil {
+				break
+			}
+			data, ok := rec.Data().(map[string]any)
+			if !ok {
+				continue
+			}
+			recKey := fmt.Sprintf("%v", rec.Key().ID)
+			if !allFlag {
+				matched, evalErr := evalAllWhere(data, recKey, conds)
+				if evalErr != nil {
+					return evalErr
+				}
+				if !matched {
+					continue
+				}
+			}
+			matches = append(matches, patchTarget{key: recKey, data: data})
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("query failed: %w", err)
+	}
+
+	// Apply patches in a single read-write transaction.
+	err = ictx.db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+		for _, m := range matches {
+			applyPatch(m.data, sets, unsets)
+			key := dal.NewKeyWithID(from, m.key)
+			record := dal.NewRecordWithData(key, m.data)
+			if setErr := tx.Set(ctx, record); setErr != nil {
+				return setErr
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	// Materialize local views.
+	if ictx.dirPath == "" {
+		return nil
+	}
+	return buildLocalViews(ctx, recordContext{
+		db:      ictx.db,
+		colDef:  ictx.colDef,
+		dirPath: ictx.dirPath,
+		def:     ictx.def,
+	})
 }

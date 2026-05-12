@@ -268,3 +268,93 @@ func TestUpdate_SingleRecord_NotFound(t *testing.T) {
 		t.Errorf("error should mention the missing id, got: %v", err)
 	}
 }
+
+func TestUpdate_SetMode_WhereFilter(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
+	seedItem(t, dir, "a", map[string]any{"priority": float64(1), "active": true})
+	seedItem(t, dir, "b", map[string]any{"priority": float64(5), "active": true})
+	seedItem(t, dir, "c", map[string]any{"priority": float64(3), "active": true})
+
+	_, err := runUpdateCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items", "--where=priority>=3",
+		"--set=active=false",
+	)
+	if err != nil {
+		t.Fatalf("expected success: %v", err)
+	}
+	if !strings.Contains(readItem(t, dir, "a"), "active: true") {
+		t.Errorf("record a should be untouched (priority=1)")
+	}
+	if !strings.Contains(readItem(t, dir, "b"), "active: false") {
+		t.Errorf("record b should be patched (priority=5)")
+	}
+	if !strings.Contains(readItem(t, dir, "c"), "active: false") {
+		t.Errorf("record c should be patched (priority=3)")
+	}
+}
+
+func TestUpdate_SetMode_All(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
+	seedItem(t, dir, "a", map[string]any{"priority": float64(1)})
+	seedItem(t, dir, "b", map[string]any{"priority": float64(2)})
+
+	_, err := runUpdateCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items", "--all", "--set=checked=true",
+	)
+	if err != nil {
+		t.Fatalf("expected success: %v", err)
+	}
+	if !strings.Contains(readItem(t, dir, "a"), "checked: true") {
+		t.Errorf("record a should have checked: true")
+	}
+	if !strings.Contains(readItem(t, dir, "b"), "checked: true") {
+		t.Errorf("record b should have checked: true")
+	}
+}
+
+func TestUpdate_SetMode_WhereAndAllMutuallyExclusive(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
+	_, err := runUpdateCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items", "--where=a==1", "--all", "--set=b=2",
+	)
+	if err == nil {
+		t.Fatal("expected error when --where and --all both supplied")
+	}
+}
+
+func TestUpdate_SetMode_NeitherWhereNorAllRejected(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
+	_, err := runUpdateCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items", "--set=b=2",
+	)
+	if err == nil {
+		t.Fatal("expected error when set mode has neither --where nor --all")
+	}
+}
+
+func TestUpdate_SetMode_ZeroMatchesIsSuccess(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
+	seedItem(t, dir, "a", map[string]any{"priority": float64(1)})
+
+	_, err := runUpdateCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items", "--where=priority>1000",
+		"--set=checked=true",
+	)
+	if err != nil {
+		t.Errorf("zero matches should succeed (exit 0), got: %v", err)
+	}
+	// Record should be unchanged.
+	if !strings.Contains(readItem(t, dir, "a"), "priority: 1") {
+		t.Errorf("record should be unchanged when no matches")
+	}
+}
