@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	"github.com/dal-go/dalgo/dal"
@@ -206,6 +207,44 @@ func runSelectFromSet(
 	})
 	if err != nil {
 		return fmt.Errorf("query failed: %w", err)
+	}
+
+	// --order-by: sort the result slice after filtering.
+	orderRaw, _ := cmd.Flags().GetString("order-by")
+	orders, orderErr := sqlflags.ParseOrderBy(orderRaw)
+	if orderErr != nil {
+		return orderErr
+	}
+	if len(orders) > 0 {
+		sort.SliceStable(rows, func(i, j int) bool {
+			for _, o := range orders {
+				cmp := compareValues(rows[i][o.Field], rows[j][o.Field])
+				if cmp == 0 {
+					continue
+				}
+				if o.Descending {
+					return cmp > 0
+				}
+				return cmp < 0
+			}
+			return false
+		})
+	}
+
+	// --min-affected pre-flight check (after WHERE, before --limit).
+	if n, supplied, mErr := sqlflags.MinAffectedFromCmd(cmd); mErr != nil {
+		return mErr
+	} else if supplied && len(rows) < n {
+		return fmt.Errorf("matched %d records, required at least %d", len(rows), n)
+	}
+
+	// --limit: cap the result count after ordering.
+	limitVal, _ := cmd.Flags().GetInt("limit")
+	if limitVal < 0 {
+		return fmt.Errorf("--limit must be >= 0, got %d", limitVal)
+	}
+	if limitVal > 0 && len(rows) > limitVal {
+		rows = rows[:limitVal]
 	}
 
 	if format == "" {

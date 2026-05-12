@@ -113,6 +113,34 @@ func asFloat(v any) (float64, bool) {
 	}
 }
 
+// compareValues returns -1, 0, +1 comparing a and b. Numeric comparison
+// is preferred when both can coerce; otherwise lexicographic on the
+// fmt-formatted strings.
+func compareValues(a, b any) int {
+	af, aok := asFloat(a)
+	bf, bok := asFloat(b)
+	if aok && bok {
+		switch {
+		case af < bf:
+			return -1
+		case af > bf:
+			return 1
+		default:
+			return 0
+		}
+	}
+	as := fmt.Sprintf("%v", a)
+	bs := fmt.Sprintf("%v", b)
+	switch {
+	case as < bs:
+		return -1
+	case as > bs:
+		return 1
+	default:
+		return 0
+	}
+}
+
 // compareOrdered evaluates >, <, >=, <= using numeric coercion when
 // possible, falling back to lexicographic string comparison.
 func compareOrdered(lhs, rhs any, op sqlflags.Operator) (bool, error) {

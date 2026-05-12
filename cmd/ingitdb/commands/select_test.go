@@ -303,3 +303,81 @@ func TestSelect_SingleRecord_NotFound(t *testing.T) {
 		t.Errorf("error should name the missing id, got: %v", err)
 	}
 }
+
+func TestSelect_SetMode_OrderByThenLimit(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := selectTestDeps(t, dir)
+	if err := seedRecord(t, dir, "test.items", "a", map[string]any{"priority": float64(1)}); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	if err := seedRecord(t, dir, "test.items", "b", map[string]any{"priority": float64(5)}); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	if err := seedRecord(t, dir, "test.items", "c", map[string]any{"priority": float64(3)}); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	stdout, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items",
+		"--order-by=-priority", "--limit=1",
+		"--fields=$id,priority", "--format=csv",
+	)
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	lines := strings.Split(strings.TrimSpace(stdout), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("want header + 1 data row, got %d lines:\n%s", len(lines), stdout)
+	}
+	// Highest priority first; --limit=1 yields only "b".
+	if !strings.Contains(lines[1], "b") {
+		t.Errorf("expected 'b' (priority=5) as the single row, got: %s", lines[1])
+	}
+}
+
+func TestSelect_SetMode_LimitValidation(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := selectTestDeps(t, dir)
+	_, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf, "--path="+dir, "--from=test.items", "--limit=-1")
+	if err == nil {
+		t.Fatal("expected error for --limit=-1")
+	}
+}
+
+func TestSelect_SetMode_MinAffected_Met(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := selectTestDeps(t, dir)
+	for _, k := range []string{"a", "b", "c"} {
+		if err := seedRecord(t, dir, "test.items", k, map[string]any{"x": float64(1)}); err != nil {
+			t.Fatalf("seed: %v", err)
+		}
+	}
+	stdout, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf, "--path="+dir, "--from=test.items", "--min-affected=2", "--format=yaml")
+	if err != nil {
+		t.Fatalf("expected success (3 >= 2), got: %v", err)
+	}
+	if !strings.Contains(stdout, "x: 1") {
+		t.Errorf("expected output, got:\n%s", stdout)
+	}
+}
+
+func TestSelect_SetMode_MinAffected_Unmet(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := selectTestDeps(t, dir)
+	if err := seedRecord(t, dir, "test.items", "a", map[string]any{"x": float64(1)}); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	stdout, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf, "--path="+dir, "--from=test.items", "--min-affected=5")
+	if err == nil {
+		t.Fatalf("expected error (1 < 5), got nil. stdout: %s", stdout)
+	}
+	if !strings.Contains(err.Error(), "1") || !strings.Contains(err.Error(), "5") {
+		t.Errorf("error should name actual=1 and required=5, got: %v", err)
+	}
+	if stdout != "" {
+		t.Errorf("stdout MUST be empty when threshold unmet, got: %s", stdout)
+	}
+}
