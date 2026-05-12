@@ -59,6 +59,12 @@ That function handles all supported `SingleRecord` formats:
 `format: ingr` does not support `SingleRecord` collections (enforced by schema validation),
 so it is implicitly out of scope for this requirement.
 
+For `format: markdown`, if the parsed frontmatter contains a key whose name equals the
+resolved content-field name (default `$content` or the value of `content_field`), the
+command MUST exit non-zero with a validation error. The content field is reserved for the
+markdown body; allowing it in frontmatter would silently overwrite or shadow the body and
+is rejected to prevent data corruption.
+
 #### REQ: edit-flag
 
 `--edit` opens `$EDITOR` (falling back to `vi` when the env var is unset) with a temporary
@@ -189,6 +195,15 @@ printf -- 'name = "Ireland"\n' | ingitdb create record --id=countries/ie
 ```
 
 writes a record with field `name: Ireland` and exits `0`.
+
+### AC: markdown-rejects-content-field-in-frontmatter
+
+**Requirements:** cli/create-record#req:stdin-input
+
+Given a `format: markdown` collection (default `content_field` `$content`), piping
+frontmatter that contains `$content: ...` MUST exit non-zero with an error message that
+mentions the colliding key name. The same rule applies when `content_field` is overridden
+(e.g. `content_field: body` → frontmatter `body: ...` is rejected).
 
 ### AC: tty-without-data-or-edit-errors
 

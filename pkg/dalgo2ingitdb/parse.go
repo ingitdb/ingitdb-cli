@@ -57,6 +57,12 @@ func ParseRecordContentForCollection(content []byte, colDef *ingitdb.CollectionD
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse markdown record: %w", err)
 	}
+	contentField := colDef.RecordFile.ResolvedContentField()
+	if _, collision := frontmatter[contentField]; collision {
+		return nil, fmt.Errorf("frontmatter key %q collides with the content field name; "+
+			"the markdown body is stored under this key — remove it from the frontmatter "+
+			"or override content_field in the collection definition", contentField)
+	}
 	result := make(map[string]any, len(frontmatter)+1)
 	for key, value := range frontmatter {
 		if _, declared := colDef.Columns[key]; !declared {
@@ -64,7 +70,7 @@ func ParseRecordContentForCollection(content []byte, colDef *ingitdb.CollectionD
 		}
 		result[key] = value
 	}
-	result[colDef.RecordFile.ResolvedContentField()] = string(body)
+	result[contentField] = string(body)
 	return result, nil
 }
 

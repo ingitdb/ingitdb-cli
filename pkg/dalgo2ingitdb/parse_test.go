@@ -1,6 +1,7 @@
 package dalgo2ingitdb
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
@@ -238,5 +239,71 @@ func TestParseMapOfRecordsContent_ParseError(t *testing.T) {
 	_, err := ParseMapOfRecordsContent(invalidYAML, ingitdb.RecordFormat("yaml"))
 	if err == nil {
 		t.Fatal("expected error for invalid YAML in ParseMapOfRecordsContent")
+	}
+}
+
+// markdownColDef returns a CollectionDef for a markdown collection with the
+// given content_field override (empty string means use the default $content).
+func markdownColDef(contentField string) *ingitdb.CollectionDef {
+	return &ingitdb.CollectionDef{
+		ID: "test.notes",
+		RecordFile: &ingitdb.RecordFileDef{
+			Name:         "{key}.md",
+			Format:       ingitdb.RecordFormatMarkdown,
+			RecordType:   ingitdb.SingleRecord,
+			ContentField: contentField,
+		},
+		Columns: map[string]*ingitdb.ColumnDef{
+			"title":                             {Type: ingitdb.ColumnTypeString},
+			ingitdb.DefaultMarkdownContentField: {Type: ingitdb.ColumnTypeString},
+			"body":                              {Type: ingitdb.ColumnTypeString},
+		},
+	}
+}
+
+func TestParseRecordContentForCollection_Markdown_ContentFieldCollision_Default(t *testing.T) {
+	t.Parallel()
+
+	// Frontmatter declares $content, which is the default content-field name
+	// reserved for the body. Must error.
+	content := []byte("---\ntitle: T\n$content: bogus\n---\nactual body\n")
+	_, err := ParseRecordContentForCollection(content, markdownColDef(""))
+	if err == nil {
+		t.Fatal("expected error for $content collision in frontmatter")
+	}
+	if !strings.Contains(err.Error(), "$content") || !strings.Contains(err.Error(), "collide") {
+		t.Fatalf("expected collision message mentioning $content, got: %v", err)
+	}
+}
+
+func TestParseRecordContentForCollection_Markdown_ContentFieldCollision_Override(t *testing.T) {
+	t.Parallel()
+
+	// content_field is overridden to "body"; frontmatter declares "body".
+	// Must error on collision.
+	content := []byte("---\ntitle: T\nbody: bogus\n---\nactual body\n")
+	_, err := ParseRecordContentForCollection(content, markdownColDef("body"))
+	if err == nil {
+		t.Fatal("expected error for body collision in frontmatter")
+	}
+	if !strings.Contains(err.Error(), `"body"`) || !strings.Contains(err.Error(), "collide") {
+		t.Fatalf("expected collision message mentioning body, got: %v", err)
+	}
+}
+
+func TestParseRecordContentForCollection_Markdown_NoCollision(t *testing.T) {
+	t.Parallel()
+
+	// Frontmatter has only declared, non-content-field keys. Body parses normally.
+	content := []byte("---\ntitle: Product 1\n---\nBody here.\n")
+	data, err := ParseRecordContentForCollection(content, markdownColDef(""))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if data["title"] != "Product 1" {
+		t.Errorf("title: got %v, want Product 1", data["title"])
+	}
+	if data[ingitdb.DefaultMarkdownContentField] != "Body here.\n" {
+		t.Errorf("$content: got %q, want %q", data[ingitdb.DefaultMarkdownContentField], "Body here.\n")
 	}
 }
