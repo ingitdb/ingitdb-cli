@@ -65,7 +65,7 @@ func serveMCP(
 }
 
 // sortedCollectionIDs returns all collection IDs from def in ascending alphabetical order.
-// Collection IDs are explicit in .ingitdb.yaml (one key per collection path).
+// Collection IDs are explicit in .ingitdb/root-collections.yaml (one key per collection path).
 func sortedCollectionIDs(def *ingitdb.Definition) []string {
 	ids := make([]string, 0, len(def.Collections))
 	for id := range def.Collections {

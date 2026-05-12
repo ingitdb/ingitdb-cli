@@ -52,7 +52,7 @@ type RootConfig struct {
 
 // IsNamespaceImport returns true if the key ends with ".*" suffix,
 // indicating it is a namespace import that references another directory's
-// .ingitdb.yaml file.
+// .ingitdb/root-collections.yaml file.
 func IsNamespaceImport(key string) bool {
 	return strings.HasSuffix(key, NamespaceImportSuffix)
 }
