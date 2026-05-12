@@ -86,3 +86,25 @@ func testTOMLDef(dirPath string) *ingitdb.Definition {
 		},
 	}
 }
+
+// testINGRDef returns a Definition with a single INGR-format collection.
+// INGR + SingleRecord is normally rejected by schema validation, but this
+// helper intentionally bypasses schema validation to test the parse-layer error.
+func testINGRDef(dirPath string) *ingitdb.Definition {
+	return &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"test.grid": {
+				ID:      "test.grid",
+				DirPath: dirPath,
+				RecordFile: &ingitdb.RecordFileDef{
+					Name:       "{key}.ingr",
+					Format:     ingitdb.RecordFormatINGR,
+					RecordType: ingitdb.SingleRecord,
+				},
+				Columns: map[string]*ingitdb.ColumnDef{
+					"name": {Type: ingitdb.ColumnTypeString},
+				},
+			},
+		},
+	}
+}
