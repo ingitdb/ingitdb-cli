@@ -314,3 +314,41 @@ func TestInsert_Key_Missing(t *testing.T) {
 		t.Errorf("error should mention key, got: %v", err)
 	}
 }
+
+func TestInsert_RejectsExistingKey(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+
+	// First insert succeeds.
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf, nil, true, nil,
+		"--path="+dir, "--into=test.items", "--key=collision", "--data={title: Original}",
+	)
+	if err != nil {
+		t.Fatalf("first insert should succeed: %v", err)
+	}
+
+	// Second insert with same key must fail.
+	_, err = runInsertCmd(t, homeDir, getWd, readDef, newDB, logf, nil, true, nil,
+		"--path="+dir, "--into=test.items", "--key=collision", "--data={title: Replacement}",
+	)
+	if err == nil {
+		t.Fatal("expected error on duplicate key")
+	}
+	if !strings.Contains(err.Error(), "collision") {
+		t.Errorf("error should name the conflicting key, got: %v", err)
+	}
+
+	// Confirm the original record was NOT overwritten.
+	// testDef stores records under $records/ inside dir (RecordsBasePath of "{key}.yaml").
+	got, readErr := os.ReadFile(filepath.Join(dir, "$records", "collision.yaml"))
+	if readErr != nil {
+		t.Fatalf("read original record: %v", readErr)
+	}
+	if !strings.Contains(string(got), "Original") {
+		t.Errorf("original record was modified, got:\n%s", string(got))
+	}
+	if strings.Contains(string(got), "Replacement") {
+		t.Errorf("original record was overwritten, got:\n%s", string(got))
+	}
+}
