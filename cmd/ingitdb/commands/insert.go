@@ -71,10 +71,11 @@ func Insert(
 				return err
 			}
 
-			// Resolve the record key (added in Task 4); for now use --key only.
-			recordKey, _ := cmd.Flags().GetString("key")
-			if recordKey == "" {
-				return fmt.Errorf("--key is required (Task 4 will add $id-in-data fallback)")
+			// Resolve the record key. Either --key, a top-level $id in
+			// the data, or both consistently supplied.
+			recordKey, data, err := resolveInsertKey(cmd, data)
+			if err != nil {
+				return err
 			}
 
 			// Insert the record (collision check added in Task 5).
@@ -115,6 +116,51 @@ func Insert(
 	sqlflags.RegisterOrderByFlag(cmd)
 	sqlflags.RegisterFieldsFlag(cmd)
 	return cmd
+}
+
+// resolveInsertKey returns the record key derived from --key and/or a
+// top-level $id field in data, plus the data map with $id stripped.
+// Rules:
+//   - --key only: use --key.
+//   - $id only: use $id; remove $id from data.
+//   - both, equal: use the value; remove $id from data.
+//   - both, different: reject naming both values.
+//   - neither: reject.
+//
+// The returned data map is always the cleaned form (no $id key) even
+// when --key alone is supplied, so the downstream Insert always sees
+// the same shape.
+func resolveInsertKey(cmd *cobra.Command, data map[string]any) (string, map[string]any, error) {
+	flagKey, _ := cmd.Flags().GetString("key")
+
+	var dataKey string
+	dataHasID := false
+	if v, ok := data["$id"]; ok {
+		dataHasID = true
+		dataKey = fmt.Sprintf("%v", v)
+	}
+
+	// Always strip $id from data — it is metadata, not a stored field.
+	if dataHasID {
+		delete(data, "$id")
+	}
+
+	switch {
+	case flagKey != "" && dataHasID:
+		if flagKey != dataKey {
+			return "", nil, fmt.Errorf("--key=%q conflicts with $id=%q in data; supply one or make them match", flagKey, dataKey)
+		}
+		return flagKey, data, nil
+	case flagKey != "":
+		return flagKey, data, nil
+	case dataHasID:
+		if dataKey == "" {
+			return "", nil, fmt.Errorf("$id in data is empty")
+		}
+		return dataKey, data, nil
+	default:
+		return "", nil, fmt.Errorf("record key required: supply --key or include a $id field in the data")
+	}
 }
 
 // readInsertData reads record content from exactly one data source

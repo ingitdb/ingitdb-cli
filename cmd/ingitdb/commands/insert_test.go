@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -235,5 +236,81 @@ func TestInsert_DataSource_MutualExclusion(t *testing.T) {
 				t.Fatalf("expected error for %v", tc.args)
 			}
 		})
+	}
+}
+
+func TestInsert_Key_FromDataIDField(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+
+	// $id provides the key; no --key flag.
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf, nil, true, nil,
+		"--path="+dir, "--into=test.items", "--data={$id: from-data, title: Eta}",
+	)
+	if err != nil {
+		t.Fatalf("expected success when $id provides the key, got: %v", err)
+	}
+
+	// Verify the record was written at the key from $id and $id is NOT
+	// stored as a data field. Read the file directly to confirm.
+	// testDef uses RecordFile.Name="{key}.yaml", so RecordsBasePath()="$records".
+	got, readErr := os.ReadFile(filepath.Join(dir, "$records", "from-data.yaml"))
+	if readErr != nil {
+		t.Fatalf("read inserted record: %v", readErr)
+	}
+	if strings.Contains(string(got), "$id:") {
+		t.Errorf("$id MUST NOT appear in the stored record file:\n%s", string(got))
+	}
+	if !strings.Contains(string(got), "title: Eta") {
+		t.Errorf("expected title: Eta in the stored record, got:\n%s", string(got))
+	}
+}
+
+func TestInsert_Key_FlagAndDataIDConsistent(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+
+	// Both supplied AND equal: proceed.
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf, nil, true, nil,
+		"--path="+dir, "--into=test.items", "--key=theta", "--data={$id: theta, title: Theta}",
+	)
+	if err != nil {
+		t.Fatalf("expected success when --key and $id match, got: %v", err)
+	}
+}
+
+func TestInsert_Key_FlagAndDataIDMismatch(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+
+	// Both supplied AND differ: reject, name both values.
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf, nil, true, nil,
+		"--path="+dir, "--into=test.items", "--key=iota", "--data={$id: kappa, title: Iota}",
+	)
+	if err == nil {
+		t.Fatal("expected error when --key and $id differ")
+	}
+	if !strings.Contains(err.Error(), "iota") || !strings.Contains(err.Error(), "kappa") {
+		t.Errorf("error should name both keys (iota, kappa), got: %v", err)
+	}
+}
+
+func TestInsert_Key_Missing(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+
+	// No --key, no $id in data: reject.
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf, nil, true, nil,
+		"--path="+dir, "--into=test.items", "--data={title: NoKey}",
+	)
+	if err == nil {
+		t.Fatal("expected error when no key supplied")
+	}
+	if !strings.Contains(strings.ToLower(err.Error()), "key") {
+		t.Errorf("error should mention key, got: %v", err)
 	}
 }
