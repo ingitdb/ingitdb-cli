@@ -83,6 +83,7 @@ func run(
 		commands.Find(),
 		commands.Create(homeDir, getWd, readDefinition, newDB, logf, nil, nil, nil),
 		commands.Read(homeDir, getWd, readDefinition, newDB, logf),
+		commands.Select(homeDir, getWd, readDefinition, newDB, logf),
 		commands.Update(homeDir, getWd, readDefinition, newDB, logf),
 		commands.Delete(homeDir, getWd, readDefinition, newDB, logf),
 		commands.Truncate(homeDir, getWd, readDefinition, logf),
