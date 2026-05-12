@@ -432,3 +432,65 @@ func TestInsert_MarkdownDollarIDFromFrontmatter(t *testing.T) {
 		t.Errorf("stored frontmatter should contain title:\n%s", string(stored))
 	}
 }
+
+func TestInsert_EndToEnd_RealisticInvocation(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+
+	stdout, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf, nil, true, nil,
+		"--path="+dir, "--into=test.items", "--key=e2e",
+		"--data={title: End-to-End, priority: 3, active: true}",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+	if stdout != "" {
+		t.Errorf("success path MUST be silent on stdout, got: %q", stdout)
+	}
+
+	// Verify the record landed.
+	colDef := testDef(dir).Collections["test.items"]
+	stored, readErr := os.ReadFile(filepath.Join(dir, colDef.RecordFile.RecordsBasePath(), "e2e.yaml"))
+	if readErr != nil {
+		t.Fatalf("read inserted record: %v", readErr)
+	}
+	if !strings.Contains(string(stored), "title: End-to-End") {
+		t.Errorf("expected title in stored record:\n%s", string(stored))
+	}
+	if !strings.Contains(string(stored), "priority: 3") {
+		t.Errorf("expected priority in stored record:\n%s", string(stored))
+	}
+	if !strings.Contains(string(stored), "active: true") {
+		t.Errorf("expected active flag in stored record:\n%s", string(stored))
+	}
+}
+
+func TestInsert_LegacyCreateRecordStillWorks(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+
+	createCmd := Create(homeDir, getWd, readDef, newDB, logf, strings.NewReader(""), func() bool { return true }, nil)
+	var buf bytes.Buffer
+	createCmd.SetOut(&buf)
+	createCmd.SetErr(&buf)
+	createCmd.SetArgs([]string{
+		"record",
+		"--path=" + dir,
+		"--id=test.items/legacy",
+		"--data={title: LegacyPath}",
+	})
+	if err := createCmd.Execute(); err != nil {
+		t.Errorf("legacy `create record` regressed: %v", err)
+	}
+
+	colDef := testDef(dir).Collections["test.items"]
+	stored, readErr := os.ReadFile(filepath.Join(dir, colDef.RecordFile.RecordsBasePath(), "legacy.yaml"))
+	if readErr != nil {
+		t.Fatalf("read legacy record: %v", readErr)
+	}
+	if !strings.Contains(string(stored), "LegacyPath") {
+		t.Errorf("legacy record content missing:\n%s", string(stored))
+	}
+}
