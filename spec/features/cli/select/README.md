@@ -119,10 +119,13 @@ applied first and the limit MUST be applied to the sorted sequence.
 
 #### REQ: format-flag
 
-The `--format` flag MUST accept `yaml`, `json`, `csv`, and `md`
-(Markdown table). The default MUST be `yaml` in single-record mode and
+The `--format` flag MUST accept `yaml`, `json`, `csv`, `md`
+(Markdown table), and `ingr` (the project's native tabular record
+format, as produced by `ingitdb materialize` and consumed by
+`ingitdb ci`). The default MUST be `yaml` in single-record mode and
 `csv` in set mode. The user MUST be able to override the default in
-either direction.
+either direction. In single-record mode, `--format=ingr` MUST emit a
+one-row INGR table (header + one record + footer).
 
 #### REQ: format-tabular-columns
 
@@ -237,6 +240,20 @@ Given a collection `countries` where no record satisfies the filter,
 exit `0` and emit a CSV containing only the header row.
 With `--format=json` it MUST emit `[]`. With `--format=yaml` it MUST
 emit `[]`. With `--format=md` it MUST emit the header row only.
+With `--format=ingr` it MUST emit the INGR header followed by a
+`# 0 records` footer.
+
+### AC: ingr-output
+
+**Requirements:** cli/select#req:format-flag
+
+Given a collection `countries` with two records,
+`ingitdb select --from=countries --fields='$id,name' --format=ingr`
+MUST emit a header line starting with `# INGR.io |`, two
+record blocks (each cell on its own line, JSON-encoded), and a
+`# 2 records` footer. In single-record mode,
+`ingitdb select --id=countries/ie --format=ingr` MUST emit a
+one-row INGR table (header + one record + `# 1 record` footer).
 
 ### AC: min-affected-fails-below-threshold
 
