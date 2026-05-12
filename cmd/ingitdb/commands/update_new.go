@@ -280,6 +280,14 @@ func runUpdateFromSet(
 		return fmt.Errorf("query failed: %w", err)
 	}
 
+	// --min-affected pre-flight check. If the matched count is below
+	// the threshold, fail BEFORE opening the write transaction.
+	if n, supplied, mErr := sqlflags.MinAffectedFromCmd(cmd); mErr != nil {
+		return mErr
+	} else if supplied && len(matches) < n {
+		return fmt.Errorf("matched %d records, required at least %d", len(matches), n)
+	}
+
 	// Apply patches in a single read-write transaction.
 	err = ictx.db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
 		for _, m := range matches {

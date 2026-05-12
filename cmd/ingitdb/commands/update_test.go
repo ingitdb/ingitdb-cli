@@ -358,3 +358,66 @@ func TestUpdate_SetMode_ZeroMatchesIsSuccess(t *testing.T) {
 		t.Errorf("record should be unchanged when no matches")
 	}
 }
+
+func TestUpdate_MinAffected_ThresholdMet(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
+	seedItem(t, dir, "a", map[string]any{"region": "EU"})
+	seedItem(t, dir, "b", map[string]any{"region": "EU"})
+	seedItem(t, dir, "c", map[string]any{"region": "US"})
+
+	_, err := runUpdateCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items", "--where=region==EU",
+		"--set=active=true", "--min-affected=2",
+	)
+	if err != nil {
+		t.Fatalf("expected success when matches (2) >= threshold (2), got: %v", err)
+	}
+	if !strings.Contains(readItem(t, dir, "a"), "active: true") {
+		t.Errorf("record a should be patched")
+	}
+	if !strings.Contains(readItem(t, dir, "b"), "active: true") {
+		t.Errorf("record b should be patched")
+	}
+}
+
+func TestUpdate_MinAffected_ThresholdUnmet_NoWriteOccurs(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
+	seedItem(t, dir, "a", map[string]any{"region": "EU"})
+	seedItem(t, dir, "b", map[string]any{"region": "US"})
+
+	_, err := runUpdateCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items", "--where=region==EU",
+		"--set=active=false", "--min-affected=2",
+	)
+	if err == nil {
+		t.Fatal("expected error when matches (1) < threshold (2)")
+	}
+	if !strings.Contains(err.Error(), "1") || !strings.Contains(err.Error(), "2") {
+		t.Errorf("error should name actual (1) and required (2), got: %v", err)
+	}
+	// Verify NO write occurred — neither record should have `active` set.
+	if strings.Contains(readItem(t, dir, "a"), "active:") {
+		t.Errorf("record a must be unchanged when threshold unmet")
+	}
+	if strings.Contains(readItem(t, dir, "b"), "active:") {
+		t.Errorf("record b must be unchanged when threshold unmet")
+	}
+}
+
+func TestUpdate_MinAffected_RejectedInSingleRecordMode(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
+	seedItem(t, dir, "a", map[string]any{"title": "Alpha"})
+
+	_, err := runUpdateCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--id=test.items/a", "--set=foo=bar", "--min-affected=1",
+	)
+	if err == nil {
+		t.Fatal("expected error when --min-affected is supplied with --id")
+	}
+}
