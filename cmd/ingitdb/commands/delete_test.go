@@ -289,3 +289,48 @@ func TestDelete_SetMode_ZeroMatchesIsSuccess(t *testing.T) {
 		t.Errorf("record a should be unchanged when no matches")
 	}
 }
+
+func TestDelete_MinAffected_ThresholdMet(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := deleteTestDeps(t, dir)
+	deleteSeedItem(t, dir, "a", map[string]any{"region": "EU"})
+	deleteSeedItem(t, dir, "b", map[string]any{"region": "EU"})
+
+	_, err := runDeleteCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items", "--where=region==EU",
+		"--min-affected=2",
+	)
+	if err != nil {
+		t.Fatalf("expected success when matches (2) >= threshold (2): %v", err)
+	}
+	if itemExists(t, dir, "a") || itemExists(t, dir, "b") {
+		t.Errorf("both records should be deleted")
+	}
+}
+
+func TestDelete_MinAffected_ThresholdUnmet_NoRecordDeleted(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := deleteTestDeps(t, dir)
+	deleteSeedItem(t, dir, "a", map[string]any{"region": "EU"})
+	deleteSeedItem(t, dir, "b", map[string]any{"region": "US"})
+
+	_, err := runDeleteCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items", "--where=region==EU",
+		"--min-affected=2",
+	)
+	if err == nil {
+		t.Fatal("expected error when matches (1) < threshold (2)")
+	}
+	if !strings.Contains(err.Error(), "1") || !strings.Contains(err.Error(), "2") {
+		t.Errorf("error should name actual (1) and required (2), got: %v", err)
+	}
+	// Destructive atomicity: NEITHER record should be deleted.
+	if !itemExists(t, dir, "a") {
+		t.Errorf("record a (EU) MUST NOT be deleted when threshold unmet")
+	}
+	if !itemExists(t, dir, "b") {
+		t.Errorf("record b (US) MUST NOT be deleted when threshold unmet")
+	}
+}

@@ -152,6 +152,16 @@ func runDeleteFromSet(
 		return fmt.Errorf("query failed: %w", err)
 	}
 
+	// --min-affected pre-flight check. If the matched count is below
+	// the threshold, fail BEFORE opening the write transaction.
+	// Destructive atomicity: no record is deleted when below
+	// threshold.
+	if n, supplied, mErr := sqlflags.MinAffectedFromCmd(cmd); mErr != nil {
+		return mErr
+	} else if supplied && len(matchedKeys) < n {
+		return fmt.Errorf("matched %d records, required at least %d", len(matchedKeys), n)
+	}
+
 	// Read-write pass: delete each matching key.
 	err = ictx.db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
 		for _, k := range matchedKeys {
