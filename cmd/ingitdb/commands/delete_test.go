@@ -202,3 +202,90 @@ func TestDelete_SingleRecord_RejectsSetModeFlags(t *testing.T) {
 		t.Errorf("record beta should remain untouched after rejected invocations")
 	}
 }
+
+func TestDelete_SetMode_WhereFilter(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := deleteTestDeps(t, dir)
+	deleteSeedItem(t, dir, "a", map[string]any{"region": "EU"})
+	deleteSeedItem(t, dir, "b", map[string]any{"region": "US"})
+	deleteSeedItem(t, dir, "c", map[string]any{"region": "EU"})
+
+	_, err := runDeleteCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items", "--where=region==EU",
+	)
+	if err != nil {
+		t.Fatalf("expected success: %v", err)
+	}
+	if itemExists(t, dir, "a") {
+		t.Errorf("record a (EU) should be deleted")
+	}
+	if !itemExists(t, dir, "b") {
+		t.Errorf("record b (US) should remain")
+	}
+	if itemExists(t, dir, "c") {
+		t.Errorf("record c (EU) should be deleted")
+	}
+}
+
+func TestDelete_SetMode_All(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := deleteTestDeps(t, dir)
+	deleteSeedItem(t, dir, "a", map[string]any{"x": float64(1)})
+	deleteSeedItem(t, dir, "b", map[string]any{"x": float64(2)})
+
+	_, err := runDeleteCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items", "--all",
+	)
+	if err != nil {
+		t.Fatalf("expected success: %v", err)
+	}
+	if itemExists(t, dir, "a") {
+		t.Errorf("record a should be deleted")
+	}
+	if itemExists(t, dir, "b") {
+		t.Errorf("record b should be deleted")
+	}
+}
+
+func TestDelete_SetMode_WhereAndAllMutuallyExclusive(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := deleteTestDeps(t, dir)
+	_, err := runDeleteCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items", "--where=a==1", "--all",
+	)
+	if err == nil {
+		t.Fatal("expected error when --where and --all both supplied")
+	}
+}
+
+func TestDelete_SetMode_NeitherWhereNorAllRejected(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := deleteTestDeps(t, dir)
+	_, err := runDeleteCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items",
+	)
+	if err == nil {
+		t.Fatal("expected error when set mode has neither --where nor --all")
+	}
+}
+
+func TestDelete_SetMode_ZeroMatchesIsSuccess(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := deleteTestDeps(t, dir)
+	deleteSeedItem(t, dir, "a", map[string]any{"x": float64(1)})
+
+	_, err := runDeleteCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items", "--where=x>1000",
+	)
+	if err != nil {
+		t.Errorf("zero matches should succeed (exit 0), got: %v", err)
+	}
+	if !itemExists(t, dir, "a") {
+		t.Errorf("record a should be unchanged when no matches")
+	}
+}

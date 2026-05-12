@@ -51,7 +51,7 @@ func Delete(
 			case sqlflags.ModeID:
 				return runDeleteByID(cmd.Context(), cmd, id, homeDir, getWd, readDefinition, newDB)
 			case sqlflags.ModeFrom:
-				return fmt.Errorf("delete --from: not yet implemented")
+				return runDeleteFromSet(cmd.Context(), cmd, from, homeDir, getWd, readDefinition, newDB)
 			default:
 				return fmt.Errorf("invalid mode")
 			}
@@ -72,6 +72,110 @@ func Delete(
 	sqlflags.RegisterOrderByFlag(cmd)
 	sqlflags.RegisterFieldsFlag(cmd)
 	return cmd
+}
+
+// runDeleteFromSet handles --from set mode: fetch all records, apply
+// WHERE filter (or --all), then delete each matching record in a
+// single transaction.
+func runDeleteFromSet(
+	ctx context.Context,
+	cmd *cobra.Command,
+	from string,
+	homeDir func() (string, error),
+	getWd func() (string, error),
+	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
+	newDB func(string, *ingitdb.Definition) (dal.DB, error),
+) error {
+	// Mutual exclusion: --where XOR --all.
+	whereExprs, _ := cmd.Flags().GetStringArray("where")
+	allFlag, _ := cmd.Flags().GetBool("all")
+	if len(whereExprs) > 0 && allFlag {
+		return fmt.Errorf("--where and --all are mutually exclusive")
+	}
+	if len(whereExprs) == 0 && !allFlag {
+		return fmt.Errorf("set mode requires one of --where or --all")
+	}
+
+	// Parse --where conditions.
+	conds := make([]sqlflags.Condition, 0, len(whereExprs))
+	for _, e := range whereExprs {
+		c, parseErr := sqlflags.ParseWhere(e)
+		if parseErr != nil {
+			return fmt.Errorf("invalid --where %q: %w", e, parseErr)
+		}
+		conds = append(conds, c)
+	}
+
+	// Resolve collection (local or GitHub).
+	ictx, err := resolveInsertContext(ctx, cmd, from, homeDir, getWd, readDefinition, newDB)
+	if err != nil {
+		return err
+	}
+
+	// Read-only pass: collect matching keys.
+	qb := dal.NewQueryBuilder(dal.From(dal.NewRootCollectionRef(from, "")))
+	q := qb.SelectIntoRecord(func() dal.Record {
+		k := dal.NewKeyWithID(from, "")
+		return dal.NewRecordWithData(k, map[string]any{})
+	})
+	var matchedKeys []string
+	err = ictx.db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
+		reader, qerr := tx.ExecuteQueryToRecordsReader(ctx, q)
+		if qerr != nil {
+			return qerr
+		}
+		defer func() { _ = reader.Close() }()
+		for {
+			rec, nextErr := reader.Next()
+			if nextErr != nil {
+				break
+			}
+			recKey := fmt.Sprintf("%v", rec.Key().ID)
+			if !allFlag {
+				data, ok := rec.Data().(map[string]any)
+				if !ok {
+					continue
+				}
+				match, evalErr := evalAllWhere(data, recKey, conds)
+				if evalErr != nil {
+					return evalErr
+				}
+				if !match {
+					continue
+				}
+			}
+			matchedKeys = append(matchedKeys, recKey)
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("query failed: %w", err)
+	}
+
+	// Read-write pass: delete each matching key.
+	err = ictx.db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+		for _, k := range matchedKeys {
+			key := dal.NewKeyWithID(from, k)
+			if delErr := tx.Delete(ctx, key); delErr != nil {
+				return delErr
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	// Materialize local views (no-op when source is GitHub).
+	if ictx.dirPath == "" {
+		return nil
+	}
+	return buildLocalViews(ctx, recordContext{
+		db:      ictx.db,
+		colDef:  ictx.colDef,
+		dirPath: ictx.dirPath,
+		def:     ictx.def,
+	})
 }
 
 // runDeleteByID handles --id mode: fetch one record to confirm it
