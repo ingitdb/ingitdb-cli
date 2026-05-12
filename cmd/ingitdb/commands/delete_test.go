@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/dal-go/dalgo/dal"
@@ -54,7 +55,7 @@ func runDeleteCmd(
 }
 
 // deleteSeedItem seeds a record under test.items.
-func deleteSeedItem(t *testing.T, dir, key string, data map[string]any) { //nolint:unused // used by Tasks 2+
+func deleteSeedItem(t *testing.T, dir, key string, data map[string]any) {
 	t.Helper()
 	if err := seedRecord(t, dir, "test.items", key, data); err != nil {
 		t.Fatalf("seed %s: %v", key, err)
@@ -62,7 +63,7 @@ func deleteSeedItem(t *testing.T, dir, key string, data map[string]any) { //noli
 }
 
 // itemExists reports whether a record file exists on disk.
-func itemExists(t *testing.T, dir, key string) bool { //nolint:unused // used by Tasks 2+
+func itemExists(t *testing.T, dir, key string) bool {
 	t.Helper()
 	colDef := testDef(dir).Collections["test.items"]
 	_, err := os.Stat(filepath.Join(colDef.DirPath, "$records", key+".yaml"))
@@ -131,5 +132,73 @@ func TestDelete_RejectsForbiddenSharedFlags(t *testing.T) {
 				t.Fatalf("expected error for %v", tc.args)
 			}
 		})
+	}
+}
+
+func TestDelete_SingleRecord_Success(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := deleteTestDeps(t, dir)
+	deleteSeedItem(t, dir, "alpha", map[string]any{"title": "Alpha"})
+
+	stdout, err := runDeleteCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--id=test.items/alpha",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+	if stdout != "" {
+		t.Errorf("success path MUST be silent on stdout, got: %q", stdout)
+	}
+	if itemExists(t, dir, "alpha") {
+		t.Errorf("record alpha should be gone after delete")
+	}
+}
+
+func TestDelete_SingleRecord_NotFound(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := deleteTestDeps(t, dir)
+
+	_, err := runDeleteCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--id=test.items/missing",
+	)
+	if err == nil {
+		t.Fatal("expected error when record not found")
+	}
+	if !strings.Contains(err.Error(), "missing") && !strings.Contains(err.Error(), "not found") {
+		t.Errorf("error should name the missing id, got: %v", err)
+	}
+}
+
+func TestDelete_SingleRecord_RejectsSetModeFlags(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := deleteTestDeps(t, dir)
+	deleteSeedItem(t, dir, "beta", map[string]any{"title": "Beta"})
+
+	cases := []struct {
+		name string
+		args []string
+	}{
+		{name: "where rejected", args: []string{"--id=test.items/beta", "--where=a==1"}},
+		{name: "all rejected", args: []string{"--id=test.items/beta", "--all"}},
+		{name: "min-affected rejected", args: []string{"--id=test.items/beta", "--min-affected=1"}},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			_, err := runDeleteCmd(t, homeDir, getWd, readDef, newDB, logf,
+				append([]string{"--path=" + dir}, tc.args...)...,
+			)
+			if err == nil {
+				t.Fatalf("expected error for %v", tc.args)
+			}
+		})
+	}
+	// Verify the record still exists after the rejections.
+	if !itemExists(t, dir, "beta") {
+		t.Errorf("record beta should remain untouched after rejected invocations")
 	}
 }

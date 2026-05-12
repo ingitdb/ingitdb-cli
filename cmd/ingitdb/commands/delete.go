@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/dal-go/dalgo/dal"
@@ -48,7 +49,7 @@ func Delete(
 
 			switch mode {
 			case sqlflags.ModeID:
-				return fmt.Errorf("delete --id: not yet implemented")
+				return runDeleteByID(cmd.Context(), cmd, id, homeDir, getWd, readDefinition, newDB)
 			case sqlflags.ModeFrom:
 				return fmt.Errorf("delete --from: not yet implemented")
 			default:
@@ -70,7 +71,53 @@ func Delete(
 	sqlflags.RegisterUnsetFlag(cmd)
 	sqlflags.RegisterOrderByFlag(cmd)
 	sqlflags.RegisterFieldsFlag(cmd)
-	// Suppress unused DI params; they're used by later tasks.
-	_, _, _, _, _ = homeDir, getWd, readDefinition, newDB, logf
 	return cmd
+}
+
+// runDeleteByID handles --id mode: fetch one record to confirm it
+// exists, then delete it inside RunReadwriteTransaction. Returns
+// non-zero if the record doesn't exist.
+func runDeleteByID(
+	ctx context.Context,
+	cmd *cobra.Command,
+	id string,
+	homeDir func() (string, error),
+	getWd func() (string, error),
+	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
+	newDB func(string, *ingitdb.Definition) (dal.DB, error),
+) error {
+	// Reject set-mode-only flags in single-record mode.
+	if cmd.Flags().Changed("where") {
+		return fmt.Errorf("--where is invalid with --id (single-record mode)")
+	}
+	if cmd.Flags().Changed("all") {
+		return fmt.Errorf("--all is invalid with --id (single-record mode)")
+	}
+	if cmd.Flags().Changed("min-affected") {
+		return fmt.Errorf("--min-affected is invalid with --id (single-record mode)")
+	}
+
+	rctx, err := resolveRecordContext(ctx, cmd, id, homeDir, getWd, readDefinition, newDB)
+	if err != nil {
+		return err
+	}
+
+	key := dal.NewKeyWithID(rctx.colDef.ID, rctx.recordKey)
+	err = rctx.db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+		// Pre-flight existence check. tx.Delete may or may not error
+		// on missing keys depending on the backend; we want an
+		// explicit user-facing diagnostic.
+		probe := dal.NewRecordWithData(key, map[string]any{})
+		if getErr := tx.Get(ctx, probe); getErr != nil {
+			return getErr
+		}
+		if !probe.Exists() {
+			return fmt.Errorf("record not found: %s", id)
+		}
+		return tx.Delete(ctx, key)
+	})
+	if err != nil {
+		return err
+	}
+	return buildLocalViews(ctx, rctx)
 }
