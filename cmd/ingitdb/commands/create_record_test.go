@@ -176,3 +176,107 @@ func TestCreate_StdinInputSmoke(t *testing.T) {
 		t.Fatalf("expected record file to be created: %v", err)
 	}
 }
+
+func TestCreate_StdinYAML(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	def := testDef(dir)
+
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) { return def, nil }
+	newDB := func(root string, d *ingitdb.Definition) (dal.DB, error) {
+		return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
+	}
+	logf := func(...any) {}
+
+	cmd := Create(homeDir, getWd, readDef, newDB, logf,
+		strings.NewReader("name: Ireland\n"),
+		func() bool { return false },
+		nil,
+	)
+	if err := runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/ie"); err != nil {
+		t.Fatalf("Create via stdin YAML: %v", err)
+	}
+
+	path := filepath.Join(dir, "$records", "ie.yaml")
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("expected file %s to be created: %v", path, err)
+	}
+	content, _ := os.ReadFile(path)
+	if !strings.Contains(string(content), "Ireland") {
+		t.Fatalf("expected record to contain Ireland, got: %s", content)
+	}
+}
+
+func TestCreate_StdinMarkdown(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	def := testMarkdownDef(dir)
+
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) { return def, nil }
+	newDB := func(root string, d *ingitdb.Definition) (dal.DB, error) {
+		return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
+	}
+	logf := func(...any) {}
+
+	mdContent := "---\ntitle: Product 1\ncategory: software\n---\nBody here.\n"
+	cmd := Create(homeDir, getWd, readDef, newDB, logf,
+		strings.NewReader(mdContent),
+		func() bool { return false },
+		nil,
+	)
+	if err := runCobraCommand(cmd, "record", "--path="+dir, "--id=test.notes/p1"); err != nil {
+		t.Fatalf("Create via stdin Markdown: %v", err)
+	}
+
+	path := filepath.Join(dir, "$records", "p1.md")
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("expected file %s to be created: %v", path, err)
+	}
+	fileBytes, _ := os.ReadFile(path)
+	fileStr := string(fileBytes)
+	if !strings.Contains(fileStr, "title: Product 1") {
+		t.Fatalf("expected frontmatter title, got: %s", fileStr)
+	}
+	if !strings.Contains(fileStr, "Body here.") {
+		t.Fatalf("expected body in record, got: %s", fileStr)
+	}
+}
+
+func TestCreate_StdinTOML(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	def := testTOMLDef(dir)
+
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) { return def, nil }
+	newDB := func(root string, d *ingitdb.Definition) (dal.DB, error) {
+		return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
+	}
+	logf := func(...any) {}
+
+	cmd := Create(homeDir, getWd, readDef, newDB, logf,
+		strings.NewReader("name = \"Ireland\"\n"),
+		func() bool { return false },
+		nil,
+	)
+	if err := runCobraCommand(cmd, "record", "--path="+dir, "--id=test.things/ie"); err != nil {
+		t.Fatalf("Create via stdin TOML: %v", err)
+	}
+
+	path := filepath.Join(dir, "$records", "ie.toml")
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("expected file %s to be created: %v", path, err)
+	}
+	content, _ := os.ReadFile(path)
+	if !strings.Contains(string(content), "Ireland") {
+		t.Fatalf("expected record to contain Ireland, got: %s", content)
+	}
+}

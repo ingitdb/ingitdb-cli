@@ -41,3 +41,48 @@ func runCobraCommand(cmd *cobra.Command, args ...string) error {
 	root.SetArgs(argv)
 	return root.ExecuteContext(context.Background())
 }
+
+// testMarkdownDef returns a Definition with a single markdown SingleRecord
+// collection at dirPath. The collection has title, category, and $content columns.
+func testMarkdownDef(dirPath string) *ingitdb.Definition {
+	return &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"test.notes": {
+				ID:      "test.notes",
+				DirPath: dirPath,
+				RecordFile: &ingitdb.RecordFileDef{
+					Name:       "{key}.md",
+					Format:     ingitdb.RecordFormatMarkdown,
+					RecordType: ingitdb.SingleRecord,
+				},
+				Columns: map[string]*ingitdb.ColumnDef{
+					"title":                             {Type: ingitdb.ColumnTypeString},
+					"category":                          {Type: ingitdb.ColumnTypeString},
+					ingitdb.DefaultMarkdownContentField: {Type: ingitdb.ColumnTypeString},
+				},
+				ColumnsOrder: []string{"title", "category"},
+			},
+		},
+	}
+}
+
+// testTOMLDef returns a Definition with a single TOML SingleRecord collection
+// at dirPath. The collection has a single "name" column.
+func testTOMLDef(dirPath string) *ingitdb.Definition {
+	return &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"test.things": {
+				ID:      "test.things",
+				DirPath: dirPath,
+				RecordFile: &ingitdb.RecordFileDef{
+					Name:       "{key}.toml",
+					Format:     ingitdb.RecordFormatTOML,
+					RecordType: ingitdb.SingleRecord,
+				},
+				Columns: map[string]*ingitdb.ColumnDef{
+					"name": {Type: ingitdb.ColumnTypeString},
+				},
+			},
+		},
+	}
+}
