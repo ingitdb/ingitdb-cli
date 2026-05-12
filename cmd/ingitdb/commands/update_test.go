@@ -2,6 +2,8 @@ package commands
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -127,5 +129,142 @@ func TestUpdate_NoPatchRejected(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "set") || !strings.Contains(err.Error(), "unset") {
 		t.Errorf("error should mention both --set and --unset, got: %v", err)
+	}
+}
+
+func seedItem(t *testing.T, dir, key string, data map[string]any) {
+	t.Helper()
+	if err := seedRecord(t, dir, "test.items", key, data); err != nil {
+		t.Fatalf("seed %s: %v", key, err)
+	}
+}
+
+func readItem(t *testing.T, dir, key string) string {
+	t.Helper()
+	colDef := testDef(dir).Collections["test.items"]
+	got, err := os.ReadFile(filepath.Join(colDef.DirPath, "$records", key+".yaml"))
+	if err != nil {
+		t.Fatalf("read %s: %v", key, err)
+	}
+	return string(got)
+}
+
+func TestUpdate_SingleRecord_Set(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
+	seedItem(t, dir, "alpha", map[string]any{"title": "Alpha", "priority": float64(1)})
+
+	_, err := runUpdateCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--id=test.items/alpha", "--set=priority=5",
+	)
+	if err != nil {
+		t.Fatalf("expected success: %v", err)
+	}
+	got := readItem(t, dir, "alpha")
+	if !strings.Contains(got, "priority: 5") {
+		t.Errorf("expected priority: 5, got:\n%s", got)
+	}
+	if !strings.Contains(got, "title: Alpha") {
+		t.Errorf("title should be preserved, got:\n%s", got)
+	}
+}
+
+func TestUpdate_SingleRecord_MultipleSets(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
+	seedItem(t, dir, "beta", map[string]any{"title": "Beta"})
+
+	_, err := runUpdateCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--id=test.items/beta",
+		"--set=priority=3", "--set=active=true",
+	)
+	if err != nil {
+		t.Fatalf("expected success: %v", err)
+	}
+	got := readItem(t, dir, "beta")
+	if !strings.Contains(got, "priority: 3") {
+		t.Errorf("missing priority, got:\n%s", got)
+	}
+	if !strings.Contains(got, "active: true") {
+		t.Errorf("missing active, got:\n%s", got)
+	}
+}
+
+func TestUpdate_SingleRecord_Unset(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
+	seedItem(t, dir, "gamma", map[string]any{"title": "Gamma", "tmp": "scratch"})
+
+	_, err := runUpdateCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--id=test.items/gamma", "--unset=tmp",
+	)
+	if err != nil {
+		t.Fatalf("expected success: %v", err)
+	}
+	got := readItem(t, dir, "gamma")
+	if strings.Contains(got, "tmp:") {
+		t.Errorf("tmp field should be removed, got:\n%s", got)
+	}
+	if !strings.Contains(got, "title: Gamma") {
+		t.Errorf("title should be preserved, got:\n%s", got)
+	}
+}
+
+func TestUpdate_SingleRecord_SetAndUnset(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
+	seedItem(t, dir, "delta", map[string]any{"title": "Delta", "draft": true})
+
+	_, err := runUpdateCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--id=test.items/delta",
+		"--set=status=published", "--unset=draft",
+	)
+	if err != nil {
+		t.Fatalf("expected success: %v", err)
+	}
+	got := readItem(t, dir, "delta")
+	if !strings.Contains(got, "status: published") {
+		t.Errorf("missing status, got:\n%s", got)
+	}
+	if strings.Contains(got, "draft:") {
+		t.Errorf("draft field should be removed, got:\n%s", got)
+	}
+}
+
+func TestUpdate_SingleRecord_SetUnsetSameFieldRejected(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
+	seedItem(t, dir, "epsilon", map[string]any{"title": "Epsilon"})
+
+	_, err := runUpdateCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--id=test.items/epsilon",
+		"--set=foo=bar", "--unset=foo",
+	)
+	if err == nil {
+		t.Fatal("expected error when --set and --unset reference the same field")
+	}
+	if !strings.Contains(err.Error(), "foo") {
+		t.Errorf("error should name the conflicting field, got: %v", err)
+	}
+}
+
+func TestUpdate_SingleRecord_NotFound(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
+
+	_, err := runUpdateCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--id=test.items/missing", "--set=foo=bar",
+	)
+	if err == nil {
+		t.Fatal("expected error when record not found")
+	}
+	if !strings.Contains(err.Error(), "missing") && !strings.Contains(err.Error(), "not found") {
+		t.Errorf("error should mention the missing id, got: %v", err)
 	}
 }
