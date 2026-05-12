@@ -35,6 +35,12 @@ The codebase has two main packages:
 - **`cmd/ingitdb/`** — CLI entry point using `github.com/spf13/cobra` for subcommand and flag parsing. The `run()`
   function is dependency-injected for testability (accepts `homeDir`, `readDefinition`, `fatal`, `logf` as parameters).
 - **`cmd/watcher/`** — Obsolete file watcher, to be folded into `ingitdb watch`.
+- **`cmd/ingitdb/commands/sqlflags/`** — Shared CLI flag grammar for the
+  SQL-verb redesign (select, insert, update, delete, drop). Parsers,
+  mode resolution, applicability checks, and cobra registration helpers.
+  Each verb command imports from here. Old verbs (`read record`,
+  `create record`, `query`, etc.) do not — they keep using
+  `cmd/ingitdb/commands/query_parser.go` until the final cleanup plan.
 
 Test data lives in `test-ingitdb/` and `.ingitdb.yaml` at the repo root points to it.
 
