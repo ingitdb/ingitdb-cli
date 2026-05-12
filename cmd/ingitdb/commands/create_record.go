@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"sort"
+	"strings"
 
 	"github.com/dal-go/dalgo/dal"
 	"github.com/spf13/cobra"
@@ -213,14 +214,23 @@ func recordFormatExt(format ingitdb.RecordFormat) string {
 	}
 }
 
-// defaultOpenEditor opens tmpPath in $EDITOR (falling back to vi).
-// Uses exec.Command to avoid shell injection.
-func defaultOpenEditor(tmpPath string) error {
-	editor := os.Getenv("EDITOR")
+// parseEditorCommand splits the EDITOR env value into a program name and
+// flag arguments. Empty input defaults to "vi". Values like "code --wait"
+// or "emacs -nw" tokenize correctly so editor flags work without invoking
+// a shell.
+func parseEditorCommand(editor string) (string, []string) {
 	if editor == "" {
 		editor = "vi"
 	}
-	c := exec.Command(editor, tmpPath)
+	parts := strings.Fields(editor)
+	return parts[0], parts[1:]
+}
+
+// defaultOpenEditor opens tmpPath in $EDITOR (falling back to vi).
+// Uses exec.Command (never a shell) to avoid injection.
+func defaultOpenEditor(tmpPath string) error {
+	prog, flags := parseEditorCommand(os.Getenv("EDITOR"))
+	c := exec.Command(prog, append(flags, tmpPath)...)
 	c.Stdin = os.Stdin
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr

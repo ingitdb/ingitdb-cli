@@ -475,3 +475,38 @@ func TestCreate_StdinINGRUnsupported(t *testing.T) {
 		t.Fatalf("expected 'unsupported' in error, got: %v", err)
 	}
 }
+
+func TestParseEditorCommand(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name     string
+		in       string
+		wantProg string
+		wantArgs []string
+	}{
+		{"empty falls back to vi", "", "vi", nil},
+		{"single word", "vim", "vim", nil},
+		{"vscode with --wait", "code --wait", "code", []string{"--wait"}},
+		{"emacs -nw", "emacs -nw", "emacs", []string{"-nw"}},
+		{"extra whitespace collapsed", "  code   --wait  ", "code", []string{"--wait"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			prog, args := parseEditorCommand(tc.in)
+			if prog != tc.wantProg {
+				t.Errorf("prog: got %q, want %q", prog, tc.wantProg)
+			}
+			if len(args) != len(tc.wantArgs) {
+				t.Errorf("args length: got %d (%v), want %d (%v)", len(args), args, len(tc.wantArgs), tc.wantArgs)
+				return
+			}
+			for i, a := range args {
+				if a != tc.wantArgs[i] {
+					t.Errorf("args[%d]: got %q, want %q", i, a, tc.wantArgs[i])
+				}
+			}
+		})
+	}
+}
