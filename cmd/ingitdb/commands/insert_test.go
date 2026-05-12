@@ -3,6 +3,7 @@ package commands
 import (
 	"bytes"
 	"io"
+	"os"
 	"strings"
 	"testing"
 
@@ -115,6 +116,123 @@ func TestInsert_RejectsForbiddenSharedFlags(t *testing.T) {
 			}
 			if !strings.Contains(strings.ToLower(err.Error()), tc.want) {
 				t.Errorf("expected error to mention %q, got: %v", tc.want, err)
+			}
+		})
+	}
+}
+
+func TestInsert_DataSource_DataFlag(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf, nil, true, nil,
+		"--path="+dir, "--into=test.items", "--key=alpha", "--data={title: Alpha}",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+}
+
+func TestInsert_DataSource_Stdin(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf,
+		strings.NewReader("title: FromStdin"), false /* not a TTY */, nil,
+		"--path="+dir, "--into=test.items", "--key=beta",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+}
+
+func TestInsert_DataSource_Empty(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf, nil, true, nil,
+		"--path="+dir, "--into=test.items", "--key=gamma", "--empty",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+}
+
+func TestInsert_DataSource_Edit(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+
+	// Editor stub: replace template with real content.
+	openEditor := func(tmpPath string) error {
+		return os.WriteFile(tmpPath, []byte("title: FromEditor\n"), 0o644)
+	}
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf, nil, true, openEditor,
+		"--path="+dir, "--into=test.items", "--key=delta", "--edit",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+}
+
+func TestInsert_DataSource_EditUnchanged(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+
+	// Editor stub: leave the file unmodified (no write).
+	openEditor := func(tmpPath string) error { return nil }
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf, nil, true, openEditor,
+		"--path="+dir, "--into=test.items", "--key=epsilon", "--edit",
+	)
+	if err == nil {
+		t.Fatal("expected error when editor exits without modifying template")
+	}
+	if !strings.Contains(strings.ToLower(err.Error()), "not edited") &&
+		!strings.Contains(strings.ToLower(err.Error()), "no changes") &&
+		!strings.Contains(strings.ToLower(err.Error()), "unchanged") {
+		t.Errorf("error should mention the template was unchanged, got: %v", err)
+	}
+}
+
+func TestInsert_DataSource_None(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf, nil, true /* TTY stdin */, nil,
+		"--path="+dir, "--into=test.items", "--key=zeta",
+	)
+	if err == nil {
+		t.Fatal("expected error when no data source supplied (TTY stdin, no --data/--edit/--empty)")
+	}
+}
+
+func TestInsert_DataSource_MutualExclusion(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+
+	cases := []struct {
+		name string
+		args []string
+	}{
+		{name: "data + empty", args: []string{"--into=test.items", "--key=x", "--data={a: 1}", "--empty"}},
+		{name: "data + edit", args: []string{"--into=test.items", "--key=x", "--data={a: 1}", "--edit"}},
+		{name: "edit + empty", args: []string{"--into=test.items", "--key=x", "--edit", "--empty"}},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf, nil, true, nil,
+				append([]string{"--path=" + dir}, tc.args...)...,
+			)
+			if err == nil {
+				t.Fatalf("expected error for %v", tc.args)
 			}
 		})
 	}
