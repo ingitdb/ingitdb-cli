@@ -56,9 +56,12 @@ func TestCRUDRecord_UpdatesTagsReadme(t *testing.T) {
 	assertTagTitle(t, dstTodoDir, "urgent", "Updated")
 	assertReadmeContains(t, dstTodoDir, "**Updated**")
 
-	// Delete step migrated to new top-level form; restored once --id is implemented (Task 2).
 	deleteCmd := Delete(homeDir, getWd, readDef, newDB, logf)
-	_ = deleteCmd
+	if err := runCobraCommand(deleteCmd, "--path="+tmpDir, "--id=todo.tags/urgent"); err != nil {
+		t.Fatalf("Delete record: %v", err)
+	}
+	assertTagMissing(t, dstTodoDir, "urgent")
+	assertReadmeNotContains(t, dstTodoDir, "**Updated**")
 }
 
 func assertTagTitle(t *testing.T, tagsDir, key, title string) {
@@ -77,7 +80,7 @@ func assertTagTitle(t *testing.T, tagsDir, key, title string) {
 	}
 }
 
-func assertTagMissing(t *testing.T, tagsDir, key string) { //nolint:unused // restored in Task 2 with delete --id
+func assertTagMissing(t *testing.T, tagsDir, key string) {
 	t.Helper()
 	data := readTagsJSON(t, tagsDir)
 	if _, ok := data[key]; ok {
@@ -107,7 +110,7 @@ func assertReadmeContains(t *testing.T, tagsDir, needle string) {
 	}
 }
 
-func assertReadmeNotContains(t *testing.T, tagsDir, needle string) { //nolint:unused // restored in Task 2 with delete --id
+func assertReadmeNotContains(t *testing.T, tagsDir, needle string) {
 	t.Helper()
 	content := readReadme(t, tagsDir)
 	if strings.Contains(content, needle) {
