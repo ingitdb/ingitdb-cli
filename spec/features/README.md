@@ -31,6 +31,7 @@ This directory tracks the SpecScore feature specifications for the **ingitdb-cli
 | [github-direct-access](github-direct-access/README.md) | Implementing | Cross-cutting `--github=owner/repo[@ref]` flag and token handling. |
 | [output-formats](output-formats/README.md) | Implementing | Cross-cutting `--format=yaml|json` flag and YAML default. |
 | [path-targeting](path-targeting/README.md) | Implementing | Cross-cutting `--path` flag and its relation to `--github`. |
+| [shared-cli-flags](shared-cli-flags/README.md) | Single source of truth for the CLI flag grammar shared across select, insert, update, delete, and drop verbs: --from, --into, --where, --set, --id, --all, --order-by, --fields. Defines parsing rules, operator semantics (==, ===, !=, !==, >=, <=, >, <), value-type model, and flag mutual-exclusion rules. |
 
 ## Feature Summaries
 
