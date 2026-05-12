@@ -115,3 +115,6 @@ Defines the `--path` flag, its default of the current working directory, and its
 
 ---
 *This document follows the https://specscore.md/feature-specification*
+
+---
+*This document follows the https://specscore.md/features-index-specification*

@@ -94,3 +94,37 @@ docs: update installation instructions
 ```
 
 See [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/) for full details.
+
+## Spec Workflow (SpecScore)
+
+This project uses [SpecScore](https://specscore.md) to track feature specifications.
+The `specscore` CLI is installed at `$(go env GOPATH)/bin/specscore`.
+
+**Directory layout:**
+
+```
+spec/
+  ideas/     → raw ideas before promotion (spec/ideas/<slug>.md)
+  features/  → feature specs (spec/features/<group>/<slug>/README.md)
+  plans/     → implementation plans
+```
+
+**Rules for AI agents:**
+
+1. **New ideas** → scaffold with `specscore idea new <slug>`, then fill in sections.
+   Never save ideas to `docs/`.
+2. **Feature specs** → live under `spec/features/`. Revise in place when enhancing an
+   existing feature; create a new slug only when scope is entirely new.
+3. **Lint before finishing** → run `specscore spec lint` and fix all errors before
+   marking any spec work as done. Use `specscore spec lint --fix` for auto-fixable issues.
+4. **Ideas index** → `spec/ideas/README.md` is managed by specscore lint `--fix`; do not
+   hand-edit the index table rows.
+
+**Common commands:**
+
+```bash
+specscore idea new <slug> --title "..." --hmw "How Might We..."
+specscore spec lint
+specscore spec lint --fix
+specscore feature list
+```
