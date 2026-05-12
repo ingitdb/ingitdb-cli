@@ -13,6 +13,7 @@ ingitdb-cli
 out/
 
 .firebase/
+.junie/
 /.claude/worktrees/
 
 # Test binary, built with `go test -c`
