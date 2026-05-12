@@ -36,7 +36,7 @@ The command MUST fail when a record with the same key already exists in the targ
 
 #### REQ: github-write-requires-token
 
-For `--github` writes, an authentication token MUST be supplied via `--token` or the `GITHUB_TOKEN` environment variable. Each successful create MUST result in exactly one commit in the remote repository (see [github-direct-access](../github-direct-access/README.md)).
+For `--github` writes, an authentication token MUST be supplied via `--token` or the `GITHUB_TOKEN` environment variable. Each successful create MUST result in exactly one commit in the remote repository (see [github-direct-access](../../github-direct-access/README.md)).
 
 ## Dependencies
 
@@ -48,13 +48,13 @@ For `--github` writes, an authentication token MUST be supplied via `--token` or
 
 ### AC: creates-local-record
 
-**Requirements:** create-record-command#req:subcommand-name, create-record-command#req:id-and-data-required, create-record-command#req:fails-if-exists
+**Requirements:** cli/create-record#req:subcommand-name, cli/create-record#req:id-and-data-required, cli/create-record#req:fails-if-exists
 
 `ingitdb create record --id=countries/ie --data='{name: Ireland}'` writes a new record file in the `countries` collection and exits `0`. Re-running the same command (without first deleting the record) exits non-zero.
 
 ### AC: creates-github-record-with-token
 
-**Requirements:** create-record-command#req:source-selection, create-record-command#req:github-write-requires-token
+**Requirements:** cli/create-record#req:source-selection, cli/create-record#req:github-write-requires-token
 
 With `GITHUB_TOKEN` set, `ingitdb create record --github=owner/repo --id=countries/ie --data='{name: Ireland}'` creates one commit in `owner/repo` containing the new record file. Without a token the command exits non-zero before any network request that would require authentication.
 

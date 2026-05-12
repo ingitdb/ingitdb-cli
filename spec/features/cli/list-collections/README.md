@@ -47,13 +47,13 @@ The command MUST print one collection ID per line and MUST exit `0` on success. 
 
 ### AC: lists-all-collections
 
-**Requirements:** list-collections-command#req:subcommand-name, list-collections-command#req:prints-ids
+**Requirements:** cli/list-collections#req:subcommand-name, cli/list-collections#req:prints-ids
 
 `ingitdb list collections` from a directory whose `.ingitdb.yaml` declares N collections prints exactly N collection IDs to stdout, one per line, and exits `0`.
 
 ### AC: scoped-listing
 
-**Requirements:** list-collections-command#req:in-flag, list-collections-command#req:filter-name-flag
+**Requirements:** cli/list-collections#req:in-flag, cli/list-collections#req:filter-name-flag
 
 `ingitdb list collections --in='countries/(ie|gb)' --filter-name='*city*'` returns only collections whose starting-point path matches the regex AND whose name matches the glob.
 

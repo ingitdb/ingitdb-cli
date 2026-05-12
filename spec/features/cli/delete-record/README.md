@@ -22,7 +22,7 @@ The command MUST be invoked as `ingitdb delete record`. The `--id` flag is requi
 
 #### REQ: id-required
 
-`--id=<collection-id>/<record-key>` MUST identify the record to delete and MUST follow the syntax defined by [id-flag-format](../id-flag-format/README.md).
+`--id=<collection-id>/<record-key>` MUST identify the record to delete and MUST follow the syntax defined by [id-flag-format](../../id-flag-format/README.md).
 
 #### REQ: source-selection
 
@@ -48,13 +48,13 @@ For `--github` writes, a token MUST be supplied via `--token` or `GITHUB_TOKEN`.
 
 ### AC: deletes-single-record-file
 
-**Requirements:** delete-record-command#req:subcommand-name, delete-record-command#req:id-required, delete-record-command#req:storage-layout-aware
+**Requirements:** cli/delete-record#req:subcommand-name, cli/delete-record#req:id-required, cli/delete-record#req:storage-layout-aware
 
 Given a `SingleRecord` collection containing the record `countries/ie`, running `ingitdb delete record --id=countries/ie` removes the corresponding file and exits `0`. Re-running the command exits non-zero because the record no longer exists.
 
 ### AC: deletes-key-from-map
 
-**Requirements:** delete-record-command#req:storage-layout-aware
+**Requirements:** cli/delete-record#req:storage-layout-aware
 
 Given a `MapOfIDRecords` collection whose shared file contains keys `ie` and `gb`, deleting `--id=collection/ie` removes the `ie` key from the file but leaves `gb` and any other keys untouched.
 

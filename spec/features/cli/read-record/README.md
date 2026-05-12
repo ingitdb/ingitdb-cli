@@ -22,7 +22,7 @@ The command MUST be invoked as `ingitdb read record`. The `--id` flag is require
 
 #### REQ: id-required
 
-The `--id=<collection-id>/<record-key>` flag MUST be provided. Its value MUST follow the syntax defined by [id-flag-format](../id-flag-format/README.md).
+The `--id=<collection-id>/<record-key>` flag MUST be provided. Its value MUST follow the syntax defined by [id-flag-format](../../id-flag-format/README.md).
 
 #### REQ: source-selection
 
@@ -49,13 +49,13 @@ The command MUST write the resolved record to stdout in the requested format and
 
 ### AC: reads-local-record
 
-**Requirements:** read-record-command#req:subcommand-name, read-record-command#req:id-required, read-record-command#req:source-selection, read-record-command#req:writes-to-stdout
+**Requirements:** cli/read-record#req:subcommand-name, cli/read-record#req:id-required, cli/read-record#req:source-selection, cli/read-record#req:writes-to-stdout
 
 Given a local database with a record at `geo.nations/ie`, `ingitdb read record --id=geo.nations/ie` writes the record's fields to stdout as YAML and exits `0`. Adding `--format=json` switches the output to JSON.
 
 ### AC: reads-from-github
 
-**Requirements:** read-record-command#req:source-selection, read-record-command#req:format-flag
+**Requirements:** cli/read-record#req:source-selection, cli/read-record#req:format-flag
 
 `ingitdb read record --github=owner/repo --id=countries/ie` resolves the record from the default branch of the given repository without requiring a local clone. Pinning to a ref (`owner/repo@main`) reads from that ref instead.
 

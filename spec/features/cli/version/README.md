@@ -38,13 +38,13 @@ The command MUST exit with status `0` whenever the binary runs to completion. Th
 
 ### AC: version-prints-three-fields
 
-**Requirements:** version-command#req:subcommand-name, version-command#req:prints-build-info
+**Requirements:** cli/version#req:subcommand-name, cli/version#req:prints-build-info
 
 Running `ingitdb version` prints a single output containing the build version string, the commit hash, and the build date. A reader can identify each of the three fields without consulting external documentation.
 
 ### AC: version-exits-zero
 
-**Requirements:** version-command#req:exit-zero
+**Requirements:** cli/version#req:exit-zero
 
 Running `ingitdb version` always exits with status `0` on a working install. CI scripts can use the command as a smoke test by checking only the exit code.
 

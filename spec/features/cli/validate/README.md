@@ -50,13 +50,13 @@ The command MUST exit with status `0` when validation passes and a non-zero stat
 
 ### AC: full-validation-by-default
 
-**Requirements:** validate-command#req:subcommand-name, validate-command#req:only-flag, validate-command#req:per-collection-summary, validate-command#req:exit-code
+**Requirements:** cli/validate#req:subcommand-name, cli/validate#req:only-flag, cli/validate#req:per-collection-summary, cli/validate#req:exit-code
 
 Running `ingitdb validate` with no flags from a directory containing a valid `.ingitdb.yaml` validates both definitions and records, prints a summary line per collection, and exits `0`. Introducing a single record that violates its schema causes the command to exit non-zero.
 
 ### AC: scoped-validation
 
-**Requirements:** validate-command#req:only-flag, validate-command#req:commit-range
+**Requirements:** cli/validate#req:only-flag, cli/validate#req:commit-range
 
 `ingitdb validate --only=records --from-commit=A --to-commit=B` checks only records that changed between commits `A` and `B` and skips definition validation. Records outside the commit range are not opened.
 

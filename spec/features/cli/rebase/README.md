@@ -42,13 +42,13 @@ If any conflicting file falls outside the categories listed in `--resolve` (for 
 
 ### AC: auto-resolves-readme-conflicts
 
-**Requirements:** rebase-command#req:subcommand-name, rebase-command#req:resolve-flag, rebase-command#req:detects-and-resolves-readmes
+**Requirements:** cli/rebase#req:subcommand-name, cli/rebase#req:resolve-flag, cli/rebase#req:detects-and-resolves-readmes
 
 Given a branch whose only conflict against `main` is in collection `README.md` files, `ingitdb rebase --base_ref=main --resolve=readme` regenerates the conflicted READMEs, stages them, and runs the rebase to completion without prompting the user. The resulting tree contains the regenerated README content.
 
 ### AC: aborts-on-source-conflict
 
-**Requirements:** rebase-command#req:aborts-on-unresolvable
+**Requirements:** cli/rebase#req:aborts-on-unresolvable
 
 When a conflict touches a source file (e.g. a hand-edited record YAML), `ingitdb rebase` does not silently resolve it; instead it aborts the rebase and lists the conflicting paths. The user must resolve them and continue manually.
 

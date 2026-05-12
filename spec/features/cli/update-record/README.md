@@ -48,13 +48,13 @@ For `--github` writes, a token MUST be supplied via `--token` or the `GITHUB_TOK
 
 ### AC: patches-existing-record
 
-**Requirements:** update-record-command#req:subcommand-name, update-record-command#req:id-and-set-required, update-record-command#req:patch-semantics
+**Requirements:** cli/update-record#req:subcommand-name, cli/update-record#req:id-and-set-required, cli/update-record#req:patch-semantics
 
 Given a record `{name: Ireland, population: 5000000}`, running `ingitdb update record --id=countries/ie --set='{capital: Dublin}'` produces a record `{name: Ireland, population: 5000000, capital: Dublin}` and exits `0`. Updating a non-existent record exits non-zero.
 
 ### AC: github-update-creates-one-commit
 
-**Requirements:** update-record-command#req:source-selection, update-record-command#req:github-write-requires-token
+**Requirements:** cli/update-record#req:source-selection, cli/update-record#req:github-write-requires-token
 
 With a valid token, `ingitdb update record --github=owner/repo --id=countries/ie --set='{capital: Dublin}'` produces exactly one commit in `owner/repo` whose diff is limited to the patched fields.
 
