@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/dal-go/dalgo/dal"
@@ -50,7 +51,7 @@ func Select(
 			case sqlflags.ModeID:
 				return runSelectByID(ctx, cmd, id, fields, format, homeDir, getWd, readDefinition, newDB)
 			case sqlflags.ModeFrom:
-				return fmt.Errorf("select --from: not yet implemented")
+				return runSelectFromSet(ctx, cmd, from, fields, format, homeDir, getWd, readDefinition, newDB)
 			default:
 				return fmt.Errorf("invalid mode")
 			}
@@ -124,4 +125,122 @@ func runSelectByID(
 		format = "yaml"
 	}
 	return writeSingleRecord(cmd.OutOrStdout(), projected, format, fields)
+}
+
+// runSelectFromSet handles --from set mode: fetch every record from
+// the collection, apply WHERE conditions, project fields, and emit
+// the result. Order-by, limit, and min-affected are layered on in
+// later tasks.
+func runSelectFromSet(
+	ctx context.Context,
+	cmd *cobra.Command,
+	from string,
+	fields []string,
+	format string,
+	homeDir func() (string, error),
+	getWd func() (string, error),
+	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
+	newDB func(string, *ingitdb.Definition) (dal.DB, error),
+) error {
+	whereExprs, _ := cmd.Flags().GetStringArray("where")
+	conds := make([]sqlflags.Condition, 0, len(whereExprs))
+	for _, expr := range whereExprs {
+		c, err := sqlflags.ParseWhere(expr)
+		if err != nil {
+			return fmt.Errorf("invalid --where %q: %w", expr, err)
+		}
+		conds = append(conds, c)
+	}
+
+	dirPath, err := resolveDBPath(cmd, homeDir, getWd)
+	if err != nil {
+		return err
+	}
+	def, err := readDefinition(dirPath)
+	if err != nil {
+		return fmt.Errorf("failed to read database definition: %w", err)
+	}
+	colDef, ok := def.Collections[from]
+	if !ok {
+		return fmt.Errorf("collection %q not found in definition", from)
+	}
+	_ = colDef
+	db, err := newDB(dirPath, def)
+	if err != nil {
+		return fmt.Errorf("failed to open database: %w", err)
+	}
+
+	qb := dal.NewQueryBuilder(dal.From(dal.NewRootCollectionRef(from, "")))
+	q := qb.SelectIntoRecord(func() dal.Record {
+		key := dal.NewKeyWithID(from, "")
+		return dal.NewRecordWithData(key, map[string]any{})
+	})
+
+	var rows []map[string]any
+	err = db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
+		reader, qerr := tx.ExecuteQueryToRecordsReader(ctx, q)
+		if qerr != nil {
+			return qerr
+		}
+		defer func() { _ = reader.Close() }()
+		for {
+			rec, nextErr := reader.Next()
+			if nextErr != nil {
+				break
+			}
+			data, ok := rec.Data().(map[string]any)
+			if !ok {
+				continue
+			}
+			recKey := fmt.Sprintf("%v", rec.Key().ID)
+			match, evalErr := evalAllWhere(data, recKey, conds)
+			if evalErr != nil {
+				return evalErr
+			}
+			if !match {
+				continue
+			}
+			rows = append(rows, projectRecord(data, recKey, fields))
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("query failed: %w", err)
+	}
+
+	if format == "" {
+		format = "csv"
+	}
+	return writeSetMode(cmd.OutOrStdout(), rows, format, fields)
+}
+
+// writeSetMode is the set-mode output dispatcher. Empty rows still
+// produce format-appropriate output (csv header / [] for json/yaml /
+// md header / INGR header + "# 0 records" footer).
+func writeSetMode(w io.Writer, rows []map[string]any, format string, columns []string) error {
+	if rows == nil {
+		rows = []map[string]any{}
+	}
+	switch format {
+	case "csv":
+		return writeCSV(w, rows, columns)
+	case "json":
+		if len(rows) == 0 {
+			_, err := fmt.Fprintln(w, "[]")
+			return err
+		}
+		return writeJSON(w, rows)
+	case "yaml", "yml":
+		if len(rows) == 0 {
+			_, err := fmt.Fprintln(w, "[]")
+			return err
+		}
+		return writeYAML(w, rows)
+	case "md", "markdown":
+		return writeMarkdown(w, rows, columns)
+	case "ingr":
+		return writeINGR(w, rows, columns)
+	default:
+		return fmt.Errorf("unknown format %q, use csv, json, yaml, md, or ingr", format)
+	}
 }

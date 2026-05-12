@@ -176,6 +176,121 @@ func TestSelect_SingleRecord_FormatINGR(t *testing.T) {
 	}
 }
 
+func TestSelect_SetMode_NoFilter(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := selectTestDeps(t, dir)
+	for _, key := range []string{"a", "b", "c"} {
+		if err := seedRecord(t, dir, "test.items", key, map[string]any{"title": "T-" + key}); err != nil {
+			t.Fatalf("seed %s: %v", key, err)
+		}
+	}
+	stdout, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf, "--path="+dir, "--from=test.items", "--format=yaml")
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if c := strings.Count(stdout, "title: T-"); c != 3 {
+		t.Errorf("want 3 records, got %d:\n%s", c, stdout)
+	}
+}
+
+func TestSelect_SetMode_WhereFilter(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := selectTestDeps(t, dir)
+	if err := seedRecord(t, dir, "test.items", "a", map[string]any{"priority": float64(1)}); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	if err := seedRecord(t, dir, "test.items", "b", map[string]any{"priority": float64(5)}); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	stdout, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf, "--path="+dir, "--from=test.items", "--where=priority>2", "--format=yaml")
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if !strings.Contains(stdout, "priority: 5") {
+		t.Errorf("expected priority:5 in output:\n%s", stdout)
+	}
+	if strings.Contains(stdout, "priority: 1") {
+		t.Errorf("did NOT expect priority:1 in output:\n%s", stdout)
+	}
+}
+
+func TestSelect_SetMode_EmptyResult_CSV(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := selectTestDeps(t, dir)
+	if err := seedRecord(t, dir, "test.items", "a", map[string]any{"priority": float64(1)}); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	stdout, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf, "--path="+dir, "--from=test.items", "--where=priority>1000", "--fields=$id,priority")
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	lines := strings.Split(strings.TrimSpace(stdout), "\n")
+	if len(lines) != 1 {
+		t.Errorf("want header-only CSV (1 line), got %d lines:\n%s", len(lines), stdout)
+	}
+	if !strings.Contains(lines[0], "$id") || !strings.Contains(lines[0], "priority") {
+		t.Errorf("header row missing expected columns:\n%s", stdout)
+	}
+}
+
+func TestSelect_SetMode_EmptyResult_JSON(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := selectTestDeps(t, dir)
+	stdout, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf, "--path="+dir, "--from=test.items", "--format=json")
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	got := strings.TrimSpace(stdout)
+	if got != "[]" {
+		t.Errorf("empty set JSON must be `[]`, got: %s", got)
+	}
+}
+
+func TestSelect_SetMode_INGR(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := selectTestDeps(t, dir)
+	if err := seedRecord(t, dir, "test.items", "a", map[string]any{"title": "Alpha", "priority": float64(1)}); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	if err := seedRecord(t, dir, "test.items", "b", map[string]any{"title": "Beta", "priority": float64(2)}); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	stdout, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf, "--path="+dir, "--from=test.items", "--fields=$id,title,priority", "--format=ingr")
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if !strings.HasPrefix(stdout, "# INGR.io | select: ") {
+		t.Errorf("missing INGR header in output:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, "# 2 records") {
+		t.Errorf("missing record-count footer:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, `"Alpha"`) || !strings.Contains(stdout, `"Beta"`) {
+		t.Errorf("missing JSON-encoded titles:\n%s", stdout)
+	}
+}
+
+func TestSelect_SetMode_INGR_EmptyResult(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := selectTestDeps(t, dir)
+	stdout, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf, "--path="+dir, "--from=test.items", "--fields=$id,title", "--format=ingr")
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if !strings.HasPrefix(stdout, "# INGR.io | select: ") {
+		t.Errorf("missing INGR header in empty-result output:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, "# 0 records") {
+		t.Errorf("empty INGR must have '# 0 records' footer:\n%s", stdout)
+	}
+}
+
 func TestSelect_SingleRecord_NotFound(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
