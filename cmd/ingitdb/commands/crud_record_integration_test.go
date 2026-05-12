@@ -42,7 +42,7 @@ func TestCRUDRecord_UpdatesTagsReadme(t *testing.T) {
 	}
 	logf := func(...any) {}
 
-	createCmd := Create(homeDir, getWd, readDef, newDB, logf)
+	createCmd := Create(homeDir, getWd, readDef, newDB, logf, nil, nil, nil)
 	if err := runCobraCommand(createCmd, "record", "--path="+tmpDir, "--id=todo.tags/urgent", "--data={title: Urgent}"); err != nil {
 		t.Fatalf("Create record: %v", err)
 	}

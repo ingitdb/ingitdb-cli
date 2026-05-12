@@ -22,7 +22,7 @@ func TestCreateRecord_GitHub_ParseError(t *testing.T) {
 	newDB := func(_ string, _ *ingitdb.Definition) (dal.DB, error) {
 		return nil, errors.New("unused")
 	}
-	cmd := createRecord(homeDir, getWd, readDefinition, newDB, func(...any) {})
+	cmd := createRecord(homeDir, getWd, readDefinition, newDB, func(...any) {}, nil, nil, nil)
 	err := runCobraCommand(cmd, "--id=test.items/x", "--data={name: X}", "--github=invalid")
 	if err == nil {
 		t.Fatal("expected error for invalid GitHub spec")
@@ -51,7 +51,7 @@ func TestCreateRecord_GitHub_ReadDefinitionError(t *testing.T) {
 	newDB := func(_ string, _ *ingitdb.Definition) (dal.DB, error) {
 		return nil, errors.New("unused")
 	}
-	cmd := createRecord(homeDir, getWd, readDefinition, newDB, func(...any) {})
+	cmd := createRecord(homeDir, getWd, readDefinition, newDB, func(...any) {}, nil, nil, nil)
 	err := runCobraCommand(cmd, "--id=test.items/x", "--data={name: X}", "--github=owner/repo")
 	if err == nil {
 		t.Fatal("expected error when reading remote definition fails")
@@ -90,7 +90,7 @@ func TestCreateRecord_GitHub_DBOpenError(t *testing.T) {
 	newDB := func(_ string, _ *ingitdb.Definition) (dal.DB, error) {
 		return nil, errors.New("unused")
 	}
-	cmd := createRecord(homeDir, getWd, readDefinition, newDB, func(...any) {})
+	cmd := createRecord(homeDir, getWd, readDefinition, newDB, func(...any) {}, nil, nil, nil)
 	err := runCobraCommand(cmd, "--id=test.items/x", "--data={name: X}", "--github=owner/repo")
 	if err == nil {
 		t.Fatal("expected error when DB open fails")
@@ -109,7 +109,7 @@ func TestCreateRecord_InvalidDataYAML(t *testing.T) {
 		return nil, errors.New("unused - should not be called")
 	}
 
-	cmd := createRecord(homeDir, getWd, readDef, newDB, func(...any) {})
+	cmd := createRecord(homeDir, getWd, readDef, newDB, func(...any) {}, nil, nil, nil)
 	err := runCobraCommand(cmd, "--path="+dir, "--id=test.items/x", "--data=: invalid yaml :")
 	if err == nil {
 		t.Fatal("expected error for invalid YAML data")

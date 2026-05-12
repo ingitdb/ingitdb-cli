@@ -827,7 +827,7 @@ func TestCreate_WithViewBuilder(t *testing.T) {
 	}
 	logf := func(...any) {}
 
-	cmd := Create(homeDir, getWd, readDef, newDB, logf)
+	cmd := Create(homeDir, getWd, readDef, newDB, logf, nil, nil, nil)
 	err := runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/newrecord", "--data={name: NewRecord}")
 	if err != nil {
 		t.Fatalf("Create with view builder: %v", err)
