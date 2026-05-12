@@ -421,3 +421,132 @@ func TestUpdate_MinAffected_RejectedInSingleRecordMode(t *testing.T) {
 		t.Fatal("expected error when --min-affected is supplied with --id")
 	}
 }
+
+func TestUpdate_EndToEnd_RealisticInvocation(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
+	seedItem(t, dir, "low", map[string]any{"priority": float64(1), "draft": true, "title": "T-low"})
+	seedItem(t, dir, "mid", map[string]any{"priority": float64(3), "draft": true, "title": "T-mid"})
+	seedItem(t, dir, "high", map[string]any{"priority": float64(5), "draft": true, "title": "T-high"})
+
+	_, err := runUpdateCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items",
+		"--where=priority>=3",
+		"--set=status=published", "--unset=draft",
+		"--min-affected=1",
+	)
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+
+	// "low" should be untouched (priority=1).
+	low := readItem(t, dir, "low")
+	if !strings.Contains(low, "draft: true") {
+		t.Errorf("low: expected draft: true, got:\n%s", low)
+	}
+	if strings.Contains(low, "status:") {
+		t.Errorf("low: status should not be set, got:\n%s", low)
+	}
+
+	// "mid" and "high" should be patched.
+	for _, key := range []string{"mid", "high"} {
+		got := readItem(t, dir, key)
+		if !strings.Contains(got, "status: published") {
+			t.Errorf("%s: expected status: published, got:\n%s", key, got)
+		}
+		if strings.Contains(got, "draft:") {
+			t.Errorf("%s: draft field should be removed, got:\n%s", key, got)
+		}
+		if !strings.Contains(got, "title: T-"+key) {
+			t.Errorf("%s: title should be preserved, got:\n%s", key, got)
+		}
+	}
+}
+
+func TestUpdate_LegacyUpdateRecordStillWorks(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
+	seedItem(t, dir, "legacy", map[string]any{"title": "Before"})
+
+	// UpdateLegacy returns the parent command; invoke `record` with
+	// the legacy YAML-blob --set syntax.
+	legacyCmd := UpdateLegacy(homeDir, getWd, readDef, newDB, logf)
+	var buf bytes.Buffer
+	legacyCmd.SetOut(&buf)
+	legacyCmd.SetErr(&buf)
+	legacyCmd.SetArgs([]string{
+		"record",
+		"--path=" + dir,
+		"--id=test.items/legacy",
+		`--set={title: After, status: ok}`,
+	})
+	if err := legacyCmd.Execute(); err != nil {
+		t.Errorf("legacy update record regressed: %v", err)
+	}
+
+	got := readItem(t, dir, "legacy")
+	if !strings.Contains(got, "title: After") {
+		t.Errorf("legacy patch missing title: After, got:\n%s", got)
+	}
+	if !strings.Contains(got, "status: ok") {
+		t.Errorf("legacy patch missing status: ok, got:\n%s", got)
+	}
+}
+
+func TestUpdate_ShallowPatchReplacesNestedMap(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
+	seedItem(t, dir, "p1", map[string]any{
+		"metadata": map[string]any{"author": "alice", "draft": true},
+	})
+
+	// --set on a top-level field that is itself a map REPLACES the
+	// whole field; it does NOT deep-merge.
+	_, err := runUpdateCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--id=test.items/p1",
+		`--set=metadata={author: bob}`,
+	)
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	got := readItem(t, dir, "p1")
+	if !strings.Contains(got, "author: bob") {
+		t.Errorf("expected new metadata.author: bob, got:\n%s", got)
+	}
+	if strings.Contains(got, "draft:") {
+		t.Errorf("old metadata.draft should be gone (shallow replace), got:\n%s", got)
+	}
+}
+
+func TestUpdate_MinAffected_WithAll(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
+	seedItem(t, dir, "a", map[string]any{"x": float64(1)})
+	seedItem(t, dir, "b", map[string]any{"x": float64(2)})
+	seedItem(t, dir, "c", map[string]any{"x": float64(3)})
+
+	// With --all, --min-affected=3 succeeds (3 records).
+	_, err := runUpdateCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items", "--all",
+		"--set=touched=true", "--min-affected=3",
+	)
+	if err != nil {
+		t.Fatalf("expected success (3 >= 3): %v", err)
+	}
+
+	// With --all, --min-affected=4 fails (only 1 record in dir2).
+	dir2 := t.TempDir()
+	homeDir2, getWd2, readDef2, newDB2, _ := updateTestDeps(t, dir2)
+	seedItem(t, dir2, "a", map[string]any{"x": float64(1)})
+	_, err = runUpdateCmd(t, homeDir2, getWd2, readDef2, newDB2, logf,
+		"--path="+dir2, "--from=test.items", "--all",
+		"--set=touched=true", "--min-affected=4",
+	)
+	if err == nil {
+		t.Fatal("expected error when collection size (1) < threshold (4)")
+	}
+}
