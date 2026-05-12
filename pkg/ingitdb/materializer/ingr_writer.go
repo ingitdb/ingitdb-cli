@@ -9,6 +9,20 @@ import (
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
+// FormatINGR is the public entry point for producing INGR bytes from
+// a slice of IRecordEntry. It accepts the same viewName + headers +
+// records arguments as the private formatINGR and exposes the same
+// option list via ExportOption variadics. Used by the CLI's `select`
+// command and by future callers that need INGR output without
+// invoking the full materialize pipeline.
+func FormatINGR(viewName string, headers []string, records []ingitdb.IRecordEntry, options ...ExportOption) ([]byte, error) {
+	opts := ExportOptions{}
+	for _, apply := range options {
+		apply(&opts)
+	}
+	return formatINGR(viewName, opts, headers, records)
+}
+
 // formatINGR serializes records in INGR format.
 // The first line is a metadata header: "# INGR.io | {viewName}: $ID, col2, col3, ..."
 // where the record key is the "$ID" column. Subsequent lines are N lines per record
