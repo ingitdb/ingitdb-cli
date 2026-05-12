@@ -166,7 +166,7 @@ func buildRecordTemplate(colDef *ingitdb.CollectionDef) []byte {
 		for _, k := range keys {
 			buf.WriteString(k + ": \n")
 		}
-		buf.WriteString("---\n")
+		buf.WriteString("---\n\n")
 	} else {
 		for _, k := range keys {
 			buf.WriteString(k + ": \n")

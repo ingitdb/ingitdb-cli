@@ -310,7 +310,7 @@ func TestBuildRecordTemplate_Markdown(t *testing.T) {
 	}
 
 	got := string(buildRecordTemplate(colDef))
-	want := "---\ntitle: \ncategory: \n---\n"
+	want := "---\ntitle: \ncategory: \n---\n\n"
 	if got != want {
 		t.Fatalf("markdown template:\ngot:  %q\nwant: %q", got, want)
 	}
