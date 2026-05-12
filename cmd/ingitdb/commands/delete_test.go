@@ -334,3 +334,64 @@ func TestDelete_MinAffected_ThresholdUnmet_NoRecordDeleted(t *testing.T) {
 		t.Errorf("record b (US) MUST NOT be deleted when threshold unmet")
 	}
 }
+
+func TestDelete_EndToEnd_RealisticInvocation(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := deleteTestDeps(t, dir)
+	deleteSeedItem(t, dir, "low", map[string]any{"priority": float64(1), "title": "T-low"})
+	deleteSeedItem(t, dir, "mid", map[string]any{"priority": float64(3), "title": "T-mid"})
+	deleteSeedItem(t, dir, "high", map[string]any{"priority": float64(5), "title": "T-high"})
+
+	stdout, err := runDeleteCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items",
+		"--where=priority>=3",
+		"--min-affected=2",
+	)
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if stdout != "" {
+		t.Errorf("success path MUST be silent on stdout, got: %q", stdout)
+	}
+
+	// "low" should remain (priority=1).
+	if !itemExists(t, dir, "low") {
+		t.Errorf("low should still exist (priority=1, didn't match filter)")
+	}
+	// "mid" and "high" should be deleted.
+	if itemExists(t, dir, "mid") {
+		t.Errorf("mid should be deleted")
+	}
+	if itemExists(t, dir, "high") {
+		t.Errorf("high should be deleted")
+	}
+}
+
+func TestDelete_MinAffected_WithAll(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := deleteTestDeps(t, dir)
+	deleteSeedItem(t, dir, "a", map[string]any{"x": float64(1)})
+	deleteSeedItem(t, dir, "b", map[string]any{"x": float64(2)})
+	deleteSeedItem(t, dir, "c", map[string]any{"x": float64(3)})
+
+	// With --all, --min-affected=3 succeeds (3 records).
+	_, err := runDeleteCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items", "--all", "--min-affected=3",
+	)
+	if err != nil {
+		t.Fatalf("expected success (3 >= 3): %v", err)
+	}
+	if itemExists(t, dir, "a") || itemExists(t, dir, "b") || itemExists(t, dir, "c") {
+		t.Errorf("all 3 records should be deleted")
+	}
+
+	// With --all, --min-affected=4 fails (only 0 records left).
+	_, err = runDeleteCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=test.items", "--all", "--min-affected=4",
+	)
+	if err == nil {
+		t.Fatal("expected error when collection (0) < threshold (4)")
+	}
+}
