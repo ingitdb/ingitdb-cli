@@ -116,6 +116,10 @@ func isFdTTY(f *os.File) bool {
 // the configured editor, and returns the parsed record data. Returns
 // (nil, true, nil) when the file was not modified (no-op edit).
 func runWithEditor(colDef *ingitdb.CollectionDef, openEditor func(string) error) (map[string]any, bool, error) {
+	if colDef.RecordFile == nil {
+		return nil, false, fmt.Errorf("collection %q has no record_file definition", colDef.ID)
+	}
+
 	template := buildRecordTemplate(colDef)
 
 	ext := recordFormatExt(colDef.RecordFile.Format)

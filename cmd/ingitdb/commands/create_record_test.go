@@ -122,7 +122,7 @@ func TestCreate_ReadDefinitionError(t *testing.T) {
 	}
 }
 
-func TestCreate_TTYError(t *testing.T) {
+func TestCreate_NoInputProvided(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -147,5 +147,32 @@ func TestCreate_TTYError(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "stdin") && !strings.Contains(err.Error(), "--edit") {
 		t.Fatalf("error should mention stdin or --edit, got: %v", err)
+	}
+}
+
+func TestCreate_StdinInputSmoke(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	def := testDef(dir)
+
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) { return def, nil }
+	newDB := func(root string, d *ingitdb.Definition) (dal.DB, error) {
+		return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
+	}
+	logf := func(...any) {}
+
+	cmd := Create(homeDir, getWd, readDef, newDB, logf,
+		strings.NewReader("name: Piped\n"),
+		func() bool { return false }, // not a TTY
+		nil,
+	)
+	if err := runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/piped"); err != nil {
+		t.Fatalf("stdin smoke: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "$records", "piped.yaml")); err != nil {
+		t.Fatalf("expected record file to be created: %v", err)
 	}
 }
