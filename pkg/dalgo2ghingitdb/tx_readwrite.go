@@ -258,6 +258,8 @@ func encodeRecordContent(data map[string]any, format ingitdb.RecordFormat) ([]by
 			return nil, fmt.Errorf("failed to encode TOML record: %w", err)
 		}
 		return encoded, nil
+	case ingitdb.RecordFormatCSV:
+		return nil, fmt.Errorf("encodeRecordContent does not support csv (single-record write path); csv requires record_type=[]map[string]any and the schema-aware EncodeRecordContentForCollection writer")
 	default:
 		return nil, fmt.Errorf("unsupported record format %q", format)
 	}
