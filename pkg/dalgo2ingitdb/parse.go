@@ -50,7 +50,12 @@ func ParseRecordContentForCollection(content []byte, colDef *ingitdb.CollectionD
 	if colDef == nil || colDef.RecordFile == nil {
 		return nil, fmt.Errorf("collection definition missing record_file")
 	}
-	if colDef.RecordFile.Format != ingitdb.RecordFormatMarkdown {
+	switch colDef.RecordFile.Format {
+	case ingitdb.RecordFormatCSV:
+		return parseCSVForCollection(content, colDef)
+	case ingitdb.RecordFormatMarkdown:
+		// fall through to the markdown logic below
+	default:
 		return ParseRecordContent(content, colDef.RecordFile.Format)
 	}
 	frontmatter, body, err := markdown.Parse(content)
