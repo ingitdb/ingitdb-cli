@@ -164,3 +164,36 @@ func TestInsertBatch_JSONL_CollisionWithExistingRecord(t *testing.T) {
 		t.Errorf("existing ie.yaml MUST NOT be mutated; expected 'Existing', got:\n%s", string(ieBytes))
 	}
 }
+
+func TestInsertBatch_YAML_HappyPath(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+	stdin := strings.NewReader(`$id: ie
+name: Ireland
+---
+$id: fr
+name: France
+`)
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf,
+		stdin, false, nil,
+		"--path="+dir, "--into=test.items", "--format=yaml",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+	ieBytes, readErr := os.ReadFile(filepath.Join(dir, "$records", "ie.yaml"))
+	if readErr != nil {
+		t.Fatalf("ie record not on disk: %v", readErr)
+	}
+	if !strings.Contains(string(ieBytes), "Ireland") {
+		t.Errorf("ie.yaml should contain 'Ireland', got:\n%s", string(ieBytes))
+	}
+	frBytes, readErr := os.ReadFile(filepath.Join(dir, "$records", "fr.yaml"))
+	if readErr != nil {
+		t.Fatalf("fr record not on disk: %v", readErr)
+	}
+	if !strings.Contains(string(frBytes), "France") {
+		t.Errorf("fr.yaml should contain 'France', got:\n%s", string(frBytes))
+	}
+}

@@ -88,3 +88,53 @@ func TestParseBatchJSONL_BlankLinesSkipped(t *testing.T) {
 		t.Errorf("second record should have Position 3 (source line), got %d", got[1].Position)
 	}
 }
+
+func TestParseBatchYAMLStream_HappyPath(t *testing.T) {
+	t.Parallel()
+	in := strings.NewReader(`$id: ie
+name: Ireland
+---
+$id: fr
+name: France
+`)
+	got, err := ParseBatchYAMLStream(in)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("want 2 records, got %d", len(got))
+	}
+	if got[0].Position != 1 || got[0].Key != "ie" {
+		t.Errorf("record[0]=%+v; want Position:1 Key:ie", got[0])
+	}
+	if got[1].Position != 2 || got[1].Key != "fr" {
+		t.Errorf("record[1]=%+v; want Position:2 Key:fr", got[1])
+	}
+}
+
+func TestParseBatchYAMLStream_MissingIDReportsDocIndex(t *testing.T) {
+	t.Parallel()
+	in := strings.NewReader(`$id: ie
+name: Ireland
+---
+name: France
+`)
+	_, err := ParseBatchYAMLStream(in)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "document 2") && !strings.Contains(err.Error(), "doc 2") {
+		t.Errorf("error %q should reference document 2", err.Error())
+	}
+}
+
+func TestParseBatchYAMLStream_EmptyStream(t *testing.T) {
+	t.Parallel()
+	got, err := ParseBatchYAMLStream(strings.NewReader(""))
+	if err != nil {
+		t.Fatalf("empty stream should not error: %v", err)
+	}
+	if len(got) != 0 {
+		t.Errorf("want 0 records, got %d", len(got))
+	}
+}

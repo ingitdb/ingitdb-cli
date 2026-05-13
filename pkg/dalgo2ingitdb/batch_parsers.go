@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 // ParsedRecord is one record extracted from a batch stream.
@@ -65,6 +67,49 @@ func ParseBatchJSONL(r io.Reader) ([]ParsedRecord, error) {
 	err := scanner.Err()
 	if err != nil {
 		return nil, fmt.Errorf("read jsonl stream: %w", err)
+	}
+	return records, nil
+}
+
+// ParseBatchYAMLStream reads a YAML multi-document stream from r and
+// returns one ParsedRecord per non-nil document. Each record MUST have
+// a top-level $id; $id is stripped from the returned Data map.
+// Position is the 1-based document index.
+func ParseBatchYAMLStream(r io.Reader) ([]ParsedRecord, error) {
+	dec := yaml.NewDecoder(r)
+	var records []ParsedRecord
+	docNo := 0
+	for {
+		var data map[string]any
+		err := dec.Decode(&data)
+		if err == io.EOF {
+			break
+		}
+		docNo++
+		if err != nil {
+			return nil, fmt.Errorf("document %d: invalid YAML: %w", docNo, err)
+		}
+		if data == nil {
+			// Skip empty documents (e.g. trailing "---\n").
+			continue
+		}
+		idRaw, ok := data["$id"]
+		if !ok {
+			return nil, fmt.Errorf("document %d: record missing required $id field", docNo)
+		}
+		key, ok := idRaw.(string)
+		if !ok {
+			return nil, fmt.Errorf("document %d: $id must be a string, got %T", docNo, idRaw)
+		}
+		if key == "" {
+			return nil, fmt.Errorf("document %d: $id is empty", docNo)
+		}
+		delete(data, "$id")
+		records = append(records, ParsedRecord{
+			Position: docNo,
+			Key:      key,
+			Data:     data,
+		})
 	}
 	return records, nil
 }
