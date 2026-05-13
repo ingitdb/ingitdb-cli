@@ -1,6 +1,6 @@
 # Idea: Batch Insert from Stdin
 
-**Status:** Draft
+**Status:** Approved
 **Date:** 2026-05-13
 **Owner:** alexander.trakhimenok@gmail.com
 **Promotes To:** —
@@ -26,6 +26,8 @@ Teach `ingitdb insert` to read a multi-record stream from stdin when a new `--fo
 
 Each record MUST carry its own `$id` (record key), since one `--key` flag cannot address many records. For CSV, `$id` MUST appear in the header or in `--fields`. The target collection comes from a single `--into=<collection>`. The whole batch is wrapped in one `RunReadwriteTransaction` — if any record fails (parse error, key collision, schema violation), every prior record in the batch is rolled back and the command exits non-zero with a diagnostic that names the offending record (line number for jsonl/csv, document index for yaml/ingr). `--data`, `--edit`, and `--empty` remain valid only for single-record mode and MUST be rejected when `--format` is set. This keeps the verb (`insert`), the existing flag grammar (`--into`, `$id`), and the strict no-overwrite semantics intact; batch is a stream-parser variant of the same command, not a new subcommand.
 
+**Stream-format / storage-format independence.** The `--format` flag describes only the wire format on stdin. The on-disk representation of each record is governed by the target collection's `format:` setting in `.ingitdb.yaml` (yaml, json, markdown, ingr, csv). Feeding `--format=jsonl` into a collection whose storage `format: markdown` MUST produce one well-formed `<key>.md` file per record (frontmatter from the record's structured fields, body from a designated body field such as `$content`). Same for the other three input formats. Markdown is supported on the storage side, never on the stdin side.
+
 ## Alternatives Considered
 
 - **New `bulk-insert` subcommand** — clean discovery surface, but duplicates every flag (`--into`, key resolution, view materialization) of `insert` and forces users to learn a second verb for the same intent. Rejected: a `--format` flag is a smaller surface change with identical semantics.
@@ -37,11 +39,13 @@ Each record MUST carry its own `$id` (record key), since one `--key` flag cannot
 
 `cat records.jsonl | ingitdb insert --into=blog.posts --format=jsonl` reads N JSON objects from stdin, each carrying `$id` and field values, and inserts all N atomically into the `blog.posts` collection. Any failure (parse, duplicate key, validation) rolls back the entire batch and exits non-zero with a diagnostic that names the offending record. Same behaviour for `--format=yaml`, `--format=ingr`, and `--format=csv` (with `--fields` when no header row or when column ordering needs to be overridden). Local view materialization happens once after the commit.
 
+The MVP MUST also demonstrate cross-format persistence: feeding `--format=jsonl` into a collection whose storage `format: markdown` MUST produce one `<key>.md` per record with frontmatter + body. An integration test against a markdown-stored collection is part of MVP acceptance.
+
 ## Not Doing (and Why)
 
 - Per-record collection routing ($collection pseudo-field) — single `--into` is sufficient for MVP; revisit on demand
 - Continue-on-error / stop-on-first-error modes — atomic is the only mode; selectable error semantics deferred until real users ask
-- Markdown batch format — markdown record framing in a stream is ambiguous (frontmatter `---` collides with YAML doc delimiter); out of scope for MVP (users with markdown collections can pipe `jsonl` and let `insert` write the markdown representation, since the collection's storage format is independent of the stream format)
+- Markdown as a **stdin stream format** — markdown record framing in a stream is ambiguous (frontmatter `---` collides with YAML doc delimiter). Markdown-stored collections are fully supported on the persistence side via `--format=jsonl|yaml|ingr|csv`; the stream format is independent of the collection's on-disk format.
 - File-based bulk import (--from-files=*.md) — stdin is the contract; file iteration is a shell-script concern
 - Upsert / replace-on-conflict — insert is strict per the existing feature spec; bulk upsert is a separate verb
 - Progress reporting / streaming feedback — atomic batches commit once; per-record progress is meaningless under all-or-nothing semantics
@@ -52,6 +56,7 @@ Each record MUST carry its own `$id` (record key), since one `--key` flag cannot
 |------|------------|-----------------|
 | Must-be-true | A single `RunReadwriteTransaction` can hold N pending inserts and roll back cleanly on any per-record failure (parse, key collision, validation) | unit test that injects a mid-batch failure and asserts zero records landed on disk |
 | Must-be-true | Stream parsers for `jsonl`/`yaml`/`ingr`/`csv` can surface a per-record location (line number for jsonl/csv, doc index for yaml/ingr) in error messages | parser unit tests on malformed inputs |
+| Must-be-true | A stream in any supported `--format` lands correctly in a markdown-stored collection: each record becomes a `<key>.md` file with frontmatter (structured fields) + body (designated body field, e.g. `$content`) | integration test: define a `format: markdown` collection, pipe a 3-record jsonl batch in, assert three `<key>.md` files exist with correct frontmatter and body content, and that the transaction is atomic (force a mid-batch failure and assert zero files written) |
 | Should-be-true | Typical batch sizes (≤10k records) fit comfortably in memory; we can buffer parsed records before commit without a streaming-commit story | benchmark with 10k synthetic records on a representative repo |
 | Should-be-true | CSV with a header row is the dominant case; `--fields` is a needed-but-secondary escape hatch (no-header CSV, column reorder, `$id` not first column) | survey the migration scripts we expect to onboard |
 | Might-be-true | Users will want batch on `update` and `delete` next (same `--format` story applied to other verbs) | defer; revisit after `insert` ships |
