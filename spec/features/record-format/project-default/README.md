@@ -1,6 +1,6 @@
 # Feature: Project-Level Default Record Format
 
-**Status:** Approved
+**Status:** Implemented
 **Source Idea:** [`default-record-format`](../../../ideas/default-record-format.md)
 **Parent Feature:** [`record-format`](../README.md)
 

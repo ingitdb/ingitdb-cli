@@ -1,6 +1,6 @@
 # Feature: Record Format Extensions
 
-**Status:** Approved
+**Status:** Implemented
 **Source Idea:** [`default-record-format`](../../ideas/default-record-format.md)
 
 ## Summary
