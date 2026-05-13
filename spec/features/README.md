@@ -6,6 +6,7 @@ This directory tracks the SpecScore feature specifications for the **ingitdb-cli
 
 | Feature | Status | Description |
 |---|---|---|
+| [record-format](record-format/README.md) | Approved | Umbrella for record-format extensions: CSV support, project-level `default_record_format` config, `--default-format` CLI flag on `ingitdb setup`. Additive on top of the existing six-format machinery (yaml/yml/json/markdown/toml/ingr). |
 | [cli/version](cli/version/README.md) | Implementing | `ingitdb version` — print build version, commit hash, and date. |
 | [cli/validate](cli/validate/README.md) | Implementing | `ingitdb validate` — check schema and records against `.ingitdb.yaml`. |
 | [cli/read-record](cli/read-record/README.md) | Implementing | `ingitdb read record` — read a single record by ID. |
