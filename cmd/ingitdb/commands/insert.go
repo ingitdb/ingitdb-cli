@@ -54,6 +54,18 @@ func Insert(
 				}
 			}
 
+			// Batch mode validation: --format must be one of the four supported
+			// stream formats. Empty means single-record mode.
+			format, _ := cmd.Flags().GetString("format")
+			if cmd.Flags().Changed("format") {
+				switch format {
+				case "jsonl", "yaml", "ingr", "csv":
+					// valid; batch mode active
+				default:
+					return fmt.Errorf("invalid --format=%q; supported batch formats are: jsonl, yaml, ingr, csv (markdown is supported as a storage format only, not as a stream format)", format)
+				}
+			}
+
 			into, _ := cmd.Flags().GetString("into")
 			if into == "" {
 				return fmt.Errorf("--into is required")

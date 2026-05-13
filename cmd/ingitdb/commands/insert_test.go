@@ -465,3 +465,38 @@ func TestInsert_EndToEnd_RealisticInvocation(t *testing.T) {
 		t.Errorf("expected active flag in stored record:\n%s", string(stored))
 	}
 }
+
+func TestInsert_RejectsInvalidFormatValue(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name   string
+		format string
+	}{
+		{"xml", "xml"},
+		{"markdown", "markdown"},
+		{"empty-but-set", ""},
+		{"yaml-stream typo", "yaml-stream"},
+	}
+	for _, tt := range cases {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			dir := t.TempDir()
+			homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+			_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf, nil, true, nil,
+				"--path="+dir,
+				"--into=test.items",
+				"--format="+tt.format,
+			)
+			if err == nil {
+				t.Fatalf("expected error for --format=%q, got nil", tt.format)
+			}
+			msg := err.Error()
+			for _, want := range []string{"jsonl", "yaml", "ingr", "csv"} {
+				if !strings.Contains(msg, want) {
+					t.Errorf("error message %q should list %q as a valid format", msg, want)
+				}
+			}
+		})
+	}
+}
