@@ -38,8 +38,15 @@ type Settings struct {
 	// opened directly (not imported via a namespace import). For example,
 	// if DefaultNamespace is "todo" and the DB has collection "tasks",
 	// it becomes "todo.tasks" when opened directly.
-	DefaultNamespace string     `yaml:"default_namespace,omitempty"`
-	Languages        []Language `yaml:"languages,omitempty"`
+	DefaultNamespace string `yaml:"default_namespace,omitempty"`
+
+	// DefaultRecordFormat is the project-level fallback record format used
+	// when a collection's record_file.format is empty. See ResolveRecordFormat
+	// for the full fallback chain (collection -> project -> hard yaml default).
+	// Empty value means "no project default; use the hard fallback."
+	DefaultRecordFormat ingitdb.RecordFormat `yaml:"default_record_format,omitempty"`
+
+	Languages []Language `yaml:"languages,omitempty"`
 }
 
 // RootConfig holds the full configuration for an inGitDB database.
