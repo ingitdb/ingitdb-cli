@@ -49,6 +49,44 @@ type Settings struct {
 	Languages []Language `yaml:"languages,omitempty"`
 }
 
+// supportedRecordFormats is the closed set of record formats accepted by
+// Settings.Validate. Keep in sync with the RecordFormat* constants in
+// pkg/ingitdb/constants.go.
+var supportedRecordFormats = []ingitdb.RecordFormat{
+	ingitdb.RecordFormatYAML,
+	ingitdb.RecordFormatYML,
+	ingitdb.RecordFormatJSON,
+	ingitdb.RecordFormatMarkdown,
+	ingitdb.RecordFormatTOML,
+	ingitdb.RecordFormatINGR,
+	ingitdb.RecordFormatCSV,
+}
+
+// Validate checks that Settings field values are well-formed. An empty
+// DefaultRecordFormat is permitted (it means "no project default; use the
+// hard fallback"); any non-empty value MUST match one of the seven
+// supported record formats. Other Settings fields are validated by
+// RootConfig.Validate today and not duplicated here.
+func (s *Settings) Validate() error {
+	if s == nil {
+		return nil
+	}
+	if s.DefaultRecordFormat == "" {
+		return nil
+	}
+	for _, f := range supportedRecordFormats {
+		if s.DefaultRecordFormat == f {
+			return nil
+		}
+	}
+	names := make([]string, len(supportedRecordFormats))
+	for i, f := range supportedRecordFormats {
+		names[i] = string(f)
+	}
+	return fmt.Errorf("unsupported default_record_format %q; valid options are: %s",
+		s.DefaultRecordFormat, strings.Join(names, ", "))
+}
+
 // RootConfig holds the full configuration for an inGitDB database.
 // Settings is loaded from .ingitdb/settings.yaml.
 // RootCollections is loaded from .ingitdb/root-collections.yaml (flat YAML map).
@@ -73,6 +111,9 @@ func namespaceImportPrefix(key string) string {
 func (rc *RootConfig) Validate() error {
 	if rc == nil {
 		return nil
+	}
+	if err := rc.Settings.Validate(); err != nil {
+		return err
 	}
 	if rc.DefaultNamespace != "" {
 		if err := ingitdb.ValidateCollectionID(rc.DefaultNamespace); err != nil {
