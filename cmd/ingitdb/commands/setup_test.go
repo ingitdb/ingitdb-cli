@@ -1,30 +1,28 @@
 package commands
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
-func TestSetup_ReturnsCommand(t *testing.T) {
+func TestSetup_WritesEmptySettingsYAML(t *testing.T) {
 	t.Parallel()
-
-	cmd := Setup()
-	if cmd == nil {
-		t.Fatal("Setup() returned nil")
+	dir := t.TempDir()
+	if err := runSetup(dir, ""); err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	if cmd.Use != "setup" {
-		t.Errorf("expected name 'setup', got %q", cmd.Name())
+	got, err := os.ReadFile(filepath.Join(dir, ".ingitdb", "settings.yaml"))
+	if err != nil {
+		t.Fatalf("expected settings.yaml to exist: %v", err)
 	}
-	if cmd.RunE == nil {
-		t.Fatal("expected Action to be set")
-	}
-}
-
-func TestSetup_NotYetImplemented(t *testing.T) {
-	t.Parallel()
-
-	cmd := Setup()
-	err := runCobraCommand(cmd)
-	if err == nil {
-		t.Fatal("expected error for not-yet-implemented command")
+	// AC-2 allows either omission of the field or empty string. Our impl
+	// emits an empty file when no flags are set.
+	if strings.Contains(string(got), "default_record_format:") &&
+		!strings.Contains(string(got), "default_record_format: \"\"") &&
+		!strings.Contains(string(got), "default_record_format: ''") {
+		// Field present and non-empty — only allowed if flag was passed.
+		t.Errorf("expected default_record_format to be absent or empty; got: %q", string(got))
 	}
 }
