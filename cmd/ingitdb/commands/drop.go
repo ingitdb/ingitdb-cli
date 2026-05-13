@@ -77,14 +77,10 @@ func dropCollection(
 				return fmt.Errorf("collection %q not found", name)
 			}
 
-			// Remove data directory (which transitively removes any
-			// nested $views/ subtree).
 			absCol := filepath.Join(dirPath, rel)
 			if rmErr := os.RemoveAll(absCol); rmErr != nil {
 				return fmt.Errorf("remove collection directory %s: %w", rel, rmErr)
 			}
-
-			// Remove entry from root-collections.yaml.
 			if writeErr := writeRootCollectionsWithout(dirPath, name); writeErr != nil {
 				return fmt.Errorf("update root-collections.yaml after removing %s: %w", name, writeErr)
 			}
@@ -94,7 +90,9 @@ func dropCollection(
 	return cmd
 }
 
-// dropView returns the `drop view <name>` subcommand.
+// dropView returns the `drop view <name>` subcommand. Supports
+// --in=<collection> to disambiguate when two collections shadow the
+// same view name.
 func dropView(
 	homeDir func() (string, error),
 	getWd func() (string, error),
@@ -110,6 +108,7 @@ func dropView(
 			_, _, _ = readDefinition, newDB, logf
 			ifExists, _ := cmd.Flags().GetBool("if-exists")
 			_, _ = cmd.Flags().GetBool("cascade") // accepted, no-op
+			scopeCol, _ := cmd.Flags().GetString("in")
 			name := args[0]
 
 			dirPath, err := resolveDBPath(cmd, homeDir, getWd)
@@ -117,46 +116,81 @@ func dropView(
 				return err
 			}
 
-			// Scan every collection's $views directory for a matching
-			// view file.
 			entries, err := readRootCollections(dirPath)
 			if err != nil {
 				return err
 			}
-			for _, rel := range entries {
+			if scopeCol != "" {
+				rel, ok := entries[scopeCol]
+				if !ok {
+					return fmt.Errorf("collection %q (from --in) not found", scopeCol)
+				}
+				entries = map[string]string{scopeCol: rel}
+			}
+
+			type viewMatch struct {
+				collection string
+				viewPath   string
+				colDir     string
+			}
+			var matches []viewMatch
+			for colID, rel := range entries {
 				viewPath := filepath.Join(dirPath, rel, "$views", name+".yaml")
-				if _, statErr := os.Stat(viewPath); statErr != nil {
-					continue
+				if _, statErr := os.Stat(viewPath); statErr == nil {
+					matches = append(matches, viewMatch{
+						collection: colID,
+						viewPath:   viewPath,
+						colDir:     filepath.Join(dirPath, rel),
+					})
 				}
-				// Found the view. Read its file_name (if any) to
-				// also remove the materialized output.
-				rawView, readErr := os.ReadFile(viewPath)
-				if readErr != nil {
-					return fmt.Errorf("read view file %s: %w", viewPath, readErr)
-				}
-				var meta struct {
-					FileName string `yaml:"file_name"`
-				}
-				_ = yaml.Unmarshal(rawView, &meta)
-
-				if rmErr := os.Remove(viewPath); rmErr != nil {
-					return fmt.Errorf("remove view file %s: %w", viewPath, rmErr)
-				}
-				if meta.FileName != "" {
-					outputPath := filepath.Join(dirPath, rel, meta.FileName)
-					if rmErr := os.Remove(outputPath); rmErr != nil && !os.IsNotExist(rmErr) {
-						return fmt.Errorf("remove materialized output %s: %w", outputPath, rmErr)
-					}
-				}
-				return nil
 			}
 
-			// View not found in any collection.
-			if ifExists {
-				return nil
+			switch len(matches) {
+			case 0:
+				if ifExists {
+					return nil
+				}
+				if scopeCol != "" {
+					return fmt.Errorf("view %q not found in collection %q", name, scopeCol)
+				}
+				return fmt.Errorf("view %q not found in any collection", name)
+			case 1:
+				return removeViewFiles(matches[0].viewPath, matches[0].colDir)
+			default:
+				cols := make([]string, 0, len(matches))
+				for _, m := range matches {
+					cols = append(cols, m.collection)
+				}
+				return fmt.Errorf("view %q is ambiguous — exists in multiple collections: %v; use --in=<collection> to disambiguate", name, cols)
 			}
-			return fmt.Errorf("view %q not found in any collection", name)
 		},
 	}
+	cmd.Flags().String("in", "", "limit the search to a specific collection (disambiguates duplicate view names)")
 	return cmd
+}
+
+// removeViewFiles removes the view-definition file and, if the view
+// declares a materialized output via `file_name`, removes that output
+// too. Missing output files are tolerated; the goal is to leave no
+// trace of the view after the call.
+func removeViewFiles(viewPath, colDir string) error {
+	rawView, readErr := os.ReadFile(viewPath)
+	if readErr != nil {
+		return fmt.Errorf("read view file %s: %w", viewPath, readErr)
+	}
+	var meta struct {
+		FileName string `yaml:"file_name"`
+	}
+	_ = yaml.Unmarshal(rawView, &meta)
+
+	if rmErr := os.Remove(viewPath); rmErr != nil {
+		return fmt.Errorf("remove view file %s: %w", viewPath, rmErr)
+	}
+	if meta.FileName != "" {
+		outputPath := filepath.Join(colDir, meta.FileName)
+		if rmErr := os.Remove(outputPath); rmErr != nil && !os.IsNotExist(rmErr) {
+			return fmt.Errorf("remove materialized output %s: %w", outputPath, rmErr)
+		}
+	}
+	return nil
 }

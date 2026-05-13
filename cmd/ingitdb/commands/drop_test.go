@@ -298,6 +298,77 @@ func TestDrop_View_NotFoundError(t *testing.T) {
 	}
 }
 
+func TestDrop_View_AmbiguousAcrossCollections(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := dropTestDeps(t, dir)
+	colA := seedCollection(t, dir, "alpha")
+	colB := seedCollection(t, dir, "bravo")
+	viewA := seedView(t, colA, "shared", "", "")
+	viewB := seedView(t, colB, "shared", "", "")
+
+	_, err := runDropCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "view", "shared",
+	)
+	if err == nil {
+		t.Fatal("expected ambiguity error when view exists in multiple collections")
+	}
+	if !strings.Contains(err.Error(), "ambiguous") {
+		t.Errorf("error should mention 'ambiguous', got: %v", err)
+	}
+	if !strings.Contains(err.Error(), "alpha") || !strings.Contains(err.Error(), "bravo") {
+		t.Errorf("error should name both parent collections, got: %v", err)
+	}
+	// Neither view should have been dropped — atomicity on ambiguous match.
+	if _, statErr := os.Stat(viewA); statErr != nil {
+		t.Errorf("alpha view should be preserved on ambiguous match")
+	}
+	if _, statErr := os.Stat(viewB); statErr != nil {
+		t.Errorf("bravo view should be preserved on ambiguous match")
+	}
+}
+
+func TestDrop_View_InFlagDisambiguates(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := dropTestDeps(t, dir)
+	colA := seedCollection(t, dir, "alpha")
+	colB := seedCollection(t, dir, "bravo")
+	viewA := seedView(t, colA, "shared", "", "")
+	viewB := seedView(t, colB, "shared", "", "")
+
+	// --in=alpha drops only alpha's "shared" view.
+	_, err := runDropCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "view", "shared", "--in=alpha",
+	)
+	if err != nil {
+		t.Fatalf("expected success with --in=alpha, got: %v", err)
+	}
+	if _, statErr := os.Stat(viewA); !os.IsNotExist(statErr) {
+		t.Errorf("alpha view should be dropped, stat: %v", statErr)
+	}
+	if _, statErr := os.Stat(viewB); statErr != nil {
+		t.Errorf("bravo view should be preserved, stat: %v", statErr)
+	}
+}
+
+func TestDrop_View_InFlag_UnknownCollection(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := dropTestDeps(t, dir)
+	seedCollection(t, dir, "alpha")
+
+	_, err := runDropCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "view", "anything", "--in=ghost",
+	)
+	if err == nil {
+		t.Fatal("expected error when --in collection does not exist")
+	}
+	if !strings.Contains(err.Error(), "ghost") {
+		t.Errorf("error should name the unknown collection, got: %v", err)
+	}
+}
+
 func TestDrop_Collection_IfExists_AbsentSucceeds(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
