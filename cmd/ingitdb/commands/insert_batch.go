@@ -89,12 +89,7 @@ func runBatchInsert(
 	// write-target that is read-only). That fixture infrastructure is
 	// out of MVP scope; revisit when batch update/delete arrive and the
 	// view path needs end-to-end coverage anyway.
-	rctx := recordContext{
-		db:      ictx.db,
-		colDef:  ictx.colDef,
-		dirPath: ictx.dirPath,
-		def:     ictx.def,
-	}
+	rctx := ictx.toRecordContext()
 	viewErr := buildLocalViews(ctx, rctx)
 	if viewErr != nil {
 		return fmt.Errorf("records inserted but view materialization failed: %w", viewErr)

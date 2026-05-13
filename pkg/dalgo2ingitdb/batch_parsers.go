@@ -12,6 +12,36 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// maxRecordKeyLen is the upper bound on a record key, matched against
+// the underlying filesystem name length cap on every mainstream FS.
+const maxRecordKeyLen = 255
+
+// validateRecordKey enforces the spec's req:key-flag character rules
+// against a key extracted from a batch stream: non-empty, no path
+// separators, no parent traversal, no leading/trailing whitespace,
+// and not longer than maxRecordKeyLen bytes.
+//
+// Callers SHOULD wrap the returned error with position info (line N,
+// document N, record N) so the user can locate the offending record.
+func validateRecordKey(key string) error {
+	if key == "" {
+		return fmt.Errorf("record key is empty")
+	}
+	if len(key) > maxRecordKeyLen {
+		return fmt.Errorf("record key length %d exceeds maximum of %d", len(key), maxRecordKeyLen)
+	}
+	if strings.TrimSpace(key) != key {
+		return fmt.Errorf("record key %q has leading or trailing whitespace", key)
+	}
+	if strings.ContainsAny(key, "/\\") {
+		return fmt.Errorf("record key %q contains a path separator", key)
+	}
+	if strings.Contains(key, "..") {
+		return fmt.Errorf("record key %q contains parent-traversal sequence \"..\"", key)
+	}
+	return nil
+}
+
 // ParsedRecord is one record extracted from a batch stream.
 type ParsedRecord struct {
 	// Position is 1-based: line number for jsonl/csv, document index
@@ -58,6 +88,9 @@ func ParseBatchJSONL(r io.Reader) ([]ParsedRecord, error) {
 		}
 		if key == "" {
 			return nil, fmt.Errorf("line %d: $id is empty", lineNo)
+		}
+		if vErr := validateRecordKey(key); vErr != nil {
+			return nil, fmt.Errorf("line %d: %w", lineNo, vErr)
 		}
 		delete(data, "$id")
 		records = append(records, ParsedRecord{
@@ -106,6 +139,9 @@ func ParseBatchYAMLStream(r io.Reader) ([]ParsedRecord, error) {
 		if key == "" {
 			return nil, fmt.Errorf("document %d: $id is empty", docNo)
 		}
+		if vErr := validateRecordKey(key); vErr != nil {
+			return nil, fmt.Errorf("document %d: %w", docNo, vErr)
+		}
 		delete(data, "$id")
 		records = append(records, ParsedRecord{
 			Position: docNo,
@@ -145,6 +181,9 @@ func ParseBatchINGR(r io.Reader) ([]ParsedRecord, error) {
 		}
 		if key == "" {
 			return nil, fmt.Errorf("record %d: $ID is empty", pos)
+		}
+		if vErr := validateRecordKey(key); vErr != nil {
+			return nil, fmt.Errorf("record %d: %w", pos, vErr)
 		}
 		delete(row, "$ID")
 		records = append(records, ParsedRecord{
@@ -229,6 +268,9 @@ func ParseBatchCSV(r io.Reader, opts CSVParseOptions) ([]ParsedRecord, error) {
 		keyVal := fields[keyColIdx]
 		if keyVal == "" {
 			return nil, fmt.Errorf("line %d: key column %q is empty", lineNo, keyCol)
+		}
+		if vErr := validateRecordKey(keyVal); vErr != nil {
+			return nil, fmt.Errorf("line %d: %w", lineNo, vErr)
 		}
 		data := make(map[string]any, len(header)-1)
 		for i, col := range header {

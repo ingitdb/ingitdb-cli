@@ -21,6 +21,18 @@ type insertContext struct {
 	def     *ingitdb.Definition
 }
 
+// toRecordContext converts an insertContext into a recordContext
+// suitable for buildLocalViews. The recordKey field is left empty —
+// callers that need it should set it explicitly.
+func (ictx insertContext) toRecordContext() recordContext {
+	return recordContext{
+		db:      ictx.db,
+		colDef:  ictx.colDef,
+		dirPath: ictx.dirPath,
+		def:     ictx.def,
+	}
+}
+
 // resolveInsertContext loads the database definition (local or
 // GitHub), validates that the target collection exists, opens a DB,
 // and returns the assembled insertContext.

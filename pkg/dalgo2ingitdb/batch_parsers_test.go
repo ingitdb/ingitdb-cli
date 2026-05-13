@@ -317,6 +317,53 @@ func TestParseBatchCSV_EmptyStream(t *testing.T) {
 	}
 }
 
+func TestValidateRecordKey(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name    string
+		key     string
+		wantErr bool
+	}{
+		{name: "simple", key: "ie", wantErr: false},
+		{name: "hyphen-and-digits", key: "country-001", wantErr: false},
+		{name: "underscore-and-dot", key: "a_b.c", wantErr: false},
+		{name: "empty", key: "", wantErr: true},
+		{name: "forward-slash", key: "foo/bar", wantErr: true},
+		{name: "backslash", key: "foo\\bar", wantErr: true},
+		{name: "parent-traversal", key: "../etc", wantErr: true},
+		{name: "embedded-dotdot", key: "a..b", wantErr: true},
+		{name: "leading-space", key: " ie", wantErr: true},
+		{name: "trailing-space", key: "ie ", wantErr: true},
+		{name: "too-long", key: strings.Repeat("a", 256), wantErr: true},
+		{name: "max-length-ok", key: strings.Repeat("a", 255), wantErr: false},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			err := validateRecordKey(tc.key)
+			if tc.wantErr && err == nil {
+				t.Errorf("validateRecordKey(%q) = nil; want error", tc.key)
+			}
+			if !tc.wantErr && err != nil {
+				t.Errorf("validateRecordKey(%q) = %v; want nil", tc.key, err)
+			}
+		})
+	}
+}
+
+func TestParseBatchJSONL_RejectsMaliciousKey(t *testing.T) {
+	t.Parallel()
+	in := strings.NewReader(`{"$id":"../../etc/passwd","name":"bad"}`)
+	_, err := ParseBatchJSONL(in)
+	if err == nil {
+		t.Fatal("expected error for traversal key")
+	}
+	if !strings.Contains(err.Error(), "line 1") {
+		t.Errorf("error should reference line 1: %v", err)
+	}
+}
+
 // recordSpec is a tiny test helper struct.
 type recordSpec struct {
 	id     string

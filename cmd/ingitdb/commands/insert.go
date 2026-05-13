@@ -151,12 +151,7 @@ func Insert(
 				return err
 			}
 			// Materialize local views if applicable.
-			return buildLocalViews(ctx, recordContext{
-				db:      ictx.db,
-				colDef:  ictx.colDef,
-				dirPath: ictx.dirPath,
-				def:     ictx.def,
-			})
+			return buildLocalViews(ctx, ictx.toRecordContext())
 		},
 	}
 	addPathFlag(cmd)
