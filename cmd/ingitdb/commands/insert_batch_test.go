@@ -92,3 +92,32 @@ func TestInsertBatch_JSONL_MissingKeyRollsBackBatch(t *testing.T) {
 		}
 	}
 }
+
+func TestInsertBatch_JSONL_IntraBatchDuplicateKey(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+	stdin := strings.NewReader(`{"$id":"ie","name":"Ireland"}
+{"$id":"ie","name":"Eire"}
+`)
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf,
+		stdin, false, nil,
+		"--path="+dir, "--into=test.items", "--format=jsonl",
+	)
+	if err == nil {
+		t.Fatal("expected error for duplicate key in batch")
+	}
+	if !strings.Contains(err.Error(), "ie") {
+		t.Errorf("error %q should name the conflicting key 'ie'", err.Error())
+	}
+	if !strings.Contains(err.Error(), "1") || !strings.Contains(err.Error(), "2") {
+		t.Errorf("error %q should name both positions (1 and 2)", err.Error())
+	}
+	path := filepath.Join(dir, "$records", "ie.yaml")
+	_, statErr := os.Stat(path)
+	if statErr == nil {
+		t.Error("ie.yaml MUST NOT exist after a duplicate-key batch")
+	} else if !os.IsNotExist(statErr) {
+		t.Errorf("unexpected stat error: %v", statErr)
+	}
+}
