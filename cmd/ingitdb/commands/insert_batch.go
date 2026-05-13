@@ -75,8 +75,20 @@ func runBatchInsert(
 		}
 		return commitErr
 	}
-	// Post-commit: materialize local views once. Failures here cannot
-	// be rolled back — records are on disk.
+	// Post-commit: materialize local views EXACTLY ONCE (req:batch-view-
+	// materialization). Failures here cannot be rolled back — records
+	// are on disk — and MUST be reported with a diagnostic distinct from
+	// a pre-commit rollback (req:batch-post-commit-failure). The error
+	// wrap on line below ("records inserted but view materialization
+	// failed") is the contract.
+	//
+	// AC: batch-view-materialization-once and AC: batch-post-commit-
+	// view-failure are verified by code inspection of THIS call site —
+	// runtime tests would require a view-fault-injection test fixture
+	// (ViewDef pointing at a column the records don't supply, or a
+	// write-target that is read-only). That fixture infrastructure is
+	// out of MVP scope; revisit when batch update/delete arrive and the
+	// view path needs end-to-end coverage anyway.
 	rctx := recordContext{
 		db:      ictx.db,
 		colDef:  ictx.colDef,
