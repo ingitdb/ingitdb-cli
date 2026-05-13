@@ -7,6 +7,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/ingr-io/ingr-go/ingr"
 	"gopkg.in/yaml.v3"
 )
 
@@ -109,6 +110,46 @@ func ParseBatchYAMLStream(r io.Reader) ([]ParsedRecord, error) {
 			Position: docNo,
 			Key:      key,
 			Data:     data,
+		})
+	}
+	return records, nil
+}
+
+// ParseBatchINGR reads an INGR multi-record stream from r and returns
+// one ParsedRecord per record. The key is read from the reserved $ID
+// column (INGR's key field; note the uppercase). $ID is stripped from
+// the returned Data map. Position is the 1-based record index.
+func ParseBatchINGR(r io.Reader) ([]ParsedRecord, error) {
+	content, err := io.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("read ingr stream: %w", err)
+	}
+	if len(content) == 0 {
+		return nil, nil
+	}
+	var rows []map[string]any
+	if err := ingr.Unmarshal(content, &rows); err != nil {
+		return nil, fmt.Errorf("parse ingr stream: %w", err)
+	}
+	records := make([]ParsedRecord, 0, len(rows))
+	for i, row := range rows {
+		pos := i + 1
+		idRaw, ok := row["$ID"]
+		if !ok {
+			return nil, fmt.Errorf("record %d: missing required $ID column", pos)
+		}
+		key, ok := idRaw.(string)
+		if !ok {
+			return nil, fmt.Errorf("record %d: $ID must be a string, got %T", pos, idRaw)
+		}
+		if key == "" {
+			return nil, fmt.Errorf("record %d: $ID is empty", pos)
+		}
+		delete(row, "$ID")
+		records = append(records, ParsedRecord{
+			Position: pos,
+			Key:      key,
+			Data:     row,
 		})
 	}
 	return records, nil

@@ -1,10 +1,13 @@
 package commands
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/ingr-io/ingr-go/ingr"
 )
 
 func TestInsertBatch_JSONL_EmptyStreamSucceeds(t *testing.T) {
@@ -178,6 +181,43 @@ name: France
 	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf,
 		stdin, false, nil,
 		"--path="+dir, "--into=test.items", "--format=yaml",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+	ieBytes, readErr := os.ReadFile(filepath.Join(dir, "$records", "ie.yaml"))
+	if readErr != nil {
+		t.Fatalf("ie record not on disk: %v", readErr)
+	}
+	if !strings.Contains(string(ieBytes), "Ireland") {
+		t.Errorf("ie.yaml should contain 'Ireland', got:\n%s", string(ieBytes))
+	}
+	frBytes, readErr := os.ReadFile(filepath.Join(dir, "$records", "fr.yaml"))
+	if readErr != nil {
+		t.Fatalf("fr record not on disk: %v", readErr)
+	}
+	if !strings.Contains(string(frBytes), "France") {
+		t.Errorf("fr.yaml should contain 'France', got:\n%s", string(frBytes))
+	}
+}
+
+func TestInsertBatch_INGR_HappyPath(t *testing.T) {
+	t.Parallel()
+	// Build INGR payload — same pattern as parse.go::encodeINGRFromMap.
+	var buf bytes.Buffer
+	w := ingr.NewRecordsWriter(&buf)
+	_, _ = w.WriteHeader("countries", []ingr.ColDef{{Name: "$ID"}, {Name: "name"}})
+	_, _ = w.WriteRecords(0,
+		ingr.NewMapRecordEntry("ie", map[string]any{"$ID": "ie", "name": "Ireland"}),
+		ingr.NewMapRecordEntry("fr", map[string]any{"$ID": "fr", "name": "France"}),
+	)
+	_ = w.Close()
+
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf,
+		bytes.NewReader(buf.Bytes()), false, nil,
+		"--path="+dir, "--into=test.items", "--format=ingr",
 	)
 	if err != nil {
 		t.Fatalf("expected success, got: %v", err)
