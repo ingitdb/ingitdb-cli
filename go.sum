@@ -61,8 +61,6 @@ github.com/google/go-querystring v1.2.0 h1:yhqkPbu2/OH+V9BfpCVPZkNmUXhb2gBxJArfh
 github.com/google/go-querystring v1.2.0/go.mod h1:8IFJqpSRITyJ8QhQ13bmbeMBDfmeEJZD5A0egEOmkqU=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
-github.com/ingr-io/ingr-go v0.0.1 h1:xV+R8OI3tDajgYdOHhniNQ3FzeBdt25zEAalBwX/Xx8=
-github.com/ingr-io/ingr-go v0.0.1/go.mod h1:nEGETUdP7aqrxk1dG8gJ8Yjp1wjpufPuCQeZtmznrac=
 github.com/ingr-io/ingr-go v0.0.2 h1:2AfFllqzCe2dCNtxIUo306oYzaZr//YzrVOHd0C73nI=
 github.com/ingr-io/ingr-go v0.0.2/go.mod h1:gb/dGW0qXziCq9iAIgk0yITyWY013w2bhdYiXO0RLuY=
 github.com/invopop/jsonschema v0.14.0 h1:MHQqLhvpNUZfw+hM3AZDYK7jxO8FZoQeQM77g8iyZjg=

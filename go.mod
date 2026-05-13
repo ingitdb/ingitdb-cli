@@ -8,11 +8,11 @@ require (
 	charm.land/lipgloss/v2 v2.0.3
 	github.com/charmbracelet/x/term v0.2.2
 	github.com/google/go-github/v86 v86.0.0
+	github.com/ingr-io/ingr-go v0.0.2
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/pelletier/go-toml/v2 v2.3.1
 	github.com/rivo/uniseg v0.4.7
 	github.com/spf13/cobra v1.10.2
-	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/mock v0.6.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -30,7 +30,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/ingr-io/ingr-go v0.0.2 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/lucasb-eyer/go-colorful v1.4.0 // indirect
 	github.com/mattn/go-runewidth v0.0.23 // indirect
@@ -42,6 +41,7 @@ require (
 	github.com/pb33f/ordered-map/v2 v2.3.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
+	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	go.yaml.in/yaml/v4 v4.0.0-rc.4 // indirect
 	golang.org/x/net v0.51.0 // indirect
