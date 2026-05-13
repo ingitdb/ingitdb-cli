@@ -465,32 +465,3 @@ func TestInsert_EndToEnd_RealisticInvocation(t *testing.T) {
 		t.Errorf("expected active flag in stored record:\n%s", string(stored))
 	}
 }
-
-func TestInsert_LegacyCreateRecordStillWorks(t *testing.T) {
-	t.Parallel()
-	dir := t.TempDir()
-	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
-
-	createCmd := Create(homeDir, getWd, readDef, newDB, logf, strings.NewReader(""), func() bool { return true }, nil)
-	var buf bytes.Buffer
-	createCmd.SetOut(&buf)
-	createCmd.SetErr(&buf)
-	createCmd.SetArgs([]string{
-		"record",
-		"--path=" + dir,
-		"--id=test.items/legacy",
-		"--data={title: LegacyPath}",
-	})
-	if err := createCmd.Execute(); err != nil {
-		t.Errorf("legacy `create record` regressed: %v", err)
-	}
-
-	colDef := testDef(dir).Collections["test.items"]
-	stored, readErr := os.ReadFile(filepath.Join(dir, colDef.RecordFile.RecordsBasePath(), "legacy.yaml"))
-	if readErr != nil {
-		t.Fatalf("read legacy record: %v", readErr)
-	}
-	if !strings.Contains(string(stored), "LegacyPath") {
-		t.Errorf("legacy record content missing:\n%s", string(stored))
-	}
-}

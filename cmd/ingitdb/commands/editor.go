@@ -2,107 +2,15 @@ package commands
 
 import (
 	"bytes"
-	"context"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"sort"
 	"strings"
 
-	"github.com/dal-go/dalgo/dal"
-	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
-
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
-
-func createRecord(
-	homeDir func() (string, error),
-	getWd func() (string, error),
-	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
-	newDB func(string, *ingitdb.Definition) (dal.DB, error),
-	logf func(...any),
-	stdin io.Reader,
-	isStdinTTY func() bool,
-	openEditor func(tmpPath string) error,
-) *cobra.Command {
-	if stdin == nil {
-		stdin = os.Stdin
-	}
-	if isStdinTTY == nil {
-		isStdinTTY = func() bool { return isFdTTY(os.Stdin) }
-	}
-	if openEditor == nil {
-		openEditor = defaultOpenEditor
-	}
-
-	cmd := &cobra.Command{
-		Use:   "record",
-		Short: "Create a new record in a collection",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			ctx := cmd.Context()
-			id, _ := cmd.Flags().GetString("id")
-			dataStr, _ := cmd.Flags().GetString("data")
-			editFlag, _ := cmd.Flags().GetBool("edit")
-
-			rctx, err := resolveRecordContext(ctx, cmd, id, homeDir, getWd, readDefinition, newDB)
-			if err != nil {
-				return err
-			}
-			if rctx.dirPath != "" {
-				logf("inGitDB db path: ", rctx.dirPath)
-			}
-
-			var data map[string]any
-			switch {
-			case dataStr != "":
-				if unmarshalErr := yaml.Unmarshal([]byte(dataStr), &data); unmarshalErr != nil {
-					return fmt.Errorf("failed to parse --data: %w", unmarshalErr)
-				}
-			case editFlag:
-				var noChanges bool
-				data, noChanges, err = runWithEditor(rctx.colDef, openEditor)
-				if err != nil {
-					return err
-				}
-				if noChanges {
-					logf("no changes — record not created")
-					return nil
-				}
-			case !isStdinTTY():
-				content, readErr := io.ReadAll(stdin)
-				if readErr != nil {
-					return fmt.Errorf("failed to read stdin: %w", readErr)
-				}
-				data, err = dalgo2ingitdb.ParseRecordContentForCollection(content, rctx.colDef)
-				if err != nil {
-					return err
-				}
-			default:
-				return fmt.Errorf("no record content provided — use --data, --edit, or pipe content via stdin")
-			}
-
-			key := dal.NewKeyWithID(rctx.colDef.ID, rctx.recordKey)
-			record := dal.NewRecordWithData(key, data)
-			err = rctx.db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
-				return tx.Insert(ctx, record)
-			})
-			if err != nil {
-				return err
-			}
-			return buildLocalViews(ctx, rctx)
-		},
-	}
-	addPathFlag(cmd)
-	addGitHubFlags(cmd)
-	cmd.Flags().String("id", "", "record ID in the format collection/path/key (e.g. todo.countries/ie)")
-	_ = cmd.MarkFlagRequired("id")
-	cmd.Flags().String("data", "", "record data as YAML or JSON (e.g. '{title: \"Ireland\"}')")
-	cmd.Flags().Bool("edit", false, "open $EDITOR with a schema-derived template")
-	return cmd
-}
 
 // isFdTTY reports whether f's file descriptor is a terminal.
 func isFdTTY(f *os.File) bool {

@@ -202,7 +202,7 @@ func TestResolveGitHubRecordContext_CollectionNotFound(t *testing.T) {
 		return nil, fmt.Errorf("unused")
 	}
 	logf := func(...any) {}
-	cmd := readRecord(homeDir, getWd, readDef, newDB, logf)
+	cmd := Select(homeDir, getWd, readDef, newDB, logf)
 	// This exercises resolveGitHubRecordContext end-to-end (DB opens OK,
 	// but reading the record will fail since fakeDB is nil). The important
 	// thing is that resolveGitHubRecordContext reaches the success return.
@@ -226,7 +226,7 @@ func TestResolveLocalRecordContext_ResolvePathError(t *testing.T) {
 	}
 	logf := func(...any) {}
 
-	cmd := readRecord(homeDir, getWd, readDef, newDB, logf)
+	cmd := Select(homeDir, getWd, readDef, newDB, logf)
 	// No --path → resolveDBPath calls getWd → error
 	err := runCobraCommand(cmd, "--id=test.items/r1")
 	if err == nil {

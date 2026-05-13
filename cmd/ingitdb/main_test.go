@@ -347,7 +347,6 @@ func TestRun_AllCommands(t *testing.T) {
 		args []string
 	}{
 		{name: "version", args: []string{"ingitdb", "version"}},
-		{name: "query help", args: []string{"ingitdb", "query", "--help"}},
 		{name: "materialize help", args: []string{"ingitdb", "materialize", "--help"}},
 		{name: "ci help", args: []string{"ingitdb", "ci", "--help"}},
 		{name: "pull help", args: []string{"ingitdb", "pull", "--help"}},
@@ -357,9 +356,10 @@ func TestRun_AllCommands(t *testing.T) {
 		{name: "serve help", args: []string{"ingitdb", "serve", "--help"}},
 		{name: "list help", args: []string{"ingitdb", "list", "--help"}},
 		{name: "find help", args: []string{"ingitdb", "find", "--help"}},
-		{name: "create help", args: []string{"ingitdb", "create", "--help"}},
-		{name: "read help", args: []string{"ingitdb", "read", "--help"}},
+		{name: "select help", args: []string{"ingitdb", "select", "--help"}},
+		{name: "insert help", args: []string{"ingitdb", "insert", "--help"}},
 		{name: "update help", args: []string{"ingitdb", "update", "--help"}},
+		{name: "drop help", args: []string{"ingitdb", "drop", "--help"}},
 		{name: "delete help", args: []string{"ingitdb", "delete", "--help"}},
 		{name: "truncate help", args: []string{"ingitdb", "truncate", "--help"}},
 		{name: "migrate help", args: []string{"ingitdb", "migrate", "--help"}},
@@ -386,58 +386,6 @@ func TestRun_AllCommands(t *testing.T) {
 				t.Fatalf("fatal should not be called for %s", tc.name)
 			}
 		})
-	}
-}
-
-func TestRun_ReadRecord_ExercisesNewDB(t *testing.T) {
-	t.Parallel()
-
-	dir := t.TempDir()
-
-	// Write a record file under $records/ (where {key}.yaml records are stored).
-	recordsDir := dir + "/$records"
-	if err := os.MkdirAll(recordsDir, 0o755); err != nil {
-		t.Fatalf("MkdirAll: %v", err)
-	}
-	recordContent := []byte("name: hello\n")
-	if err := os.WriteFile(recordsDir+"/r1.yaml", recordContent, 0o644); err != nil {
-		t.Fatalf("WriteFile: %v", err)
-	}
-
-	readDefinition := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
-		return &ingitdb.Definition{
-			Collections: map[string]*ingitdb.CollectionDef{
-				"test.items": {
-					ID:      "test.items",
-					DirPath: dir,
-					RecordFile: &ingitdb.RecordFileDef{
-						Name:       "{key}.yaml",
-						Format:     "yaml",
-						RecordType: ingitdb.SingleRecord,
-					},
-					Columns: map[string]*ingitdb.ColumnDef{
-						"name": {Type: ingitdb.ColumnTypeString},
-					},
-				},
-			},
-		}, nil
-	}
-	fatalCalled := false
-	fatal := func(err error) {
-		fatalCalled = true
-		t.Logf("fatal: %v", err)
-	}
-	homeDir := func() (string, error) { return "/tmp/home", nil }
-	getWd := func() (string, error) { return dir, nil }
-	logf := func(...any) {}
-
-	// Running `read record` exercises newDB → dalgo2fsingitdb.NewLocalDBWithDef.
-	run(
-		[]string{"ingitdb", "read", "record", "--path=" + dir, "--id=test.items/r1"},
-		homeDir, getWd, readDefinition, fatal, logf,
-	)
-	if fatalCalled {
-		t.Fatal("fatal should not be called")
 	}
 }
 

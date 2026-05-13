@@ -42,16 +42,16 @@ func TestCRUDRecord_UpdatesTagsReadme(t *testing.T) {
 	}
 	logf := func(...any) {}
 
-	createCmd := Create(homeDir, getWd, readDef, newDB, logf, nil, nil, nil)
-	if err := runCobraCommand(createCmd, "record", "--path="+tmpDir, "--id=todo.tags/urgent", "--data={title: Urgent}"); err != nil {
-		t.Fatalf("Create record: %v", err)
+	insertCmd := Insert(homeDir, getWd, readDef, newDB, logf, nil, nil, nil)
+	if err := runCobraCommand(insertCmd, "--path="+tmpDir, "--into=todo.tags", "--key=urgent", `--data={"title": "Urgent"}`); err != nil {
+		t.Fatalf("Insert: %v", err)
 	}
 	assertTagTitle(t, dstTodoDir, "urgent", "Urgent")
 	assertReadmeContains(t, dstTodoDir, "**Urgent**")
 
-	updateCmd := UpdateLegacy(homeDir, getWd, readDef, newDB, logf)
-	if err := runCobraCommand(updateCmd, "record", "--path="+tmpDir, "--id=todo.tags/urgent", "--set={titles: {en: Updated}}"); err != nil {
-		t.Fatalf("Update record: %v", err)
+	updateCmd := Update(homeDir, getWd, readDef, newDB, logf)
+	if err := runCobraCommand(updateCmd, "--path="+tmpDir, "--id=todo.tags/urgent", "--set=titles={en: Updated}"); err != nil {
+		t.Fatalf("Update: %v", err)
 	}
 	assertTagTitle(t, dstTodoDir, "urgent", "Updated")
 	assertReadmeContains(t, dstTodoDir, "**Updated**")

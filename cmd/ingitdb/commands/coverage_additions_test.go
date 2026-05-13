@@ -258,51 +258,6 @@ func TestMaterialize_DefaultPath(t *testing.T) {
 // read_collection.go – resolveDBPath error and ReadFile error
 // ============================================================
 
-func TestReadCollection_ResolvePathError(t *testing.T) {
-	t.Parallel()
-
-	homeDir := func() (string, error) { return "", fmt.Errorf("no home") }
-	getWd := func() (string, error) { return "", fmt.Errorf("no wd") }
-	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
-		return &ingitdb.Definition{}, nil
-	}
-	newDB := func(_ string, _ *ingitdb.Definition) (dal.DB, error) { return nil, nil }
-	logf := func(...any) {}
-
-	cmd := Read(homeDir, getWd, readDef, newDB, logf)
-	// No --path → resolveDBPath calls getWd → error
-	err := runCobraCommand(cmd, "collection", "--collection=test.items")
-	if err == nil {
-		t.Fatal("expected error when resolveDBPath fails")
-	}
-}
-
-func TestReadCollection_ReadFileError(t *testing.T) {
-	t.Parallel()
-
-	dir := t.TempDir()
-	def := &ingitdb.Definition{
-		Collections: map[string]*ingitdb.CollectionDef{
-			"test.items": {
-				ID:      "test.items",
-				DirPath: dir, // .collection/test.items.yaml does not exist → ReadFile fails
-			},
-		},
-	}
-
-	homeDir := func() (string, error) { return "/tmp/home", nil }
-	getWd := func() (string, error) { return dir, nil }
-	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) { return def, nil }
-	newDB := func(_ string, _ *ingitdb.Definition) (dal.DB, error) { return nil, nil }
-	logf := func(...any) {}
-
-	cmd := Read(homeDir, getWd, readDef, newDB, logf)
-	err := runCobraCommand(cmd, "collection", "--path="+dir, "--collection=test.items")
-	if err == nil {
-		t.Fatal("expected error when collection def file does not exist")
-	}
-}
-
 // ============================================================
 // read_record_github.go – uncovered branches
 // ============================================================
@@ -796,14 +751,14 @@ func TestUpdate_WithViewBuilder(t *testing.T) {
 	}
 	logf := func(...any) {}
 
-	cmd := UpdateLegacy(homeDir, getWd, readDef, newDB, logf)
-	err := runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/item", "--set={name: NewName}")
+	cmd := Update(homeDir, getWd, readDef, newDB, logf)
+	err := runCobraCommand(cmd, "--path="+dir, "--id=test.items/item", "--set=name=NewName")
 	if err != nil {
 		t.Fatalf("Update with view builder: %v", err)
 	}
 }
 
-func TestCreate_WithViewBuilder(t *testing.T) {
+func TestInsert_WithViewBuilder(t *testing.T) {
 	// Modifies viewBuilderFactory — not parallel.
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -827,9 +782,9 @@ func TestCreate_WithViewBuilder(t *testing.T) {
 	}
 	logf := func(...any) {}
 
-	cmd := Create(homeDir, getWd, readDef, newDB, logf, nil, nil, nil)
-	err := runCobraCommand(cmd, "record", "--path="+dir, "--id=test.items/newrecord", "--data={name: NewRecord}")
+	cmd := Insert(homeDir, getWd, readDef, newDB, logf, nil, nil, nil)
+	err := runCobraCommand(cmd, "--path="+dir, "--into=test.items", "--key=newrecord", "--data={name: NewRecord}")
 	if err != nil {
-		t.Fatalf("Create with view builder: %v", err)
+		t.Fatalf("Insert with view builder: %v", err)
 	}
 }

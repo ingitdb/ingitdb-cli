@@ -494,31 +494,3 @@ func TestSelect_EndToEnd_RealisticInvocation(t *testing.T) {
 		t.Errorf("expected high before mid (descending priority), got high@%d, mid@%d", idxHigh, idxMid)
 	}
 }
-
-func TestSelect_LegacyCommandsStillWork(t *testing.T) {
-	t.Parallel()
-	dir := t.TempDir()
-	homeDir, getWd, readDef, newDB, logf := selectTestDeps(t, dir)
-	if err := seedRecord(t, dir, "test.items", "a", map[string]any{"title": "Alpha"}); err != nil {
-		t.Fatalf("seed: %v", err)
-	}
-	// read record (legacy)
-	readCmd := Read(homeDir, getWd, readDef, newDB, logf)
-	var readBuf bytes.Buffer
-	readCmd.SetOut(&readBuf)
-	readCmd.SetErr(&readBuf)
-	readCmd.SetArgs([]string{"record", "--path=" + dir, "--id=test.items/a"})
-	if err := readCmd.Execute(); err != nil {
-		t.Errorf("legacy `read record` regressed: %v", err)
-	}
-
-	// query (legacy)
-	queryCmd := Query(homeDir, getWd, readDef, newDB, logf)
-	var queryBuf bytes.Buffer
-	queryCmd.SetOut(&queryBuf)
-	queryCmd.SetErr(&queryBuf)
-	queryCmd.SetArgs([]string{"--path=" + dir, "--collection=test.items"})
-	if err := queryCmd.Execute(); err != nil {
-		t.Errorf("legacy `query` regressed: %v", err)
-	}
-}

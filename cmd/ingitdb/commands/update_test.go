@@ -464,37 +464,6 @@ func TestUpdate_EndToEnd_RealisticInvocation(t *testing.T) {
 	}
 }
 
-func TestUpdate_LegacyUpdateRecordStillWorks(t *testing.T) {
-	t.Parallel()
-	dir := t.TempDir()
-	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
-	seedItem(t, dir, "legacy", map[string]any{"title": "Before"})
-
-	// UpdateLegacy returns the parent command; invoke `record` with
-	// the legacy YAML-blob --set syntax.
-	legacyCmd := UpdateLegacy(homeDir, getWd, readDef, newDB, logf)
-	var buf bytes.Buffer
-	legacyCmd.SetOut(&buf)
-	legacyCmd.SetErr(&buf)
-	legacyCmd.SetArgs([]string{
-		"record",
-		"--path=" + dir,
-		"--id=test.items/legacy",
-		`--set={title: After, status: ok}`,
-	})
-	if err := legacyCmd.Execute(); err != nil {
-		t.Errorf("legacy update record regressed: %v", err)
-	}
-
-	got := readItem(t, dir, "legacy")
-	if !strings.Contains(got, "title: After") {
-		t.Errorf("legacy patch missing title: After, got:\n%s", got)
-	}
-	if !strings.Contains(got, "status: ok") {
-		t.Errorf("legacy patch missing status: ok, got:\n%s", got)
-	}
-}
-
 func TestUpdate_ShallowPatchReplacesNestedMap(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()

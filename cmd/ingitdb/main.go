@@ -69,7 +69,6 @@ func run(
 	rootCmd.AddCommand(
 		commands.Version(version, commit, date),
 		commands.Validate(homeDir, getWd, readDefinition, datavalidator.NewValidator(), nil, logf),
-		commands.Query(homeDir, getWd, readDefinition, newDB, logf),
 		commands.Materialize(homeDir, getWd, readDefinition, vb, logf),
 		commands.CI(homeDir, getWd, readDefinition, vb, logf),
 		commands.Pull(),
@@ -81,8 +80,6 @@ func run(
 		commands.Serve(homeDir, getWd, readDefinition, newDB, logf),
 		commands.List(homeDir, getWd, readDefinition),
 		commands.Find(),
-		commands.Create(homeDir, getWd, readDefinition, newDB, logf, nil, nil, nil),
-		commands.Read(homeDir, getWd, readDefinition, newDB, logf),
 		commands.Select(homeDir, getWd, readDefinition, newDB, logf),
 		commands.Insert(homeDir, getWd, readDefinition, newDB, logf, nil, nil, nil),
 		commands.Update(homeDir, getWd, readDefinition, newDB, logf),
