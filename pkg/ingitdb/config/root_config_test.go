@@ -1256,3 +1256,78 @@ func TestSettings_Validate_EachOfSevenAccepted(t *testing.T) {
 		})
 	}
 }
+
+func TestResolveRecordFormat_CollectionSettingWins(t *testing.T) {
+	t.Parallel()
+	col := &ingitdb.CollectionDef{
+		RecordFile: &ingitdb.RecordFileDef{Format: ingitdb.RecordFormatJSON},
+	}
+	s := &Settings{DefaultRecordFormat: ingitdb.RecordFormatINGR}
+	got := ResolveRecordFormat(col, s)
+	if got != ingitdb.RecordFormatJSON {
+		t.Errorf("expected json, got %q", got)
+	}
+}
+
+func TestResolveRecordFormat_ProjectDefaultWhenCollectionUnset(t *testing.T) {
+	t.Parallel()
+	col := &ingitdb.CollectionDef{
+		RecordFile: &ingitdb.RecordFileDef{Format: ""},
+	}
+	s := &Settings{DefaultRecordFormat: ingitdb.RecordFormatINGR}
+	got := ResolveRecordFormat(col, s)
+	if got != ingitdb.RecordFormatINGR {
+		t.Errorf("expected ingr, got %q", got)
+	}
+}
+
+func TestResolveRecordFormat_HardFallbackWhenBothUnset(t *testing.T) {
+	t.Parallel()
+	col := &ingitdb.CollectionDef{
+		RecordFile: &ingitdb.RecordFileDef{Format: ""},
+	}
+	s := &Settings{DefaultRecordFormat: ""}
+	got := ResolveRecordFormat(col, s)
+	if got != ingitdb.RecordFormatYAML {
+		t.Errorf("expected yaml, got %q", got)
+	}
+}
+
+func TestResolveRecordFormat_NilCollectionUsesProjectDefault(t *testing.T) {
+	t.Parallel()
+	s := &Settings{DefaultRecordFormat: ingitdb.RecordFormatCSV}
+	got := ResolveRecordFormat(nil, s)
+	if got != ingitdb.RecordFormatCSV {
+		t.Errorf("expected csv, got %q", got)
+	}
+}
+
+func TestResolveRecordFormat_NilSettingsUsesHardFallback(t *testing.T) {
+	t.Parallel()
+	got := ResolveRecordFormat(nil, nil)
+	if got != ingitdb.RecordFormatYAML {
+		t.Errorf("expected yaml, got %q", got)
+	}
+}
+
+func TestResolveRecordFormat_NilRecordFileFallsThrough(t *testing.T) {
+	t.Parallel()
+	col := &ingitdb.CollectionDef{RecordFile: nil}
+	s := &Settings{DefaultRecordFormat: ingitdb.RecordFormatINGR}
+	got := ResolveRecordFormat(col, s)
+	if got != ingitdb.RecordFormatINGR {
+		t.Errorf("expected ingr, got %q", got)
+	}
+}
+
+func TestResolveRecordFormat_EmptyFormatStringFallsThrough(t *testing.T) {
+	t.Parallel()
+	col := &ingitdb.CollectionDef{
+		RecordFile: &ingitdb.RecordFileDef{Format: ""},
+	}
+	s := &Settings{DefaultRecordFormat: ingitdb.RecordFormatJSON}
+	got := ResolveRecordFormat(col, s)
+	if got != ingitdb.RecordFormatJSON {
+		t.Errorf("expected json, got %q", got)
+	}
+}
