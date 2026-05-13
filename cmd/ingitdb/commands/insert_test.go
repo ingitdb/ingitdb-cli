@@ -478,7 +478,6 @@ func TestInsert_RejectsInvalidFormatValue(t *testing.T) {
 		{"yaml-stream typo", "yaml-stream"},
 	}
 	for _, tt := range cases {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			dir := t.TempDir()
