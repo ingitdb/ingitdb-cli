@@ -1164,3 +1164,50 @@ func TestReadRootConfigFromFile_RootCollectionsReadError(t *testing.T) {
 		t.Errorf("expected wrapped ioErr, got %v", err)
 	}
 }
+
+func TestSettings_DefaultRecordFormat_FieldExists(t *testing.T) {
+	t.Parallel()
+	var s Settings
+	_ = s.DefaultRecordFormat // compile-time check; type must be ingitdb.RecordFormat
+}
+
+func TestReadSettingsFromFile_DefaultRecordFormat_OmittedOnExistingFile(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	settingsPath := filepath.Join(dir, ".ingitdb", "settings.yaml")
+	if err := os.MkdirAll(filepath.Dir(settingsPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(settingsPath, []byte("default_namespace: todo\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	s, err := ReadSettingsFromFile(dir, ingitdb.NewReadOptions())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if s.DefaultNamespace != "todo" {
+		t.Errorf("expected default_namespace=todo, got %q", s.DefaultNamespace)
+	}
+	if s.DefaultRecordFormat != "" {
+		t.Errorf("expected DefaultRecordFormat to be empty, got %q", s.DefaultRecordFormat)
+	}
+}
+
+func TestReadSettingsFromFile_DefaultRecordFormat_LoadsFromYAML(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	settingsPath := filepath.Join(dir, ".ingitdb", "settings.yaml")
+	if err := os.MkdirAll(filepath.Dir(settingsPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(settingsPath, []byte("default_record_format: ingr\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	s, err := ReadSettingsFromFile(dir, ingitdb.NewReadOptions())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if s.DefaultRecordFormat != ingitdb.RecordFormatINGR {
+		t.Errorf("expected DefaultRecordFormat=ingr, got %q", s.DefaultRecordFormat)
+	}
+}
