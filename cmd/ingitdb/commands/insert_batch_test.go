@@ -7,7 +7,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/dal-go/dalgo/dal"
 	"github.com/ingr-io/ingr-go/ingr"
+
+	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2fsingitdb"
+	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
 func TestInsertBatch_JSONL_EmptyStreamSucceeds(t *testing.T) {
@@ -264,6 +268,59 @@ func TestInsertBatch_CSV_FieldsNoHeader(t *testing.T) {
 	}
 	if !strings.Contains(string(ieBytes), "Ireland") {
 		t.Errorf("ie.yaml should contain 'Ireland', got:\n%s", string(ieBytes))
+	}
+}
+
+// TestInsertBatch_JSONL_ToMarkdownStorage is the load-bearing
+// verification of req:batch-storage-format-independence for the
+// markdown case: a JSONL stream lands as one <key>.md per record,
+// with declared columns becoming YAML frontmatter and $content
+// becoming the body. This test inlines its own DI setup because
+// insertTestDeps is hardcoded to testDef (a YAML collection).
+func TestInsertBatch_JSONL_ToMarkdownStorage(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+	def := testMarkdownDef(dir)
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) { return def, nil }
+	newDB := func(root string, d *ingitdb.Definition) (dal.DB, error) {
+		return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
+	}
+	logf := func(...any) {}
+
+	stdin := strings.NewReader(`{"$id":"hello","title":"Hello","$content":"First post body."}
+{"$id":"world","title":"World","$content":"Second post body."}
+`)
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf,
+		stdin, false, nil,
+		"--path="+dir, "--into=test.notes", "--format=jsonl",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+	helloPath := filepath.Join(dir, "$records", "hello.md")
+	helloBytes, readErr := os.ReadFile(helloPath)
+	if readErr != nil {
+		t.Fatalf("posts/hello.md not on disk: %v", readErr)
+	}
+	helloStr := string(helloBytes)
+	if !strings.Contains(helloStr, "title: Hello") {
+		t.Errorf("hello.md missing 'title: Hello' frontmatter; got:\n%s", helloStr)
+	}
+	if !strings.Contains(helloStr, "First post body.") {
+		t.Errorf("hello.md missing body 'First post body.'; got:\n%s", helloStr)
+	}
+	if strings.Contains(helloStr, "$id") {
+		t.Errorf("hello.md MUST NOT contain $id; got:\n%s", helloStr)
+	}
+	if strings.Contains(helloStr, "$content:") {
+		t.Errorf("hello.md MUST NOT contain $content in frontmatter (body should be after frontmatter, not as a key); got:\n%s", helloStr)
+	}
+	worldPath := filepath.Join(dir, "$records", "world.md")
+	_, readErr = os.ReadFile(worldPath)
+	if readErr != nil {
+		t.Errorf("world.md not on disk: %v", readErr)
 	}
 }
 
