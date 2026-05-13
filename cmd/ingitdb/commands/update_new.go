@@ -288,8 +288,17 @@ func runUpdateFromSet(
 		return fmt.Errorf("matched %d records, required at least %d", len(matches), n)
 	}
 
+	// For --remote, wrap the db with a batching variant so the worker's
+	// N tx.Set calls land as one Git commit instead of N (spec
+	// REQ:one-commit-per-write). Local --path keeps the original db.
+	writeDB, wrapErr := maybeWrapWithBatching(cmd, ictx.db, ictx.def,
+		fmt.Sprintf("ingitdb: update %s (batch)", from))
+	if wrapErr != nil {
+		return wrapErr
+	}
+
 	// Apply patches in a single read-write transaction.
-	err = ictx.db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+	err = writeDB.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
 		for _, m := range matches {
 			applyPatch(m.data, sets, unsets)
 			key := dal.NewKeyWithID(from, m.key)

@@ -162,8 +162,17 @@ func runDeleteFromSet(
 		return fmt.Errorf("matched %d records, required at least %d", len(matchedKeys), n)
 	}
 
+	// For --remote, wrap the db with a batching variant so the worker's
+	// N tx.Delete calls land as one Git commit instead of N (spec
+	// REQ:one-commit-per-write). Local --path keeps the original db.
+	writeDB, wrapErr := maybeWrapWithBatching(cmd, ictx.db, ictx.def,
+		fmt.Sprintf("ingitdb: delete from %s (batch)", from))
+	if wrapErr != nil {
+		return wrapErr
+	}
+
 	// Read-write pass: delete each matching key.
-	err = ictx.db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+	err = writeDB.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
 		for _, k := range matchedKeys {
 			key := dal.NewKeyWithID(from, k)
 			if delErr := tx.Delete(ctx, key); delErr != nil {

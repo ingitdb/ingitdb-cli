@@ -8,6 +8,7 @@ import (
 	"github.com/dal-go/dalgo/dal"
 	"github.com/spf13/cobra"
 
+	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ghingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
@@ -108,4 +109,26 @@ func resolveRemoteFromFlags(cmd *cobra.Command, value string) (remoteSpec, error
 		return remoteSpec{}, err
 	}
 	return spec, nil
+}
+
+// maybeWrapWithBatching returns a BatchingGitHubDB wrapping db when --remote
+// is set, otherwise returns db unchanged. Set-mode write callers
+// (update --from, delete --from) use this so a worker that touches N records
+// produces exactly one Git commit (spec REQ:one-commit-per-write). Each
+// record's Set / Delete buffers; the wrapper flushes via TreeWriter when the
+// worker returns.
+//
+// Single-record callers (--id) should NOT wrap — they already touch one
+// file and the per-file Contents API satisfies one-commit-per-write.
+func maybeWrapWithBatching(cmd *cobra.Command, db dal.DB, def *ingitdb.Definition, commitMessage string) (dal.DB, error) {
+	remoteVal, _ := cmd.Flags().GetString("remote")
+	if remoteVal == "" {
+		return db, nil
+	}
+	spec, err := resolveRemoteFromFlags(cmd, remoteVal)
+	if err != nil {
+		return nil, err
+	}
+	cfg := newGitHubConfig(spec, remoteToken(cmd, spec.Host))
+	return dalgo2ghingitdb.NewBatchingGitHubDB(cfg, def, commitMessage)
 }
