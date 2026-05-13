@@ -2,6 +2,7 @@ package dalgo2ingitdb
 
 import (
 	"bufio"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -153,4 +154,117 @@ func ParseBatchINGR(r io.Reader) ([]ParsedRecord, error) {
 		})
 	}
 	return records, nil
+}
+
+// CSVParseOptions controls CSV-specific behavior.
+type CSVParseOptions struct {
+	// KeyColumn, if non-empty, names the column to use as the record
+	// key (overrides $id/id auto-resolution).
+	KeyColumn string
+	// Fields, if non-empty, replaces the header row: the first stdin
+	// line is treated as data and these names are used for column
+	// mapping.
+	Fields []string
+}
+
+// ParseBatchCSV reads RFC 4180 CSV from r and returns one ParsedRecord
+// per data row. Key resolution precedence is:
+//  1. opts.KeyColumn if set (rejected before reading rows if column missing).
+//  2. column named "$id" if present.
+//  3. column named "id" if present (auto-mapped).
+//  4. otherwise error.
+//
+// When both "$id" and "id" columns exist without opts.KeyColumn, "$id"
+// wins; "id" is kept as a data field. The resolved key column's value
+// is stripped from Data.
+//
+// If opts.Fields is non-empty, those names override the header row:
+// the first stdin line is treated as data, and Position is 1-based
+// against data rows. Otherwise Position is 1-based against source
+// lines, so the header is line 1 and the first data row is line 2.
+func ParseBatchCSV(r io.Reader, opts CSVParseOptions) ([]ParsedRecord, error) {
+	cr := csv.NewReader(r)
+	cr.FieldsPerRecord = -1 // we validate manually so we can error per line
+
+	var header []string
+	var firstDataLine int
+	if len(opts.Fields) > 0 {
+		header = append([]string(nil), opts.Fields...)
+		firstDataLine = 1
+	} else {
+		h, err := cr.Read()
+		if err == io.EOF {
+			return nil, nil
+		}
+		if err != nil {
+			return nil, fmt.Errorf("read csv header: %w", err)
+		}
+		header = h
+		firstDataLine = 2
+	}
+	if len(header) == 0 {
+		return nil, fmt.Errorf("csv header is empty")
+	}
+
+	// Resolve which column is the key.
+	keyCol, keyColIdx, err := resolveCSVKeyColumn(header, opts.KeyColumn)
+	if err != nil {
+		return nil, err
+	}
+
+	var records []ParsedRecord
+	lineNo := firstDataLine - 1
+	for {
+		fields, readErr := cr.Read()
+		lineNo++
+		if readErr == io.EOF {
+			break
+		}
+		if readErr != nil {
+			return nil, fmt.Errorf("line %d: csv parse error: %w", lineNo, readErr)
+		}
+		if len(fields) != len(header) {
+			return nil, fmt.Errorf("line %d: row has %d columns, header has %d", lineNo, len(fields), len(header))
+		}
+		keyVal := fields[keyColIdx]
+		if keyVal == "" {
+			return nil, fmt.Errorf("line %d: key column %q is empty", lineNo, keyCol)
+		}
+		data := make(map[string]any, len(header)-1)
+		for i, col := range header {
+			if i == keyColIdx {
+				continue
+			}
+			data[col] = fields[i]
+		}
+		records = append(records, ParsedRecord{
+			Position: lineNo,
+			Key:      keyVal,
+			Data:     data,
+		})
+	}
+	return records, nil
+}
+
+func resolveCSVKeyColumn(header []string, override string) (string, int, error) {
+	if override != "" {
+		for i, h := range header {
+			if h == override {
+				return override, i, nil
+			}
+		}
+		return "", -1, fmt.Errorf("--key-column=%q not found in CSV header %v", override, header)
+	}
+	// Look for $id first (wins precedence over id).
+	for i, h := range header {
+		if h == "$id" {
+			return "$id", i, nil
+		}
+	}
+	for i, h := range header {
+		if h == "id" {
+			return "id", i, nil
+		}
+	}
+	return "", -1, fmt.Errorf("no key column found in CSV header %v; use --key-column, or include a $id or id column", header)
 }

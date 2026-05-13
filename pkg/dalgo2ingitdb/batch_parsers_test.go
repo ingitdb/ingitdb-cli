@@ -201,6 +201,122 @@ func TestParseBatchINGR_EmptyStream(t *testing.T) {
 	}
 }
 
+func TestParseBatchCSV_HeaderWithDollarID(t *testing.T) {
+	t.Parallel()
+	in := strings.NewReader("$id,name,population\nie,Ireland,5\nfr,France,68\n")
+	got, err := ParseBatchCSV(in, CSVParseOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("want 2 records, got %d", len(got))
+	}
+	// Position is 1-based against source lines. Header is line 1; first data record is line 2.
+	if got[0].Position != 2 || got[0].Key != "ie" || got[0].Data["name"] != "Ireland" {
+		t.Errorf("record[0]=%+v", got[0])
+	}
+	if _, has := got[0].Data["$id"]; has {
+		t.Errorf("$id must be stripped from Data")
+	}
+}
+
+func TestParseBatchCSV_AutoMapsIDToKey(t *testing.T) {
+	t.Parallel()
+	in := strings.NewReader("id,name\nie,Ireland\nfr,France\n")
+	got, err := ParseBatchCSV(in, CSVParseOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got[0].Key != "ie" || got[1].Key != "fr" {
+		t.Errorf("keys=%v,%v; want ie,fr", got[0].Key, got[1].Key)
+	}
+	if _, has := got[0].Data["id"]; has {
+		t.Errorf("id must be stripped from Data when auto-mapped to key")
+	}
+}
+
+func TestParseBatchCSV_BothDollarIDAndID(t *testing.T) {
+	t.Parallel()
+	in := strings.NewReader("$id,id,name\nie,IE-001,Ireland\nfr,FR-002,France\n")
+	got, err := ParseBatchCSV(in, CSVParseOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got[0].Key != "ie" {
+		t.Errorf("$id should win precedence, got Key=%q", got[0].Key)
+	}
+	// "id" column becomes a data field when $id wins.
+	if got[0].Data["id"] != "IE-001" {
+		t.Errorf("'id' should be a data field when $id is the key; got Data=%+v", got[0].Data)
+	}
+}
+
+func TestParseBatchCSV_KeyColumnOverride(t *testing.T) {
+	t.Parallel()
+	in := strings.NewReader("external_id,name\nie,Ireland\nfr,France\n")
+	got, err := ParseBatchCSV(in, CSVParseOptions{KeyColumn: "external_id"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got[0].Key != "ie" {
+		t.Errorf("Key should be from external_id column, got %q", got[0].Key)
+	}
+	if _, has := got[0].Data["external_id"]; has {
+		t.Errorf("--key-column value must be stripped from Data")
+	}
+}
+
+func TestParseBatchCSV_KeyColumnMissing(t *testing.T) {
+	t.Parallel()
+	in := strings.NewReader("name\nIreland\n")
+	_, err := ParseBatchCSV(in, CSVParseOptions{KeyColumn: "external_id"})
+	if err == nil {
+		t.Fatal("expected error when --key-column names a non-existent column")
+	}
+	if !strings.Contains(err.Error(), "external_id") {
+		t.Errorf("error %q should name the missing column", err.Error())
+	}
+}
+
+func TestParseBatchCSV_NoKeyColumnFound(t *testing.T) {
+	t.Parallel()
+	in := strings.NewReader("name,population\nIreland,5\n")
+	_, err := ParseBatchCSV(in, CSVParseOptions{})
+	if err == nil {
+		t.Fatal("expected error when no key column is present")
+	}
+	if !strings.Contains(err.Error(), "$id") || !strings.Contains(err.Error(), "id") {
+		t.Errorf("error %q should suggest $id, id, or --key-column", err.Error())
+	}
+}
+
+func TestParseBatchCSV_FieldsOverrideNoHeader(t *testing.T) {
+	t.Parallel()
+	in := strings.NewReader("ie,Ireland\nfr,France\n")
+	got, err := ParseBatchCSV(in, CSVParseOptions{Fields: []string{"$id", "name"}})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(got) != 2 || got[0].Key != "ie" || got[0].Data["name"] != "Ireland" {
+		t.Errorf("records=%+v", got)
+	}
+	// With --fields, line 1 is the first data record.
+	if got[0].Position != 1 {
+		t.Errorf("Position should be 1 (no header), got %d", got[0].Position)
+	}
+}
+
+func TestParseBatchCSV_EmptyStream(t *testing.T) {
+	t.Parallel()
+	got, err := ParseBatchCSV(strings.NewReader(""), CSVParseOptions{})
+	if err != nil {
+		t.Fatalf("empty stream should succeed, got: %v", err)
+	}
+	if len(got) != 0 {
+		t.Errorf("want 0 records, got %d", len(got))
+	}
+}
+
 // recordSpec is a tiny test helper struct.
 type recordSpec struct {
 	id     string

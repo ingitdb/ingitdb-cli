@@ -201,6 +201,72 @@ name: France
 	}
 }
 
+func TestInsertBatch_CSV_HeaderDollarID(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+	stdin := strings.NewReader("$id,name,population\nie,Ireland,5\nfr,France,68\n")
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf,
+		stdin, false, nil,
+		"--path="+dir, "--into=test.items", "--format=csv",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+	ieBytes, readErr := os.ReadFile(filepath.Join(dir, "$records", "ie.yaml"))
+	if readErr != nil {
+		t.Fatalf("ie record not on disk: %v", readErr)
+	}
+	if !strings.Contains(string(ieBytes), "Ireland") {
+		t.Errorf("ie.yaml should contain 'Ireland', got:\n%s", string(ieBytes))
+	}
+}
+
+func TestInsertBatch_CSV_KeyColumnOverride(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+	stdin := strings.NewReader("external_id,name\nie,Ireland\nfr,France\n")
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf,
+		stdin, false, nil,
+		"--path="+dir, "--into=test.items", "--format=csv", "--key-column=external_id",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+	ieBytes, readErr := os.ReadFile(filepath.Join(dir, "$records", "ie.yaml"))
+	if readErr != nil {
+		t.Fatalf("ie record not on disk: %v", readErr)
+	}
+	if !strings.Contains(string(ieBytes), "Ireland") {
+		t.Errorf("ie.yaml should contain 'Ireland', got:\n%s", string(ieBytes))
+	}
+	if strings.Contains(string(ieBytes), "external_id") {
+		t.Errorf("--key-column value must NOT appear as data field, got:\n%s", string(ieBytes))
+	}
+}
+
+func TestInsertBatch_CSV_FieldsNoHeader(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+	stdin := strings.NewReader("ie,Ireland\nfr,France\n")
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf,
+		stdin, false, nil,
+		"--path="+dir, "--into=test.items", "--format=csv", "--fields=$id,name",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+	ieBytes, readErr := os.ReadFile(filepath.Join(dir, "$records", "ie.yaml"))
+	if readErr != nil {
+		t.Fatalf("ie record not on disk: %v", readErr)
+	}
+	if !strings.Contains(string(ieBytes), "Ireland") {
+		t.Errorf("ie.yaml should contain 'Ireland', got:\n%s", string(ieBytes))
+	}
+}
+
 func TestInsertBatch_INGR_HappyPath(t *testing.T) {
 	t.Parallel()
 	// Build INGR payload — same pattern as parse.go::encodeINGRFromMap.

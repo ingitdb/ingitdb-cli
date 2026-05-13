@@ -105,7 +105,6 @@ func runBatchInsert(
 
 // parseBatchStream routes to the format-specific parser.
 func parseBatchStream(format, keyColumn string, fields []string, r io.Reader) ([]dalgo2ingitdb.ParsedRecord, error) {
-	_, _ = keyColumn, fields
 	switch format {
 	case "jsonl":
 		return dalgo2ingitdb.ParseBatchJSONL(r)
@@ -114,7 +113,10 @@ func parseBatchStream(format, keyColumn string, fields []string, r io.Reader) ([
 	case "ingr":
 		return dalgo2ingitdb.ParseBatchINGR(r)
 	case "csv":
-		return nil, fmt.Errorf("batch format %q not yet implemented", format)
+		return dalgo2ingitdb.ParseBatchCSV(r, dalgo2ingitdb.CSVParseOptions{
+			KeyColumn: keyColumn,
+			Fields:    fields,
+		})
 	default:
 		return nil, fmt.Errorf("unsupported batch format %q", format)
 	}

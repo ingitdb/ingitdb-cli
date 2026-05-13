@@ -114,9 +114,12 @@ func Insert(
 					return fmt.Errorf("batch mode (--format=%s) requires piped stdin; refusing to read from a TTY", format)
 				}
 				keyColumn, _ := cmd.Flags().GetString("key-column")
-				fieldsCSV, _ := cmd.Flags().GetString("fields")
 				var fields []string
-				if fieldsCSV != "" {
+				// Only honor --fields when explicitly set; the shared
+				// sqlflags.RegisterFieldsFlag default is "*", which would
+				// otherwise be misread as a one-column header override.
+				if cmd.Flags().Changed("fields") {
+					fieldsCSV, _ := cmd.Flags().GetString("fields")
 					fields = strings.Split(fieldsCSV, ",")
 					for i := range fields {
 						fields[i] = strings.TrimSpace(fields[i])
