@@ -69,6 +69,10 @@ func (rfd RecordFileDef) Validate() error {
 		return fmt.Errorf("format %q does not support record type %q (use %q or %q)",
 			RecordFormatINGR, SingleRecord, ListOfRecords, MapOfRecords)
 	}
+	if rfd.Format == RecordFormatCSV && rfd.RecordType != ListOfRecords {
+		return fmt.Errorf("format %q requires record type %q, got %q",
+			RecordFormatCSV, ListOfRecords, rfd.RecordType)
+	}
 	if rfd.ExcludeRegex != "" {
 		if _, err := regexp.Compile(rfd.ExcludeRegex); err != nil {
 			return fmt.Errorf("invalid exclude_regex %q: %w", rfd.ExcludeRegex, err)

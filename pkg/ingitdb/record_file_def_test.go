@@ -48,6 +48,21 @@ func TestRecordFileDefValidate(t *testing.T) {
 			},
 			err: "",
 		},
+		{
+			name: "csv_rejects_single_record",
+			def:  RecordFileDef{Name: "records.csv", Format: RecordFormatCSV, RecordType: SingleRecord},
+			err:  "format \"csv\" requires record type \"[]map[string]any\"",
+		},
+		{
+			name: "csv_rejects_map_of_records",
+			def:  RecordFileDef{Name: "records.csv", Format: RecordFormatCSV, RecordType: MapOfRecords},
+			err:  "format \"csv\" requires record type \"[]map[string]any\"",
+		},
+		{
+			name: "csv_accepts_list_of_records",
+			def:  RecordFileDef{Name: "records.csv", Format: RecordFormatCSV, RecordType: ListOfRecords},
+			err:  "",
+		},
 	}
 
 	for _, tt := range tests {
