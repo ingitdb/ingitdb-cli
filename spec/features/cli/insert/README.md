@@ -149,9 +149,9 @@ stderr.
 #### REQ: source-selection
 
 `insert` MUST accept either `--path=PATH` (local) or
-`--github=OWNER/REPO[@REF]` (remote GitHub), but never both, per
-[path-targeting](../../path-targeting/README.md) and
-[github-direct-access](../../github-direct-access/README.md). When
+`--remote=HOST/OWNER/REPO[@REF]` (remote Git repository), but never
+both, per [path-targeting](../../path-targeting/README.md) and
+[remote-repo-access](../../remote-repo-access/README.md). When
 neither is provided, the current working directory is used.
 
 ## Dependencies
@@ -159,8 +159,8 @@ neither is provided, the current working directory is used.
 - [shared-cli-flags](../../shared-cli-flags/README.md) — `--into`
   applicability, applicability rejections for unused flags.
 - [path-targeting](../../path-targeting/README.md) — `--path` resolution.
-- [github-direct-access](../../github-direct-access/README.md) —
-  `--github` source.
+- [remote-repo-access](../../remote-repo-access/README.md) —
+  `--remote` source.
 - [markdown-insert-ux](../../../ideas/markdown-insert-ux.md) — the
   approved approach for stdin / `--edit` / markdown frontmatter
   inheritance is reused here; this feature does not contradict that

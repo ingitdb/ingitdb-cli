@@ -9,7 +9,7 @@ Top-level command with four subcommands. `delete record` is implemented; the res
 
 ```
 ingitdb delete record --id=ID [--path=PATH]
-ingitdb delete record --id=ID --github=OWNER/REPO[@REF] [--token=TOKEN]
+ingitdb delete record --id=ID --remote=HOST/OWNER/REPO[@REF] [--token=TOKEN]
 ```
 
 Deletes a single record by ID. For `SingleRecord` collections, the record file is removed. For
@@ -19,8 +19,8 @@ Deletes a single record by ID. For `SingleRecord` collections, the record file i
 | --------------------------- | -------- | --------------------------------------------------------------------------------------- |
 | `--id=ID`                   | yes      | Record ID as `collection/path/key`.                                                     |
 | `--path=PATH`               | no       | Path to the local database directory. Defaults to the current working directory.        |
-| `--github=OWNER/REPO[@REF]` | no       | GitHub repository. Mutually exclusive with `--path`.                                    |
-| `--token=TOKEN`             | no       | GitHub personal access token. Falls back to `GITHUB_TOKEN`. Required for GitHub writes. |
+| `--remote=HOST/OWNER/REPO[@REF]` | no       | Remote Git repository (e.g. `github.com/owner/repo`). Mutually exclusive with `--path`.   |
+| `--token=TOKEN`             | no       | Personal access token. Falls back to host-derived env vars (e.g. `GITHUB_TOKEN`). Required for `--remote` writes. |
 
 **Examples:**
 
@@ -30,7 +30,7 @@ ingitdb delete record --id=countries/ie
 
 # 🐙 Delete a record in a GitHub repository
 export GITHUB_TOKEN=ghp_...
-ingitdb delete record --github=myorg/mydb --id=countries/ie
+ingitdb delete record --remote=github.com/myorg/mydb --id=countries/ie
 ```
 
 The following subcommands are planned but not yet implemented:

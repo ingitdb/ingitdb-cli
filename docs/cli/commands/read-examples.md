@@ -35,18 +35,18 @@ title: Active
 ### 🖥️ Command 2: Read from GitHub Repository
 
 ```bash
-ingitdb read record --github ingitdb/ingitdb-cli@main --id todo.tags/active
+ingitdb read record --remote github.com/ingitdb/ingitdb-cli@main --id todo.tags/active
 ```
 
 Or specify without a branch (uses default branch):
 
 ```bash
-ingitdb read record --github ingitdb/ingitdb-cli --id todo.tags/active
+ingitdb read record --remote github.com/ingitdb/ingitdb-cli --id todo.tags/active
 ```
 
 **Explanation:**
 - `read record` - Read a single record
-- `--github ingitdb/ingitdb-cli@main` - GitHub repository as `owner/repo[@ref]`
+- `--remote github.com/ingitdb/ingitdb-cli@main` - Remote repository as `host/owner/repo[@ref]`
   - `ingitdb` = GitHub organization
   - `ingitdb-cli` = repository name
   - `@main` = (Optional) Git reference (branch, tag, or commit)
@@ -70,7 +70,7 @@ ingitdb read record --id todo.tags/active --format json
 
 **GitHub:**
 ```bash
-ingitdb read record --github ingitdb/ingitdb-cli --id todo.tags/active --format json
+ingitdb read record --remote github.com/ingitdb/ingitdb-cli --id todo.tags/active --format json
 ```
 
 **Output:**
@@ -100,10 +100,10 @@ ingitdb read record --github ingitdb/ingitdb-cli --id todo.tags/active --format 
 4. **Git References**
    - Can specify `@branch`, `@tag`, or `@commit` for GitHub
    - Examples:
-     - `--github owner/repo@main`
-     - `--github owner/repo@v1.0.0`
-     - `--github owner/repo@abc123def456`
-     - `--github owner/repo` (uses default branch)
+     - `--remote github.com/owner/repo@main`
+     - `--remote github.com/owner/repo@v1.0.0`
+     - `--remote github.com/owner/repo@abc123def456`
+     - `--remote github.com/owner/repo` (uses default branch)
 
 ## 📂 Error Handling
 
@@ -131,7 +131,7 @@ error: failed to resolve remote definition: .ingitdb file not found in repositor
 
 | Aspect | Local | GitHub |
 |--------|-------|--------|
-| Command | `--path <dir>` | `--github owner/repo[@ref]` |
+| Command | `--path <dir>` | `--remote host/owner/repo[@ref]` |
 | Authentication | None | None for public reads; token required for private reads and all writes |
 | File Access | Direct filesystem | GitHub REST API |
 | Performance | Fast (local disk) | Network dependent |

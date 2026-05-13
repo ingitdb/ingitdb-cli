@@ -148,11 +148,11 @@ multiple `---`-separated documents).
 #### REQ: source-selection
 
 `select` MUST accept either `--path=PATH` (local) or
-`--github=OWNER/REPO[@REF]` (remote GitHub), but never both. When
-neither is provided, the current working directory is used as the
-local path. This MUST behave identically in both modes (single-record
-and set) and MUST follow
-[github-direct-access](../../github-direct-access/README.md) and
+`--remote=HOST/OWNER/REPO[@REF]` (remote Git repository), but never
+both. When neither is provided, the current working directory is used
+as the local path. This MUST behave identically in both modes
+(single-record and set) and MUST follow
+[remote-repo-access](../../remote-repo-access/README.md) and
 [path-targeting](../../path-targeting/README.md).
 
 ## Dependencies
@@ -162,8 +162,8 @@ and set) and MUST follow
   mode-selection rules.
 - [id-flag-format](../../id-flag-format/README.md) — `--id` syntax.
 - [path-targeting](../../path-targeting/README.md) — `--path` resolution.
-- [github-direct-access](../../github-direct-access/README.md) —
-  `--github` source.
+- [remote-repo-access](../../remote-repo-access/README.md) —
+  `--remote` source.
 - [output-formats](../../output-formats/README.md) — shared format
   contracts.
 
@@ -287,14 +287,15 @@ and then apply the limit, emitting one record.
 `ingitdb select --from=countries --limit=10` against a 3-record
 collection MUST emit all 3 records and exit `0`.
 
-### AC: reads-from-github
+### AC: reads-from-remote
 
 **Requirements:** cli/select#req:source-selection
 
-`ingitdb select --github=owner/repo --id=countries/ie` MUST resolve
-the record from the default branch and emit it as YAML (single-record
-default). Pinning to a ref (`owner/repo@main`) MUST read from that
-ref. Combining `--github` with `--path` MUST be rejected.
+`ingitdb select --remote=github.com/owner/repo --id=countries/ie` MUST
+resolve the record from the default branch and emit it as YAML
+(single-record default). Pinning to a ref
+(`github.com/owner/repo@main`) MUST read from that ref. Combining
+`--remote` with `--path` MUST be rejected.
 
 ### AC: rejects-non-select-flags
 

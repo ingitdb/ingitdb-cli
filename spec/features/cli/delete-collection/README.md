@@ -40,7 +40,7 @@ Not defined yet.
 
 - Acceptance criteria not yet defined for this feature.
 - Should the command refuse to delete a collection that other collections or views reference?
-- Should `delete collection` support `--github`?
+- Should `delete collection` support `--remote`?
 
 ---
 *This document follows the https://specscore.md/feature-specification*

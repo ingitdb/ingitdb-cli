@@ -40,7 +40,7 @@ Not defined yet.
 
 - Acceptance criteria not yet defined for this feature.
 - Should `truncate` require an interactive confirmation, or rely on the user's git history for safety?
-- Should `--github` be supported for remote truncation given that it could produce a single very large commit?
+- Should `--remote` be supported for remote truncation given that it could produce a single very large commit?
 
 ---
 *This document follows the https://specscore.md/feature-specification*

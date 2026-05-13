@@ -4,7 +4,7 @@
 
 ## Summary
 
-The `ingitdb delete record` command removes a single record by `--id` from a local database directory or from a GitHub repository. For `SingleRecord` collections the entire record file is removed; for `MapOfIDRecords` collections only the matching key is removed from the shared map file.
+The `ingitdb delete record` command removes a single record by `--id` from a local database directory or from a remote Git repository. For `SingleRecord` collections the entire record file is removed; for `MapOfIDRecords` collections only the matching key is removed from the shared map file.
 
 ## Problem
 
@@ -26,7 +26,7 @@ The command MUST be invoked as `ingitdb delete record`. The `--id` flag is requi
 
 #### REQ: source-selection
 
-`--path=PATH` and `--github=OWNER/REPO[@REF]` MUST be mutually exclusive. When neither is given the current working directory is used.
+`--path=PATH` and `--remote=HOST/OWNER/REPO[@REF]` MUST be mutually exclusive. When neither is given the current working directory is used.
 
 ### Semantics
 
@@ -34,15 +34,15 @@ The command MUST be invoked as `ingitdb delete record`. The `--id` flag is requi
 
 For collections whose `record_file.type` is `SingleRecord`, the command MUST delete the on-disk file backing the record. For collections whose `record_file.type` is `MapOfIDRecords`, the command MUST remove the matching key from the shared map file while leaving sibling keys intact.
 
-#### REQ: github-write-requires-token
+#### REQ: remote-write-requires-token
 
-For `--github` writes, a token MUST be supplied via `--token` or `GITHUB_TOKEN`. Each successful delete MUST produce exactly one commit in the remote repository.
+For `--remote` writes, a token MUST be supplied via `--token` or a host-derived environment variable (e.g. `GITHUB_TOKEN` for `github.com`). Each successful delete MUST produce exactly one commit in the remote repository.
 
 ## Dependencies
 
 - id-flag-format
 - path-targeting
-- github-direct-access
+- remote-repo-access
 
 ## Acceptance Criteria
 

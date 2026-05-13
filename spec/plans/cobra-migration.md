@@ -14,7 +14,7 @@ Migrate `cmd/ingitdb` from `github.com/urfave/cli/v3` to `github.com/spf13/cobra
 #### `cmd/ingitdb/commands/flags.go`
 
 Create shared flag-registration helpers to eliminate the ~22-file repetition of `--path`,
-~6-file repetition of `--github`/`--token`, etc.
+~6-file repetition of `--remote`/`--token`, etc.
 
 ```go
 package commands
@@ -26,7 +26,7 @@ func addPathFlag(cmd *cobra.Command) {
     cmd.Flags().String("path", "", "path to the database directory (default: current directory)")
 }
 
-// addGitHubFlags adds --github and --token flags. Used by record CRUD + list collections.
+// addGitHubFlags adds --remote and --token flags. Used by record CRUD + list collections.
 func addGitHubFlags(cmd *cobra.Command) {
     cmd.Flags().String("github", "", "GitHub source as owner/repo[@branch|tag|commit]")
     cmd.Flags().String("token", "", "GitHub personal access token (or set GITHUB_TOKEN env var)")
@@ -332,7 +332,7 @@ git merge --no-ff feat/cobra-batch-2 -m "feat(cobra): merge batch-2"
 
 **Notes**:
 - `delete.go` is a parent command group: `cmd.AddCommand(deleteCollection(), deleteView(), deleteRecords(), deleteRecord(...))`
-- `delete_record.go` uses `resolveRecordContextCobra`; needs `--path`, `--github`, `--token`, `--id` (required)
+- `delete_record.go` uses `resolveRecordContextCobra`; needs `--path`, `--remote`, `--token`, `--id` (required)
 - `delete_records.go`, `delete_collection.go`, `delete_view.go` are stubs — replace cli.Exit with fmt.Errorf
 - Use `addPathFlag(cmd)`, `addGitHubFlags(cmd)` where applicable
 - `delete.go` has alias `"d"` — `Aliases: []string{"d"}` works identically in Cobra
@@ -375,7 +375,7 @@ git merge --no-ff feat/cobra-batch-2 -m "feat(cobra): merge batch-2"
 **Notes**:
 - `create.go` and `update.go` are parent groups
 - `create_record.go` and `update_record.go` both use `resolveRecordContextCobra`
-- Both have `--path`, `--github`, `--token`, `--id` (required), plus command-specific data flag
+- Both have `--path`, `--remote`, `--token`, `--id` (required), plus command-specific data flag
   → use `addPathFlag(cmd)`, `addGitHubFlags(cmd)`, `cmd.MarkFlagRequired("id")`
 - `update_record.go` has `--set` (required): `cmd.Flags().String("set", "", "..."); _ = cmd.MarkFlagRequired("set")`
 
@@ -460,7 +460,7 @@ After all 8 batch branches are merged:
 | Repeated pattern | Files affected | Solution |
 |-----------------|---------------|---------|
 | `--path` flag definition | 22 files | `addPathFlag(cmd)` in flags.go |
-| `--github` + `--token` flags | 6 files | `addGitHubFlags(cmd)` in flags.go |
+| `--remote` + `--token` flags | 6 files | `addGitHubFlags(cmd)` in flags.go |
 | `--format` flag | 4 files | `addFormatFlag(cmd, default)` in flags.go |
 | `--collection` flag | 6 files | `addCollectionFlag(cmd, required)` in flags.go |
 | `--path`+`--views`+`--records-delimiter` | 2 files | `addMaterializeFlags(cmd)` in flags.go |

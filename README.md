@@ -177,48 +177,49 @@ ingitdb update record --path=. --id=geo.nations/ie --set='{title: "Ireland, Repu
 ingitdb delete record --path=. --id=geo.nations/ie
 ```
 
-## 🔗 Accessing GitHub Repositories Directly
+## 🔗 Accessing Remote Repositories Directly
 
-inGitDB can read and write records in a remote GitHub repository without cloning it. The
-`--github` flag replaces `--path` and points the CLI at a GitHub repository over the REST API.
+inGitDB can read and write records in a remote Git repository without cloning it. The
+`--remote` flag replaces `--path` and points the CLI at a remote Git hosting service
+(GitHub today; GitLab and Bitbucket adapters are coming) over the provider's REST API.
 
 ### 🌐 Public repositories (no token required)
 
 ```shell
 # Read a record
-ingitdb read record --github=owner/repo --id=countries/ie
+ingitdb read record --remote=github.com/owner/repo --id=countries/ie
 
 # Pin to a specific branch, tag, or commit SHA
-ingitdb read record --github=owner/repo@main --id=todo.tags/active
-ingitdb read record --github=owner/repo@v1.2.0 --id=todo.tags/active
+ingitdb read record --remote=github.com/owner/repo@main --id=todo.tags/active
+ingitdb read record --remote=github.com/owner/repo@v1.2.0 --id=todo.tags/active
 
 # List all collections
-ingitdb list collections --github=owner/repo
+ingitdb list collections --remote=github.com/owner/repo
 ```
 
 ### 🔒 Private repositories
 
-Supply a token via the `GITHUB_TOKEN` environment variable or the `--token` flag. All write
-operations also require a token, even for public repositories.
+Supply a token via a host-derived environment variable (e.g. `GITHUB_TOKEN` for `github.com`)
+or the `--token` flag. All write operations also require a token, even for public repositories.
 
 ```shell
 # Set the token once in your shell
 export GITHUB_TOKEN=ghp_...
 
-ingitdb read record --github=owner/repo --id=countries/ie
-ingitdb list collections --github=owner/repo
-ingitdb create record --github=owner/repo --id=countries/ie --data='{name: Ireland}'
-ingitdb update record --github=owner/repo --id=countries/ie --set='{name: Ireland, capital: Dublin}'
-ingitdb delete record --github=owner/repo --id=countries/ie
+ingitdb read record --remote=github.com/owner/repo --id=countries/ie
+ingitdb list collections --remote=github.com/owner/repo
+ingitdb create record --remote=github.com/owner/repo --id=countries/ie --data='{name: Ireland}'
+ingitdb update record --remote=github.com/owner/repo --id=countries/ie --set='{name: Ireland, capital: Dublin}'
+ingitdb delete record --remote=github.com/owner/repo --id=countries/ie
 
 # Or pass the token inline (not recommended for scripts — it ends up in shell history)
-ingitdb read record --github=owner/repo --token=ghp_... --id=countries/ie
+ingitdb read record --remote=github.com/owner/repo --token=ghp_... --id=countries/ie
 ```
 
 Each write operation (`create record`, `update record`, `delete record`) creates a single commit
 in the remote repository. No local clone is required at any point.
 
-See [GitHub Direct Access](docs/features/github-direct-access.md) for the full reference,
+See [Remote Repository Access](docs/features/remote-repo-access.md) for the full reference,
 including authentication details, rate limit notes, and limitations.
 
 ---
@@ -239,11 +240,11 @@ languages:
 | ------------------------------------------------- | :--------- | -------------------------------------------------------- |
 | [`version`](docs/cli/commands/version.md)         | ✅ done    | Print build version, commit hash, and date               |
 | [`validate`](docs/cli/commands/validate.md)       | ✅ done    | Check every record against its collection schema         |
-| [`read record`](docs/cli/commands/read.md)        | ✅ done    | Read a single record by ID (local or GitHub)             |
+| [`read record`](docs/cli/commands/read.md)        | ✅ done    | Read a single record by ID (local or remote)             |
 | [`create record`](docs/cli/commands/create.md)    | ✅ done    | Create a new record in a collection                      |
-| [`update record`](docs/cli/commands/update.md)    | ✅ done    | Update fields of an existing record (local or GitHub)    |
-| [`delete record`](docs/cli/commands/delete.md)    | ✅ done    | Delete a single record by ID (local or GitHub)           |
-| [`list collections`](docs/cli/commands/list.md)   | ✅ done    | List collection IDs (local or GitHub)                    |
+| [`update record`](docs/cli/commands/update.md)    | ✅ done    | Update fields of an existing record (local or remote)    |
+| [`delete record`](docs/cli/commands/delete.md)    | ✅ done    | Delete a single record by ID (local or remote)           |
+| [`list collections`](docs/cli/commands/list.md)   | ✅ done    | List collection IDs (local or remote)                    |
 | `list view`                                       | 🟡 planned | List view definition                                     |
 | `list subscribers`                                | 🟡 planned | List subscribers                                         |
 | [`find`](docs/cli/commands/find.md)               | 🟡 planned | Search records by substring, regex, or exact value       |
@@ -297,7 +298,7 @@ Storage format, schema definitions, roadmap, and system-level feature specs are 
 | -------- | ----------- |
 | [Storage Format](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/STORAGE_FORMAT.md) | Directory layout, collection schema, column types, record files |
 | [Features](https://github.com/ingitdb/ingitdb-specs/tree/main/docs/features/) | What inGitDB can do today and what is coming |
-| [GitHub Direct Access](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/features/github-direct-access.md) | Read and write records in remote GitHub repositories without cloning |
+| [Remote Repository Access](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/features/remote-repo-access.md) | Read and write records in remote Git repositories (GitHub, GitLab, Bitbucket) without cloning |
 | [Diff](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/features/diff.md) | Record-level diff between two git refs with field-level detail, commit annotations, and JSON/YAML output |
 | [Roadmap](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/ROADMAP.md) | Nine delivery phases from Validator to GraphQL |
 | [Competitors](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/COMPETITORS.md) | Honest feature comparison with related tools |

@@ -110,7 +110,7 @@
             <ul>
               <li><a href="#cli-commands">CLI Commands</a></li>
               <li><a href="#configuration">Configuration</a></li>
-              <li><a href="#github-access">GitHub Access</a></li>
+              <li><a href="#remote-access">Remote Access</a></li>
               <li><a href="#features">Features</a></li>
               <li><a href="#triggers">Triggers &amp; Subscribers</a></li>
             </ul>
@@ -379,26 +379,27 @@ languages:
           </p>
         </section>
 
-        <section id="github-access">
-          <h2>GitHub Direct Access</h2>
+        <section id="remote-access">
+          <h2>Remote Repository Access</h2>
           <p>
-            inGitDB can read and write records in a remote GitHub repository
-            without cloning it. The <code>--github</code> flag replaces
-            <code>--path</code> and points the CLI at a GitHub repository over
-            the REST API.
+            inGitDB can read and write records in a remote Git repository
+            without cloning it. The <code>--remote</code> flag replaces
+            <code>--path</code> and points the CLI at a remote hosting service
+            (GitHub today; GitLab and Bitbucket adapters are coming) over the
+            provider's REST API.
           </p>
 
           <div class="code-example">
             <h4>Public repositories (no token required)</h4>
             <pre><code># Read a record
-ingitdb read record --github=owner/repo --id=countries/ie
+ingitdb read record --remote=github.com/owner/repo --id=countries/ie
 
 # Pin to a specific branch, tag, or commit SHA
-ingitdb read record --github=owner/repo@main --id=todo.tags/active
-ingitdb read record --github=owner/repo@v1.2.0 --id=todo.tags/active
+ingitdb read record --remote=github.com/owner/repo@main --id=todo.tags/active
+ingitdb read record --remote=github.com/owner/repo@v1.2.0 --id=todo.tags/active
 
 # List all collections
-ingitdb list collections --github=owner/repo</code></pre>
+ingitdb list collections --remote=github.com/owner/repo</code></pre>
           </div>
 
           <div class="code-example">
@@ -407,10 +408,10 @@ ingitdb list collections --github=owner/repo</code></pre>
 export GITHUB_TOKEN=ghp_...
 
 # Now you can read and write
-ingitdb read record --github=owner/repo --id=countries/ie
-ingitdb create record --github=owner/repo --id=countries/ie --data='{name: Ireland}'
-ingitdb update record --github=owner/repo --id=countries/ie --set='{capital: Dublin}'
-ingitdb delete record --github=owner/repo --id=countries/ie</code></pre>
+ingitdb read record --remote=github.com/owner/repo --id=countries/ie
+ingitdb create record --remote=github.com/owner/repo --id=countries/ie --data='{name: Ireland}'
+ingitdb update record --remote=github.com/owner/repo --id=countries/ie --set='{capital: Dublin}'
+ingitdb delete record --remote=github.com/owner/repo --id=countries/ie</code></pre>
           </div>
 
           <p>

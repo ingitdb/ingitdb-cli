@@ -4,11 +4,11 @@
 
 ## Summary
 
-The `ingitdb read record` command reads a single record by `--id` and writes it to stdout in YAML (default) or JSON. It works against a local database directory (`--path`) or directly against a GitHub repository (`--github`).
+The `ingitdb read record` command reads a single record by `--id` and writes it to stdout in YAML (default) or JSON. It works against a local database directory (`--path`) or directly against a remote Git repository (`--remote`).
 
 ## Problem
 
-Inspecting a single record is a fundamental data-access operation. Users need a uniform way to fetch one record without writing custom YAML/JSON parsing code, regardless of whether the database lives on a local clone or in a remote GitHub repository.
+Inspecting a single record is a fundamental data-access operation. Users need a uniform way to fetch one record without writing custom YAML/JSON parsing code, regardless of whether the database lives on a local clone or in a remote Git repository.
 
 ## Behavior
 
@@ -26,7 +26,7 @@ The `--id=<collection-id>/<record-key>` flag MUST be provided. Its value MUST fo
 
 #### REQ: source-selection
 
-The command MUST accept either `--path=PATH` (local directory) or `--github=OWNER/REPO[@REF]` (remote GitHub repository), but never both. When neither is given, the current working directory is used as the local path.
+The command MUST accept either `--path=PATH` (local directory) or `--remote=HOST/OWNER/REPO[@REF]` (remote Git repository), but never both. When neither is given, the current working directory is used as the local path.
 
 #### REQ: format-flag
 
@@ -43,7 +43,7 @@ The command MUST write the resolved record to stdout in the requested format and
 - id-flag-format
 - output-formats
 - path-targeting
-- github-direct-access
+- remote-repo-access
 
 ## Acceptance Criteria
 
@@ -53,11 +53,11 @@ The command MUST write the resolved record to stdout in the requested format and
 
 Given a local database with a record at `geo.nations/ie`, `ingitdb read record --id=geo.nations/ie` writes the record's fields to stdout as YAML and exits `0`. Adding `--format=json` switches the output to JSON.
 
-### AC: reads-from-github
+### AC: reads-from-remote
 
 **Requirements:** cli/read-record#req:source-selection, cli/read-record#req:format-flag
 
-`ingitdb read record --github=owner/repo --id=countries/ie` resolves the record from the default branch of the given repository without requiring a local clone. Pinning to a ref (`owner/repo@main`) reads from that ref instead.
+`ingitdb read record --remote=github.com/owner/repo --id=countries/ie` resolves the record from the default branch of the given repository without requiring a local clone. Pinning to a ref (`github.com/owner/repo@main`) reads from that ref instead.
 
 ## Outstanding Questions
 

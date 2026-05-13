@@ -28,9 +28,9 @@ This directory tracks the SpecScore feature specifications for the **ingitdb-cli
 | [cli/setup](cli/setup/README.md) | Draft | `ingitdb setup` — initialise a new database directory. |
 | [cli/migrate](cli/migrate/README.md) | Draft | `ingitdb migrate` — migrate records between schema versions. |
 | [id-flag-format](id-flag-format/README.md) | Implementing | Cross-cutting `--id=<collection-id>/<record-key>` syntax. |
-| [github-direct-access](github-direct-access/README.md) | Implementing | Cross-cutting `--github=owner/repo[@ref]` flag and token handling. |
 | [output-formats](output-formats/README.md) | Implementing | Cross-cutting `--format=yaml|json` flag and YAML default. |
-| [path-targeting](path-targeting/README.md) | Implementing | Cross-cutting `--path` flag and its relation to `--github`. |
+| [path-targeting](path-targeting/README.md) | Implementing | Cross-cutting `--path` flag and its relation to `--remote`. |
+| [remote-repo-access](remote-repo-access/README.md) | Implementing | Cross-cutting `--remote=<URL>` flag, provider dispatch, and token resolution for remote Git hosting services. |
 | [shared-cli-flags](shared-cli-flags/README.md) | Single source of truth for the CLI flag grammar shared across select, insert, update, delete, and drop verbs: --from, --into, --where, --set, --id, --all, --order-by, --fields. Defines parsing rules, operator semantics (==, ===, !=, !==, >=, <=, >, <), value-type model, and flag mutual-exclusion rules. |
 
 ## Feature Summaries
@@ -101,14 +101,14 @@ Migrates records from one schema version to another for a named target.
 ### id-flag-format
 Defines the `--id=<collection-id>/<record-key>` syntax used by every CRUD command, including the longest-prefix-match rule and the allowed character set for collection IDs.
 
-### github-direct-access
-Defines the `--github=owner/repo[@ref]` flag, token resolution via `--token` and `GITHUB_TOKEN`, and the one-commit-per-write rule for remote operations.
-
 ### output-formats
 Defines the `--format=yaml|json` flag, the YAML default, and the contract that read-style commands obey.
 
 ### path-targeting
-Defines the `--path` flag, its default of the current working directory, and its mutual exclusivity with `--github`.
+Defines the `--path` flag, its default of the current working directory, and its mutual exclusivity with `--remote`.
+
+### remote-repo-access
+Defines the `--remote=<URL>` flag for direct access to remote Git hosting services (GitHub, GitLab, Bitbucket, and self-hosted instances), with built-in provider inference, `--provider` override for unknown hosts, host-derived token environment variables, and the one-commit-per-write rule.
 
 ## Outstanding Questions
 

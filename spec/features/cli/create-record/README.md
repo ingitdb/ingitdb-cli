@@ -8,13 +8,13 @@ The `ingitdb create record` command creates a new record in a collection. The re
 collection and key are taken from `--id`; its content can be supplied via `--data` (YAML/JSON
 inline), via **stdin** (piped markdown or YAML file), or interactively via **`--edit`**
 (opens `$EDITOR` with a schema-generated template). The command works against a local path or
-a GitHub repository; remote writes require an authentication token.
+a remote Git repository; remote writes require an authentication token.
 
 ## Problem
 
 Users adding data to an inGitDB database should not have to hand-write the on-disk YAML/JSON
 or Markdown in the exact location and shape the validator expects. A dedicated `create record`
-command encapsulates the placement, encoding, and (for GitHub) the commit creation in a single
+command encapsulates the placement, encoding, and (for `--remote`) the commit creation in a single
 invocation.
 
 For **markdown-format collections**, the current `--data` flag only accepts structured YAML,
@@ -99,7 +99,7 @@ error: no record content provided — use --data, --edit, or pipe content via st
 
 #### REQ: source-selection
 
-`--path=PATH` and `--github=OWNER/REPO[@REF]` MUST be mutually exclusive. When neither is
+`--path=PATH` and `--remote=HOST/OWNER/REPO[@REF]` MUST be mutually exclusive. When neither is
 given the current working directory is used.
 
 ### Semantics
@@ -109,11 +109,12 @@ given the current working directory is used.
 The command MUST fail when a record with the same key already exists in the target collection.
 It MUST NOT silently overwrite existing data.
 
-#### REQ: github-write-requires-token
+#### REQ: remote-write-requires-token
 
-For `--github` writes, an authentication token MUST be supplied via `--token` or the
-`GITHUB_TOKEN` environment variable. Each successful create MUST result in exactly one commit
-in the remote repository (see [github-direct-access](../../github-direct-access/README.md)).
+For `--remote` writes, an authentication token MUST be supplied via `--token` or a
+host-derived environment variable (e.g. `GITHUB_TOKEN` for `github.com`). Each successful
+create MUST result in exactly one commit in the remote repository (see
+[remote-repo-access](../../remote-repo-access/README.md)).
 
 ## Data Flow
 
@@ -145,7 +146,7 @@ invoke create record
 
 - [id-flag-format](../../id-flag-format/README.md)
 - [path-targeting](../../path-targeting/README.md)
-- [github-direct-access](../../github-direct-access/README.md)
+- [remote-repo-access](../../remote-repo-access/README.md)
 
 ## Acceptance Criteria
 
@@ -229,15 +230,15 @@ Given an editor script that appends `title: Product 1` to the temp file
 `ingitdb create record --id=products/p1 --edit` against a `format: yaml` collection inserts a
 record with `title: Product 1` and exits `0`.
 
-### AC: creates-github-record-with-token
+### AC: creates-remote-record-with-token
 
 **Requirements:** cli/create-record#req:source-selection,
-cli/create-record#req:github-write-requires-token
+cli/create-record#req:remote-write-requires-token
 
-With `GITHUB_TOKEN` set, `ingitdb create record --github=owner/repo --id=countries/ie
---data='{name: Ireland}'` creates one commit in `owner/repo` containing the new record file.
-Without a token the command exits non-zero before any network request that would require
-authentication.
+With `GITHUB_TOKEN` set, `ingitdb create record --remote=github.com/owner/repo
+--id=countries/ie --data='{name: Ireland}'` creates one commit in `owner/repo` containing
+the new record file. Without a token the command exits non-zero before any network request
+that would require authentication.
 
 ## Rehearse Integration
 

@@ -4,7 +4,7 @@
 
 ```
 ingitdb read record --id=ID [--path=PATH] [--format=yaml|json]
-ingitdb read record --id=ID --github=OWNER/REPO[@REF] [--token=TOKEN] [--format=yaml|json]
+ingitdb read record --id=ID --remote=HOST/OWNER/REPO[@REF] [--token=TOKEN] [--format=yaml|json]
 ```
 
 Reads a single record by ID and writes it to stdout.
@@ -13,8 +13,8 @@ Reads a single record by ID and writes it to stdout.
 | --------------------------- | -------- | ---------------------------------------------------------------------------------------- |
 | `--id=ID`                   | yes      | Record ID as `collection/path/key` (e.g. `countries/ie`).                                |
 | `--path=PATH`               | no       | Path to the local database directory. Defaults to the current working directory.         |
-| `--github=OWNER/REPO[@REF]` | no       | GitHub repository as `owner/repo` or `owner/repo@ref`. Mutually exclusive with `--path`. |
-| `--token=TOKEN`             | no       | GitHub personal access token. Falls back to `GITHUB_TOKEN` env var.                      |
+| `--remote=HOST/OWNER/REPO[@REF]` | no       | Remote Git repository (e.g. `github.com/owner/repo` or `github.com/owner/repo@ref`). Mutually exclusive with `--path`. |
+| `--token=TOKEN`             | no       | Personal access token for the remote provider. Falls back to host-derived env vars (e.g. `GITHUB_TOKEN` for `github.com`). |
 | `--format=FORMAT`           | no       | Output format: `yaml` (default) or `json`.                                               |
 
 **Examples:**
@@ -27,17 +27,17 @@ ingitdb read record --id=countries/ie
 ingitdb read record --path=/var/db/myapp --id=countries/ie
 
 # 🐙 Read from a public GitHub repository
-ingitdb read record --github=ingitdb/ingitdb-cli --id=todo.tags/active
+ingitdb read record --remote=github.com/ingitdb/ingitdb-cli --id=todo.tags/active
 
 # 🔁 Read from a specific branch on GitHub, output as JSON
-ingitdb read record --github=ingitdb/ingitdb-cli@main --id=todo.tags/active --format=json
+ingitdb read record --remote=github.com/ingitdb/ingitdb-cli@main --id=todo.tags/active --format=json
 
 # 🐙 Read from a private GitHub repository
 export GITHUB_TOKEN=ghp_...
-ingitdb read record --github=myorg/private-db --id=users/alice
+ingitdb read record --remote=github.com/myorg/private-db --id=users/alice
 ```
 
-See [GitHub Direct Access](../../features/github-direct-access.md) for more detail.
+See [Remote Repository Access](../../features/remote-repo-access.md) for more detail.
 
 See [Read Examples](read-examples.md) for more usage examples.
 

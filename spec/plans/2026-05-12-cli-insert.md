@@ -296,7 +296,7 @@ go build -o /tmp/ingitdb-insert ./cmd/ingitdb/
 /tmp/ingitdb-insert insert --help 2>&1 | head -25
 ```
 
-Expected: help text mentions `--into`, `--key`, `--data`, `--edit`, `--empty`, `--path`, `--github`, `--token`.
+Expected: help text mentions `--into`, `--key`, `--data`, `--edit`, `--empty`, `--path`, `--remote`, `--token`.
 
 - [ ] **Step 1.7 — Lint and commit**
 
@@ -306,7 +306,7 @@ git add cmd/ingitdb/commands/insert.go cmd/ingitdb/commands/insert_test.go cmd/i
 git commit -m "$(cat <<'EOF'
 feat(cli): scaffold insert command
 
-Registers --into, --key, --data, --edit, --empty, --path, --github,
+Registers --into, --key, --data, --edit, --empty, --path, --remote,
 plus the forbidden shared flags (--from, --id, --where, etc.) so
 they can be explicitly rejected at RunE time with verb-specific
 diagnostics. Returns "not yet implemented" until subsequent tasks
@@ -450,7 +450,7 @@ func resolveInsertContext(
 	githubVal, _ := cmd.Flags().GetString("github")
 	pathVal, _ := cmd.Flags().GetString("path")
 	if githubVal != "" && pathVal != "" {
-		return insertContext{}, fmt.Errorf("--path with --github is not supported")
+		return insertContext{}, fmt.Errorf("--path with --remote is not supported")
 	}
 	if githubVal != "" {
 		return resolveInsertContextGitHub(ctx, cmd, collectionID, githubVal)
@@ -524,7 +524,7 @@ feat(cli/insert): add resolveInsertContext for --into-driven flow
 
 Parallel to resolveRecordContext but takes a collection ID directly
 (from --into) instead of parsing it out of an --id value. Supports
-both local (--path) and GitHub (--github) sources, reusing the
+both local (--path) and GitHub (--remote) sources, reusing the
 readRemoteDefinitionForCollection helper added by the cli/select
 plan. Returns an insertContext struct containing db + colDef +
 dirPath + def — the same fields downstream insert logic needs.

@@ -393,7 +393,7 @@ go build -o /tmp/ingitdb-update ./cmd/ingitdb/
 /tmp/ingitdb-update update --help 2>&1 | head -20
 ```
 
-Expected: help text mentions `--id`, `--from`, `--where`, `--set`, `--unset`, `--all`, `--min-affected`, `--path`, `--github`, `--token`.
+Expected: help text mentions `--id`, `--from`, `--where`, `--set`, `--unset`, `--all`, `--min-affected`, `--path`, `--remote`, `--token`.
 
 - [ ] **Step 1.9 — Lint and commit**
 
@@ -1394,7 +1394,7 @@ EOF
 | `set-mode-zero-matches-default` | 3 |
 | `min-affected-flag` | 4 |
 | `success-output` | 2/3/4 — all paths exit 0 with empty stdout on success |
-| `source-selection` | 2 (single-record via resolveRecordContext), 3 (set via resolveInsertContext — both already handle --github) |
+| `source-selection` | 2 (single-record via resolveRecordContext), 3 (set via resolveInsertContext — both already handle --remote) |
 | `github-write-requires-token` | inherited; not exercised by integration tests |
 
 **2. Placeholder scan.** No `TBD`/`TODO`/"implement later" strings. Every code block is complete.

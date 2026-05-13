@@ -6,7 +6,7 @@
 provides full CRUD access to inGitDB repositories stored on GitHub. It uses the GitHub REST API
 to read and write files directly, with no local clone required.
 
-The package is consumed by the `ingitdb` CLI when `--github=owner/repo` is supplied, and can
+The package is consumed by the `ingitdb` CLI when `--remote=github.com/owner/repo` is supplied (or any equivalent form resolving to the `github` provider), and can
 also be used as a Go library by any program that needs database access to a remote inGitDB
 repository.
 
@@ -25,7 +25,7 @@ repository.
 
 ```mermaid
 flowchart LR
-    CLI["ingitdb CLI\n--github=owner/repo"] --> DB["githubDB\n(dal.DB)"]
+    CLI["ingitdb CLI\n--remote=github.com/owner/repo"] --> DB["githubDB\n(dal.DB)"]
     DB --> ROTx["readonlyTx\n(dal.ReadTransaction)"]
     DB --> RWTx["readwriteTx\n(dal.ReadwriteTransaction)"]
     ROTx --> FR["githubFileReader\n(FileReader)"]
@@ -276,7 +276,7 @@ go test -timeout=10s ./pkg/dalgo2ghingitdb/...
 
 ## 📂 See also
 
-- [GitHub Direct Access](features/github-direct-access.md) — CLI-level documentation with
+- [Remote Repository Access](features/remote-repo-access.md) — CLI-level documentation with
   command examples, auth setup, rate limits, and limitations
 - [Transactions](features/transactions.md) — local read/write transaction model
 - [DALgo](https://github.com/dal-go/dalgo) — the database abstraction layer

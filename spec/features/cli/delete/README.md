@@ -103,17 +103,18 @@ stdout. Diagnostic and progress messages MUST go to stderr.
 #### REQ: source-selection
 
 `delete` MUST accept either `--path=PATH` (local) or
-`--github=OWNER/REPO[@REF]` (remote GitHub), but never both, per
-[path-targeting](../../path-targeting/README.md) and
-[github-direct-access](../../github-direct-access/README.md). When
+`--remote=HOST/OWNER/REPO[@REF]` (remote Git repository), but never
+both, per [path-targeting](../../path-targeting/README.md) and
+[remote-repo-access](../../remote-repo-access/README.md). When
 neither is provided, the current working directory is used.
 
-#### REQ: github-write-requires-token
+#### REQ: remote-write-requires-token
 
-For `--github` writes, a token MUST be supplied via `--token` or the
-`GITHUB_TOKEN` environment variable. Each successful invocation MUST
-produce exactly one commit in the remote repository, regardless of
-how many records were deleted.
+For `--remote` writes, a token MUST be supplied via `--token` or a
+host-derived environment variable (e.g. `GITHUB_TOKEN` for
+`github.com`). Each successful invocation MUST produce exactly one
+commit in the remote repository, regardless of how many records were
+deleted.
 
 ## Dependencies
 
@@ -121,19 +122,19 @@ how many records were deleted.
   `--from`, `--where`, `--all`, and applicability matrix.
 - [id-flag-format](../../id-flag-format/README.md) — `--id` syntax.
 - [path-targeting](../../path-targeting/README.md) — `--path`.
-- [github-direct-access](../../github-direct-access/README.md) —
-  `--github`.
+- [remote-repo-access](../../remote-repo-access/README.md) —
+  `--remote`.
 
 ## Acceptance Criteria
 
 ### AC: single-record-delete
 
-**Requirements:** cli/delete#req:subcommand-name, cli/delete#req:mode-selection, cli/delete#req:single-record-delete, cli/delete#req:success-output, cli/delete#req:github-write-requires-token
+**Requirements:** cli/delete#req:subcommand-name, cli/delete#req:mode-selection, cli/delete#req:single-record-delete, cli/delete#req:success-output, cli/delete#req:remote-write-requires-token
 
 Given a local database containing a record `countries/ie`,
 `ingitdb delete --id=countries/ie` MUST remove the record, exit `0`,
 and write nothing to stdout. Targeting the same record against a
-GitHub repository MUST produce exactly one commit.
+remote repository MUST produce exactly one commit.
 
 ### AC: single-record-not-found
 
@@ -155,10 +156,10 @@ and write nothing to stdout.
 
 ### AC: set-mode-all-delete
 
-**Requirements:** cli/delete#req:set-mode-shape, cli/delete#req:github-write-requires-token
+**Requirements:** cli/delete#req:set-mode-shape, cli/delete#req:remote-write-requires-token
 
 `ingitdb delete --from=countries --all` MUST remove every record in
-`countries` and produce one commit when targeting GitHub.
+`countries` and produce one commit when targeting a remote repository.
 `ingitdb delete --from=countries` (no `--where`, no `--all`) MUST be
 rejected per `shared-cli-flags#req:all-flag`.
 `ingitdb delete --from=countries --all --where='region==EU'` MUST be

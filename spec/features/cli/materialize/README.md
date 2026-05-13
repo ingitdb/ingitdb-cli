@@ -41,7 +41,7 @@ Not defined yet.
 ## Outstanding Questions
 
 - Acceptance criteria not yet defined for this feature.
-- Should `materialize` support `--github` to write generated files back to a remote repository in a single commit?
+- Should `materialize` support `--remote` to write generated files back to a remote repository in a single commit?
 - Should there be a `materialize all` that runs both subcommands in dependency order?
 
 ---

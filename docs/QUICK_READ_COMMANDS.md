@@ -9,7 +9,7 @@ ingitdb read record --id todo.tags/active
 
 ### 🐙 2. From GitHub Repository (using dalgo2ghingitdb)
 ```bash
-ingitdb read record --github ingitdb/ingitdb-cli --id todo.tags/active
+ingitdb read record --remote github.com/ingitdb/ingitdb-cli --id todo.tags/active
 ```
 
 ## 🖥️ Both Commands Output
@@ -27,9 +27,9 @@ title: Active
 
 ### 🖥️ GitHub Command
 - `read record` - subcommand to read a single record
-- `--github ingitdb/ingitdb-cli` - GitHub repo as owner/repo
+- `--remote github.com/ingitdb/ingitdb-cli` - Remote repo as `host/owner/repo`
 - `--id todo.tags/active` - same record ID format
-- Optionally add `@branch` or `@tag`: `--github ingitdb/ingitdb-cli@main`
+- Optionally add `@branch`, `@tag`, or `@commit`: `--remote github.com/ingitdb/ingitdb-cli@main`
 - Uses `dalgo2ghingitdb` adapter for GitHub REST API access
 
 ## 📂 Output Format Options
@@ -41,7 +41,7 @@ Add `--format json` to both commands for JSON output:
 ingitdb read record --id todo.tags/active --format json
 
 # 🐙 GitHub
-ingitdb read record --github ingitdb/ingitdb-cli --id todo.tags/active --format json
+ingitdb read record --remote github.com/ingitdb/ingitdb-cli --id todo.tags/active --format json
 ```
 
 Both output:

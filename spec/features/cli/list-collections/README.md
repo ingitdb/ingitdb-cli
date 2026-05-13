@@ -4,7 +4,7 @@
 
 ## Summary
 
-The `ingitdb list collections` command prints every collection ID defined in a database. It works against a local directory (`--path`) or a GitHub repository (`--github`), and supports two narrowing flags: `--in` (regex on starting-point path) and `--filter-name` (glob on collection name).
+The `ingitdb list collections` command prints every collection ID defined in a database. It works against a local directory (`--path`) or a remote Git repository (`--remote`), and supports two narrowing flags: `--in` (regex on starting-point path) and `--filter-name` (glob on collection name).
 
 ## Problem
 
@@ -22,7 +22,7 @@ The command MUST be invoked as `ingitdb list collections`. All flags are optiona
 
 #### REQ: source-selection
 
-`--path=PATH` and `--github=OWNER/REPO[@REF]` MUST be mutually exclusive. When neither is given the current working directory is used.
+`--path=PATH` and `--remote=HOST/OWNER/REPO[@REF]` MUST be mutually exclusive. When neither is given the current working directory is used.
 
 #### REQ: in-flag
 
@@ -41,7 +41,7 @@ The command MUST print one collection ID per line and MUST exit `0` on success. 
 ## Dependencies
 
 - path-targeting
-- github-direct-access
+- remote-repo-access
 
 ## Acceptance Criteria
 

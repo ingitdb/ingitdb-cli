@@ -233,7 +233,7 @@ go build -o /tmp/ingitdb-select ./cmd/ingitdb/
 /tmp/ingitdb-select select --help 2>&1 | head -20
 ```
 
-Expected: help text mentions all registered flags (`--id`, `--from`, `--where`, `--order-by`, `--fields`, `--limit`, `--min-affected`, `--format`, `--path`, `--github`, `--token`).
+Expected: help text mentions all registered flags (`--id`, `--from`, `--where`, `--order-by`, `--fields`, `--limit`, `--min-affected`, `--format`, `--path`, `--remote`, `--token`).
 
 - [ ] **Step 1.7 — Lint and commit**
 
@@ -245,7 +245,7 @@ feat(cli): scaffold select command with sqlflags wiring
 
 Adds the `ingitdb select` command shell. Registers --id, --from,
 --where, --order-by, --fields, --limit, --min-affected, --format,
---path, --github, and --token. Resolves mode via sqlflags.ResolveMode
+--path, --remote, and --token. Resolves mode via sqlflags.ResolveMode
 and returns "not yet implemented" for both branches; subsequent
 commits add single-record and set-mode execution paths.
 
@@ -1661,7 +1661,7 @@ EOF
 
 ## Task 6 — GitHub source support
 
-**Context:** The spec requires `select --github=owner/repo[@REF]` to read from a remote repository without a local clone. The existing `read_record_github.go` shows the pattern (`resolveGitHubRecordContext` + `gitHubDBFactory.NewGitHubDBWithDef`). This task wires both modes to use the GitHub path when `--github` is supplied.
+**Context:** The spec requires `select --remote=owner/repo[@REF]` to read from a remote repository without a local clone. The existing `read_record_github.go` shows the pattern (`resolveGitHubRecordContext` + `gitHubDBFactory.NewGitHubDBWithDef`). This task wires both modes to use the GitHub path when `--remote` is supplied.
 
 **Files:**
 - Modify: `cmd/ingitdb/commands/select.go`
@@ -1677,7 +1677,7 @@ Verify the helpers exist. The single-record GitHub path is `resolveGitHubRecordC
 
 If a clean set-mode GitHub helper does NOT exist, this task may need to introduce one — in which case STOP and report the gap rather than guess. Report `BLOCKED: need a set-mode GitHub-source reader; only single-record one exists.`
 
-- [ ] **Step 6.2 — Write the failing test for --path/--github mutual exclusion**
+- [ ] **Step 6.2 — Write the failing test for --path/--remote mutual exclusion**
 
 Append to `cmd/ingitdb/commands/select_test.go`:
 
@@ -1687,9 +1687,9 @@ func TestSelect_PathAndGitHubMutuallyExclusive(t *testing.T) {
 	dir := t.TempDir()
 	homeDir, getWd, readDef, newDB, logf := selectTestDeps(t, dir)
 	cmd := Select(homeDir, getWd, readDef, newDB, logf)
-	err := runCobraCommand(cmd, "--path="+dir, "--github=foo/bar", "--id=todo.items/x")
+	err := runCobraCommand(cmd, "--path="+dir, "--remote=foo/bar", "--id=todo.items/x")
 	if err == nil {
-		t.Fatal("expected error when both --path and --github supplied")
+		t.Fatal("expected error when both --path and --remote supplied")
 	}
 }
 ```
@@ -1704,13 +1704,13 @@ If the test already passes because `resolveRecordContext` rejects the combo, tha
 
 - [ ] **Step 6.4 — Implement GitHub branch in `runSelectFromSet`**
 
-In `runSelectFromSet`, before resolving `dirPath`, check for `--github`:
+In `runSelectFromSet`, before resolving `dirPath`, check for `--remote`:
 
 ```go
 	githubVal, _ := cmd.Flags().GetString("github")
 	pathVal, _ := cmd.Flags().GetString("path")
 	if githubVal != "" && pathVal != "" {
-		return fmt.Errorf("--path with --github is not supported")
+		return fmt.Errorf("--path with --remote is not supported")
 	}
 	if githubVal != "" {
 		spec, parseErr := parseGitHubRepoSpec(githubVal)
@@ -1744,13 +1744,13 @@ go test -timeout=10s ./cmd/ingitdb/commands/
 golangci-lint run ./cmd/ingitdb/commands/...
 git add cmd/ingitdb/commands/select.go cmd/ingitdb/commands/select_test.go
 git commit -m "$(cat <<'EOF'
-feat(cli/select): add --github source support for both modes
+feat(cli/select): add --remote source support for both modes
 
 Single-record mode inherits GitHub resolution via the existing
-resolveRecordContext seam. Set mode now branches on --github: it
+resolveRecordContext seam. Set mode now branches on --remote: it
 parses the repo spec, reads the remote definition, opens a GitHub-
 backed DB, and reuses runSelectFromSetWithDB for the actual query.
---path and --github stay mutually exclusive.
+--path and --remote stay mutually exclusive.
 
 Spec: cli/select#req:source-selection
 EOF

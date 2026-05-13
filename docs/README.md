@@ -51,7 +51,7 @@ A one-line description of each document, grouped by purpose.
 | [CLI](cli/README.md)                                            | Every subcommand, flag, and exit code for the `ingitdb` binary          |
 | [Configuration](configuration/README.md)                 | Root DB config (`.ingitdb/`) and per-collection schema files            |
 | [Features](features/README.md)                           | Full feature list with status (WIP / pending) and links to detail pages |
-| [GitHub Direct Access](features/github-direct-access.md) | Read and write records in remote GitHub repositories without cloning    |
+| [Remote Repository Access](features/remote-repo-access.md) | Read and write records in remote Git repositories (GitHub, GitLab, Bitbucket) without cloning |
 | [Default Collection View](features/default-collection-view.md) | Export collection records to `$ingitdb/` flat files for web-app consumption |
 
 ### 📂 Developer docs
@@ -87,9 +87,9 @@ Spec-level docs live in [ingitdb-specs](https://github.com/ingitdb/ingitdb-specs
 | ------------- | -------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------- |
 | `version`     | —                                      | implemented                               | Print build version, commit hash, and date                                                   |
 | `validate`    | —                                      | implemented                               | Check schema and data against `.ingitdb/root-collections.yaml`                               |
-| `read`        | `record`                               | implemented                               | Read a single record by ID (local or GitHub)                                                 |
-| `create`      | `record`                               | implemented                               | Create a new record (local or GitHub)                                                        |
-| `update`      | `record`                               | implemented                               | Update fields of an existing record (local or GitHub)                                        |
+| `read`        | `record`                               | implemented                               | Read a single record by ID (local or remote)                                                 |
+| `create`      | `record`                               | implemented                               | Create a new record (local or remote)                                                        |
+| `update`      | `record`                               | implemented                               | Update fields of an existing record (local or remote)                                        |
 | `delete`      | `record` `collection` `view` `records` | `record` implemented; others planned      | Remove a record, collection, view definition, or individual records                          |
 | `list`        | `collections` `view` `subscribers`     | `collections` implemented; others planned | List schema objects, optionally scoped with `--in` and `--filter-name`                       |
 | `find`        | —                                      | planned                                   | Search records by `--substr`, `--re`, or `--exact`; scope with `--in`, `--fields`, `--limit` |

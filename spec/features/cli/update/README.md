@@ -126,18 +126,19 @@ messages MUST go to stderr.
 #### REQ: source-selection
 
 `update` MUST accept either `--path=PATH` (local) or
-`--github=OWNER/REPO[@REF]` (remote GitHub), but never both, per
-[path-targeting](../../path-targeting/README.md) and
-[github-direct-access](../../github-direct-access/README.md). When
+`--remote=HOST/OWNER/REPO[@REF]` (remote Git repository), but never
+both, per [path-targeting](../../path-targeting/README.md) and
+[remote-repo-access](../../remote-repo-access/README.md). When
 neither is provided, the current working directory is used.
 
-#### REQ: github-write-requires-token
+#### REQ: remote-write-requires-token
 
-For `--github` writes, a token MUST be supplied via `--token` or the
-`GITHUB_TOKEN` environment variable. Each successful invocation MUST
-produce exactly one commit in the remote repository, regardless of
-how many records the patch touched (single-record mode commits the
-one record; set mode commits the batch atomically).
+For `--remote` writes, a token MUST be supplied via `--token` or a
+host-derived environment variable (e.g. `GITHUB_TOKEN` for
+`github.com`). Each successful invocation MUST produce exactly one
+commit in the remote repository, regardless of how many records the
+patch touched (single-record mode commits the one record; set mode
+commits the batch atomically).
 
 ## Dependencies
 
@@ -146,14 +147,14 @@ one record; set mode commits the batch atomically).
   set/unset mutual field exclusion.
 - [id-flag-format](../../id-flag-format/README.md) — `--id` syntax.
 - [path-targeting](../../path-targeting/README.md) — `--path`.
-- [github-direct-access](../../github-direct-access/README.md) —
-  `--github`.
+- [remote-repo-access](../../remote-repo-access/README.md) —
+  `--remote`.
 
 ## Acceptance Criteria
 
 ### AC: single-record-patch
 
-**Requirements:** cli/update#req:subcommand-name, cli/update#req:mode-selection, cli/update#req:patch-required, cli/update#req:patch-shallow, cli/update#req:success-output, cli/update#req:github-write-requires-token
+**Requirements:** cli/update#req:subcommand-name, cli/update#req:mode-selection, cli/update#req:patch-required, cli/update#req:patch-shallow, cli/update#req:success-output, cli/update#req:remote-write-requires-token
 
 Given a record `{name: Ireland, population: 5000000}`,
 `ingitdb update --id=countries/ie --set='capital=Dublin'` MUST
@@ -220,12 +221,12 @@ exit `0`, and write nothing to stdout.
 
 ### AC: set-mode-all
 
-**Requirements:** cli/update#req:set-mode-shape, cli/update#req:github-write-requires-token
+**Requirements:** cli/update#req:set-mode-shape, cli/update#req:remote-write-requires-token
 
 `ingitdb update --from=countries --all --set='last_audit=2026-05-12'`
 MUST patch every record in `countries` with the new field, exit `0`,
-and produce one commit (per `req:github-write-requires-token` when
-the target is GitHub).
+and produce one commit (per `req:remote-write-requires-token` when
+the target is a remote repository).
 `ingitdb update --from=countries --all --where='region==EU' --set='…'`
 MUST be rejected (per `shared-cli-flags#req:all-flag`).
 
@@ -279,15 +280,15 @@ rejected (per `shared-cli-flags#req:order-by-applicability`).
 `ingitdb update --id=countries/ie --set='…' --fields=name` MUST be
 rejected (per `shared-cli-flags#req:fields-applicability`).
 
-### AC: github-update-one-commit
+### AC: remote-update-one-commit
 
-**Requirements:** cli/update#req:source-selection, cli/update#req:github-write-requires-token
+**Requirements:** cli/update#req:source-selection, cli/update#req:remote-write-requires-token
 
 With a valid token,
-`ingitdb update --github=owner/repo --id=countries/ie --set='capital=Dublin'`
+`ingitdb update --remote=github.com/owner/repo --id=countries/ie --set='capital=Dublin'`
 MUST produce exactly one commit in `owner/repo` whose diff is limited
 to the patched fields.
-`ingitdb update --github=owner/repo --from=countries --all --set='checked=true'`
+`ingitdb update --remote=github.com/owner/repo --from=countries --all --set='checked=true'`
 MUST also produce exactly one commit, even when many records change.
 
 ## Outstanding Questions

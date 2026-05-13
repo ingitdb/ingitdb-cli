@@ -63,7 +63,7 @@ the applicability rules in `shared-cli-flags`).
 2. Remove the collection's data directory and every record file
    inside it.
 3. Commit both changes in a single git commit on the local working
-   tree (or, with `--github`, a single remote commit).
+   tree (or, with `--remote`, a single remote commit).
 
 Partial drops (schema-only or data-only) MUST NOT happen; either
 both succeed or neither does.
@@ -125,31 +125,32 @@ Diagnostic and progress messages MUST go to stderr.
 #### REQ: source-selection
 
 `drop` MUST accept either `--path=PATH` (local) or
-`--github=OWNER/REPO[@REF]` (remote GitHub), but never both, per
-[path-targeting](../../path-targeting/README.md) and
-[github-direct-access](../../github-direct-access/README.md). When
+`--remote=HOST/OWNER/REPO[@REF]` (remote Git repository), but never
+both, per [path-targeting](../../path-targeting/README.md) and
+[remote-repo-access](../../remote-repo-access/README.md). When
 neither is provided, the current working directory is used.
 
-#### REQ: github-write-requires-token
+#### REQ: remote-write-requires-token
 
-For `--github` writes, a token MUST be supplied via `--token` or the
-`GITHUB_TOKEN` environment variable. Each successful invocation MUST
-produce exactly one commit in the remote repository, even when
-`--cascade` drops multiple objects.
+For `--remote` writes, a token MUST be supplied via `--token` or a
+host-derived environment variable (e.g. `GITHUB_TOKEN` for
+`github.com`). Each successful invocation MUST produce exactly one
+commit in the remote repository, even when `--cascade` drops multiple
+objects.
 
 ## Dependencies
 
 - [shared-cli-flags](../../shared-cli-flags/README.md) — applicability
   rejections for the flags `drop` does NOT accept.
 - [path-targeting](../../path-targeting/README.md) — `--path`.
-- [github-direct-access](../../github-direct-access/README.md) —
-  `--github`.
+- [remote-repo-access](../../remote-repo-access/README.md) —
+  `--remote`.
 
 ## Acceptance Criteria
 
 ### AC: drop-collection-success
 
-**Requirements:** cli/drop#req:subcommand-shape, cli/drop#req:name-positional, cli/drop#req:drop-collection-removes-schema-and-data, cli/drop#req:success-output, cli/drop#req:github-write-requires-token
+**Requirements:** cli/drop#req:subcommand-shape, cli/drop#req:name-positional, cli/drop#req:drop-collection-removes-schema-and-data, cli/drop#req:success-output, cli/drop#req:remote-write-requires-token
 
 Given a database where `.ingitdb.yaml` declares collection `cities`
 with 12 records under `cities/`,
@@ -157,7 +158,7 @@ with 12 records under `cities/`,
 `.ingitdb.yaml`, delete the `cities/` directory and all 12 record
 files, and produce one git commit. The command MUST exit `0` and
 write nothing to stdout. Targeting the same operation against a
-GitHub repository MUST produce exactly one remote commit.
+remote repository MUST produce exactly one remote commit.
 
 ### AC: drop-view-success
 
@@ -216,14 +217,14 @@ diagnostic naming `active_cities` as the blocking dependent.
 
 ### AC: cascade-drops-dependents
 
-**Requirements:** cli/drop#req:cascade-flag, cli/drop#req:github-write-requires-token
+**Requirements:** cli/drop#req:cascade-flag, cli/drop#req:remote-write-requires-token
 
 Given the same database as the previous AC,
 `ingitdb drop collection cities --cascade` MUST drop both `cities`
 (schema entry + data) and `active_cities` (schema entry + materialized
 files) in a single git commit. The command MUST exit `0` and write
-nothing to stdout. Targeting GitHub MUST produce exactly one remote
-commit covering all dropped objects.
+nothing to stdout. Targeting a remote repository MUST produce exactly
+one remote commit covering all dropped objects.
 
 ### AC: cascade-without-dependents
 

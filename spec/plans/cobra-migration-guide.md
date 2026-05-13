@@ -178,7 +178,7 @@ These functions are created in Phase 0. Import path: same package (`commands`).
 
 ```go
 addPathFlag(cmd *cobra.Command)
-addGitHubFlags(cmd *cobra.Command)               // adds --github and --token
+addGitHubFlags(cmd *cobra.Command)               // adds --remote and --token
 addFormatFlag(cmd *cobra.Command, defaultValue string)
 addCollectionFlag(cmd *cobra.Command, required bool)
 addMaterializeFlags(cmd *cobra.Command)          // --path, --views, --records-delimiter

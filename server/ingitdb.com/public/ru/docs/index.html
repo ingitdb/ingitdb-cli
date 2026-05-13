@@ -63,7 +63,7 @@
                     <ul>
                         <li><a href="#cli-commands">Команды CLI</a></li>
                         <li><a href="#configuration">Конфигурация</a></li>
-                        <li><a href="#github-access">Доступ к GitHub</a></li>
+                        <li><a href="#remote-access">Удалённый доступ</a></li>
                         <li><a href="#features">Возможности</a></li>
                         <li><a href="#triggers">Триггеры и подписчики</a></li>
                     </ul>
@@ -299,21 +299,21 @@ languages:
                 <p>Узнайте больше о параметрах конфигурации в <a href="https://github.com/ingitdb/ingitdb-cli/blob/main/docs/configuration/README.md" target="_blank" rel="noopener">документации по конфигурации</a>.</p>
             </section>
 
-            <section id="github-access">
-                <h2>Прямой доступ к GitHub</h2>
-                <p>inGitDB может читать и записывать записи в удалённом репозитории GitHub без его клонирования. Флаг <code>--github</code> заменяет <code>--path</code> и направляет CLI на репозиторий GitHub через REST API.</p>
+            <section id="remote-access">
+                <h2>Прямой доступ к удалённым репозиториям</h2>
+                <p>inGitDB может читать и записывать записи в удалённом Git-репозитории без его клонирования. Флаг <code>--remote</code> заменяет <code>--path</code> и направляет CLI на удалённый хостинг (на сегодня — GitHub; адаптеры для GitLab и Bitbucket в разработке) через REST API провайдера.</p>
 
                 <div class="code-example">
                     <h4>Публичные репозитории (токен не требуется)</h4>
                     <pre><code># Прочитайте запись
-ingitdb read record --github=owner/repo --id=countries/ie
+ingitdb read record --remote=github.com/owner/repo --id=countries/ie
 
 # Закрепите на определённой ветке, теге или хэше коммита
-ingitdb read record --github=owner/repo@main --id=todo.tags/active
-ingitdb read record --github=owner/repo@v1.2.0 --id=todo.tags/active
+ingitdb read record --remote=github.com/owner/repo@main --id=todo.tags/active
+ingitdb read record --remote=github.com/owner/repo@v1.2.0 --id=todo.tags/active
 
 # Список всех коллекций
-ingitdb list collections --github=owner/repo</code></pre>
+ingitdb list collections --remote=github.com/owner/repo</code></pre>
                 </div>
 
                 <div class="code-example">
@@ -322,10 +322,10 @@ ingitdb list collections --github=owner/repo</code></pre>
 export GITHUB_TOKEN=ghp_...
 
 # Теперь вы можете читать и писать
-ingitdb read record --github=owner/repo --id=countries/ie
-ingitdb create record --github=owner/repo --id=countries/ie --data='{name: Ireland}'
-ingitdb update record --github=owner/repo --id=countries/ie --set='{capital: Dublin}'
-ingitdb delete record --github=owner/repo --id=countries/ie</code></pre>
+ingitdb read record --remote=github.com/owner/repo --id=countries/ie
+ingitdb create record --remote=github.com/owner/repo --id=countries/ie --data='{name: Ireland}'
+ingitdb update record --remote=github.com/owner/repo --id=countries/ie --set='{capital: Dublin}'
+ingitdb delete record --remote=github.com/owner/repo --id=countries/ie</code></pre>
                 </div>
 
                 <p>Каждая операция записи создаёт один коммит в удалённом репозитории. Локальный клон не требуется.</p>
