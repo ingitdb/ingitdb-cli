@@ -297,3 +297,69 @@ func TestDrop_View_NotFoundError(t *testing.T) {
 		t.Errorf("error should name the missing view, got: %v", err)
 	}
 }
+
+func TestDrop_Collection_IfExists_AbsentSucceeds(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := dropTestDeps(t, dir)
+	seedCollection(t, dir, "other") // need root-collections.yaml to exist
+
+	_, err := runDropCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "collection", "ghost", "--if-exists",
+	)
+	if err != nil {
+		t.Errorf("--if-exists should suppress missing-collection error, got: %v", err)
+	}
+}
+
+func TestDrop_View_IfExists_AbsentSucceeds(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := dropTestDeps(t, dir)
+	seedCollection(t, dir, "cities")
+
+	_, err := runDropCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "view", "ghost", "--if-exists",
+	)
+	if err != nil {
+		t.Errorf("--if-exists should suppress missing-view error, got: %v", err)
+	}
+}
+
+func TestDrop_CascadeFlagAccepted(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := dropTestDeps(t, dir)
+	seedCollection(t, dir, "cities")
+
+	// --cascade is a no-op in this data model; ensure it does not
+	// produce an unknown-flag error.
+	_, err := runDropCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "collection", "cities", "--cascade",
+	)
+	if err != nil {
+		t.Errorf("--cascade should be accepted as a no-op, got: %v", err)
+	}
+}
+
+func TestDrop_EndToEnd_CollectionWithView(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := dropTestDeps(t, dir)
+	colDir := seedCollection(t, dir, "cities")
+	viewPath := seedView(t, colDir, "active_cities", "active.csv", "name\nDublin\n")
+
+	// dropping the collection should transitively remove its nested view.
+	_, err := runDropCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "collection", "cities",
+	)
+	if err != nil {
+		t.Fatalf("drop collection: %v", err)
+	}
+	if _, statErr := os.Stat(colDir); !os.IsNotExist(statErr) {
+		t.Errorf("collection directory should be gone")
+	}
+	if _, statErr := os.Stat(viewPath); !os.IsNotExist(statErr) {
+		t.Errorf("nested view file should be gone (transitive removal)")
+	}
+}
