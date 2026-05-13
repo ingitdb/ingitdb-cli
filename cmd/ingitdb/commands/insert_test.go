@@ -536,3 +536,29 @@ func TestInsert_BatchModeRejectsSingleRecordFlags(t *testing.T) {
 		})
 	}
 }
+
+func TestInsert_KeyColumnAndFieldsRequireBatchCSV(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name string
+		args []string
+	}{
+		{"--key-column without --format", []string{"--key=ie", "--data={}", "--key-column=external_id"}},
+		{"--key-column with --format=jsonl", []string{"--format=jsonl", "--key-column=external_id"}},
+		{"--fields with --format=jsonl", []string{"--format=jsonl", "--fields=$id,name"}},
+		{"--fields without --format (single record)", []string{"--key=ie", "--data={}", "--fields=name"}},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			dir := t.TempDir()
+			homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+			args := append([]string{"--path=" + dir, "--into=test.items"}, tc.args...)
+			_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf, nil, true, nil, args...)
+			if err == nil {
+				t.Fatalf("expected error for %s", tc.name)
+			}
+		})
+	}
+}

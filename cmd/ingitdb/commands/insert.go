@@ -47,13 +47,6 @@ func Insert(
 			_ = logf
 			ctx := cmd.Context()
 
-			// Reject shared flags that don't apply to insert.
-			for _, flag := range []string{"from", "id", "where", "set", "unset", "all", "min-affected", "order-by", "fields"} {
-				if cmd.Flags().Changed(flag) {
-					return fmt.Errorf("--%s is not valid with insert (insert uses --into + --key + data source)", flag)
-				}
-			}
-
 			// Batch mode validation: --format must be one of the four supported
 			// stream formats. Empty means single-record mode.
 			format, _ := cmd.Flags().GetString("format")
@@ -66,14 +59,41 @@ func Insert(
 				}
 			}
 
-			// In batch mode, reject single-record flags.
 			batchMode := cmd.Flags().Changed("format")
+
+			// Reject shared flags that don't apply to insert.
+			for _, flag := range []string{"from", "id", "where", "set", "unset", "all", "min-affected", "order-by", "fields"} {
+				if !cmd.Flags().Changed(flag) {
+					continue
+				}
+				// Carve-out: --fields is permitted in batch-CSV mode (see req:batch-csv-fields-flag).
+				if flag == "fields" && batchMode && format == "csv" {
+					continue
+				}
+				return fmt.Errorf("--%s is not valid with insert (insert uses --into + --key + data source)", flag)
+			}
+
+			// In batch mode, reject single-record flags.
 			if batchMode {
 				for _, f := range []string{"data", "edit", "empty", "key"} {
 					if cmd.Flags().Changed(f) {
 						return fmt.Errorf("--%s is not valid in batch mode (--format=%s); batch mode reads multi-record stream from stdin and resolves keys from each record's $id", f, format)
 					}
 				}
+			}
+
+			// --key-column is only valid in batch-CSV mode.
+			if cmd.Flags().Changed("key-column") {
+				if !batchMode || format != "csv" {
+					return fmt.Errorf("--key-column is valid only with --format=csv")
+				}
+			}
+
+			// --fields is rejected outside single-record (existing logic above)
+			// AND outside batch-CSV. The shared-flag loop rejects it in
+			// single-record mode; here we add the batch-non-csv guard.
+			if batchMode && format != "csv" && cmd.Flags().Changed("fields") {
+				return fmt.Errorf("--fields is valid only with --format=csv (used to override the CSV header row or drive parsing when no header is present)")
 			}
 
 			into, _ := cmd.Flags().GetString("into")
