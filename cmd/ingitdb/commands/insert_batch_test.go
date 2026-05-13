@@ -360,3 +360,132 @@ func TestInsertBatch_INGR_HappyPath(t *testing.T) {
 		t.Errorf("fr.yaml should contain 'France', got:\n%s", string(frBytes))
 	}
 }
+
+func TestInsertBatch_YAML_ToMarkdownStorage(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+	def := testMarkdownDef(dir)
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) { return def, nil }
+	newDB := func(root string, d *ingitdb.Definition) (dal.DB, error) {
+		return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
+	}
+	logf := func(...any) {}
+
+	stdin := strings.NewReader(`$id: hello
+title: Hello
+$content: |
+  First post body.
+---
+$id: world
+title: World
+$content: |
+  Second post body.
+`)
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf,
+		stdin, false, nil,
+		"--path="+dir, "--into=test.notes", "--format=yaml",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+	helloPath := filepath.Join(dir, "$records", "hello.md")
+	helloBytes, readErr := os.ReadFile(helloPath)
+	if readErr != nil {
+		t.Fatalf("hello.md not on disk: %v", readErr)
+	}
+	helloStr := string(helloBytes)
+	if !strings.Contains(helloStr, "title: Hello") {
+		t.Errorf("hello.md missing 'title: Hello'; got:\n%s", helloStr)
+	}
+	if !strings.Contains(helloStr, "First post body.") {
+		t.Errorf("hello.md missing body; got:\n%s", helloStr)
+	}
+}
+
+func TestInsertBatch_INGR_ToMarkdownStorage(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+	def := testMarkdownDef(dir)
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) { return def, nil }
+	newDB := func(root string, d *ingitdb.Definition) (dal.DB, error) {
+		return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
+	}
+	logf := func(...any) {}
+
+	// Build INGR payload using the same pattern as TestInsertBatch_INGR_HappyPath.
+	var buf bytes.Buffer
+	w := ingr.NewRecordsWriter(&buf)
+	_, _ = w.WriteHeader("notes", []ingr.ColDef{{Name: "$ID"}, {Name: "title"}, {Name: "$content"}})
+	_, _ = w.WriteRecords(0,
+		ingr.NewMapRecordEntry("hello", map[string]any{
+			"$ID":      "hello",
+			"title":    "Hello",
+			"$content": "First post body.",
+		}),
+		ingr.NewMapRecordEntry("world", map[string]any{
+			"$ID":      "world",
+			"title":    "World",
+			"$content": "Second post body.",
+		}),
+	)
+	_ = w.Close()
+
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf,
+		bytes.NewReader(buf.Bytes()), false, nil,
+		"--path="+dir, "--into=test.notes", "--format=ingr",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+	helloPath := filepath.Join(dir, "$records", "hello.md")
+	helloBytes, readErr := os.ReadFile(helloPath)
+	if readErr != nil {
+		t.Fatalf("hello.md not on disk: %v", readErr)
+	}
+	if !strings.Contains(string(helloBytes), "title: Hello") {
+		t.Errorf("hello.md missing 'title: Hello'; got:\n%s", string(helloBytes))
+	}
+	if !strings.Contains(string(helloBytes), "First post body.") {
+		t.Errorf("hello.md missing body; got:\n%s", string(helloBytes))
+	}
+}
+
+func TestInsertBatch_CSV_ToMarkdownStorage(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+	def := testMarkdownDef(dir)
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) { return def, nil }
+	newDB := func(root string, d *ingitdb.Definition) (dal.DB, error) {
+		return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
+	}
+	logf := func(...any) {}
+
+	// RFC 4180 CSV: real newlines inside quoted cells. For this test the
+	// body content has no embedded newlines, keeping the CSV simple.
+	stdin := strings.NewReader("$id,title,$content\nhello,Hello,First post body.\nworld,World,Second post body.\n")
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf,
+		stdin, false, nil,
+		"--path="+dir, "--into=test.notes", "--format=csv",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+	helloPath := filepath.Join(dir, "$records", "hello.md")
+	helloBytes, readErr := os.ReadFile(helloPath)
+	if readErr != nil {
+		t.Fatalf("hello.md not on disk: %v", readErr)
+	}
+	helloStr := string(helloBytes)
+	if !strings.Contains(helloStr, "title: Hello") {
+		t.Errorf("hello.md missing 'title: Hello'; got:\n%s", helloStr)
+	}
+	if !strings.Contains(helloStr, "First post body.") {
+		t.Errorf("hello.md missing body; got:\n%s", helloStr)
+	}
+}
