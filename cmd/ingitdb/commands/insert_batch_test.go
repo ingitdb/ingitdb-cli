@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -20,5 +22,43 @@ func TestInsertBatch_JSONL_EmptyStreamSucceeds(t *testing.T) {
 	// streams into out (see existing TestInsert_* tests using `out`).
 	if !strings.Contains(out, "0 records inserted") {
 		t.Errorf("output %q should mention '0 records inserted'", out)
+	}
+}
+
+func TestInsertBatch_JSONL_HappyPath(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+	stdin := strings.NewReader(`{"$id":"ie","name":"Ireland"}
+{"$id":"fr","name":"France"}
+`)
+	out, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf,
+		stdin, false /* not TTY */, nil,
+		"--path="+dir, "--into=test.items", "--format=jsonl",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+	if !strings.Contains(out, "2 records inserted") {
+		t.Errorf("output %q should mention '2 records inserted'", out)
+	}
+	// Verify both records exist on disk. The test fixture's "test.items"
+	// collection stores as YAML under $records/<key>.yaml.
+	ieBytes, readErr := os.ReadFile(filepath.Join(dir, "$records", "ie.yaml"))
+	if readErr != nil {
+		t.Fatalf("ie record not on disk: %v", readErr)
+	}
+	if !strings.Contains(string(ieBytes), "Ireland") {
+		t.Errorf("ie.yaml should contain 'Ireland', got:\n%s", string(ieBytes))
+	}
+	if strings.Contains(string(ieBytes), "$id") {
+		t.Errorf("ie.yaml MUST NOT contain $id (key field stripped), got:\n%s", string(ieBytes))
+	}
+	frBytes, readErr := os.ReadFile(filepath.Join(dir, "$records", "fr.yaml"))
+	if readErr != nil {
+		t.Fatalf("fr record not on disk: %v", readErr)
+	}
+	if !strings.Contains(string(frBytes), "France") {
+		t.Errorf("fr.yaml should contain 'France', got:\n%s", string(frBytes))
 	}
 }
