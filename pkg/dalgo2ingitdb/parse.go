@@ -203,6 +203,26 @@ func encodeINGRFromMap(data map[string]map[string]any, recordsetName string, col
 	return buf.Bytes(), nil
 }
 
+// EncodeRecordContentForCollection serializes record content using the
+// collection's declared format. It is the write-side counterpart of
+// ParseRecordContentForCollection and the only path callers should use
+// when writing records that may be in a format that requires schema
+// access (csv today; possibly others later).
+//
+// For csv, value MUST be []map[string]any — see encodeCSVForCollection.
+// For the other six formats, value is passed through to marshalForFormat
+// unchanged; callers that want a single-record map[string]any can keep
+// using the schema-agnostic marshalForFormat directly.
+func EncodeRecordContentForCollection(value any, colDef *ingitdb.CollectionDef) ([]byte, error) {
+	if colDef == nil || colDef.RecordFile == nil {
+		return nil, fmt.Errorf("collection definition missing record_file")
+	}
+	if colDef.RecordFile.Format == ingitdb.RecordFormatCSV {
+		return encodeCSVForCollection(value, colDef)
+	}
+	return marshalForFormat(value, colDef.RecordFile.Format)
+}
+
 func resolveINGRColumns(data map[string]map[string]any, columnsOrder []string) []string {
 	seen := map[string]bool{"$ID": true}
 	ordered := []string{"$ID"}
