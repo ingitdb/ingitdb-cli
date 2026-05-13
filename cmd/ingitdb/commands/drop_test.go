@@ -103,21 +103,6 @@ func TestDrop_RegistersIfExistsAndCascade(t *testing.T) {
 	}
 }
 
-func TestDrop_ViewPlaceholder(t *testing.T) {
-	t.Parallel()
-	dir := t.TempDir()
-	homeDir, getWd, readDef, newDB, logf := dropTestDeps(t, dir)
-	_, err := runDropCmd(t, homeDir, getWd, readDef, newDB, logf,
-		"--path="+dir, "view", "some_view",
-	)
-	if err == nil {
-		t.Fatal("expected 'not yet implemented' until Task 3 lands")
-	}
-	if !strings.Contains(err.Error(), "not yet implemented") {
-		t.Errorf("expected 'not yet implemented' diagnostic, got: %v", err)
-	}
-}
-
 // seedCollection creates a minimal collection directory at
 // <dbDir>/.collections/<name>/ with a definition.yaml and a data
 // file, plus a root-collections.yaml entry. Returns the absolute
@@ -223,5 +208,92 @@ func TestDrop_Collection_PreservesOtherEntries(t *testing.T) {
 	root, _ := os.ReadFile(filepath.Join(dir, ".ingitdb", "root-collections.yaml"))
 	if !strings.Contains(string(root), "bravo") {
 		t.Errorf("expected bravo entry preserved, got:\n%s", string(root))
+	}
+}
+
+// seedView creates a view file under <colDir>/$views/<viewName>.yaml
+// with optional FileName metadata. If outputContent is non-empty,
+// also creates the materialized file at <colDir>/<outputRel>.
+func seedView(t *testing.T, colDir, viewName, outputRel, outputContent string) string {
+	t.Helper()
+	viewsDir := filepath.Join(colDir, "$views")
+	if err := os.MkdirAll(viewsDir, 0o755); err != nil {
+		t.Fatalf("mkdir $views: %v", err)
+	}
+	viewYAML := "id: " + viewName + "\n"
+	if outputRel != "" {
+		viewYAML += "file_name: " + outputRel + "\n"
+	}
+	viewPath := filepath.Join(viewsDir, viewName+".yaml")
+	if err := os.WriteFile(viewPath, []byte(viewYAML), 0o644); err != nil {
+		t.Fatalf("write view: %v", err)
+	}
+	if outputContent != "" && outputRel != "" {
+		outputPath := filepath.Join(colDir, outputRel)
+		if err := os.MkdirAll(filepath.Dir(outputPath), 0o755); err != nil {
+			t.Fatalf("mkdir output dir: %v", err)
+		}
+		if err := os.WriteFile(outputPath, []byte(outputContent), 0o644); err != nil {
+			t.Fatalf("write output: %v", err)
+		}
+	}
+	return viewPath
+}
+
+func TestDrop_View_RemovesViewFile(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := dropTestDeps(t, dir)
+	colDir := seedCollection(t, dir, "cities")
+	viewPath := seedView(t, colDir, "active_cities", "", "")
+
+	_, err := runDropCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "view", "active_cities",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+	if _, statErr := os.Stat(viewPath); !os.IsNotExist(statErr) {
+		t.Errorf("expected view file gone, got stat err: %v", statErr)
+	}
+}
+
+func TestDrop_View_RemovesMaterializedOutput(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := dropTestDeps(t, dir)
+	colDir := seedCollection(t, dir, "cities")
+	outputRel := "active_cities.csv"
+	viewPath := seedView(t, colDir, "active_cities", outputRel, "name,population\n")
+
+	_, err := runDropCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "view", "active_cities",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+	if _, statErr := os.Stat(viewPath); !os.IsNotExist(statErr) {
+		t.Errorf("expected view file gone, got stat err: %v", statErr)
+	}
+	outputPath := filepath.Join(colDir, outputRel)
+	if _, statErr := os.Stat(outputPath); !os.IsNotExist(statErr) {
+		t.Errorf("expected materialized output gone, got stat err: %v", statErr)
+	}
+}
+
+func TestDrop_View_NotFoundError(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := dropTestDeps(t, dir)
+	seedCollection(t, dir, "cities") // exists but has no views
+
+	_, err := runDropCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "view", "nonexistent",
+	)
+	if err == nil {
+		t.Fatal("expected error when view does not exist")
+	}
+	if !strings.Contains(err.Error(), "nonexistent") {
+		t.Errorf("error should name the missing view, got: %v", err)
 	}
 }

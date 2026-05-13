@@ -7,6 +7,7 @@ import (
 
 	"github.com/dal-go/dalgo/dal"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
@@ -93,8 +94,7 @@ func dropCollection(
 	return cmd
 }
 
-// dropView returns the `drop view <name>` subcommand. Task 3 fills in
-// the body.
+// dropView returns the `drop view <name>` subcommand.
 func dropView(
 	homeDir func() (string, error),
 	getWd func() (string, error),
@@ -107,9 +107,55 @@ func dropView(
 		Short: "Drop a view (removes view definition + materialized output)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, _, _, _, _ = homeDir, getWd, readDefinition, newDB, logf
-			_ = args
-			return fmt.Errorf("drop view: not yet implemented")
+			_, _, _ = readDefinition, newDB, logf
+			ifExists, _ := cmd.Flags().GetBool("if-exists")
+			_, _ = cmd.Flags().GetBool("cascade") // accepted, no-op
+			name := args[0]
+
+			dirPath, err := resolveDBPath(cmd, homeDir, getWd)
+			if err != nil {
+				return err
+			}
+
+			// Scan every collection's $views directory for a matching
+			// view file.
+			entries, err := readRootCollections(dirPath)
+			if err != nil {
+				return err
+			}
+			for _, rel := range entries {
+				viewPath := filepath.Join(dirPath, rel, "$views", name+".yaml")
+				if _, statErr := os.Stat(viewPath); statErr != nil {
+					continue
+				}
+				// Found the view. Read its file_name (if any) to
+				// also remove the materialized output.
+				rawView, readErr := os.ReadFile(viewPath)
+				if readErr != nil {
+					return fmt.Errorf("read view file %s: %w", viewPath, readErr)
+				}
+				var meta struct {
+					FileName string `yaml:"file_name"`
+				}
+				_ = yaml.Unmarshal(rawView, &meta)
+
+				if rmErr := os.Remove(viewPath); rmErr != nil {
+					return fmt.Errorf("remove view file %s: %w", viewPath, rmErr)
+				}
+				if meta.FileName != "" {
+					outputPath := filepath.Join(dirPath, rel, meta.FileName)
+					if rmErr := os.Remove(outputPath); rmErr != nil && !os.IsNotExist(rmErr) {
+						return fmt.Errorf("remove materialized output %s: %w", outputPath, rmErr)
+					}
+				}
+				return nil
+			}
+
+			// View not found in any collection.
+			if ifExists {
+				return nil
+			}
+			return fmt.Errorf("view %q not found in any collection", name)
 		},
 	}
 	return cmd
