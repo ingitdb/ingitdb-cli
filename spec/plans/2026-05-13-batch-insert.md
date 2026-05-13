@@ -132,7 +132,6 @@ func TestInsert_RejectsInvalidFormatValue(t *testing.T) {
         {"yaml-stream typo", "yaml-stream"},
     }
     for _, tt := range cases {
-        tt := tt
         t.Run(tt.name, func(t *testing.T) {
             t.Parallel()
             dir, homeDir, getWd, readDef, newDB, logf := setupInsertTestRepo(t)
@@ -221,7 +220,6 @@ func TestInsert_BatchModeRejectsSingleRecordFlags(t *testing.T) {
         {"--key", []string{"--key=ie"}},
     }
     for _, tt := range cases {
-        tt := tt
         t.Run(tt.name, func(t *testing.T) {
             t.Parallel()
             dir, homeDir, getWd, readDef, newDB, logf := setupInsertTestRepo(t)
@@ -299,7 +297,6 @@ func TestInsert_KeyColumnAndFieldsRequireBatchCSV(t *testing.T) {
         {"--fields without --format (single record)", []string{"--key=ie", "--data={}", "--fields=name"}},
     }
     for _, tt := range cases {
-        tt := tt
         t.Run(tt.name, func(t *testing.T) {
             t.Parallel()
             dir, homeDir, getWd, readDef, newDB, logf := setupInsertTestRepo(t)
