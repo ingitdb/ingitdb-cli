@@ -1211,3 +1211,48 @@ func TestReadSettingsFromFile_DefaultRecordFormat_LoadsFromYAML(t *testing.T) {
 		t.Errorf("expected DefaultRecordFormat=ingr, got %q", s.DefaultRecordFormat)
 	}
 }
+
+func TestSettings_Validate_UnsupportedFormatRejected(t *testing.T) {
+	t.Parallel()
+	s := Settings{DefaultRecordFormat: "xml"}
+	err := s.Validate()
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	msg := err.Error()
+	for _, name := range []string{"xml", "yaml", "yml", "json", "markdown", "toml", "ingr", "csv"} {
+		if !strings.Contains(msg, name) {
+			t.Errorf("expected error message to contain %q; got: %s", name, msg)
+		}
+	}
+}
+
+func TestSettings_Validate_EmptyValueAccepted(t *testing.T) {
+	t.Parallel()
+	s := Settings{DefaultRecordFormat: ""}
+	if err := s.Validate(); err != nil {
+		t.Errorf("expected nil error for empty DefaultRecordFormat, got: %v", err)
+	}
+}
+
+func TestSettings_Validate_EachOfSevenAccepted(t *testing.T) {
+	t.Parallel()
+	for _, f := range []ingitdb.RecordFormat{
+		ingitdb.RecordFormatYAML,
+		ingitdb.RecordFormatYML,
+		ingitdb.RecordFormatJSON,
+		ingitdb.RecordFormatMarkdown,
+		ingitdb.RecordFormatTOML,
+		ingitdb.RecordFormatINGR,
+		ingitdb.RecordFormatCSV,
+	} {
+		f := f
+		t.Run(string(f), func(t *testing.T) {
+			t.Parallel()
+			s := Settings{DefaultRecordFormat: f}
+			if err := s.Validate(); err != nil {
+				t.Errorf("expected nil error for %q, got: %v", f, err)
+			}
+		})
+	}
+}
