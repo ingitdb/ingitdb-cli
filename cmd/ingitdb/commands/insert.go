@@ -66,6 +66,16 @@ func Insert(
 				}
 			}
 
+			// In batch mode, reject single-record flags.
+			batchMode := cmd.Flags().Changed("format")
+			if batchMode {
+				for _, f := range []string{"data", "edit", "empty", "key"} {
+					if cmd.Flags().Changed(f) {
+						return fmt.Errorf("--%s is not valid in batch mode (--format=%s); batch mode reads multi-record stream from stdin and resolves keys from each record's $id", f, format)
+					}
+				}
+			}
+
 			into, _ := cmd.Flags().GetString("into")
 			if into == "" {
 				return fmt.Errorf("--into is required")

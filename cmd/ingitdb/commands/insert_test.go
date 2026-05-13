@@ -499,3 +499,40 @@ func TestInsert_RejectsInvalidFormatValue(t *testing.T) {
 		})
 	}
 }
+
+func TestInsert_BatchModeRejectsSingleRecordFlags(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name string
+		args []string
+	}{
+		{"--data", []string{"--data={$id: ie}"}},
+		{"--edit", []string{"--edit"}},
+		{"--empty", []string{"--empty"}},
+		{"--key", []string{"--key=ie"}},
+	}
+	for _, tt := range cases {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			dir := t.TempDir()
+			homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+			args := append([]string{
+				"--path=" + dir,
+				"--into=test.items",
+				"--format=jsonl",
+			}, tt.args...)
+			// Provide a stub openEditor for the --edit case.
+			openEditor := func(tmpPath string) error {
+				return os.WriteFile(tmpPath, []byte("title: Stub\n"), 0o644)
+			}
+			_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf, nil, true, openEditor, args...)
+			if err == nil {
+				t.Fatalf("expected error when combining --format=jsonl with %s", tt.name)
+			}
+			if !strings.Contains(err.Error(), tt.name) && !strings.Contains(err.Error(), strings.TrimPrefix(tt.name, "--")) {
+				t.Errorf("error %q should name the offending flag %s", err.Error(), tt.name)
+			}
+		})
+	}
+}
