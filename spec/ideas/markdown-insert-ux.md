@@ -67,7 +67,7 @@ body → `$content`. The `--edit` flag is in scope for MVP; bulk import is not.
 - **Existing Features affected:** [cli/create-record](../features/cli/create-record/README.md)
 - **Dependencies:** none
 
-## Open Questions
+## Outstanding Questions
 
 None at this time.
 
