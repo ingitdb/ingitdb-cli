@@ -12,6 +12,7 @@ const (
 	RecordFormatMarkdown RecordFormat = "markdown"
 	RecordFormatTOML     RecordFormat = "toml"
 	RecordFormatINGR     RecordFormat = "ingr"
+	RecordFormatCSV      RecordFormat = "csv"
 )
 
 // DefaultMarkdownContentField is the default name of the column that holds
