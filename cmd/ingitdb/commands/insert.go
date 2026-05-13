@@ -104,6 +104,8 @@ func Insert(
 	cmd.Flags().String("data", "", "record data as YAML or JSON (e.g. '{title: \"Ireland\"}')")
 	cmd.Flags().Bool("edit", false, "open $EDITOR with a schema-derived template")
 	cmd.Flags().Bool("empty", false, "create the record with only the key, no fields")
+	cmd.Flags().String("format", "", "batch mode: stream format (jsonl, yaml, ingr, csv); when set, reads multi-record stream from stdin")
+	cmd.Flags().String("key-column", "", "batch-csv mode only: column name to use as the record key (overrides $id/id auto-resolution)")
 	// Register the forbidden shared flags so cobra doesn't error on
 	// "unknown flag"; we reject them at RunE time with our own message.
 	sqlflags.RegisterFromFlag(cmd)
