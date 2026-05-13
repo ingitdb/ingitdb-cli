@@ -2,6 +2,8 @@ package commands
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/dal-go/dalgo/dal"
 	"github.com/spf13/cobra"
@@ -40,7 +42,6 @@ func Drop(
 }
 
 // dropCollection returns the `drop collection <name>` subcommand.
-// Task 2 fills in the body.
 func dropCollection(
 	homeDir func() (string, error),
 	getWd func() (string, error),
@@ -53,9 +54,40 @@ func dropCollection(
 		Short: "Drop a collection (removes schema entry + data directory)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, _, _, _, _ = homeDir, getWd, readDefinition, newDB, logf
-			_ = args
-			return fmt.Errorf("drop collection: not yet implemented")
+			_, _, _ = readDefinition, newDB, logf
+			ifExists, _ := cmd.Flags().GetBool("if-exists")
+			_, _ = cmd.Flags().GetBool("cascade") // accepted, no-op
+			name := args[0]
+
+			dirPath, err := resolveDBPath(cmd, homeDir, getWd)
+			if err != nil {
+				return err
+			}
+
+			entries, err := readRootCollections(dirPath)
+			if err != nil {
+				return err
+			}
+			rel, ok := entries[name]
+			if !ok {
+				if ifExists {
+					return nil
+				}
+				return fmt.Errorf("collection %q not found", name)
+			}
+
+			// Remove data directory (which transitively removes any
+			// nested $views/ subtree).
+			absCol := filepath.Join(dirPath, rel)
+			if rmErr := os.RemoveAll(absCol); rmErr != nil {
+				return fmt.Errorf("remove collection directory %s: %w", rel, rmErr)
+			}
+
+			// Remove entry from root-collections.yaml.
+			if writeErr := writeRootCollectionsWithout(dirPath, name); writeErr != nil {
+				return fmt.Errorf("update root-collections.yaml after removing %s: %w", name, writeErr)
+			}
+			return nil
 		},
 	}
 	return cmd

@@ -2,14 +2,25 @@ package commands
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/dal-go/dalgo/dal"
+	"gopkg.in/yaml.v3"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2fsingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
+
+func yamlUnmarshalForTest(data []byte, out any) error {
+	return yaml.Unmarshal(data, out)
+}
+
+func yamlMarshalForTest(in any) ([]byte, error) {
+	return yaml.Marshal(in)
+}
 
 // dropTestDeps returns a minimal DI set for the Drop command.
 func dropTestDeps(t *testing.T, dir string) (
@@ -92,21 +103,6 @@ func TestDrop_RegistersIfExistsAndCascade(t *testing.T) {
 	}
 }
 
-func TestDrop_CollectionPlaceholder(t *testing.T) {
-	t.Parallel()
-	dir := t.TempDir()
-	homeDir, getWd, readDef, newDB, logf := dropTestDeps(t, dir)
-	_, err := runDropCmd(t, homeDir, getWd, readDef, newDB, logf,
-		"--path="+dir, "collection", "test.items",
-	)
-	if err == nil {
-		t.Fatal("expected 'not yet implemented' until Task 2 lands")
-	}
-	if !strings.Contains(err.Error(), "not yet implemented") {
-		t.Errorf("expected 'not yet implemented' diagnostic, got: %v", err)
-	}
-}
-
 func TestDrop_ViewPlaceholder(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
@@ -119,5 +115,113 @@ func TestDrop_ViewPlaceholder(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "not yet implemented") {
 		t.Errorf("expected 'not yet implemented' diagnostic, got: %v", err)
+	}
+}
+
+// seedCollection creates a minimal collection directory at
+// <dbDir>/.collections/<name>/ with a definition.yaml and a data
+// file, plus a root-collections.yaml entry. Returns the absolute
+// collection directory path.
+func seedCollection(t *testing.T, dbDir, name string) string {
+	t.Helper()
+	colDir := filepath.Join(dbDir, ".collections", name)
+	if err := os.MkdirAll(colDir, 0o755); err != nil {
+		t.Fatalf("mkdir colDir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(colDir, "definition.yaml"), []byte("columns:\n  id: {}\n"), 0o644); err != nil {
+		t.Fatalf("write definition.yaml: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(colDir, "sample.yaml"), []byte("id: 1\n"), 0o644); err != nil {
+		t.Fatalf("write sample.yaml: %v", err)
+	}
+	// Update root-collections.yaml — append or create.
+	rootDir := filepath.Join(dbDir, ".ingitdb")
+	if err := os.MkdirAll(rootDir, 0o755); err != nil {
+		t.Fatalf("mkdir .ingitdb: %v", err)
+	}
+	rootPath := filepath.Join(rootDir, "root-collections.yaml")
+	var current map[string]string
+	if existing, readErr := os.ReadFile(rootPath); readErr == nil {
+		_ = yamlUnmarshalForTest(existing, &current)
+	}
+	if current == nil {
+		current = map[string]string{}
+	}
+	current[name] = ".collections/" + name
+	out, _ := yamlMarshalForTest(current)
+	if err := os.WriteFile(rootPath, out, 0o644); err != nil {
+		t.Fatalf("write root-collections.yaml: %v", err)
+	}
+	return colDir
+}
+
+func TestDrop_Collection_RemovesDataAndSchema(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := dropTestDeps(t, dir)
+	colDir := seedCollection(t, dir, "cities")
+
+	stdout, err := runDropCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "collection", "cities",
+	)
+	if err != nil {
+		t.Fatalf("expected success, got: %v", err)
+	}
+	if stdout != "" {
+		t.Errorf("drop should be silent on stdout, got: %q", stdout)
+	}
+	// Data side: directory gone.
+	if _, statErr := os.Stat(colDir); !os.IsNotExist(statErr) {
+		t.Errorf("expected collection directory gone, got stat err: %v", statErr)
+	}
+	// Schema side: entry gone from root-collections.yaml.
+	root, readErr := os.ReadFile(filepath.Join(dir, ".ingitdb", "root-collections.yaml"))
+	if readErr != nil {
+		t.Fatalf("read root-collections: %v", readErr)
+	}
+	if strings.Contains(string(root), "cities") {
+		t.Errorf("expected cities entry removed, got:\n%s", string(root))
+	}
+}
+
+func TestDrop_Collection_NotFoundError(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := dropTestDeps(t, dir)
+	// Seed an unrelated collection so .ingitdb/root-collections.yaml exists.
+	seedCollection(t, dir, "other")
+
+	_, err := runDropCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "collection", "nonexistent",
+	)
+	if err == nil {
+		t.Fatal("expected error when collection does not exist")
+	}
+	if !strings.Contains(err.Error(), "nonexistent") {
+		t.Errorf("error should name the missing collection, got: %v", err)
+	}
+}
+
+func TestDrop_Collection_PreservesOtherEntries(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := dropTestDeps(t, dir)
+	seedCollection(t, dir, "alpha")
+	bravoDir := seedCollection(t, dir, "bravo")
+
+	_, err := runDropCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "collection", "alpha",
+	)
+	if err != nil {
+		t.Fatalf("drop alpha: %v", err)
+	}
+	// bravo's directory must still exist.
+	if _, statErr := os.Stat(bravoDir); statErr != nil {
+		t.Errorf("expected bravo directory preserved, got: %v", statErr)
+	}
+	// bravo's entry must still be in root-collections.yaml.
+	root, _ := os.ReadFile(filepath.Join(dir, ".ingitdb", "root-collections.yaml"))
+	if !strings.Contains(string(root), "bravo") {
+		t.Errorf("expected bravo entry preserved, got:\n%s", string(root))
 	}
 }
