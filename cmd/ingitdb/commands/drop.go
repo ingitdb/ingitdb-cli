@@ -32,6 +32,14 @@ func Drop(
 		},
 	}
 	cmd.PersistentFlags().String("path", "", "path to the database directory (default: current directory)")
+	cmd.PersistentFlags().String("remote", "",
+		"remote repository, e.g. github.com/owner/repo[@branch|tag|commit] "+
+			"(mutually exclusive with --path)")
+	cmd.PersistentFlags().String("token", "",
+		"personal access token; falls back to host-derived env vars "+
+			"(e.g. GITHUB_TOKEN for github.com)")
+	cmd.PersistentFlags().String("provider", "",
+		"explicit provider id (github, gitlab, bitbucket) — required for unknown hosts")
 	cmd.PersistentFlags().Bool("if-exists", false, "do not fail when the target does not exist")
 	cmd.PersistentFlags().Bool("cascade", false, "drop dependents along with the target (no-op in the current data model)")
 
@@ -59,6 +67,15 @@ func dropCollection(
 			ifExists, _ := cmd.Flags().GetBool("if-exists")
 			_, _ = cmd.Flags().GetBool("cascade") // accepted, no-op
 			name := args[0]
+
+			remoteVal, _ := cmd.Flags().GetString("remote")
+			pathVal, _ := cmd.Flags().GetString("path")
+			if remoteVal != "" && pathVal != "" {
+				return fmt.Errorf("--path and --remote are mutually exclusive")
+			}
+			if remoteVal != "" {
+				return dropCollectionRemote(cmd.Context(), cmd, name, ifExists)
+			}
 
 			dirPath, err := resolveDBPath(cmd, homeDir, getWd)
 			if err != nil {
@@ -110,6 +127,15 @@ func dropView(
 			_, _ = cmd.Flags().GetBool("cascade") // accepted, no-op
 			scopeCol, _ := cmd.Flags().GetString("in")
 			name := args[0]
+
+			remoteVal, _ := cmd.Flags().GetString("remote")
+			pathVal, _ := cmd.Flags().GetString("path")
+			if remoteVal != "" && pathVal != "" {
+				return fmt.Errorf("--path and --remote are mutually exclusive")
+			}
+			if remoteVal != "" {
+				return dropViewRemote(cmd.Context(), cmd, name, scopeCol, ifExists)
+			}
 
 			dirPath, err := resolveDBPath(cmd, homeDir, getWd)
 			if err != nil {
