@@ -5,6 +5,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/config"
 )
 
 func TestSetup_WritesEmptySettingsYAML(t *testing.T) {
@@ -77,10 +80,22 @@ func TestSetup_DefaultFormatFlag_AcceptsAllSevenFormats(t *testing.T) {
 
 func TestSetup_DefaultFormatFlag_LoadsBackCleanly(t *testing.T) {
 	t.Parallel()
-	// Round-trip placeholder: setup with csv succeeds. The full
-	// ReadSettingsFromFile + ResolveRecordFormat round-trip lives in Task 17.
 	dir := t.TempDir()
 	if err := runSetup(dir, "csv"); err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+	settings, err := config.ReadSettingsFromFile(dir, ingitdb.NewReadOptions())
+	if err != nil {
+		t.Fatalf("failed to read back settings: %v", err)
+	}
+	if settings.DefaultRecordFormat != ingitdb.RecordFormatCSV {
+		t.Errorf("expected DefaultRecordFormat=csv, got %q", settings.DefaultRecordFormat)
+	}
+	// Resolver picks the project default when the collection's format is empty.
+	got := config.ResolveRecordFormat(&ingitdb.CollectionDef{
+		RecordFile: &ingitdb.RecordFileDef{Format: ""},
+	}, &settings)
+	if got != ingitdb.RecordFormatCSV {
+		t.Errorf("ResolveRecordFormat returned %q, expected csv", got)
 	}
 }
