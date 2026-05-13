@@ -121,3 +121,46 @@ func TestInsertBatch_JSONL_IntraBatchDuplicateKey(t *testing.T) {
 		t.Errorf("unexpected stat error: %v", statErr)
 	}
 }
+
+func TestInsertBatch_JSONL_CollisionWithExistingRecord(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+	// Pre-insert "ie" as a single record so the batch will collide on key=ie.
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf,
+		nil, true, nil,
+		"--path="+dir, "--into=test.items", "--key=ie", "--data={title: Existing}",
+	)
+	if err != nil {
+		t.Fatalf("setup insert failed: %v", err)
+	}
+	// Now batch: line 1 inserts "fr", line 2 collides with existing "ie".
+	stdin := strings.NewReader(`{"$id":"fr","title":"France"}
+{"$id":"ie","title":"Ireland"}
+`)
+	_, err = runInsertCmd(t, homeDir, getWd, readDef, newDB, logf,
+		stdin, false, nil,
+		"--path="+dir, "--into=test.items", "--format=jsonl",
+	)
+	if err == nil {
+		t.Fatal("expected error for collision with existing key")
+	}
+	// CRITICAL: the "fr" record from line 1 of the batch MUST NOT exist
+	// on disk — the transaction rolled back when line 2's collision
+	// triggered tx.Insert to fail.
+	frPath := filepath.Join(dir, "$records", "fr.yaml")
+	_, statErr := os.Stat(frPath)
+	if statErr == nil {
+		t.Error("fr.yaml MUST NOT exist after a failed batch (collision on line 2 rolls back line 1)")
+	} else if !os.IsNotExist(statErr) {
+		t.Errorf("unexpected stat error for fr.yaml: %v", statErr)
+	}
+	// Existing "ie" still has its original content.
+	ieBytes, readErr := os.ReadFile(filepath.Join(dir, "$records", "ie.yaml"))
+	if readErr != nil {
+		t.Fatalf("existing ie.yaml should still be on disk: %v", readErr)
+	}
+	if !strings.Contains(string(ieBytes), "Existing") {
+		t.Errorf("existing ie.yaml MUST NOT be mutated; expected 'Existing', got:\n%s", string(ieBytes))
+	}
+}
