@@ -38,7 +38,7 @@ git commit -m "fix(countries): update Ireland population"
 
 **Command:**
 ```shell
-ingitdb read record --path=. --id=countries/ie
+ingitdb select --path=. --id=countries/ie
 ```
 
 **Expected exit code:** `0`

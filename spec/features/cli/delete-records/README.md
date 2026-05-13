@@ -1,6 +1,6 @@
 # Feature: Delete Records Command
 
-**Status:** Draft
+**Status:** Superseded by [spec/features/cli/delete/](../delete/README.md). The `ingitdb delete records` command has been replaced by `ingitdb delete --from=... --where=...` (or `--all`). This document is preserved as a historical record.
 
 ## Summary
 

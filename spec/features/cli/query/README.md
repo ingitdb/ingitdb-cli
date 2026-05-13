@@ -1,6 +1,6 @@
 # Feature: Query Command
 
-**Status:** Draft
+**Status:** Superseded by [spec/features/cli/select/](../select/README.md). The `ingitdb query` command has been replaced by `ingitdb select --from=... --where=...`. This document is preserved as a historical record.
 
 ## Summary
 

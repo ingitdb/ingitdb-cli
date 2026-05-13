@@ -37,7 +37,7 @@ git commit -m "feat(countries): add Ireland"
 
 **Command:**
 ```shell
-ingitdb read record --path=. --id=countries/ie
+ingitdb select --path=. --id=countries/ie
 ```
 
 **Expected exit code:** `0`

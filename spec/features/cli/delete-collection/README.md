@@ -1,6 +1,6 @@
 # Feature: Delete Collection Command
 
-**Status:** Draft
+**Status:** Superseded by [spec/features/cli/drop/](../drop/README.md). The `ingitdb delete collection` command has been replaced by `ingitdb drop collection <name>`. This document is preserved as a historical record.
 
 ## Summary
 

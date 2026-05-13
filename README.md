@@ -154,27 +154,31 @@ ingitdb find --exact=Ireland --in='countries/.*' --fields=country
 # Delete all records from a collection (keeps the schema)
 ingitdb truncate --collection=countries.counties
 
-# Delete a specific collection and all its records
-ingitdb delete collection --collection=countries.counties.dublin
+# Drop a specific collection and all its records
+ingitdb drop collection countries.counties.dublin
 
-# Delete records matching a pattern within a collection
-ingitdb delete records --collection=countries.counties --filter-name='*old*'
+# Delete records matching a filter within a collection
+ingitdb delete --from=countries.counties --where='status==archived'
 
 # --- Record CRUD (requires record_file.type: "map[string]any" collections) ---
 
-# Create a new record: the --id format is <collection-id>/<record-key>
+# Insert a new record: the --id format is <collection-id>/<record-key>
 # (collection IDs allow alphanumeric and "." only; "/" separates collection and key)
-ingitdb create record --path=. --id=geo.nations/ie --data='{title: "Ireland"}'
+ingitdb insert --path=. --id=geo.nations/ie --data='{title: "Ireland"}'
 
-# Read a record (output format: yaml or json)
-ingitdb read record --path=. --id=geo.nations/ie
-ingitdb read record --path=. --id=geo.nations/ie --format=json
+# Select a record by ID (output format: yaml or json)
+ingitdb select --path=. --id=geo.nations/ie
+ingitdb select --path=. --id=geo.nations/ie --format=json
+
+# Select records from a collection with a filter (supported operators: ==, ===, !=, !==, >=, <=, >, <)
+ingitdb select --from=geo.nations --where='population>1000000'
+ingitdb select --from=geo.nations --where='continent==europe' --format=json
 
 # Update fields of an existing record (patch semantics: only listed fields change)
-ingitdb update record --path=. --id=geo.nations/ie --set='{title: "Ireland, Republic of"}'
+ingitdb update --path=. --id=geo.nations/ie --set='{title: "Ireland, Republic of"}'
 
 # Delete a single record
-ingitdb delete record --path=. --id=geo.nations/ie
+ingitdb delete --path=. --id=geo.nations/ie
 ```
 
 ## 🔗 Accessing Remote Repositories Directly
@@ -186,12 +190,12 @@ inGitDB can read and write records in a remote Git repository without cloning it
 ### 🌐 Public repositories (no token required)
 
 ```shell
-# Read a record
-ingitdb read record --remote=github.com/owner/repo --id=countries/ie
+# Select a record
+ingitdb select --remote=github.com/owner/repo --id=countries/ie
 
 # Pin to a specific branch, tag, or commit SHA
-ingitdb read record --remote=github.com/owner/repo@main --id=todo.tags/active
-ingitdb read record --remote=github.com/owner/repo@v1.2.0 --id=todo.tags/active
+ingitdb select --remote=github.com/owner/repo@main --id=todo.tags/active
+ingitdb select --remote=github.com/owner/repo@v1.2.0 --id=todo.tags/active
 
 # List all collections
 ingitdb list collections --remote=github.com/owner/repo
@@ -206,17 +210,17 @@ or the `--token` flag. All write operations also require a token, even for publi
 # Set the token once in your shell
 export GITHUB_TOKEN=ghp_...
 
-ingitdb read record --remote=github.com/owner/repo --id=countries/ie
+ingitdb select --remote=github.com/owner/repo --id=countries/ie
 ingitdb list collections --remote=github.com/owner/repo
-ingitdb create record --remote=github.com/owner/repo --id=countries/ie --data='{name: Ireland}'
-ingitdb update record --remote=github.com/owner/repo --id=countries/ie --set='{name: Ireland, capital: Dublin}'
-ingitdb delete record --remote=github.com/owner/repo --id=countries/ie
+ingitdb insert --remote=github.com/owner/repo --id=countries/ie --data='{name: Ireland}'
+ingitdb update --remote=github.com/owner/repo --id=countries/ie --set='{name: Ireland, capital: Dublin}'
+ingitdb delete --remote=github.com/owner/repo --id=countries/ie
 
 # Or pass the token inline (not recommended for scripts — it ends up in shell history)
-ingitdb read record --remote=github.com/owner/repo --token=ghp_... --id=countries/ie
+ingitdb select --remote=github.com/owner/repo --token=ghp_... --id=countries/ie
 ```
 
-Each write operation (`create record`, `update record`, `delete record`) creates a single commit
+Each write operation (`insert`, `update`, `delete`) creates a single commit
 in the remote repository. No local clone is required at any point.
 
 See [Remote Repository Access](docs/features/remote-repo-access.md) for the full reference,
@@ -240,19 +244,16 @@ languages:
 | ------------------------------------------------- | :--------- | -------------------------------------------------------- |
 | [`version`](docs/cli/commands/version.md)         | ✅ done    | Print build version, commit hash, and date               |
 | [`validate`](docs/cli/commands/validate.md)       | ✅ done    | Check every record against its collection schema         |
-| [`read record`](docs/cli/commands/read.md)        | ✅ done    | Read a single record by ID (local or remote)             |
-| [`create record`](docs/cli/commands/create.md)    | ✅ done    | Create a new record in a collection                      |
-| [`update record`](docs/cli/commands/update.md)    | ✅ done    | Update fields of an existing record (local or remote)    |
-| [`delete record`](docs/cli/commands/delete.md)    | ✅ done    | Delete a single record by ID (local or remote)           |
+| [`select`](docs/cli/commands/select.md)           | ✅ done    | Read records by ID or query a collection (local or remote) |
+| [`insert`](docs/cli/commands/insert.md)           | ✅ done    | Insert a new record (single record or batch from stdin)  |
+| [`update`](docs/cli/commands/update.md)           | ✅ done    | Update fields of an existing record (local or remote)    |
+| [`delete`](docs/cli/commands/delete.md)           | ✅ done    | Delete records by ID or `--where` filter (local or remote) |
+| [`drop`](docs/cli/commands/drop.md)               | ✅ done    | Drop a collection or view definition                     |
 | [`list collections`](docs/cli/commands/list.md)   | ✅ done    | List collection IDs (local or remote)                    |
 | `list view`                                       | 🟡 planned | List view definition                                     |
 | `list subscribers`                                | 🟡 planned | List subscribers                                         |
 | [`find`](docs/cli/commands/find.md)               | 🟡 planned | Search records by substring, regex, or exact value       |
-| `delete collection`                               | 🟡 planned | Remove a collection                                      |
-| `delete view`                                     | 🟡 planned | Remove view definition                                   |
-| `delete records`                                  | 🟡 planned | Remove records from a collection                         |
 | [`truncate`](docs/cli/commands/truncate.md)       | 🟡 planned | Remove all records from a collection, keeping its schema |
-| [`query`](docs/cli/commands/query.md)             | 🟡 planned | Query and format records from a collection               |
 | [`materialize`](docs/cli/commands/materialize.md) | 🟡 planned | Build materialized views into `$views/`                  |
 | [`diff`](docs/cli/commands/diff.md)               | 🟡 planned | Show record-level changes between two git refs           |
 | [`pull`](docs/cli/commands/pull.md)               | 🟡 planned | Pull remote changes and rebuild views                    |

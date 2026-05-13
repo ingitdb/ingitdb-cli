@@ -1,6 +1,6 @@
 # Feature: Delete Record Command
 
-**Status:** Implementing
+**Status:** Superseded by [spec/features/cli/delete/](../delete/README.md). The `ingitdb delete record` command has been removed; use `ingitdb delete --id=...` instead. This document is preserved as a historical record.
 
 ## Summary
 

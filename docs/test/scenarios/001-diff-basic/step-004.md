@@ -51,7 +51,7 @@ git commit -m "feat(countries): add France and Germany"
 
 **Command:**
 ```shell
-ingitdb read record --path=. --id=countries/fr
+ingitdb select --path=. --id=countries/fr
 ```
 
 **Expected exit code:** `0`
@@ -64,7 +64,7 @@ population: 67750000
 
 **Command:**
 ```shell
-ingitdb read record --path=. --id=countries/de
+ingitdb select --path=. --id=countries/de
 ```
 
 **Expected exit code:** `0`

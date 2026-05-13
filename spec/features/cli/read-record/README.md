@@ -1,6 +1,6 @@
 # Feature: Read Record Command
 
-**Status:** Implementing
+**Status:** Superseded by [spec/features/cli/select/](../select/README.md). The `ingitdb read record` command has been removed; use `ingitdb select --id=...` instead. This document is preserved as a historical record.
 
 ## Summary
 

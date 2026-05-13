@@ -1,6 +1,6 @@
 # Feature: Create Record Command
 
-**Status:** Implementing
+**Status:** Superseded by [spec/features/cli/insert/](../insert/README.md). The `ingitdb create record` command has been removed; use `ingitdb insert --into=... --key=...` instead. This document is preserved as a historical record.
 
 ## Summary
 

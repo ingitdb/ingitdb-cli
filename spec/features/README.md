@@ -9,17 +9,22 @@ This directory tracks the SpecScore feature specifications for the **ingitdb-cli
 | [record-format](record-format/README.md) | Implemented | Umbrella for record-format extensions: CSV support, project-level `default_record_format` config, `--default-format` CLI flag on `ingitdb setup`. Additive on top of the existing six-format machinery (yaml/yml/json/markdown/toml/ingr). |
 | [cli/version](cli/version/README.md) | Implementing | `ingitdb version` — print build version, commit hash, and date. |
 | [cli/validate](cli/validate/README.md) | Implementing | `ingitdb validate` — check schema and records against `.ingitdb.yaml`. |
-| [cli/read-record](cli/read-record/README.md) | Implementing | `ingitdb read record` — read a single record by ID. |
-| [cli/create-record](cli/create-record/README.md) | Implementing | `ingitdb create record` — create a new record. |
-| [cli/update-record](cli/update-record/README.md) | Implementing | `ingitdb update record` — patch fields of an existing record. |
-| [cli/delete-record](cli/delete-record/README.md) | Implementing | `ingitdb delete record` — delete a single record by ID. |
+| [cli/select](cli/select/README.md) | Implementing | `ingitdb select` — read a single record (`--id`) or query a set of records (`--from`/`--where`). |
+| [cli/insert](cli/insert/README.md) | Implementing | `ingitdb insert` — create a new record (`--into`/`--key`). |
+| [cli/update](cli/update/README.md) | Implementing | `ingitdb update` — patch fields of one or more records. |
+| [cli/delete](cli/delete/README.md) | Implementing | `ingitdb delete` — delete records by ID or by `--from`/`--where`. |
+| [cli/drop](cli/drop/README.md) | Implementing | `ingitdb drop` — drop a collection or view. |
 | [cli/list-collections](cli/list-collections/README.md) | Implementing | `ingitdb list collections` — list collection IDs. |
 | [cli/rebase](cli/rebase/README.md) | Implementing | `ingitdb rebase` — rebase with auto-resolution of generated-file conflicts. |
 | [cli/find](cli/find/README.md) | Draft | `ingitdb find` — search records by substring, regex, or exact value. |
 | [cli/truncate](cli/truncate/README.md) | Draft | `ingitdb truncate` — remove all records from a collection. |
-| [cli/delete-collection](cli/delete-collection/README.md) | Draft | `ingitdb delete collection` — remove a collection and its records. |
-| [cli/delete-records](cli/delete-records/README.md) | Draft | `ingitdb delete records` — remove records matching a filter. |
-| [cli/query](cli/query/README.md) | Draft | `ingitdb query` — query and format records from a collection. |
+| [cli/read-record](cli/read-record/README.md) | Superseded by [cli/select](cli/select/README.md) | `ingitdb read record` (removed). |
+| [cli/create-record](cli/create-record/README.md) | Superseded by [cli/insert](cli/insert/README.md) | `ingitdb create record` (removed). |
+| [cli/update-record](cli/update-record/README.md) | Superseded by [cli/update](cli/update/README.md) | `ingitdb update record` (removed). |
+| [cli/delete-record](cli/delete-record/README.md) | Superseded by [cli/delete](cli/delete/README.md) | `ingitdb delete record` (removed). |
+| [cli/delete-records](cli/delete-records/README.md) | Superseded by [cli/delete](cli/delete/README.md) | `ingitdb delete records` (removed). |
+| [cli/delete-collection](cli/delete-collection/README.md) | Superseded by [cli/drop](cli/drop/README.md) | `ingitdb delete collection` (removed). |
+| [cli/query](cli/query/README.md) | Superseded by [cli/select](cli/select/README.md) | `ingitdb query` (removed). |
 | [cli/materialize](cli/materialize/README.md) | Draft | `ingitdb materialize` — build materialized views and READMEs. |
 | [cli/diff](cli/diff/README.md) | Draft | `ingitdb diff` — record-level diff between two git refs. |
 | [cli/pull](cli/pull/README.md) | Draft | `ingitdb pull` — pull, auto-resolve, and rebuild views. |
@@ -42,17 +47,20 @@ Prints build version, commit hash, and build date to stdout. The simplest CLI co
 ### cli/validate
 Validates the `.ingitdb.yaml` definition and every record file against its collection schema. Supports `--only=definition|records` for partial passes and `--from-commit`/`--to-commit` for fast CI mode that only checks files changed in a commit range.
 
-### cli/read-record
-Reads a single record by `--id` from a local path or directly from a GitHub repository, formatting the result as YAML (default) or JSON.
+### cli/select
+Reads a single record by `--id` (yaml default) or queries a set of records from a collection via `--from` with optional `--where`/`--order-by`/`--fields`/`--limit` (csv default). Replaces the legacy `read record` and `query` commands.
 
-### cli/create-record
-Creates a new record in a `map[string]any` collection. Fails when a record with the same key already exists. Works against a local path or a GitHub repository (writes require a token).
+### cli/insert
+Creates a new record in a collection using `--into=COLLECTION` and `--key=KEY` (or `$id` in the supplied data). Accepts data via `--data`, stdin, or `--edit`. Fails when the key already exists. Replaces the legacy `create record` command.
 
-### cli/update-record
-Updates an existing record using patch semantics: only fields supplied in `--set` change; all others are preserved.
+### cli/update
+Applies patch-style updates: `--set` adds/changes fields, `--unset` removes fields. Works in single-record mode (`--id`) or set mode (`--from` + `--where`/`--all`). Replaces the legacy `update record` command.
 
-### cli/delete-record
-Deletes a single record by ID. For `SingleRecord` collections the record file is removed; for `MapOfIDRecords` collections the key is removed from the shared map file.
+### cli/delete
+Deletes records in single-record mode (`--id`) or set mode (`--from` + `--where`/`--all`). For `SingleRecord` collections the record file is removed; for `MapOfIDRecords` collections only the matching key is removed. Replaces the legacy `delete record` and `delete records` commands.
+
+### cli/drop
+Drops schema objects: `drop collection <name>` and `drop view <name>`. Removes both the schema entry and any associated data directory in a single git commit. `--if-exists` for idempotence; `--cascade` to drop dependents. Replaces the legacy `delete collection` and `delete view` commands.
 
 ### cli/list-collections
 Lists collection IDs from a local DB or a GitHub repository, with optional `--in` regex scoping and `--filter-name` glob filtering.
@@ -65,15 +73,6 @@ Searches record fields by substring, regex, or exact match. Supports field white
 
 ### cli/truncate
 Removes every record from a collection while preserving the collection definition.
-
-### cli/delete-collection
-Deletes a collection definition and every record file that belongs to it.
-
-### cli/delete-records
-Bulk-deletes records that match a glob pattern within a collection, optionally scoped by an `--in` sub-path regex.
-
-### cli/query
-Queries records from a single collection with `--where` filters, `--order-by` sorting, and pluggable output formats (CSV, JSON, YAML, Markdown).
 
 ### cli/materialize
 Renders generated artifacts: collection `README.md` files and materialized view files under `$views/`.

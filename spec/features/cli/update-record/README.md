@@ -1,6 +1,6 @@
 # Feature: Update Record Command
 
-**Status:** Implementing
+**Status:** Superseded by [spec/features/cli/update/](../update/README.md). The `ingitdb update record` command has been renamed to `ingitdb update`. This document is preserved as a historical record.
 
 ## Summary
 

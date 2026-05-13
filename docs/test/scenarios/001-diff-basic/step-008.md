@@ -15,9 +15,9 @@ entirely, producing the "deleted" change type in the diff. All three change type
 ## Actions
 
 ```shell
-ingitdb delete record --path=. --id=countries/fr
+ingitdb delete --path=. --id=countries/fr
 
-# If ingitdb delete record does not auto-stage the removal, stage it manually:
+# If ingitdb delete does not auto-stage the removal, stage it manually:
 # git add -u 'countries/$records/fr'
 
 git commit -m "chore(countries): remove France"
@@ -29,7 +29,7 @@ git commit -m "chore(countries): remove France"
 
 **Command:**
 ```shell
-ingitdb read record --path=. --id=countries/fr
+ingitdb select --path=. --id=countries/fr
 ```
 
 **Expected exit code:** `2` (record not found / error)
@@ -51,6 +51,6 @@ gone
 
 ## Notes
 
-- If `ingitdb delete record` performs `git rm` internally, no manual staging is needed.
+- If `ingitdb delete` performs `git rm` internally, no manual staging is needed.
   If it only deletes the file from disk, add `git add -u` before committing.
   The correct behaviour should be documented in [`docs/cli/commands/delete.md`](../../../cli/commands/delete.md).

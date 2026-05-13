@@ -49,7 +49,7 @@ feature: (branched here) → [modify ie] → [delete fr] → [add es]
 2. **Null representation in `--depth=full`**: The JSON spec uses `null`; the text format is
    unspecified. Step-013 pins this as `(none)` — update if the implementation differs.
 3. **`--collection=nonexistent` exit code**: Step-014 asks whether this exits `0` or `2`.
-4. **`ingitdb delete record` staging**: Does it `git rm` or only delete from disk? Step-008 notes the conditional.
+4. **`ingitdb delete` staging**: Does it `git rm` or only delete from disk? Step-008 notes the conditional.
 
 ## Steps
 
