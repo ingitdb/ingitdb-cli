@@ -62,3 +62,33 @@ func TestInsertBatch_JSONL_HappyPath(t *testing.T) {
 		t.Errorf("fr.yaml should contain 'France', got:\n%s", string(frBytes))
 	}
 }
+
+func TestInsertBatch_JSONL_MissingKeyRollsBackBatch(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+	stdin := strings.NewReader(`{"$id":"ie","name":"Ireland"}
+{"name":"France"}
+`)
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf,
+		stdin, false /* not TTY */, nil,
+		"--path="+dir, "--into=test.items", "--format=jsonl",
+	)
+	if err == nil {
+		t.Fatal("expected error for missing $id at line 2")
+	}
+	if !strings.Contains(err.Error(), "line 2") {
+		t.Errorf("error %q should reference line 2", err.Error())
+	}
+	// CRITICAL: neither record MUST exist on disk — the parser rejects
+	// the bad batch before opening the transaction, so nothing lands.
+	for _, key := range []string{"ie", "fr"} {
+		path := filepath.Join(dir, "$records", key+".yaml")
+		_, statErr := os.Stat(path)
+		if statErr == nil {
+			t.Errorf("record %s/%s.yaml MUST NOT exist after a failed batch", "$records", key)
+		} else if !os.IsNotExist(statErr) {
+			t.Errorf("unexpected stat error for %s: %v", path, statErr)
+		}
+	}
+}
