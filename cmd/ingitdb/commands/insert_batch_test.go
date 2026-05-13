@@ -14,6 +14,52 @@ import (
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
+func TestInsertBatch_RejectsMapOfRecordsCollection(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	// Build a Definition with a MapOfRecords collection. batch mode
+	// MUST refuse it at the pre-flight stage with a clear diagnostic,
+	// because every batch record would resolve to the same path and
+	// the rollback path is built for per-record path tracking.
+	def := &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"test.map": {
+				ID:      "test.map",
+				DirPath: dir,
+				RecordFile: &ingitdb.RecordFileDef{
+					Name:       "all.yaml",
+					Format:     "yaml",
+					RecordType: ingitdb.MapOfRecords,
+				},
+				Columns: map[string]*ingitdb.ColumnDef{
+					"name": {Type: ingitdb.ColumnTypeString},
+				},
+			},
+		},
+	}
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) { return def, nil }
+	newDB := func(root string, d *ingitdb.Definition) (dal.DB, error) {
+		return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
+	}
+	logf := func(...any) {}
+	stdin := strings.NewReader(`{"$id":"ie","name":"Ireland"}` + "\n")
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf,
+		stdin, false /* not TTY */, nil,
+		"--path="+dir, "--into=test.map", "--format=jsonl",
+	)
+	if err == nil {
+		t.Fatal("expected error when batch-inserting into a MapOfRecords collection")
+	}
+	if !strings.Contains(err.Error(), "record_type=") {
+		t.Errorf("error %q should mention record_type=", err.Error())
+	}
+	if !strings.Contains(err.Error(), "test.map") {
+		t.Errorf("error %q should name the collection 'test.map'", err.Error())
+	}
+}
+
 func TestInsertBatch_JSONL_EmptyStreamSucceeds(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()

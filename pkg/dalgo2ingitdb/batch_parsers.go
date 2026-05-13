@@ -115,12 +115,12 @@ func ParseBatchYAMLStream(r io.Reader) ([]ParsedRecord, error) {
 	var records []ParsedRecord
 	docNo := 0
 	for {
+		docNo++
 		var data map[string]any
 		err := dec.Decode(&data)
 		if err == io.EOF {
 			break
 		}
-		docNo++
 		if err != nil {
 			return nil, fmt.Errorf("document %d: invalid YAML: %w", docNo, err)
 		}

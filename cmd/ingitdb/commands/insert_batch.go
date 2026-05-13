@@ -40,6 +40,16 @@ func runBatchInsert(
 	ictx insertContext,
 	stderr io.Writer,
 ) error {
+	// MapOfRecords collections store every record in one shared file,
+	// which means every batch record resolves to the same path. The
+	// rollback path is built around per-record path tracking and would
+	// either dedupe the shared path (correct, but only by accident) or,
+	// for untracked files, os.Remove the shared file — destroying
+	// pre-existing records in the collection. Refuse batch mode for
+	// these collections until a proper SetMulti-based path exists.
+	if ictx.colDef.RecordFile != nil && ictx.colDef.RecordFile.RecordType == ingitdb.MapOfRecords {
+		return fmt.Errorf("batch mode does not yet support collections with record_type=%s; only single-record collections are supported (collection: %s)", ictx.colDef.RecordFile.RecordType, ictx.colDef.ID)
+	}
 	records, err := parseBatchStream(format, keyColumn, fields, stdin)
 	if err != nil {
 		return err
@@ -64,6 +74,14 @@ func runBatchInsert(
 			if insertErr != nil {
 				return fmt.Errorf("record at position %d (key=%q): %w", rec.Position, rec.Key, insertErr)
 			}
+			// IMPORTANT: append only AFTER tx.Insert succeeds. The
+			// current dalgo2fsingitdb backend performs the collision
+			// check BEFORE writing, so a failing Insert means no file
+			// was created. Appending the path pre-insert would cause
+			// rollback to remove a pre-existing file with the same
+			// path (e.g. the colliding record from a prior insert),
+			// destroying real data — verified by
+			// TestInsertBatch_JSONL_CollisionWithExistingRecord.
 			writtenPaths = append(writtenPaths, path)
 		}
 		return nil
@@ -158,19 +176,30 @@ func rollbackBatchWrites(ctx context.Context, repoRoot string, paths []string) e
 		return nil
 	}
 	isGit := isGitWorkingTree(ctx, repoRoot)
-	var firstErr error
-	for _, path := range paths {
-		var err error
-		if isGit && isTracked(ctx, repoRoot, path) {
-			err = gitCheckoutPath(ctx, repoRoot, path)
-		} else {
-			removeErr := os.Remove(path)
-			if removeErr != nil && !os.IsNotExist(removeErr) {
-				err = fmt.Errorf("remove %s: %w", path, removeErr)
+	var trackedPaths []string
+	var untrackedPaths []string
+	if isGit {
+		for _, path := range paths {
+			if isTracked(ctx, repoRoot, path) {
+				trackedPaths = append(trackedPaths, path)
+			} else {
+				untrackedPaths = append(untrackedPaths, path)
 			}
 		}
-		if err != nil && firstErr == nil {
-			firstErr = err
+	} else {
+		untrackedPaths = paths
+	}
+	var firstErr error
+	if len(trackedPaths) > 0 {
+		checkoutErr := gitCheckoutPaths(ctx, repoRoot, trackedPaths)
+		if checkoutErr != nil {
+			firstErr = checkoutErr
+		}
+	}
+	for _, path := range untrackedPaths {
+		removeErr := os.Remove(path)
+		if removeErr != nil && !os.IsNotExist(removeErr) && firstErr == nil {
+			firstErr = fmt.Errorf("remove %s: %w", path, removeErr)
 		}
 	}
 	return firstErr
@@ -184,25 +213,49 @@ func isGitWorkingTree(ctx context.Context, dir string) bool {
 	return cmd.Run() == nil
 }
 
-// isTracked returns true if path is tracked by git in the working tree
+// isTracked reports whether path is tracked by git in the working tree
 // rooted at repoRoot.
+//
+// `git ls-files --error-unmatch` exits 0 when the path is tracked and
+// 1 when it is not. Any OTHER exit (transient .git/index.lock, git
+// not on PATH, network errors on remote repos, etc.) is treated as
+// "unknown — assume tracked": running `git checkout HEAD -- <path>`
+// on an untracked file is a benign no-op, but failing to restore a
+// tracked file because of a transient git error would destroy real
+// data on rollback.
 func isTracked(ctx context.Context, repoRoot, path string) bool {
 	cmd := exec.CommandContext(ctx, "git", "-C", repoRoot, "ls-files", "--error-unmatch", path)
 	cmd.Stdout = io.Discard
 	cmd.Stderr = io.Discard
-	return cmd.Run() == nil
+	runErr := cmd.Run()
+	if runErr == nil {
+		return true
+	}
+	exitErr, ok := runErr.(*exec.ExitError)
+	if ok && exitErr.ExitCode() == 1 {
+		return false
+	}
+	return true
 }
 
-// gitCheckoutPath restores path to its HEAD-committed state via
-// `git checkout HEAD -- <path>`.
-func gitCheckoutPath(ctx context.Context, repoRoot, path string) error {
-	cmd := exec.CommandContext(ctx, "git", "-C", repoRoot, "checkout", "HEAD", "--", path)
+// gitCheckoutPaths restores the supplied paths to their HEAD-committed
+// state in a single invocation of `git checkout HEAD -- <path>...`.
+// This is meaningful on large batches where the per-path overhead of
+// forking git would otherwise dominate the rollback cost.
+func gitCheckoutPaths(ctx context.Context, repoRoot string, paths []string) error {
+	if len(paths) == 0 {
+		return nil
+	}
+	args := make([]string, 0, len(paths)+5)
+	args = append(args, "-C", repoRoot, "checkout", "HEAD", "--")
+	args = append(args, paths...)
+	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Stdout = io.Discard
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	runErr := cmd.Run()
 	if runErr != nil {
-		return fmt.Errorf("git checkout %s: %w (%s)", path, runErr, strings.TrimSpace(stderr.String()))
+		return fmt.Errorf("git checkout %d paths: %w (%s)", len(paths), runErr, strings.TrimSpace(stderr.String()))
 	}
 	return nil
 }
