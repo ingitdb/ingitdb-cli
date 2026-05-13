@@ -36,13 +36,13 @@ func resolveInsertContext(
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	newDB func(string, *ingitdb.Definition) (dal.DB, error),
 ) (insertContext, error) {
-	githubVal, _ := cmd.Flags().GetString("github")
+	remoteVal, _ := cmd.Flags().GetString("remote")
 	pathVal, _ := cmd.Flags().GetString("path")
-	if githubVal != "" && pathVal != "" {
-		return insertContext{}, fmt.Errorf("--path with --github is not supported")
+	if remoteVal != "" && pathVal != "" {
+		return insertContext{}, fmt.Errorf("--path with --remote is not supported")
 	}
-	if githubVal != "" {
-		return resolveInsertContextGitHub(ctx, cmd, collectionID, githubVal)
+	if remoteVal != "" {
+		return resolveInsertContextRemote(ctx, cmd, collectionID, remoteVal)
 	}
 	dirPath, err := resolveDBPath(cmd, homeDir, getWd)
 	if err != nil {
@@ -68,15 +68,15 @@ func resolveInsertContext(
 	}, nil
 }
 
-// resolveInsertContextGitHub is the GitHub-source variant. It uses
+// resolveInsertContextRemote is the remote-source variant. It uses
 // the existing readRemoteDefinitionForCollection helper to load only
 // the named collection's definition from the remote repo.
-func resolveInsertContextGitHub(
+func resolveInsertContextRemote(
 	ctx context.Context,
 	cmd *cobra.Command,
-	collectionID, githubValue string,
+	collectionID, remoteValue string,
 ) (insertContext, error) {
-	spec, err := parseGitHubRepoSpec(githubValue)
+	spec, err := resolveRemoteFromFlags(cmd, remoteValue)
 	if err != nil {
 		return insertContext{}, err
 	}
@@ -88,10 +88,10 @@ func resolveInsertContextGitHub(
 	if !ok {
 		return insertContext{}, fmt.Errorf("collection %q not found in remote definition", collectionID)
 	}
-	cfg := newGitHubConfig(spec, githubToken(cmd))
+	cfg := newGitHubConfig(spec, remoteToken(cmd, spec.Host))
 	db, err := gitHubDBFactory.NewGitHubDBWithDef(cfg, def)
 	if err != nil {
-		return insertContext{}, fmt.Errorf("failed to open github database: %w", err)
+		return insertContext{}, fmt.Errorf("failed to open remote database: %w", err)
 	}
 	return insertContext{
 		db:      db,

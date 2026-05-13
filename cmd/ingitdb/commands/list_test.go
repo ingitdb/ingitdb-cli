@@ -128,7 +128,7 @@ func TestSubscribers_NotYetImplemented(t *testing.T) {
 	}
 }
 
-func TestListCollectionsGitHub_Success(t *testing.T) {
+func TestListCollectionsRemote_Success(t *testing.T) {
 	t.Parallel()
 
 	// This test requires a mock GitHub file reader, which is not straightforward.
@@ -157,7 +157,13 @@ func TestListCollectionsGitHub_Success(t *testing.T) {
 	t.Fatal("collections subcommand not found")
 }
 
-func TestListCollectionsGitHub_WithMock(t *testing.T) {
+// sampleRemoteSpec returns a canonical github.com/owner/repo spec for tests
+// that exercise listCollectionsRemoteWithSpec without going through the parser.
+func sampleRemoteSpec() remoteSpec {
+	return remoteSpec{Host: "github.com", Path: []string{"owner", "repo"}}
+}
+
+func TestListCollectionsRemote_WithMock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -174,23 +180,13 @@ func TestListCollectionsGitHub_WithMock(t *testing.T) {
 	defer func() { gitHubFileReaderFactory = originalFactory }()
 
 	ctx := context.Background()
-	err := listCollectionsGitHub(ctx, "owner/repo", "")
+	err := listCollectionsRemoteWithSpec(ctx, sampleRemoteSpec(), "")
 	if err != nil {
-		t.Fatalf("listCollectionsGitHub: %v", err)
+		t.Fatalf("listCollectionsRemoteWithSpec: %v", err)
 	}
 }
 
-func TestListCollectionsGitHub_ParseError(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-	err := listCollectionsGitHub(ctx, "invalid", "")
-	if err == nil {
-		t.Fatal("expected error for invalid GitHub spec")
-	}
-}
-
-func TestListCollectionsGitHub_ReaderCreationError(t *testing.T) {
+func TestListCollectionsRemote_ReaderCreationError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -202,13 +198,13 @@ func TestListCollectionsGitHub_ReaderCreationError(t *testing.T) {
 	defer func() { gitHubFileReaderFactory = originalFactory }()
 
 	ctx := context.Background()
-	err := listCollectionsGitHub(ctx, "owner/repo", "")
+	err := listCollectionsRemoteWithSpec(ctx, sampleRemoteSpec(), "")
 	if err == nil {
 		t.Fatal("expected error when file reader creation fails")
 	}
 }
 
-func TestListCollectionsGitHub_FileNotFound(t *testing.T) {
+func TestListCollectionsRemote_FileNotFound(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -221,13 +217,13 @@ func TestListCollectionsGitHub_FileNotFound(t *testing.T) {
 	defer func() { gitHubFileReaderFactory = originalFactory }()
 
 	ctx := context.Background()
-	err := listCollectionsGitHub(ctx, "owner/repo", "")
+	err := listCollectionsRemoteWithSpec(ctx, sampleRemoteSpec(), "")
 	if err == nil {
 		t.Fatal("expected error when root config file not found")
 	}
 }
 
-func TestListCollectionsGitHub_InvalidYAML(t *testing.T) {
+func TestListCollectionsRemote_InvalidYAML(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -244,13 +240,13 @@ func TestListCollectionsGitHub_InvalidYAML(t *testing.T) {
 	defer func() { gitHubFileReaderFactory = originalFactory }()
 
 	ctx := context.Background()
-	err := listCollectionsGitHub(ctx, "owner/repo", "")
+	err := listCollectionsRemoteWithSpec(ctx, sampleRemoteSpec(), "")
 	if err == nil {
 		t.Fatal("expected error when root config has invalid YAML")
 	}
 }
 
-func TestListCollectionsGitHub_InvalidConfig(t *testing.T) {
+func TestListCollectionsRemote_InvalidConfig(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -267,91 +263,15 @@ func TestListCollectionsGitHub_InvalidConfig(t *testing.T) {
 	defer func() { gitHubFileReaderFactory = originalFactory }()
 
 	ctx := context.Background()
-	err := listCollectionsGitHub(ctx, "owner/repo", "")
+	err := listCollectionsRemoteWithSpec(ctx, sampleRemoteSpec(), "")
 	if err == nil {
 		t.Fatal("expected error when root config validation fails")
 	}
 }
 
-func TestParseGitHubRepoSpec_Valid(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name      string
-		input     string
-		wantOwner string
-		wantRepo  string
-		wantRef   string
-	}{
-		{
-			name:      "owner/repo",
-			input:     "owner/repo",
-			wantOwner: "owner",
-			wantRepo:  "repo",
-			wantRef:   "",
-		},
-		{
-			name:      "owner/repo@ref",
-			input:     "owner/repo@main",
-			wantOwner: "owner",
-			wantRepo:  "repo",
-			wantRef:   "main",
-		},
-		{
-			name:      "owner/repo@tag",
-			input:     "owner/repo@v1.0.0",
-			wantOwner: "owner",
-			wantRepo:  "repo",
-			wantRef:   "v1.0.0",
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			spec, err := parseGitHubRepoSpec(tc.input)
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if spec.Owner != tc.wantOwner {
-				t.Errorf("Owner = %q, want %q", spec.Owner, tc.wantOwner)
-			}
-			if spec.Repo != tc.wantRepo {
-				t.Errorf("Repo = %q, want %q", spec.Repo, tc.wantRepo)
-			}
-			if spec.Ref != tc.wantRef {
-				t.Errorf("Ref = %q, want %q", spec.Ref, tc.wantRef)
-			}
-		})
-	}
-}
-
-func TestParseGitHubRepoSpec_Invalid(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name  string
-		input string
-	}{
-		{name: "empty", input: ""},
-		{name: "missing repo", input: "owner/"},
-		{name: "missing owner", input: "/repo"},
-		{name: "no slash", input: "ownerrepo"},
-		{name: "empty ref", input: "owner/repo@"},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			_, err := parseGitHubRepoSpec(tc.input)
-			if err == nil {
-				t.Fatalf("expected error for input %q", tc.input)
-			}
-		})
-	}
-}
+// Note: TestParseGitHubRepoSpec_* tests have been deleted; the canonical
+// parser is parseRemoteSpec, exercised by TestParseRemoteSpec_* in
+// remote_helpers_test.go.
 
 func TestGitHubToken_FromFlag(t *testing.T) {
 	t.Parallel()

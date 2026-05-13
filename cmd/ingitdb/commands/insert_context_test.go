@@ -15,7 +15,7 @@ func TestResolveInsertContext_LocalSuccess(t *testing.T) {
 
 	cmd := &cobra.Command{Use: "test"}
 	addPathFlag(cmd)
-	addGitHubFlags(cmd)
+	addRemoteFlags(cmd)
 	if err := cmd.ParseFlags([]string{"--path=" + dir}); err != nil {
 		t.Fatalf("parse: %v", err)
 	}
@@ -46,7 +46,7 @@ func TestResolveInsertContext_UnknownCollection(t *testing.T) {
 
 	cmd := &cobra.Command{Use: "test"}
 	addPathFlag(cmd)
-	addGitHubFlags(cmd)
+	addRemoteFlags(cmd)
 	if err := cmd.ParseFlags([]string{"--path=" + dir}); err != nil {
 		t.Fatalf("parse: %v", err)
 	}

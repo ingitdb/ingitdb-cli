@@ -81,7 +81,7 @@ func TestSelect_RegistersAllSharedFlags(t *testing.T) {
 	dir := t.TempDir()
 	homeDir, getWd, readDef, newDB, logf := selectTestDeps(t, dir)
 	cmd := Select(homeDir, getWd, readDef, newDB, logf)
-	for _, name := range []string{"id", "from", "where", "order-by", "fields", "limit", "min-affected", "format", "path", "github"} {
+	for _, name := range []string{"id", "from", "where", "order-by", "fields", "limit", "min-affected", "format", "path", "remote"} {
 		if cmd.Flags().Lookup(name) == nil {
 			t.Errorf("flag --%s not registered", name)
 		}
@@ -411,12 +411,12 @@ func TestSelect_PathAndGitHubMutuallyExclusive(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
 	homeDir, getWd, readDef, newDB, logf := selectTestDeps(t, dir)
-	_, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf, "--path="+dir, "--github=foo/bar", "--from=test.items")
+	_, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf, "--path="+dir, "--remote=github.com/foo/bar", "--from=test.items")
 	if err == nil {
-		t.Fatal("expected error when both --path and --github supplied")
+		t.Fatal("expected error when both --path and --remote supplied")
 	}
-	if !strings.Contains(err.Error(), "--path") || !strings.Contains(err.Error(), "--github") {
-		t.Errorf("error should mention --path and --github, got: %v", err)
+	if !strings.Contains(err.Error(), "--path") || !strings.Contains(err.Error(), "--remote") {
+		t.Errorf("error should mention --path and --remote, got: %v", err)
 	}
 }
 
@@ -424,7 +424,7 @@ func TestSelect_SetMode_GitHubFlagAccepted(t *testing.T) {
 	// Not parallel: replaces package-level gitHubFileReaderFactory.
 	dir := t.TempDir()
 	homeDir, getWd, readDef, newDB, logf := selectTestDeps(t, dir)
-	// Smoke test: --from + --github parses and branches correctly before any
+	// Smoke test: --from + --remote parses and branches correctly before any
 	// network call. We inject a reader that returns a network-style error so
 	// the test is hermetic and confirms the GitHub branch is wired — not just
 	// that flag parsing succeeds.
@@ -432,7 +432,7 @@ func TestSelect_SetMode_GitHubFlagAccepted(t *testing.T) {
 	gitHubFileReaderFactory = &stubFileReaderFactory{err: fmt.Errorf("github: network error")}
 	defer func() { gitHubFileReaderFactory = origFactory }()
 
-	_, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf, "--github=owner/repo", "--from=test.items")
+	_, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf, "--remote=github.com/owner/repo", "--from=test.items")
 	if err == nil {
 		t.Fatal("expected error from injected GitHub factory failure")
 	}

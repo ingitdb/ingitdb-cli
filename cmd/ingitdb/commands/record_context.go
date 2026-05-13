@@ -20,19 +20,19 @@ type recordContext struct {
 	def       *ingitdb.Definition
 }
 
-func resolveGitHubRecordContext(ctx context.Context, cmd *cobra.Command, id, githubValue string) (recordContext, error) {
-	spec, parseErr := parseGitHubRepoSpec(githubValue)
-	if parseErr != nil {
-		return recordContext{}, parseErr
+func resolveRemoteRecordContext(ctx context.Context, cmd *cobra.Command, id, remoteValue string) (recordContext, error) {
+	spec, err := resolveRemoteFromFlags(cmd, remoteValue)
+	if err != nil {
+		return recordContext{}, err
 	}
 	def, collectionID, key, readErr := readRemoteDefinitionForID(ctx, spec, id)
 	if readErr != nil {
 		return recordContext{}, fmt.Errorf("failed to resolve remote definition: %w", readErr)
 	}
-	cfg := newGitHubConfig(spec, githubToken(cmd))
+	cfg := newGitHubConfig(spec, remoteToken(cmd, spec.Host))
 	db, err := gitHubDBFactory.NewGitHubDBWithDef(cfg, def)
 	if err != nil {
-		return recordContext{}, fmt.Errorf("failed to open github database: %w", err)
+		return recordContext{}, fmt.Errorf("failed to open remote database: %w", err)
 	}
 	colDef := def.Collections[collectionID]
 	if colDef == nil {
@@ -42,7 +42,7 @@ func resolveGitHubRecordContext(ctx context.Context, cmd *cobra.Command, id, git
 }
 
 // buildLocalViews materializes views for the collection. It is a no-op when
-// the record context refers to a GitHub source (dirPath is empty).
+// the record context refers to a remote source (dirPath is empty).
 func buildLocalViews(ctx context.Context, rctx recordContext) error {
 	if rctx.dirPath == "" {
 		return nil

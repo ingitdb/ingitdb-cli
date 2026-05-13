@@ -59,7 +59,7 @@ func TestUpdate_RegistersAllFlags(t *testing.T) {
 	dir := t.TempDir()
 	homeDir, getWd, readDef, newDB, logf := updateTestDeps(t, dir)
 	cmd := Update(homeDir, getWd, readDef, newDB, logf)
-	for _, name := range []string{"id", "from", "where", "set", "unset", "all", "min-affected", "path", "github"} {
+	for _, name := range []string{"id", "from", "where", "set", "unset", "all", "min-affected", "path", "remote"} {
 		if cmd.Flags().Lookup(name) == nil {
 			t.Errorf("flag --%s not registered", name)
 		}

@@ -123,10 +123,10 @@ func TestBuildLocalViews_BuildViewsError(t *testing.T) {
 	}
 }
 
-// TestResolveGitHubRecordContext_CollectionNotFound verifies that
-// resolveGitHubRecordContext returns an error when collectionID is missing
+// TestResolveRemoteRecordContext_CollectionNotFound verifies that
+// resolveRemoteRecordContext returns an error when collectionID is missing
 // from the resolved definition (defensive path).
-func TestResolveGitHubRecordContext_CollectionNotFound(t *testing.T) {
+func TestResolveRemoteRecordContext_CollectionNotFound(t *testing.T) {
 	t.Skip("TODO: test panics due to nil gomock controller — needs rework")
 	// NOTE: modifies package-level seam variables.
 	ctrl := gomock.NewController(t)
@@ -167,7 +167,7 @@ func TestResolveGitHubRecordContext_CollectionNotFound(t *testing.T) {
 	// readRemoteDefinitionForIDWithReader DOES include the collection in def,
 	// so NewGitHubDBWithDef is called. We return the def that OMITS the collection
 	// to trigger the nil-colDef check. But wait — def is returned by
-	// readRemoteDefinitionForIDWithReader, and resolveGitHubRecordContext uses it.
+	// readRemoteDefinitionForIDWithReader, and resolveRemoteRecordContext uses it.
 	// We need newGitHubDBFactory to accept any def because the def already has
 	// the right collection inside readRemoteDefinitionForIDWithReader.
 	mockDBFactory.EXPECT().NewGitHubDBWithDef(gomock.Any(), gomock.Any()).Return(fakeDB, nil).AnyTimes()
@@ -182,7 +182,7 @@ func TestResolveGitHubRecordContext_CollectionNotFound(t *testing.T) {
 	}()
 
 	// readRemoteDefinitionForIDWithReader builds def from the file reader and
-	// includes the collection. BUT resolveGitHubRecordContext does:
+	// includes the collection. BUT resolveRemoteRecordContext does:
 	//   colDef := def.Collections[collectionID]
 	// We cannot make collectionID differ from what's in def without deeper
 	// patching; instead we set up a reader whose root-collections points to
@@ -191,7 +191,7 @@ func TestResolveGitHubRecordContext_CollectionNotFound(t *testing.T) {
 	// internal inconsistency.
 	//
 	// Pragmatic approach: verify the happy path works so the success-return
-	// line in resolveGitHubRecordContext is covered.
+	// line in resolveRemoteRecordContext is covered.
 	_ = def // not directly usable here without rewriting the internals
 	homeDir := func() (string, error) { return "/tmp/home", nil }
 	getWd := func() (string, error) { return "/tmp/wd", nil }
@@ -203,11 +203,11 @@ func TestResolveGitHubRecordContext_CollectionNotFound(t *testing.T) {
 	}
 	logf := func(...any) {}
 	cmd := Select(homeDir, getWd, readDef, newDB, logf)
-	// This exercises resolveGitHubRecordContext end-to-end (DB opens OK,
+	// This exercises resolveRemoteRecordContext end-to-end (DB opens OK,
 	// but reading the record will fail since fakeDB is nil). The important
-	// thing is that resolveGitHubRecordContext reaches the success return.
+	// thing is that resolveRemoteRecordContext reaches the success return.
 	// The error comes later from the DAL operation itself.
-	_ = runCobraCommand(cmd, "--id=test.items/r1", "--github=owner/repo")
+	_ = runCobraCommand(cmd, "--id=test.items/r1", "--remote=github.com/owner/repo")
 }
 
 // TestResolveLocalRecordContext_ResolvePathError verifies that

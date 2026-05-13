@@ -68,7 +68,7 @@ func Update(
 		},
 	}
 	addPathFlag(cmd)
-	addGitHubFlags(cmd)
+	addRemoteFlags(cmd)
 	sqlflags.RegisterIDFlag(cmd)
 	sqlflags.RegisterFromFlag(cmd)
 	sqlflags.RegisterWhereFlag(cmd)

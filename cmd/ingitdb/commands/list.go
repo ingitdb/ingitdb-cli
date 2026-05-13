@@ -38,15 +38,15 @@ func collections(
 		Short: "List collections in the database",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			ctx := cmd.Context()
-			githubValue, _ := cmd.Flags().GetString("github")
-			if githubValue != "" {
-				return listCollectionsGitHub(ctx, githubValue, githubToken(cmd))
+			remoteValue, _ := cmd.Flags().GetString("remote")
+			if remoteValue != "" {
+				return listCollectionsRemote(ctx, cmd, remoteValue)
 			}
 			return listCollectionsLocal(cmd, homeDir, getWd, readDefinition)
 		},
 	}
 	addPathFlag(cmd)
-	addGitHubFlags(cmd)
+	addRemoteFlags(cmd)
 	cmd.Flags().String("in", "", "regular expression for the starting-point path")
 	cmd.Flags().String("filter-name", "", "pattern to filter collection names")
 	return cmd
@@ -77,11 +77,20 @@ func listCollectionsLocal(
 	return nil
 }
 
-func listCollectionsGitHub(ctx context.Context, githubValue, token string) error {
-	spec, parseErr := parseGitHubRepoSpec(githubValue)
-	if parseErr != nil {
-		return parseErr
+// listCollectionsRemote is the cmd-facing entry point. It parses the --remote
+// value, validates the provider, and dispatches to listCollectionsRemoteWithSpec.
+func listCollectionsRemote(ctx context.Context, cmd *cobra.Command, remoteValue string) error {
+	spec, err := resolveRemoteFromFlags(cmd, remoteValue)
+	if err != nil {
+		return err
 	}
+	return listCollectionsRemoteWithSpec(ctx, spec, remoteToken(cmd, spec.Host))
+}
+
+// listCollectionsRemoteWithSpec is the testable inner form: it takes a
+// pre-parsed remoteSpec and an explicit token so unit tests can exercise
+// the remote code path without constructing a cobra.Command.
+func listCollectionsRemoteWithSpec(ctx context.Context, spec remoteSpec, token string) error {
 	cfg := newGitHubConfig(spec, token)
 	fileReader, newReaderErr := gitHubFileReaderFactory.NewGitHubFileReader(cfg)
 	if newReaderErr != nil {

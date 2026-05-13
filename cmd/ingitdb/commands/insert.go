@@ -97,7 +97,7 @@ func Insert(
 		},
 	}
 	addPathFlag(cmd)
-	addGitHubFlags(cmd)
+	addRemoteFlags(cmd)
 	sqlflags.RegisterIntoFlag(cmd)
 	// Insert-specific flags.
 	cmd.Flags().String("key", "", "record key (alternative: $id field in --data)")

@@ -52,9 +52,9 @@ func resolveRecordContext(
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	newDB func(string, *ingitdb.Definition) (dal.DB, error),
 ) (recordContext, error) {
-	githubValue, _ := cmd.Flags().GetString("github")
-	if githubValue != "" {
-		return resolveGitHubRecordContext(ctx, cmd, id, githubValue)
+	remoteValue, _ := cmd.Flags().GetString("remote")
+	if remoteValue != "" {
+		return resolveRemoteRecordContext(ctx, cmd, id, remoteValue)
 	}
 	return resolveLocalRecordContext(cmd, id, homeDir, getWd, readDefinition, newDB)
 }
@@ -86,12 +86,26 @@ func resolveLocalRecordContext(
 	return recordContext{db: db, colDef: colDef, recordKey: recordKey, dirPath: dirPath, def: def}, nil
 }
 
-// githubToken returns the GitHub token from --token flag or GITHUB_TOKEN env var.
-// Replaces the old urfave/cli githubToken in read_record_github.go.
-func githubToken(cmd *cobra.Command) string {
-	token, _ := cmd.Flags().GetString("token")
-	if token == "" {
-		token = os.Getenv("GITHUB_TOKEN")
+// remoteToken returns the auth token for host using the resolution order
+// from spec REQ:token-resolution: --token flag first, then
+// <HOST_NO_TLD>_TOKEN, then <HOST_FULL>_TOKEN. Returns "" if no source
+// supplies a value; callers decide whether that constitutes an error.
+func remoteToken(cmd *cobra.Command, host string) string {
+	tokenFlag, _ := cmd.Flags().GetString("token")
+	return resolveRemoteToken(host, tokenFlag, os.Getenv)
+}
+
+// resolveRemoteFromFlags parses --remote and validates the provider override,
+// returning a canonical remoteSpec ready for the github (or future) adapter.
+// Errors from invalid grammar or unsupported provider fire before any I/O.
+func resolveRemoteFromFlags(cmd *cobra.Command, value string) (remoteSpec, error) {
+	spec, err := parseRemoteSpec(value)
+	if err != nil {
+		return remoteSpec{}, err
 	}
-	return token
+	providerOverride, _ := cmd.Flags().GetString("provider")
+	if _, err := resolveRemoteProvider(spec, providerOverride); err != nil {
+		return remoteSpec{}, err
+	}
+	return spec, nil
 }

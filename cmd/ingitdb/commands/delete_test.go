@@ -75,7 +75,7 @@ func TestDelete_RegistersAllFlags(t *testing.T) {
 	dir := t.TempDir()
 	homeDir, getWd, readDef, newDB, logf := deleteTestDeps(t, dir)
 	cmd := Delete(homeDir, getWd, readDef, newDB, logf)
-	for _, name := range []string{"id", "from", "where", "all", "min-affected", "path", "github"} {
+	for _, name := range []string{"id", "from", "where", "all", "min-affected", "path", "remote"} {
 		if cmd.Flags().Lookup(name) == nil {
 			t.Errorf("flag --%s not registered", name)
 		}

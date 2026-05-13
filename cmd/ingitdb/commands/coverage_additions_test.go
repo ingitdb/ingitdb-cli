@@ -184,10 +184,10 @@ func TestDocsUpdate_DefaultPath(t *testing.T) {
 }
 
 // ============================================================
-// list.go – collections via --github (through CLI)
+// list.go – collections via --remote (through CLI)
 // ============================================================
 
-func TestCollections_ViaGitHub_ParseError(t *testing.T) {
+func TestCollections_ViaRemote_ParseError(t *testing.T) {
 	t.Parallel()
 
 	homeDir := func() (string, error) { return "/tmp/home", nil }
@@ -197,15 +197,15 @@ func TestCollections_ViaGitHub_ParseError(t *testing.T) {
 	}
 
 	cmd := List(homeDir, getWd, readDef)
-	// invalid GitHub spec triggers listCollectionsGitHub via the `if githubValue != ""`
-	// branch in the collections action.
-	err := runCobraCommand(cmd, "collections", "--github=invalid-no-slash")
+	// invalid --remote value triggers listCollectionsRemote via the `if remoteValue != ""`
+	// branch in the collections action; the parser rejects it before any I/O.
+	err := runCobraCommand(cmd, "collections", "--remote=invalid-no-slash")
 	if err == nil {
-		t.Fatal("expected error for invalid GitHub spec via CLI")
+		t.Fatal("expected error for invalid --remote value via CLI")
 	}
 }
 
-func TestListCollectionsGitHub_ReadFileError(t *testing.T) {
+func TestListCollectionsRemote_ReadFileError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -219,7 +219,7 @@ func TestListCollectionsGitHub_ReadFileError(t *testing.T) {
 	defer func() { gitHubFileReaderFactory = originalFactory }()
 
 	ctx := context.Background()
-	err := listCollectionsGitHub(ctx, "owner/repo", "")
+	err := listCollectionsRemoteWithSpec(ctx, sampleRemoteSpec(), "")
 	if err == nil {
 		t.Fatal("expected error when ReadFile returns an error")
 	}

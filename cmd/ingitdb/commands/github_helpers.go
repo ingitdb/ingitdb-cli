@@ -14,43 +14,20 @@ import (
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/config"
 )
 
-type githubRepoSpec struct {
-	Owner string
-	Repo  string
-	Ref   string
-}
-
-// newGitHubConfig builds a dalgo2ghingitdb.Config from a repo spec and token.
-func newGitHubConfig(spec githubRepoSpec, token string) dalgo2ghingitdb.Config {
+// newGitHubConfig builds a dalgo2ghingitdb.Config from a parsed remote spec
+// and a token. The caller must have already resolved the provider to github;
+// this function does not validate the host.
+func newGitHubConfig(spec remoteSpec, token string) dalgo2ghingitdb.Config {
 	return dalgo2ghingitdb.Config{
-		Owner: spec.Owner,
-		Repo:  spec.Repo,
+		Owner: spec.Owner(),
+		Repo:  spec.Repo(),
 		Ref:   spec.Ref,
 		Token: token,
 	}
 }
 
-func parseGitHubRepoSpec(value string) (githubRepoSpec, error) {
-	if value == "" {
-		return githubRepoSpec{}, fmt.Errorf("--github cannot be empty")
-	}
-	repoPart, refPart, hasRef := strings.Cut(value, "@")
-	segments := strings.Split(repoPart, "/")
-	if len(segments) != 2 || segments[0] == "" || segments[1] == "" {
-		return githubRepoSpec{}, fmt.Errorf("invalid --github value %q: expected owner/repo[@ref]", value)
-	}
-	spec := githubRepoSpec{Owner: segments[0], Repo: segments[1]}
-	if hasRef {
-		if refPart == "" {
-			return githubRepoSpec{}, fmt.Errorf("invalid --github value %q: empty ref", value)
-		}
-		spec.Ref = refPart
-	}
-	return spec, nil
-}
-
-func readRemoteDefinitionForID(ctx context.Context, spec githubRepoSpec, id string) (*ingitdb.Definition, string, string, error) {
-	cfg := dalgo2ghingitdb.Config{Owner: spec.Owner, Repo: spec.Repo, Ref: spec.Ref}
+func readRemoteDefinitionForID(ctx context.Context, spec remoteSpec, id string) (*ingitdb.Definition, string, string, error) {
+	cfg := dalgo2ghingitdb.Config{Owner: spec.Owner(), Repo: spec.Repo(), Ref: spec.Ref}
 	fileReader, err := gitHubFileReaderFactory.NewGitHubFileReader(cfg)
 	if err != nil {
 		return nil, "", "", err
@@ -150,7 +127,7 @@ func resolveRemoteCollectionPath(rootCollections map[string]string, id string) (
 // collection. Unlike readRemoteDefinitionForID, which uses an ID prefix to
 // discover the collection, this helper requires the caller to know the
 // collection ID up front — suitable for set-mode queries (--from=<collection>).
-func readRemoteDefinitionForCollection(ctx context.Context, spec githubRepoSpec, collectionID string) (*ingitdb.Definition, error) {
+func readRemoteDefinitionForCollection(ctx context.Context, spec remoteSpec, collectionID string) (*ingitdb.Definition, error) {
 	cfg := newGitHubConfig(spec, "")
 	reader, err := gitHubFileReaderFactory.NewGitHubFileReader(cfg)
 	if err != nil {

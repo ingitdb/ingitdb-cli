@@ -69,7 +69,7 @@ func TestInsert_RegistersAllFlags(t *testing.T) {
 	dir := t.TempDir()
 	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
 	cmd := Insert(homeDir, getWd, readDef, newDB, logf, strings.NewReader(""), func() bool { return true }, nil)
-	for _, name := range []string{"into", "key", "data", "edit", "empty", "path", "github"} {
+	for _, name := range []string{"into", "key", "data", "edit", "empty", "path", "remote"} {
 		if cmd.Flags().Lookup(name) == nil {
 			t.Errorf("flag --%s not registered", name)
 		}

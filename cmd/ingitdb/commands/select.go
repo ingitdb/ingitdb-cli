@@ -59,7 +59,7 @@ func Select(
 		},
 	}
 	addPathFlag(cmd)
-	addGitHubFlags(cmd)
+	addRemoteFlags(cmd)
 	sqlflags.RegisterIDFlag(cmd)
 	sqlflags.RegisterFromFlag(cmd)
 	sqlflags.RegisterWhereFlag(cmd)
@@ -130,7 +130,7 @@ func runSelectByID(
 
 // runSelectFromSet handles --from set mode: fetch every record from
 // the collection, apply WHERE conditions, project fields, and emit
-// the result. Supports both local (--path) and remote (--github) sources.
+// the result. Supports both local (--path) and remote (--remote) sources.
 func runSelectFromSet(
 	ctx context.Context,
 	cmd *cobra.Command,
@@ -142,26 +142,26 @@ func runSelectFromSet(
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	newDB func(string, *ingitdb.Definition) (dal.DB, error),
 ) error {
-	githubValue, _ := cmd.Flags().GetString("github")
+	remoteValue, _ := cmd.Flags().GetString("remote")
 	pathValue, _ := cmd.Flags().GetString("path")
 
-	if githubValue != "" && pathValue != "" {
-		return fmt.Errorf("--path and --github are mutually exclusive")
+	if remoteValue != "" && pathValue != "" {
+		return fmt.Errorf("--path and --remote are mutually exclusive")
 	}
 
-	if githubValue != "" {
-		spec, parseErr := parseGitHubRepoSpec(githubValue)
-		if parseErr != nil {
-			return parseErr
+	if remoteValue != "" {
+		spec, err := resolveRemoteFromFlags(cmd, remoteValue)
+		if err != nil {
+			return err
 		}
 		def, readErr := readRemoteDefinitionForCollection(ctx, spec, from)
 		if readErr != nil {
 			return fmt.Errorf("failed to read remote definition: %w", readErr)
 		}
-		cfg := newGitHubConfig(spec, githubToken(cmd))
+		cfg := newGitHubConfig(spec, remoteToken(cmd, spec.Host))
 		db, dbErr := gitHubDBFactory.NewGitHubDBWithDef(cfg, def)
 		if dbErr != nil {
-			return fmt.Errorf("failed to open github database: %w", dbErr)
+			return fmt.Errorf("failed to open remote database: %w", dbErr)
 		}
 		return runSelectFromSetWithDB(ctx, cmd, from, fields, format, db)
 	}

@@ -48,7 +48,7 @@ func TestCreateRecord_GitHubDBError(t *testing.T) {
 
 	// In a real integration test, you would:
 	// 1. Create a complete CLI command with proper flags
-	// 2. Run it with the --github flag to trigger GitHub code path
+	// 2. Run it with the --remote flag to trigger the remote code path
 	// 3. Assert that the error returned matches expectedErr
 }
 
@@ -78,7 +78,8 @@ func TestListCollections_GitHubFileReaderError(t *testing.T) {
 
 	// Test the function that uses gitHubFileReaderFactory
 	ctx := context.Background()
-	err := listCollectionsGitHub(ctx, "owner/repo", "fake-token")
+	spec := remoteSpec{Host: "github.com", Path: []string{"owner", "repo"}}
+	err := listCollectionsRemoteWithSpec(ctx, spec, "fake-token")
 
 	if err == nil {
 		t.Fatal("expected error when file reader creation fails")
