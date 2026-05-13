@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/dal-go/dalgo/dal"
 	"github.com/spf13/cobra"
@@ -112,7 +113,16 @@ func Insert(
 				if isStdinTTY() {
 					return fmt.Errorf("batch mode (--format=%s) requires piped stdin; refusing to read from a TTY", format)
 				}
-				return fmt.Errorf("batch mode is not yet implemented (format=%s)", format)
+				keyColumn, _ := cmd.Flags().GetString("key-column")
+				fieldsCSV, _ := cmd.Flags().GetString("fields")
+				var fields []string
+				if fieldsCSV != "" {
+					fields = strings.Split(fieldsCSV, ",")
+					for i := range fields {
+						fields[i] = strings.TrimSpace(fields[i])
+					}
+				}
+				return runBatchInsert(ctx, format, keyColumn, fields, stdin, ictx, cmd.ErrOrStderr())
 			}
 
 			// Read data from whichever source the user supplied.
