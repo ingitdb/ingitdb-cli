@@ -409,3 +409,31 @@ func readRootConfigFromFile(dirPath string, o ingitdb.ReadOptions, readFile func
 
 	return
 }
+
+// ResolveRecordFormat returns the effective RecordFormat for a collection,
+// applying the fallback chain:
+//
+//	collection.RecordFile.Format -> settings.DefaultRecordFormat -> ingitdb.RecordFormatYAML.
+//
+// The helper tolerates a nil collection, a collection with a nil RecordFile,
+// an empty Format string, and a nil settings — each is treated as "no
+// per-tier setting" and the helper falls through to the next tier.
+//
+// Note on call-site migration: existing call sites that read
+// CollectionDef.RecordFile.Format directly operate downstream of
+// RecordFileDef.Validate (which rejects empty Format), so they cannot
+// observe a project-level fallback today. Wholesale migration is therefore
+// deferred — see the outstanding question in
+// spec/features/record-format/project-default/README.md. This helper is
+// the canonical entry point for new code paths (csv read/write,
+// programmatic content writers, future dalgo schema-modification consumers)
+// and SHOULD be used wherever the caller cannot guarantee Format is set.
+func ResolveRecordFormat(collection *ingitdb.CollectionDef, settings *Settings) ingitdb.RecordFormat {
+	if collection != nil && collection.RecordFile != nil && collection.RecordFile.Format != "" {
+		return collection.RecordFile.Format
+	}
+	if settings != nil && settings.DefaultRecordFormat != "" {
+		return settings.DefaultRecordFormat
+	}
+	return ingitdb.RecordFormatYAML
+}
