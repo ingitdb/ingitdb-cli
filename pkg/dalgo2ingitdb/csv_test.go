@@ -75,3 +75,97 @@ func TestParseRecordContentForCollection_CSV_RejectsReorderedHeader(t *testing.T
 		t.Errorf("expected error to mention order/position mismatch; got: %v", err)
 	}
 }
+
+func TestEncodeRecordContentForCollection_CSV_HeaderAndRowOrder(t *testing.T) {
+	t.Parallel()
+	col := newCSVCollectionDef([]string{"id", "name", "email"})
+	rows := []map[string]any{
+		{"id": "1", "name": "Alice", "email": "alice@example.com"},
+		{"id": "2", "name": "Bob", "email": "bob@example.com"},
+	}
+
+	out, err := EncodeRecordContentForCollection(rows, col)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := "id,name,email\n1,Alice,alice@example.com\n2,Bob,bob@example.com\n"
+	if string(out) != want {
+		t.Errorf("output mismatch.\n  got:  %q\n  want: %q", string(out), want)
+	}
+}
+
+func TestEncodeRecordContentForCollection_CSV_Deterministic(t *testing.T) {
+	t.Parallel()
+	col := newCSVCollectionDef([]string{"id", "name", "email"})
+	rows := []map[string]any{
+		{"email": "alice@example.com", "name": "Alice", "id": "1"},
+		{"name": "Bob", "id": "2", "email": "bob@example.com"},
+	}
+
+	first, err := EncodeRecordContentForCollection(rows, col)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	for i := 0; i < 5; i++ {
+		out, err := EncodeRecordContentForCollection(rows, col)
+		if err != nil {
+			t.Fatalf("unexpected error on iteration %d: %v", i, err)
+		}
+		if string(out) != string(first) {
+			t.Errorf("non-deterministic output on iteration %d.\n  first:  %q\n  this:   %q",
+				i, string(first), string(out))
+		}
+	}
+}
+
+func TestEncodeRecordContentForCollection_CSV_RejectsKeyedMap(t *testing.T) {
+	t.Parallel()
+	col := newCSVCollectionDef([]string{"id", "name"})
+	keyed := map[string]map[string]any{
+		"1": {"name": "Alice"},
+		"2": {"name": "Bob"},
+	}
+
+	_, err := EncodeRecordContentForCollection(keyed, col)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if !strings.Contains(err.Error(), "csv") || !strings.Contains(err.Error(), "list") {
+		t.Errorf("expected error to mention csv + list; got: %v", err)
+	}
+}
+
+func TestEncodeRecordContentForCollection_CSV_RejectsNestedObject(t *testing.T) {
+	t.Parallel()
+	col := newCSVCollectionDef([]string{"id", "address"})
+	rows := []map[string]any{
+		{"id": "1", "address": map[string]any{"city": "Berlin"}},
+	}
+
+	_, err := EncodeRecordContentForCollection(rows, col)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if !strings.Contains(err.Error(), "address") {
+		t.Errorf("expected error to mention field name 'address'; got: %v", err)
+	}
+	if !strings.Contains(err.Error(), "nested") && !strings.Contains(err.Error(), "array") {
+		t.Errorf("expected error to mention nested/array constraint; got: %v", err)
+	}
+}
+
+func TestEncodeRecordContentForCollection_CSV_RejectsArrayField(t *testing.T) {
+	t.Parallel()
+	col := newCSVCollectionDef([]string{"id", "tags"})
+	rows := []map[string]any{
+		{"id": "1", "tags": []any{"a", "b", "c"}},
+	}
+
+	_, err := EncodeRecordContentForCollection(rows, col)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if !strings.Contains(err.Error(), "tags") {
+		t.Errorf("expected error to mention field name 'tags'; got: %v", err)
+	}
+}
