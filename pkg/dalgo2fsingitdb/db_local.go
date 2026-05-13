@@ -27,6 +27,10 @@ func NewLocalDBWithDef(rootDirPath string, def *ingitdb.Definition) (dal.DB, err
 }
 
 type localDB struct {
+	// dal.NoConcurrency: this driver does not yet implement file locking,
+	// so concurrent connections are not safe. dalgo2ingitdb is the
+	// concurrent-safe sibling driver.
+	dal.NoConcurrency
 	rootDirPath string
 	def         *ingitdb.Definition
 }

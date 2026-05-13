@@ -53,6 +53,10 @@ func NewGitHubDBWithDef(cfg Config, def *ingitdb.Definition) (dal.DB, error) {
 }
 
 type githubDB struct {
+	// dal.NoConcurrency: GitHub API rate limits make concurrent connections
+	// from a single client process counterproductive. The conservative
+	// default surfaces the right answer to callers sizing worker pools.
+	dal.NoConcurrency
 	cfg        Config
 	def        *ingitdb.Definition
 	fileReader *githubFileReader

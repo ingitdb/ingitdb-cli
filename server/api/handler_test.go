@@ -153,6 +153,7 @@ func (t *fakeReadwriteTx) UpdateMulti(_ context.Context, _ []*dal.Key, _ []updat
 //   - getTxErr: injected into the tx so that tx.Get() returns this error
 //   - setErr / deleteErr / insertErr: injected into the rw-tx for op-level errors
 type fakeDB struct {
+	dal.NoConcurrency
 	s          *fakeStore
 	readTxErr  error
 	writeTxErr error

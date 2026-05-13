@@ -116,7 +116,10 @@ func (t *fakeReadwriteTx) UpdateMulti(_ context.Context, _ []*dal.Key, _ []updat
 	return nil
 }
 
-type fakeDB struct{ s *fakeStore }
+type fakeDB struct {
+	dal.NoConcurrency
+	s *fakeStore
+}
 
 var _ dal.DB = (*fakeDB)(nil)
 

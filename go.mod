@@ -7,6 +7,7 @@ require (
 	charm.land/fang/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.3
 	github.com/charmbracelet/x/term v0.2.2
+	github.com/gofrs/flock v0.13.0
 	github.com/google/go-github/v86 v86.0.0
 	github.com/ingr-io/ingr-go v0.0.2
 	github.com/julienschmidt/httprouter v1.3.0
@@ -30,7 +31,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/kr/pretty v0.3.1 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.4.0 // indirect
 	github.com/mattn/go-runewidth v0.0.23 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
@@ -49,7 +50,6 @@ require (
 	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
-	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )
 
 require (
@@ -67,7 +67,7 @@ require (
 require (
 	github.com/RoaringBitmap/roaring/v2 v2.18.0 // indirect
 	github.com/bits-and-blooms/bitset v1.24.4 // indirect
-	github.com/dal-go/dalgo v0.41.15
+	github.com/dal-go/dalgo v0.42.0
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/strongo/random v0.0.1 // indirect
 )
