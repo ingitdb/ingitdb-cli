@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"slices"
+	"sort"
 	"strings"
 )
 
@@ -139,4 +140,136 @@ func splitRemoteBareForm(value string) (host, pathPart string) {
 		host = expanded
 	}
 	return host, pathPart
+}
+
+// remoteProvider identifies a remote Git hosting backend.
+type remoteProvider string
+
+const (
+	providerGitHub    remoteProvider = "github"
+	providerGitLab    remoteProvider = "gitlab"
+	providerBitbucket remoteProvider = "bitbucket"
+)
+
+// builtInProviderHosts maps canonical hosts to provider IDs. See spec
+// REQ:provider-inference.
+var builtInProviderHosts = map[string]remoteProvider{
+	"github.com":    providerGitHub,
+	"gitlab.com":    providerGitLab,
+	"bitbucket.org": providerBitbucket,
+}
+
+// registeredProviders is the set of provider IDs the CLI recognizes, even
+// when no adapter is yet compiled in. An unknown --provider value is rejected
+// before any I/O.
+var registeredProviders = map[remoteProvider]bool{
+	providerGitHub:    true,
+	providerGitLab:    true,
+	providerBitbucket: true,
+}
+
+// implementedProviders is the subset of registeredProviders that has a
+// working adapter today. Adding a new provider means adding its key here
+// (and wiring its adapter at the dispatch site).
+var implementedProviders = map[remoteProvider]bool{
+	providerGitHub: true,
+}
+
+// resolveRemoteProvider decides which provider adapter handles spec, honoring
+// an optional explicit override.
+//
+// Errors (always before any I/O):
+//   - host not in builtInProviderHosts AND override is empty → "unknown remote host"
+//   - override is set but not in registeredProviders → "unknown --provider"
+//   - resolved provider is registered but not implemented → "provider X is not yet supported"
+func resolveRemoteProvider(spec remoteSpec, override string) (remoteProvider, error) {
+	var p remoteProvider
+	if override != "" {
+		p = remoteProvider(override)
+		if !registeredProviders[p] {
+			return "", fmt.Errorf("unknown --provider %q (known: %s)",
+				override, registeredProviderList())
+		}
+	} else {
+		var ok bool
+		p, ok = builtInProviderHosts[spec.Host]
+		if !ok {
+			return "", fmt.Errorf("unknown remote host %q: pass --provider=<id> to choose an adapter (known: %s)",
+				spec.Host, registeredProviderList())
+		}
+	}
+	if !implementedProviders[p] {
+		return "", fmt.Errorf("provider %q is not yet supported (implemented: %s)",
+			p, implementedProviderList())
+	}
+	return p, nil
+}
+
+// registeredProviderList returns a stable, comma-separated list of registered
+// provider IDs, for use in error messages.
+func registeredProviderList() string {
+	return sortedProviderKeys(registeredProviders)
+}
+
+// implementedProviderList returns a stable, comma-separated list of
+// implemented provider IDs, for use in error messages.
+func implementedProviderList() string {
+	return sortedProviderKeys(implementedProviders)
+}
+
+func sortedProviderKeys(m map[remoteProvider]bool) string {
+	ids := make([]string, 0, len(m))
+	for p, ok := range m {
+		if ok {
+			ids = append(ids, string(p))
+		}
+	}
+	sort.Strings(ids)
+	return strings.Join(ids, ", ")
+}
+
+// resolveRemoteToken finds the auth token for host, honoring the resolution
+// order from spec REQ:token-resolution:
+//  1. flagValue (the --token CLI flag, "" if unset)
+//  2. <HOST_NO_TLD>_TOKEN env var (rightmost host label dropped)
+//  3. <HOST_FULL>_TOKEN env var (full host, dots → underscores)
+//
+// Returns "" if no source supplies a value; callers decide whether that is
+// an error for the operation at hand (writes always require a token; reads
+// of public repos do not).
+//
+// getEnv is passed in for testability — production callers pass os.Getenv.
+func resolveRemoteToken(host, flagValue string, getEnv func(string) string) string {
+	if flagValue != "" {
+		return flagValue
+	}
+	if shortName := hostTokenEnvName(host, true); shortName != "" {
+		if v := getEnv(shortName); v != "" {
+			return v
+		}
+	}
+	if fullName := hostTokenEnvName(host, false); fullName != "" {
+		if v := getEnv(fullName); v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+// hostTokenEnvName builds the env var name for host per the mechanical rule:
+// uppercase, replace `.` with `_`, append `_TOKEN`. When dropTLD is true the
+// rightmost label is removed first; if that leaves nothing (single-label
+// host), returns "" — only the full form is meaningful then.
+func hostTokenEnvName(host string, dropTLD bool) string {
+	if host == "" {
+		return ""
+	}
+	if dropTLD {
+		idx := strings.LastIndex(host, ".")
+		if idx < 0 {
+			return ""
+		}
+		host = host[:idx]
+	}
+	return strings.ToUpper(strings.ReplaceAll(host, ".", "_")) + "_TOKEN"
 }
