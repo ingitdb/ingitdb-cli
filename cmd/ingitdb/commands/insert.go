@@ -107,6 +107,14 @@ func Insert(
 				return err
 			}
 
+			// Batch mode validation: reject TTY stdin before attempting to read data.
+			if batchMode {
+				if isStdinTTY() {
+					return fmt.Errorf("batch mode (--format=%s) requires piped stdin; refusing to read from a TTY", format)
+				}
+				return fmt.Errorf("batch mode is not yet implemented (format=%s)", format)
+			}
+
 			// Read data from whichever source the user supplied.
 			data, err := readInsertData(cmd, stdin, isStdinTTY, openEditor, ictx.colDef)
 			if err != nil {

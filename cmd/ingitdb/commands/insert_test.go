@@ -562,3 +562,20 @@ func TestInsert_KeyColumnAndFieldsRequireBatchCSV(t *testing.T) {
 		})
 	}
 }
+
+func TestInsert_BatchModeRejectsTTYStdin(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := insertTestDeps(t, dir)
+	// stdinIsTTY=true simulates an interactive terminal.
+	_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf, nil, true, nil,
+		"--path="+dir, "--into=test.items", "--format=jsonl",
+	)
+	if err == nil {
+		t.Fatal("expected error when --format is set and stdin is a TTY")
+	}
+	msg := strings.ToLower(err.Error())
+	if !strings.Contains(msg, "pipe") && !strings.Contains(msg, "tty") && !strings.Contains(msg, "stdin") {
+		t.Errorf("error %q should mention TTY/stdin/pipe", err.Error())
+	}
+}
