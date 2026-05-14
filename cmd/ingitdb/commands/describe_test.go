@@ -530,8 +530,8 @@ func columnsSection(t *testing.T, yamlOut string) string {
 	}
 	rest := yamlOut[start:]
 	for _, marker := range []string{"\n    columns_order:", "\n_meta:"} {
-		if end := strings.Index(rest, marker); end >= 0 {
-			return rest[:end]
+		if before, _, ok := strings.Cut(rest, marker); ok {
+			return before
 		}
 	}
 	return rest

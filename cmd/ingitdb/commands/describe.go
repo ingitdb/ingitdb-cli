@@ -56,9 +56,39 @@ func Describe(
 	return cmd
 }
 
+// loadLocalDef enforces --path/--remote mutual exclusion, rejects
+// remote mode (not yet implemented), resolves the local database
+// directory, and reads its Definition. Shared by every describe
+// entry point.
+func loadLocalDef(
+	cmd *cobra.Command,
+	homeDir func() (string, error),
+	getWd func() (string, error),
+	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
+) (string, *ingitdb.Definition, error) {
+	pathVal, _ := cmd.Flags().GetString("path")
+	remoteVal, _ := cmd.Flags().GetString("remote")
+	if pathVal != "" && remoteVal != "" {
+		return "", nil, fmt.Errorf("--path and --remote are mutually exclusive")
+	}
+	if remoteVal != "" {
+		return "", nil, fmt.Errorf("describe --remote not yet implemented")
+	}
+	dirPath, err := resolveDBPath(cmd, homeDir, getWd)
+	if err != nil {
+		return "", nil, err
+	}
+	def, readErr := readDefinition(dirPath)
+	if readErr != nil {
+		return "", nil, fmt.Errorf("failed to read database definition: %w", readErr)
+	}
+	return dirPath, def, nil
+}
+
 // bareNameDescribe is invoked when the user runs `describe <name>`
 // without a kind. Resolves to a collection first; falls back to a
-// view; errors loudly on collection/view name collision.
+// view; errors loudly on collection/view name collision. The view
+// walk is performed once and reused on dispatch.
 func bareNameDescribe(
 	cmd *cobra.Command,
 	name string,
@@ -66,22 +96,9 @@ func bareNameDescribe(
 	getWd func() (string, error),
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 ) error {
-	pathVal, _ := cmd.Flags().GetString("path")
-	remoteVal, _ := cmd.Flags().GetString("remote")
-	if pathVal != "" && remoteVal != "" {
-		return fmt.Errorf("--path and --remote are mutually exclusive")
-	}
-	if remoteVal != "" {
-		return fmt.Errorf("describe --remote not yet implemented")
-	}
-
-	dirPath, err := resolveDBPath(cmd, homeDir, getWd)
+	dirPath, def, err := loadLocalDef(cmd, homeDir, getWd, readDefinition)
 	if err != nil {
 		return err
-	}
-	def, readErr := readDefinition(dirPath)
-	if readErr != nil {
-		return fmt.Errorf("failed to read database definition: %w", readErr)
 	}
 
 	_, collectionMatch := def.Collections[name]
@@ -95,9 +112,9 @@ func bareNameDescribe(
 			name, name, name,
 		)
 	case collectionMatch:
-		return runDescribeCollection(cmd, name, homeDir, getWd, readDefinition)
+		return describeCollectionFromDef(cmd, dirPath, def, name)
 	case hasView:
-		return runDescribeView(cmd, name, "", homeDir, getWd, readDefinition)
+		return describeViewFromMatches(cmd, name, "", viewMatches)
 	default:
 		return fmt.Errorf("no collection or view named %q in database at %s", name, dirPath)
 	}
@@ -114,15 +131,12 @@ func describeCollectionCmd(
 		Short:   "Describe a collection (schema, columns, primary key, views)",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
-			return runDescribeCollection(cmd, name, homeDir, getWd, readDefinition)
+			return runDescribeCollection(cmd, args[0], homeDir, getWd, readDefinition)
 		},
 	}
 	return cmd
 }
 
-// runDescribeCollection is split out so the bare-name resolver in
-// Task 7 can call it with the same dependencies.
 func runDescribeCollection(
 	cmd *cobra.Command,
 	name string,
@@ -130,39 +144,35 @@ func runDescribeCollection(
 	getWd func() (string, error),
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 ) error {
-	pathVal, _ := cmd.Flags().GetString("path")
-	remoteVal, _ := cmd.Flags().GetString("remote")
-	if pathVal != "" && remoteVal != "" {
-		return fmt.Errorf("--path and --remote are mutually exclusive")
+	dirPath, def, err := loadLocalDef(cmd, homeDir, getWd, readDefinition)
+	if err != nil {
+		return err
 	}
-	if remoteVal != "" {
-		return fmt.Errorf("describe --remote not yet implemented")
-	}
+	return describeCollectionFromDef(cmd, dirPath, def, name)
+}
 
+// describeCollectionFromDef formats and emits a collection given an
+// already-loaded Definition. Separated so the bare-name resolver can
+// reuse the same loaded state without re-reading the database.
+func describeCollectionFromDef(
+	cmd *cobra.Command,
+	dirPath string,
+	def *ingitdb.Definition,
+	name string,
+) error {
 	rawFormat, _ := cmd.Flags().GetString("format")
 	format, err := resolveFormat(rawFormat, engineIngitDB)
 	if err != nil {
 		return err
 	}
-
-	dirPath, err := resolveDBPath(cmd, homeDir, getWd)
-	if err != nil {
-		return err
-	}
-	def, readErr := readDefinition(dirPath)
-	if readErr != nil {
-		return fmt.Errorf("failed to read database definition: %w", readErr)
-	}
 	col, ok := def.Collections[name]
 	if !ok {
 		return fmt.Errorf("collection %q not found in database at %s", name, dirPath)
 	}
-
 	views, subcols, err := discoverCollectionChildren(dirPath, name)
 	if err != nil {
 		return err
 	}
-
 	node, err := buildCollectionPayload(col, collectionOutputCtx{
 		relPath:            name,
 		viewNames:          views,
@@ -181,26 +191,27 @@ func runDescribeCollection(
 func discoverCollectionChildren(dbDir, colName string) (views, subcols []string, err error) {
 	colDir := filepath.Join(dbDir, colName)
 	viewsDir := filepath.Join(colDir, "$views")
-	if entries, statErr := os.ReadDir(viewsDir); statErr == nil {
+	if entries, readErr := os.ReadDir(viewsDir); readErr == nil {
 		for _, e := range entries {
 			if e.IsDir() {
 				continue
 			}
-			if strings.HasSuffix(e.Name(), ".yaml") {
-				views = append(views, strings.TrimSuffix(e.Name(), ".yaml"))
+			if base, ok := strings.CutSuffix(e.Name(), ".yaml"); ok {
+				views = append(views, base)
 			}
 		}
 	}
-	entries, _ := os.ReadDir(colDir)
-	for _, e := range entries {
-		if !e.IsDir() {
-			continue
-		}
-		if e.Name() == "$views" || e.Name() == ".collection" {
-			continue
-		}
-		if _, statErr := os.Stat(filepath.Join(colDir, e.Name(), ".collection")); statErr == nil {
-			subcols = append(subcols, e.Name())
+	if entries, readErr := os.ReadDir(colDir); readErr == nil {
+		for _, e := range entries {
+			if !e.IsDir() {
+				continue
+			}
+			if e.Name() == "$views" || e.Name() == ".collection" {
+				continue
+			}
+			if _, statErr := os.Stat(filepath.Join(colDir, e.Name(), ".collection")); statErr == nil {
+				subcols = append(subcols, e.Name())
+			}
 		}
 	}
 	return
@@ -242,9 +253,8 @@ func describeViewCmd(
 		Short: "Describe a view (definition, source, template)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
 			scopeCol, _ := cmd.Flags().GetString("in")
-			return runDescribeView(cmd, name, scopeCol, homeDir, getWd, readDefinition)
+			return runDescribeView(cmd, args[0], scopeCol, homeDir, getWd, readDefinition)
 		},
 	}
 	cmd.Flags().String("in", "", "limit the search to a specific collection (disambiguates duplicate view names)")
@@ -258,37 +268,29 @@ func runDescribeView(
 	getWd func() (string, error),
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 ) error {
-	pathVal, _ := cmd.Flags().GetString("path")
-	remoteVal, _ := cmd.Flags().GetString("remote")
-	if pathVal != "" && remoteVal != "" {
-		return fmt.Errorf("--path and --remote are mutually exclusive")
-	}
-	if remoteVal != "" {
-		return fmt.Errorf("describe --remote not yet implemented")
-	}
-
-	rawFormat, _ := cmd.Flags().GetString("format")
-	format, err := resolveFormat(rawFormat, engineIngitDB)
+	dirPath, def, err := loadLocalDef(cmd, homeDir, getWd, readDefinition)
 	if err != nil {
 		return err
 	}
-
-	dirPath, err := resolveDBPath(cmd, homeDir, getWd)
-	if err != nil {
-		return err
-	}
-	def, readErr := readDefinition(dirPath)
-	if readErr != nil {
-		return fmt.Errorf("failed to read database definition: %w", readErr)
-	}
-
 	if scopeCol != "" {
 		if _, ok := def.Collections[scopeCol]; !ok {
 			return fmt.Errorf("collection %q (from --in) not found", scopeCol)
 		}
 	}
-
 	matches := findViewMatches(dirPath, def, name, scopeCol)
+	return describeViewFromMatches(cmd, name, scopeCol, matches)
+}
+
+// describeViewFromMatches formats and emits a view given a
+// pre-resolved list of matches. The bare-name resolver walks views
+// once for ambiguity detection and then calls this directly, avoiding
+// a second walk inside runDescribeView.
+func describeViewFromMatches(cmd *cobra.Command, name, scopeCol string, matches []viewMatch) error {
+	rawFormat, _ := cmd.Flags().GetString("format")
+	format, err := resolveFormat(rawFormat, engineIngitDB)
+	if err != nil {
+		return err
+	}
 	switch len(matches) {
 	case 0:
 		if scopeCol != "" {
