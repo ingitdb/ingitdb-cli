@@ -2,23 +2,19 @@ package commands
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"testing"
 
+	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/validator"
 )
-
-// stdoutMu serialises captureStdout across the parallel tests below.
-// They each swap os.Stdout temporarily; concurrent swaps would race.
-var stdoutMu sync.Mutex
 
 var ingitdbValidatorReadDef = func(p string, opts ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
 	return validator.ReadDefinition(p, opts...)
@@ -103,25 +99,24 @@ func describeFixtureDB(t *testing.T, collections map[string]*ingitdb.CollectionD
 	return root
 }
 
-// captureStdout runs fn and returns whatever it wrote to os.Stdout.
-func captureStdout(t *testing.T, fn func()) string {
+// captureStdout runs cmd as a subcommand under a fresh root and
+// returns whatever it wrote via cobra's writer. Avoids mutating
+// the process-global os.Stdout, so it's safe under t.Parallel().
+func captureStdout(t *testing.T, cmd *cobra.Command, args ...string) (string, error) {
 	t.Helper()
-	stdoutMu.Lock()
-	defer stdoutMu.Unlock()
-	old := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-	done := make(chan struct{})
+	root := &cobra.Command{
+		Use:           "app",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+	}
+	root.AddCommand(cmd)
+	argv := append([]string{cmd.Name()}, args...)
 	var buf bytes.Buffer
-	go func() {
-		_, _ = io.Copy(&buf, r)
-		close(done)
-	}()
-	fn()
-	_ = w.Close()
-	os.Stdout = old
-	<-done
-	return buf.String()
+	root.SetOut(&buf)
+	root.SetErr(&buf)
+	root.SetArgs(argv)
+	err := root.ExecuteContext(context.Background())
+	return buf.String(), err
 }
 
 func TestDescribeCollection_LocalYAML_Shape(t *testing.T) {
@@ -139,11 +134,10 @@ func TestDescribeCollection_LocalYAML_Shape(t *testing.T) {
 	homeDir := func() (string, error) { return "/tmp/home", nil }
 	getWd := func() (string, error) { return dir, nil }
 	cmd := Describe(homeDir, getWd, ingitdbValidatorReadDef)
-	out := captureStdout(t, func() {
-		if err := runCobraCommand(cmd, "collection", "users", "--path="+dir); err != nil {
-			t.Fatalf("collection users: %v", err)
-		}
-	})
+	out, err := captureStdout(t, cmd, "collection", "users", "--path="+dir)
+	if err != nil {
+		t.Fatalf("collection users: %v", err)
+	}
 	var parsed map[string]any
 	if err := yaml.Unmarshal([]byte(out), &parsed); err != nil {
 		t.Fatalf("parse yaml: %v\nout:\n%s", err, out)
@@ -180,12 +174,8 @@ func TestDescribeCollection_TableAliasEquivalent(t *testing.T) {
 	cmd := Describe(func() (string, error) { return "/tmp", nil },
 		func() (string, error) { return dir, nil },
 		ingitdbValidatorReadDef)
-	collOut := captureStdout(t, func() {
-		_ = runCobraCommand(cmd, "collection", "users", "--path="+dir)
-	})
-	tableOut := captureStdout(t, func() {
-		_ = runCobraCommand(cmd, "table", "users", "--path="+dir)
-	})
+	collOut, _ := captureStdout(t, cmd, "collection", "users", "--path="+dir)
+	tableOut, _ := captureStdout(t, cmd, "table", "users", "--path="+dir)
 	if collOut != tableOut {
 		t.Errorf("table alias produced different output:\n--collection--\n%s\n--table--\n%s", collOut, tableOut)
 	}
@@ -221,9 +211,7 @@ func TestDescribeCollection_JSONFormat(t *testing.T) {
 	cmd := Describe(func() (string, error) { return "/tmp", nil },
 		func() (string, error) { return dir, nil },
 		ingitdbValidatorReadDef)
-	out := captureStdout(t, func() {
-		_ = runCobraCommand(cmd, "collection", "users", "--path="+dir, "--format=json")
-	})
+	out, _ := captureStdout(t, cmd, "collection", "users", "--path="+dir, "--format=json")
 	var parsed map[string]any
 	if err := json.Unmarshal([]byte(out), &parsed); err != nil {
 		t.Fatalf("parse json: %v\nout:\n%s", err, out)
@@ -267,12 +255,8 @@ func TestDescribeCollection_NativeResolvesToYAML(t *testing.T) {
 	cmd := Describe(func() (string, error) { return "/tmp", nil },
 		func() (string, error) { return dir, nil },
 		ingitdbValidatorReadDef)
-	yamlOut := captureStdout(t, func() {
-		_ = runCobraCommand(cmd, "collection", "users", "--path="+dir, "--format=yaml")
-	})
-	nativeOut := captureStdout(t, func() {
-		_ = runCobraCommand(cmd, "collection", "users", "--path="+dir, "--format=native")
-	})
+	yamlOut, _ := captureStdout(t, cmd, "collection", "users", "--path="+dir, "--format=yaml")
+	nativeOut, _ := captureStdout(t, cmd, "collection", "users", "--path="+dir, "--format=native")
 	if yamlOut != nativeOut {
 		t.Errorf("--format=native ≠ --format=yaml on ingitdb")
 	}
@@ -297,11 +281,10 @@ func TestDescribeView_BasicShape(t *testing.T) {
 	cmd := Describe(func() (string, error) { return "/tmp", nil },
 		func() (string, error) { return dir, nil },
 		ingitdbValidatorReadDef)
-	out := captureStdout(t, func() {
-		if err := runCobraCommand(cmd, "view", "top_buyers", "--path="+dir); err != nil {
-			t.Fatalf("view top_buyers: %v", err)
-		}
-	})
+	out, err := captureStdout(t, cmd, "view", "top_buyers", "--path="+dir)
+	if err != nil {
+		t.Fatalf("view top_buyers: %v", err)
+	}
 	var parsed map[string]any
 	if err := yaml.Unmarshal([]byte(out), &parsed); err != nil {
 		t.Fatalf("parse: %v", err)
@@ -368,9 +351,7 @@ func TestDescribeView_ResolvedByIn(t *testing.T) {
 	cmd := Describe(func() (string, error) { return "/tmp", nil },
 		func() (string, error) { return dir, nil },
 		ingitdbValidatorReadDef)
-	out := captureStdout(t, func() {
-		_ = runCobraCommand(cmd, "view", "recent", "--in=orders", "--path="+dir)
-	})
+	out, _ := captureStdout(t, cmd, "view", "recent", "--in=orders", "--path="+dir)
 	var parsed map[string]any
 	if err := yaml.Unmarshal([]byte(out), &parsed); err != nil {
 		t.Fatalf("parse: %v", err)
@@ -435,12 +416,8 @@ func TestDescribeBareName_ResolvesToCollection(t *testing.T) {
 	cmd := Describe(func() (string, error) { return "/tmp", nil },
 		func() (string, error) { return dir, nil },
 		ingitdbValidatorReadDef)
-	bareOut := captureStdout(t, func() {
-		_ = runCobraCommand(cmd, "users", "--path="+dir)
-	})
-	collOut := captureStdout(t, func() {
-		_ = runCobraCommand(cmd, "collection", "users", "--path="+dir)
-	})
+	bareOut, _ := captureStdout(t, cmd, "users", "--path="+dir)
+	collOut, _ := captureStdout(t, cmd, "collection", "users", "--path="+dir)
 	if bareOut != collOut {
 		t.Errorf("bare-name output differs from explicit collection")
 	}
@@ -527,12 +504,8 @@ func TestDescribeCollection_ColumnsOrderRespected_CLI(t *testing.T) {
 	cmd := Describe(func() (string, error) { return "/tmp", nil },
 		func() (string, error) { return dir, nil },
 		ingitdbValidatorReadDef)
-	first := captureStdout(t, func() {
-		_ = runCobraCommand(cmd, "collection", "users", "--path="+dir)
-	})
-	second := captureStdout(t, func() {
-		_ = runCobraCommand(cmd, "collection", "users", "--path="+dir)
-	})
+	first, _ := captureStdout(t, cmd, "collection", "users", "--path="+dir)
+	second, _ := captureStdout(t, cmd, "collection", "users", "--path="+dir)
 	if first != second {
 		t.Errorf("output is not byte-identical across runs")
 	}
@@ -580,12 +553,8 @@ func TestDescribeCollection_ColumnsOrderAlphaFallback_CLI(t *testing.T) {
 	cmd := Describe(func() (string, error) { return "/tmp", nil },
 		func() (string, error) { return dir, nil },
 		ingitdbValidatorReadDef)
-	first := captureStdout(t, func() {
-		_ = runCobraCommand(cmd, "collection", "users", "--path="+dir)
-	})
-	second := captureStdout(t, func() {
-		_ = runCobraCommand(cmd, "collection", "users", "--path="+dir)
-	})
+	first, _ := captureStdout(t, cmd, "collection", "users", "--path="+dir)
+	second, _ := captureStdout(t, cmd, "collection", "users", "--path="+dir)
 	if first != second {
 		t.Errorf("output is not byte-identical across runs")
 	}

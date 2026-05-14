@@ -5,6 +5,7 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -170,7 +171,7 @@ func runDescribeCollection(
 	if err != nil {
 		return fmt.Errorf("build payload: %w", err)
 	}
-	return emitNode(node, format)
+	return emitNode(cmd.OutOrStdout(), node, format)
 }
 
 // discoverCollectionChildren walks the on-disk collection directory
@@ -205,15 +206,15 @@ func discoverCollectionChildren(dbDir, colName string) (views, subcols []string,
 	return
 }
 
-// emitNode writes a yaml.Node to stdout in the chosen format.
-func emitNode(node *yaml.Node, format string) error {
+// emitNode writes a yaml.Node to w in the chosen format.
+func emitNode(w io.Writer, node *yaml.Node, format string) error {
 	switch format {
 	case "yaml":
 		out, err := yaml.Marshal(node)
 		if err != nil {
 			return fmt.Errorf("marshal yaml: %w", err)
 		}
-		_, _ = fmt.Fprint(os.Stdout, string(out))
+		_, _ = fmt.Fprint(w, string(out))
 		return nil
 	case "json":
 		var v any
@@ -224,7 +225,7 @@ func emitNode(node *yaml.Node, format string) error {
 		if err != nil {
 			return fmt.Errorf("marshal json: %w", err)
 		}
-		_, _ = fmt.Fprintln(os.Stdout, string(raw))
+		_, _ = fmt.Fprintln(w, string(raw))
 		return nil
 	default:
 		return fmt.Errorf("unsupported format %q", format)
@@ -326,7 +327,7 @@ func runDescribeView(
 	if err != nil {
 		return fmt.Errorf("build payload: %w", err)
 	}
-	return emitNode(node, format)
+	return emitNode(cmd.OutOrStdout(), node, format)
 }
 
 type viewMatch struct {
