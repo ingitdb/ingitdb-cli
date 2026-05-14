@@ -540,7 +540,7 @@ func TestDescribeCollection_ColumnsOrderRespected_CLI(t *testing.T) {
 	emailIdx := strings.Index(columnsBlock, "email:")
 	idIdx := strings.Index(columnsBlock, "id:")
 	nameIdx := strings.Index(columnsBlock, "name:")
-	if !(emailIdx >= 0 && idIdx > emailIdx && nameIdx > idIdx) {
+	if emailIdx < 0 || idIdx <= emailIdx || nameIdx <= idIdx {
 		t.Errorf("expected columns ordered email, id, name; got:\n%s", first)
 	}
 }
@@ -593,7 +593,7 @@ func TestDescribeCollection_ColumnsOrderAlphaFallback_CLI(t *testing.T) {
 	emailIdx := strings.Index(columnsBlock, "email:")
 	idIdx := strings.Index(columnsBlock, "id:")
 	nameIdx := strings.Index(columnsBlock, "name:")
-	if !(emailIdx >= 0 && idIdx > emailIdx && nameIdx > idIdx) {
+	if emailIdx < 0 || idIdx <= emailIdx || nameIdx <= idIdx {
 		t.Errorf("expected alphabetical email, id, name; got:\n%s", first)
 	}
 }

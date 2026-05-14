@@ -81,12 +81,12 @@ func TestBuildCollectionPayload_SortedViewsAndSubcollections(t *testing.T) {
 	s := string(out)
 	activeIdx := strings.Index(s, "active_users")
 	topIdx := strings.Index(s, "top_buyers")
-	if !(activeIdx > 0 && topIdx > activeIdx) {
+	if activeIdx <= 0 || topIdx <= activeIdx {
 		t.Errorf("expected views sorted [active_users, top_buyers]; got:\n%s", s)
 	}
 	ordersIdx := strings.Index(s, "orders")
 	sessionsIdx := strings.Index(s, "sessions")
-	if !(ordersIdx > 0 && sessionsIdx > ordersIdx) {
+	if ordersIdx <= 0 || sessionsIdx <= ordersIdx {
 		t.Errorf("expected subcollections sorted [orders, sessions]; got:\n%s", s)
 	}
 }

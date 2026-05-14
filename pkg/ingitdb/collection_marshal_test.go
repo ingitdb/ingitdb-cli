@@ -25,7 +25,7 @@ func TestCollectionDef_MarshalYAML_HonorsColumnsOrder(t *testing.T) {
 	emailIdx := strings.Index(got, "email:")
 	idIdx := strings.Index(got, "id:")
 	nameIdx := strings.Index(got, "name:")
-	if !(emailIdx < idIdx && idIdx < nameIdx) {
+	if emailIdx >= idIdx || idIdx >= nameIdx {
 		t.Errorf("expected columns_order [email, id, name]; got:\n%s", got)
 	}
 }
@@ -47,7 +47,7 @@ func TestCollectionDef_MarshalYAML_AlphabeticalFallback(t *testing.T) {
 	emailIdx := strings.Index(got, "email:")
 	idIdx := strings.Index(got, "id:")
 	nameIdx := strings.Index(got, "name:")
-	if !(emailIdx < idIdx && idIdx < nameIdx) {
+	if emailIdx >= idIdx || idIdx >= nameIdx {
 		t.Errorf("expected alphabetical fallback (email, id, name); got:\n%s", got)
 	}
 }
