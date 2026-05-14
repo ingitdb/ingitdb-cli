@@ -476,3 +476,124 @@ func TestDescribeBareName_AmbiguousErrors(t *testing.T) {
 		t.Fatalf("want ambiguous-name error; got: %v", err)
 	}
 }
+
+func TestDescribeCollection_MutualExclusion(t *testing.T) {
+	t.Parallel()
+	cmd := Describe(
+		func() (string, error) { return "/tmp", nil },
+		func() (string, error) { return "/tmp", nil },
+		ingitdbValidatorReadDef,
+	)
+	err := runCobraCommand(cmd, "collection", "users", "--path=/tmp", "--remote=github.com/owner/repo")
+	if err == nil || !strings.Contains(err.Error(), "--path and --remote are mutually exclusive") {
+		t.Fatalf("want mutual-exclusion error; got: %v", err)
+	}
+}
+
+func TestDescribeCollection_UnknownFormatRejected(t *testing.T) {
+	t.Parallel()
+	dir := describeFixtureDB(t, map[string]*ingitdb.CollectionDef{
+		"users": {
+			ID:         "users",
+			RecordFile: &ingitdb.RecordFileDef{Name: "{key}.yaml", Format: "yaml", RecordType: ingitdb.SingleRecord},
+			Columns:    map[string]*ingitdb.ColumnDef{"id": {Type: ingitdb.ColumnTypeString}},
+		},
+	}, nil)
+	cmd := Describe(func() (string, error) { return "/tmp", nil },
+		func() (string, error) { return dir, nil },
+		ingitdbValidatorReadDef)
+	err := runCobraCommand(cmd, "collection", "users", "--path="+dir, "--format=xml")
+	if err == nil ||
+		!strings.Contains(err.Error(), `invalid --format value "xml"`) ||
+		!strings.Contains(err.Error(), "valid values: yaml, json, native, sql") {
+		t.Fatalf("want unknown-format error; got: %v", err)
+	}
+}
+
+func TestDescribeCollection_ColumnsOrderRespected_CLI(t *testing.T) {
+	t.Parallel()
+	dir := describeFixtureDB(t, map[string]*ingitdb.CollectionDef{
+		"users": {
+			ID:         "users",
+			RecordFile: &ingitdb.RecordFileDef{Name: "{key}.yaml", Format: "yaml", RecordType: ingitdb.SingleRecord},
+			Columns: map[string]*ingitdb.ColumnDef{
+				"id":    {Type: ingitdb.ColumnTypeString},
+				"email": {Type: ingitdb.ColumnTypeString},
+				"name":  {Type: ingitdb.ColumnTypeString},
+			},
+			ColumnsOrder: []string{"email", "id", "name"},
+		},
+	}, nil)
+	cmd := Describe(func() (string, error) { return "/tmp", nil },
+		func() (string, error) { return dir, nil },
+		ingitdbValidatorReadDef)
+	first := captureStdout(t, func() {
+		_ = runCobraCommand(cmd, "collection", "users", "--path="+dir)
+	})
+	second := captureStdout(t, func() {
+		_ = runCobraCommand(cmd, "collection", "users", "--path="+dir)
+	})
+	if first != second {
+		t.Errorf("output is not byte-identical across runs")
+	}
+	columnsBlock := columnsSection(t, first)
+	emailIdx := strings.Index(columnsBlock, "email:")
+	idIdx := strings.Index(columnsBlock, "id:")
+	nameIdx := strings.Index(columnsBlock, "name:")
+	if !(emailIdx >= 0 && idIdx > emailIdx && nameIdx > idIdx) {
+		t.Errorf("expected columns ordered email, id, name; got:\n%s", first)
+	}
+}
+
+// columnsSection extracts the substring of the YAML output between the
+// `columns:` key and the next top-level key (`columns_order:` or
+// `_meta:`). Used by columns-order CLI tests to disambiguate the
+// `name:` field inside record_file from a column named `name`.
+func columnsSection(t *testing.T, yamlOut string) string {
+	t.Helper()
+	start := strings.Index(yamlOut, "columns:")
+	if start < 0 {
+		t.Fatalf("no columns block in output:\n%s", yamlOut)
+	}
+	rest := yamlOut[start:]
+	for _, marker := range []string{"\n    columns_order:", "\n_meta:"} {
+		if end := strings.Index(rest, marker); end >= 0 {
+			return rest[:end]
+		}
+	}
+	return rest
+}
+
+func TestDescribeCollection_ColumnsOrderAlphaFallback_CLI(t *testing.T) {
+	t.Parallel()
+	dir := describeFixtureDB(t, map[string]*ingitdb.CollectionDef{
+		"users": {
+			ID:         "users",
+			RecordFile: &ingitdb.RecordFileDef{Name: "{key}.yaml", Format: "yaml", RecordType: ingitdb.SingleRecord},
+			Columns: map[string]*ingitdb.ColumnDef{
+				"id":    {Type: ingitdb.ColumnTypeString},
+				"email": {Type: ingitdb.ColumnTypeString},
+				"name":  {Type: ingitdb.ColumnTypeString},
+			},
+		},
+	}, nil)
+	cmd := Describe(func() (string, error) { return "/tmp", nil },
+		func() (string, error) { return dir, nil },
+		ingitdbValidatorReadDef)
+	first := captureStdout(t, func() {
+		_ = runCobraCommand(cmd, "collection", "users", "--path="+dir)
+	})
+	second := captureStdout(t, func() {
+		_ = runCobraCommand(cmd, "collection", "users", "--path="+dir)
+	})
+	if first != second {
+		t.Errorf("output is not byte-identical across runs")
+	}
+	columnsBlock := columnsSection(t, first)
+	emailIdx := strings.Index(columnsBlock, "email:")
+	idIdx := strings.Index(columnsBlock, "id:")
+	nameIdx := strings.Index(columnsBlock, "name:")
+	if !(emailIdx >= 0 && idIdx > emailIdx && nameIdx > idIdx) {
+		t.Errorf("expected alphabetical email, id, name; got:\n%s", first)
+	}
+}
