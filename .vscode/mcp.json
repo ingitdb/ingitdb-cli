@@ -1,9 +1,0 @@
-{
-  "servers": {
-    "ingitdb": {
-      "type": "stdio",
-      "command": "go",
-      "args": ["run", "./cmd/ingitdb", "serve", "--mcp", "--path", "."]
-    }
-  }
-}
