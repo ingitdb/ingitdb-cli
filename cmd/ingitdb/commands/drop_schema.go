@@ -1,5 +1,7 @@
 package commands
 
+// specscore: feature/cli/drop
+
 import (
 	"fmt"
 	"os"

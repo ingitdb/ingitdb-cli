@@ -1,5 +1,7 @@
 package commands
 
+// specscore: feature/cli/insert
+
 import (
 	"context"
 	"fmt"

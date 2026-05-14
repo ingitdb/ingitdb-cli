@@ -1,5 +1,7 @@
 package commands
 
+// specscore: feature/cli/list-collections
+
 import (
 	"context"
 	"fmt"

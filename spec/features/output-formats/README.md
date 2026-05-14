@@ -32,6 +32,13 @@ Every command that supports `--format` MUST accept `json` as a value and produce
 
 A command MAY support additional formats (e.g. `csv`, `md`, `toml`) beyond `yaml` and `json` when they make domain sense. Such formats MUST be documented in the command's own feature spec.
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/output-formats`):
+
+- [`cmd/ingitdb/commands/record_projection.go`](../../cmd/ingitdb/commands/record_projection.go)
+
 ## Acceptance Criteria
 
 ### AC: yaml-is-default

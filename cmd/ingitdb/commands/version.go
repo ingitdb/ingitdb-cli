@@ -1,5 +1,7 @@
 package commands
 
+// specscore: feature/cli/version
+
 import (
 	"fmt"
 

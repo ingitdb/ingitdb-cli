@@ -118,6 +118,14 @@ Each successful write operation MUST produce exactly one commit in the remote re
 
 The command MUST NOT clone the remote repository to local disk in order to satisfy a `--remote` operation. All reads and writes are performed via the resolved provider's REST API.
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/remote-repo-access`):
+
+- [`cmd/ingitdb/commands/github_helpers.go`](../../cmd/ingitdb/commands/github_helpers.go)
+- [`cmd/ingitdb/commands/remote_helpers.go`](../../cmd/ingitdb/commands/remote_helpers.go)
+
 ## Acceptance Criteria
 
 ### AC: read-public-without-token

@@ -223,6 +223,15 @@ No source Idea exists. The implicit assumptions this Feature commits to:
 | Should-be-true | `os.RemoveAll` is safe to use for `DropCollection` on the collection directory (no symlinks or mounts inside typical inGitDB repos) | Assumed; documented in REQ:drop-collection. |
 | Should-be-true | The `dbschema.ConstraintDef` type supports a `PrimaryKeyConstraint` kind variant | Plan-time: check `dbschema/constraint.go` for the enum value. |
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/dalgo2ingitdb-dbschema-ddl-coverage`):
+
+- [`pkg/dalgo2ingitdb/schema_modifier.go`](../../pkg/dalgo2ingitdb/schema_modifier.go)
+- [`pkg/dalgo2ingitdb/schema_reader.go`](../../pkg/dalgo2ingitdb/schema_reader.go)
+- [`pkg/dalgo2ingitdb/type_mapping.go`](../../pkg/dalgo2ingitdb/type_mapping.go)
+
 ## Acceptance Criteria
 
 ### AC: new-database-opens-existing-path

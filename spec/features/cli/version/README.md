@@ -34,6 +34,13 @@ Build information MUST be written so that it can be captured by piping the comma
 
 The command MUST exit with status `0` whenever the binary runs to completion. There is no error path beyond crashes in the runtime itself.
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/cli/version`):
+
+- [`cmd/ingitdb/commands/version.go`](../../../cmd/ingitdb/commands/version.go)
+
 ## Acceptance Criteria
 
 ### AC: version-prints-three-fields

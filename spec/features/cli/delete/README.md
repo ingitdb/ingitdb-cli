@@ -125,6 +125,13 @@ deleted.
 - [remote-repo-access](../../remote-repo-access/README.md) —
   `--remote`.
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/cli/delete`):
+
+- [`cmd/ingitdb/commands/delete.go`](../../../cmd/ingitdb/commands/delete.go)
+
 ## Acceptance Criteria
 
 ### AC: single-record-delete

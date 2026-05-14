@@ -1,5 +1,7 @@
 package commands
 
+// specscore: feature/cli/select
+
 import (
 	"encoding/json"
 	"fmt"

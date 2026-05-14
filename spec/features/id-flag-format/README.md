@@ -38,6 +38,13 @@ When more than one declared collection ID is a prefix of the `--id` value, the l
 
 The `--id`-driven CRUD commands MUST only operate on collections whose `record_file.type` is `map[string]any`. They MUST reject IDs targeting collections of type `[]map[string]any` (list) or `map[string]map[string]any` (dictionary) until those layouts are explicitly supported.
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/id-flag-format`):
+
+- [`pkg/ingitdb/collection_id.go`](../../pkg/ingitdb/collection_id.go)
+
 ## Acceptance Criteria
 
 ### AC: id-syntax-rejects-invalid

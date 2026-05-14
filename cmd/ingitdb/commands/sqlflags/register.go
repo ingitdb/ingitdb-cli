@@ -1,5 +1,7 @@
 package sqlflags
 
+// specscore: feature/shared-cli-flags
+
 import "github.com/spf13/cobra"
 
 // RegisterFromFlag adds --from. Used by select, update, delete.

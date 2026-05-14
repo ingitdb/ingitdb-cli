@@ -167,6 +167,16 @@ as the local path. This MUST behave identically in both modes
 - [output-formats](../../output-formats/README.md) — shared format
   contracts.
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/cli/select`):
+
+- [`cmd/ingitdb/commands/query_output.go`](../../../cmd/ingitdb/commands/query_output.go)
+- [`cmd/ingitdb/commands/select.go`](../../../cmd/ingitdb/commands/select.go)
+- [`cmd/ingitdb/commands/select_output.go`](../../../cmd/ingitdb/commands/select_output.go)
+- [`cmd/ingitdb/commands/select_where.go`](../../../cmd/ingitdb/commands/select_where.go)
+
 ## Acceptance Criteria
 
 ### AC: single-record-yaml-default

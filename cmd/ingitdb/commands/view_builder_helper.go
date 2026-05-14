@@ -1,5 +1,7 @@
 package commands
 
+// specscore: feature/cli/materialize
+
 import (
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/materializer"

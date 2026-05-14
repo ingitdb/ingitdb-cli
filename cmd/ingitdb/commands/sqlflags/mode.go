@@ -1,5 +1,7 @@
 package sqlflags
 
+// specscore: feature/shared-cli-flags
+
 import "fmt"
 
 // Mode is the verb operating mode.

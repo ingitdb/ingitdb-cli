@@ -1,5 +1,7 @@
 package commands
 
+// specscore: feature/output-formats
+
 // projectRecord returns a map containing only the requested fields from data.
 // If fields is nil or empty, all fields are returned with $id injected.
 // The special field "$id" resolves to the record's key string.

@@ -38,6 +38,15 @@ The command MUST run in the foreground and host every requested service inside t
 
 - path-targeting
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/cli/serve`):
+
+- [`cmd/ingitdb/commands/serve.go`](../../../cmd/ingitdb/commands/serve.go)
+- [`cmd/ingitdb/commands/serve_http.go`](../../../cmd/ingitdb/commands/serve_http.go)
+- [`cmd/ingitdb/commands/serve_mcp.go`](../../../cmd/ingitdb/commands/serve_mcp.go)
+
 ## Acceptance Criteria
 
 Not defined yet.

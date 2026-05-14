@@ -1,5 +1,7 @@
 package commands
 
+// specscore: feature/cli/insert
+
 import (
 	"bytes"
 	"context"

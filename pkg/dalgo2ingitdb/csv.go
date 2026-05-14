@@ -1,5 +1,7 @@
 package dalgo2ingitdb
 
+// specscore: feature/record-format/csv-support
+
 import (
 	"bytes"
 	"encoding/csv"

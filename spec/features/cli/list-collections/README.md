@@ -43,6 +43,13 @@ The command MUST print one collection ID per line and MUST exit `0` on success. 
 - path-targeting
 - remote-repo-access
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/cli/list-collections`):
+
+- [`cmd/ingitdb/commands/list.go`](../../../cmd/ingitdb/commands/list.go)
+
 ## Acceptance Criteria
 
 ### AC: lists-all-collections

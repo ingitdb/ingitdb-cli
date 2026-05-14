@@ -1,5 +1,7 @@
 package commands
 
+// specscore: feature/shared-cli-flags
+
 import "github.com/spf13/cobra"
 
 // addPathFlag adds --path flag (DB directory). Used by almost every command.

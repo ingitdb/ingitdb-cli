@@ -244,6 +244,24 @@ other verb.
 - [id-flag-format](../id-flag-format/README.md) — `--id` syntax is
   defined there and referenced by `req:id-flag`.
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/shared-cli-flags`):
+
+- [`cmd/ingitdb/commands/cobra_helpers.go`](../../cmd/ingitdb/commands/cobra_helpers.go)
+- [`cmd/ingitdb/commands/flags.go`](../../cmd/ingitdb/commands/flags.go)
+- [`cmd/ingitdb/commands/sqlflags/applicability.go`](../../cmd/ingitdb/commands/sqlflags/applicability.go)
+- [`cmd/ingitdb/commands/sqlflags/doc.go`](../../cmd/ingitdb/commands/sqlflags/doc.go)
+- [`cmd/ingitdb/commands/sqlflags/fields.go`](../../cmd/ingitdb/commands/sqlflags/fields.go)
+- [`cmd/ingitdb/commands/sqlflags/min_affected.go`](../../cmd/ingitdb/commands/sqlflags/min_affected.go)
+- [`cmd/ingitdb/commands/sqlflags/mode.go`](../../cmd/ingitdb/commands/sqlflags/mode.go)
+- [`cmd/ingitdb/commands/sqlflags/order_by.go`](../../cmd/ingitdb/commands/sqlflags/order_by.go)
+- [`cmd/ingitdb/commands/sqlflags/register.go`](../../cmd/ingitdb/commands/sqlflags/register.go)
+- [`cmd/ingitdb/commands/sqlflags/set.go`](../../cmd/ingitdb/commands/sqlflags/set.go)
+- [`cmd/ingitdb/commands/sqlflags/unset.go`](../../cmd/ingitdb/commands/sqlflags/unset.go)
+- [`cmd/ingitdb/commands/sqlflags/where.go`](../../cmd/ingitdb/commands/sqlflags/where.go)
+
 ## Acceptance Criteria
 
 ### AC: where-rejects-bare-equals

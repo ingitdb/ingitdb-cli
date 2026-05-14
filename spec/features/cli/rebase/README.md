@@ -38,6 +38,13 @@ When `git rebase` halts on a conflict, the command MUST inspect the unmerged fil
 
 If any conflicting file falls outside the categories listed in `--resolve` (for example a `.ingitdb.yaml` or a Go source file), the command MUST abort the rebase and print the list of unresolved paths so the user can resolve them manually.
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/cli/rebase`):
+
+- [`cmd/ingitdb/commands/rebase.go`](../../../cmd/ingitdb/commands/rebase.go)
+
 ## Acceptance Criteria
 
 ### AC: auto-resolves-readme-conflicts

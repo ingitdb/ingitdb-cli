@@ -34,6 +34,14 @@ The command MUST be invoked as `ingitdb materialize collection` or `ingitdb mate
 
 - path-targeting
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/cli/materialize`):
+
+- [`cmd/ingitdb/commands/materialize.go`](../../../cmd/ingitdb/commands/materialize.go)
+- [`cmd/ingitdb/commands/view_builder_helper.go`](../../../cmd/ingitdb/commands/view_builder_helper.go)
+
 ## Acceptance Criteria
 
 Not defined yet.

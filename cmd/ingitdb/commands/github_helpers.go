@@ -1,5 +1,7 @@
 package commands
 
+// specscore: feature/remote-repo-access
+
 import (
 	"context"
 	"fmt"

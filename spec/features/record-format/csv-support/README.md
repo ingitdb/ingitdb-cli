@@ -130,6 +130,13 @@ In-package Go tests using `encoding/csv`-produced fixtures. Two fixture flavors:
 
 All ACs are testable via `go test ./pkg/dalgo2ingitdb/... ./pkg/ingitdb/...`. No external scaffolding needed.
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/record-format/csv-support`):
+
+- [`pkg/dalgo2ingitdb/csv.go`](../../../pkg/dalgo2ingitdb/csv.go)
+
 ## Outstanding Questions
 
 - **Empty/null cell handling.** Go's `encoding/csv` writes an empty string for empty cells. Does inGitDB's read path treat `""` as the empty string OR as a null/missing value? Decide at plan time; document in godoc on the CSV read path.

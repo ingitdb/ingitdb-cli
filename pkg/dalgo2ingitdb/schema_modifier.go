@@ -1,5 +1,7 @@
 package dalgo2ingitdb
 
+// specscore: feature/dalgo2ingitdb-dbschema-ddl-coverage
+
 import (
 	"context"
 	"errors"

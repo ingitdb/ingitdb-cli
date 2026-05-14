@@ -1,5 +1,7 @@
 package commands
 
+// specscore: feature/cli/serve
+
 import (
 	"context"
 	"fmt"

@@ -1,5 +1,7 @@
 package commands
 
+// specscore: feature/cli/rebase
+
 import (
 	"fmt"
 	"os"

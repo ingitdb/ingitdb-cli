@@ -1,5 +1,7 @@
 package validator
 
+// specscore: feature/cli/validate
+
 import (
 	"bytes"
 	"fmt"

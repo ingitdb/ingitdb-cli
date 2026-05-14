@@ -1,5 +1,7 @@
 package commands
 
+// specscore: feature/cli/validate
+
 import (
 	"fmt"
 	"path/filepath"

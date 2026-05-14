@@ -34,6 +34,13 @@ The command MUST write a starter `.ingitdb.yaml` (with at least `rootCollections
 
 When run against an already-initialised directory, the command MUST exit non-zero with a clear message rather than silently mutating the existing setup.
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/cli/setup`):
+
+- [`cmd/ingitdb/commands/setup.go`](../../../cmd/ingitdb/commands/setup.go)
+
 ## Acceptance Criteria
 
 Not defined yet.

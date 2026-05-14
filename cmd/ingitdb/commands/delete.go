@@ -1,5 +1,7 @@
 package commands
 
+// specscore: feature/cli/delete
+
 import (
 	"context"
 	"fmt"

@@ -21,3 +21,5 @@
 // the Reject* helpers. Authoritative spec:
 // spec/features/shared-cli-flags/README.md
 package sqlflags
+
+// specscore: feature/shared-cli-flags

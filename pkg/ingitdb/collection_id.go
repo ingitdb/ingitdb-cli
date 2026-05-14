@@ -1,5 +1,7 @@
 package ingitdb
 
+// specscore: feature/id-flag-format
+
 import (
 	"fmt"
 )

@@ -327,6 +327,15 @@ is NOT permitted in batch mode.
   `record_file.format` setting that batch mode reads through when
   persisting records (`req:batch-storage-format-independence`).
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/cli/insert`):
+
+- [`cmd/ingitdb/commands/insert.go`](../../../cmd/ingitdb/commands/insert.go)
+- [`cmd/ingitdb/commands/insert_batch.go`](../../../cmd/ingitdb/commands/insert_batch.go)
+- [`cmd/ingitdb/commands/insert_context.go`](../../../cmd/ingitdb/commands/insert_context.go)
+
 ## Acceptance Criteria
 
 ### AC: key-via-flag

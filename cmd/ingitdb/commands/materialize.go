@@ -1,5 +1,7 @@
 package commands
 
+// specscore: feature/cli/materialize
+
 import (
 	"fmt"
 	"path/filepath"

@@ -1,5 +1,7 @@
 package commands
 
+// specscore: feature/shared-cli-flags
+
 import (
 	"context"
 	"fmt"

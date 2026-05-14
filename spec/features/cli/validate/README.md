@@ -46,6 +46,15 @@ The command MUST exit with status `0` when validation passes and a non-zero stat
 
 - path-targeting
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/cli/validate`):
+
+- [`cmd/ingitdb/commands/validate.go`](../../../cmd/ingitdb/commands/validate.go)
+- [`pkg/ingitdb/validator/def_validator.go`](../../../pkg/ingitdb/validator/def_validator.go)
+- [`pkg/ingitdb/validator/subscribers_validator.go`](../../../pkg/ingitdb/validator/subscribers_validator.go)
+
 ## Acceptance Criteria
 
 ### AC: full-validation-by-default

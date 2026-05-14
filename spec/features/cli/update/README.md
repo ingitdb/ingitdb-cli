@@ -150,6 +150,13 @@ commits the batch atomically).
 - [remote-repo-access](../../remote-repo-access/README.md) —
   `--remote`.
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/cli/update`):
+
+- [`cmd/ingitdb/commands/update_new.go`](../../../cmd/ingitdb/commands/update_new.go)
+
 ## Acceptance Criteria
 
 ### AC: single-record-patch

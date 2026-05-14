@@ -146,6 +146,15 @@ objects.
 - [remote-repo-access](../../remote-repo-access/README.md) —
   `--remote`.
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/cli/drop`):
+
+- [`cmd/ingitdb/commands/drop.go`](../../../cmd/ingitdb/commands/drop.go)
+- [`cmd/ingitdb/commands/drop_remote.go`](../../../cmd/ingitdb/commands/drop_remote.go)
+- [`cmd/ingitdb/commands/drop_schema.go`](../../../cmd/ingitdb/commands/drop_schema.go)
+
 ## Acceptance Criteria
 
 ### AC: drop-collection-success

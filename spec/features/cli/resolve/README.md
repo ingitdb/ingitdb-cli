@@ -34,6 +34,13 @@ The command MUST run an interactive TUI that presents conflicts and accepts the 
 
 - path-targeting
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/cli/resolve`):
+
+- [`cmd/ingitdb/commands/resolve.go`](../../../cmd/ingitdb/commands/resolve.go)
+
 ## Acceptance Criteria
 
 Not defined yet.

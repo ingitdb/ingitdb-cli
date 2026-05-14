@@ -40,6 +40,13 @@ The command MUST run in the foreground and continue emitting events until the pr
 
 - path-targeting
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/cli/watch`):
+
+- [`cmd/ingitdb/commands/watch.go`](../../../cmd/ingitdb/commands/watch.go)
+
 ## Acceptance Criteria
 
 Not defined yet.

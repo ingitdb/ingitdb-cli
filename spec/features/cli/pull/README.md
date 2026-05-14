@@ -40,6 +40,13 @@ The command MUST exit `0` when all conflicts are resolved and views rebuilt succ
 
 - path-targeting
 
+## Implementation
+
+Source files implementing this feature (annotated with
+`// specscore: feature/cli/pull`):
+
+- [`cmd/ingitdb/commands/pull.go`](../../../cmd/ingitdb/commands/pull.go)
+
 ## Acceptance Criteria
 
 Not defined yet.
