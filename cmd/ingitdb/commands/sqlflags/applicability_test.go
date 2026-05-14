@@ -83,3 +83,49 @@ func TestRejectSetModeFlagsRequireOneOf(t *testing.T) {
 		t.Fatal("expected error when neither --where nor --all supplied in set mode")
 	}
 }
+
+func TestRejectSetModeFlags_AllInModeID(t *testing.T) {
+	t.Parallel()
+	err := RejectSetModeFlags(SetModeFlags{AllSupplied: true}, ModeID)
+	if err == nil {
+		t.Fatal("expected error when --all supplied in ModeID")
+	}
+	if !strings.Contains(err.Error(), "--all") {
+		t.Errorf("error should name --all, got: %v", err)
+	}
+}
+
+func TestRejectSetModeFlags_MinAffectedInModeID(t *testing.T) {
+	t.Parallel()
+	err := RejectSetModeFlags(SetModeFlags{MinAffectedSupplied: true}, ModeID)
+	if err == nil {
+		t.Fatal("expected error when --min-affected supplied in ModeID")
+	}
+	if !strings.Contains(err.Error(), "--min-affected") {
+		t.Errorf("error should name --min-affected, got: %v", err)
+	}
+}
+
+func TestRejectSetModeFlags_UnknownMode(t *testing.T) {
+	t.Parallel()
+	err := RejectSetModeFlags(SetModeFlags{}, Mode(99))
+	if err == nil {
+		t.Fatal("expected error for unknown mode")
+	}
+}
+
+func TestRejectSetModeFlags_ModeFrom_WhereOnly(t *testing.T) {
+	t.Parallel()
+	err := RejectSetModeFlags(SetModeFlags{WhereSupplied: true}, ModeFrom)
+	if err != nil {
+		t.Errorf("unexpected error with --where in ModeFrom: %v", err)
+	}
+}
+
+func TestRejectSetModeFlags_ModeFrom_AllOnly(t *testing.T) {
+	t.Parallel()
+	err := RejectSetModeFlags(SetModeFlags{AllSupplied: true}, ModeFrom)
+	if err != nil {
+		t.Errorf("unexpected error with --all in ModeFrom: %v", err)
+	}
+}

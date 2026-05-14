@@ -68,6 +68,33 @@ func TestParseWhere_AllOperators(t *testing.T) {
 	}
 }
 
+func TestOperator_IsStrict(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		op   Operator
+		want bool
+	}{
+		{op: OpStrictEq, want: true},
+		{op: OpStrictNeq, want: true},
+		{op: OpLooseEq, want: false},
+		{op: OpLooseNeq, want: false},
+		{op: OpGt, want: false},
+		{op: OpLt, want: false},
+		{op: OpGte, want: false},
+		{op: OpLte, want: false},
+		{op: OpInvalid, want: false},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run("", func(t *testing.T) {
+			t.Parallel()
+			if got := tt.op.IsStrict(); got != tt.want {
+				t.Errorf("IsStrict() = %v, want %v for op %v", got, tt.want, tt.op)
+			}
+		})
+	}
+}
+
 func TestParseWhere_StrictPreservesStringForQuoted(t *testing.T) {
 	t.Parallel()
 	// Quoted strings stay strings even when content looks numeric.

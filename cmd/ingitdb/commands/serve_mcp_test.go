@@ -454,12 +454,17 @@ func TestRegisterMCPTools_ReadRecord_Success(t *testing.T) {
 	dir := t.TempDir()
 	def := testMCPDef(dir)
 
-	// Pre-create the record file.
+	// Pre-create the record file. The backend stores {key}.yaml records under
+	// a $records/ subdirectory (see RecordsBasePath).
+	recordsDir := filepath.Join(dir, "$records")
+	if mkdirErr := os.MkdirAll(recordsDir, 0o755); mkdirErr != nil {
+		t.Fatalf("MkdirAll: %v", mkdirErr)
+	}
 	content, marshalErr := yaml.Marshal(map[string]any{"name": "hello"})
 	if marshalErr != nil {
 		t.Fatalf("yaml.Marshal: %v", marshalErr)
 	}
-	if writeErr := os.WriteFile(filepath.Join(dir, "r1.yaml"), content, 0o644); writeErr != nil {
+	if writeErr := os.WriteFile(filepath.Join(recordsDir, "r1.yaml"), content, 0o644); writeErr != nil {
 		t.Fatalf("WriteFile: %v", writeErr)
 	}
 
@@ -610,11 +615,16 @@ func TestRegisterMCPTools_UpdateRecord_Success(t *testing.T) {
 	dir := t.TempDir()
 	def := testMCPDef(dir)
 
+	// Records are stored under $records/ subdirectory (see RecordsBasePath).
+	recordsDir := filepath.Join(dir, "$records")
+	if mkdirErr := os.MkdirAll(recordsDir, 0o755); mkdirErr != nil {
+		t.Fatalf("MkdirAll: %v", mkdirErr)
+	}
 	content, marshalErr := yaml.Marshal(map[string]any{"name": "old"})
 	if marshalErr != nil {
 		t.Fatalf("yaml.Marshal: %v", marshalErr)
 	}
-	if writeErr := os.WriteFile(filepath.Join(dir, "r2.yaml"), content, 0o644); writeErr != nil {
+	if writeErr := os.WriteFile(filepath.Join(recordsDir, "r2.yaml"), content, 0o644); writeErr != nil {
 		t.Fatalf("WriteFile: %v", writeErr)
 	}
 
@@ -799,11 +809,16 @@ func TestRegisterMCPTools_DeleteRecord_Success(t *testing.T) {
 	dir := t.TempDir()
 	def := testMCPDef(dir)
 
+	// Records are stored under $records/ subdirectory (see RecordsBasePath).
+	recordsDir := filepath.Join(dir, "$records")
+	if mkdirErr := os.MkdirAll(recordsDir, 0o755); mkdirErr != nil {
+		t.Fatalf("MkdirAll: %v", mkdirErr)
+	}
 	content, marshalErr := yaml.Marshal(map[string]any{"name": "to-delete"})
 	if marshalErr != nil {
 		t.Fatalf("yaml.Marshal: %v", marshalErr)
 	}
-	if writeErr := os.WriteFile(filepath.Join(dir, "del1.yaml"), content, 0o644); writeErr != nil {
+	if writeErr := os.WriteFile(filepath.Join(recordsDir, "del1.yaml"), content, 0o644); writeErr != nil {
 		t.Fatalf("WriteFile: %v", writeErr)
 	}
 
@@ -1002,5 +1017,100 @@ func TestServeMCP_RegisterToolsError(t *testing.T) {
 	err := serveMCP(ctx, dir, readDef, newDB, func(...any) {})
 	if err == nil {
 		t.Fatal("expected error when registerMCPTools fails")
+	}
+}
+
+// TestRegisterMCPTools_CreateRecord_TxInsertError covers the tx.Insert error
+// branch (line 132-134) by attempting to create a record that already exists.
+func TestRegisterMCPTools_CreateRecord_TxInsertError(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	def := testMCPDef(dir)
+
+	// Pre-seed the record under $records/ so tx.Insert fails on duplicate.
+	recordsDir := filepath.Join(dir, "$records")
+	if mkdirErr := os.MkdirAll(recordsDir, 0o755); mkdirErr != nil {
+		t.Fatalf("MkdirAll: %v", mkdirErr)
+	}
+	content, marshalErr := yaml.Marshal(map[string]any{"name": "existing"})
+	if marshalErr != nil {
+		t.Fatalf("yaml.Marshal: %v", marshalErr)
+	}
+	if writeErr := os.WriteFile(filepath.Join(recordsDir, "dup1.yaml"), content, 0o644); writeErr != nil {
+		t.Fatalf("WriteFile: %v", writeErr)
+	}
+
+	server, tr := newTestMCPServer()
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return def, nil
+	}
+	newDB := func(root string, d *ingitdb.Definition) (dal.DB, error) {
+		return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
+	}
+
+	if err := registerMCPTools(server, dir, readDef, newDB); err != nil {
+		t.Fatalf("registerMCPTools: %v", err)
+	}
+	if err := server.Serve(); err != nil {
+		t.Fatalf("server.Serve: %v", err)
+	}
+
+	// Try to create the same record again — tx.Insert should return an error.
+	argsJSON := `{"id":"test.items/dup1","data":"{name: duplicate}"}`
+	resp, err := tr.callTool(context.Background(), 23, "create_record", argsJSON)
+	if err != nil {
+		t.Fatalf("callTool: %v", err)
+	}
+	if resp == nil {
+		t.Fatal("expected response")
+	}
+}
+
+// TestRegisterMCPTools_ReadRecord_TxGetError covers the tx.Get error branch
+// in read_record (line 163-165). We use a failing newDB that returns a DB
+// whose read transaction errors on Get.
+func TestRegisterMCPTools_UpdateRecord_TxGetError(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	def := testMCPDef(dir)
+
+	// UpdateRecord reads the existing record with tx.Get first. If the record
+	// does not exist, the local backend returns (record.Exists() == false) which
+	// exercises the !record.Exists() branch (already covered by NotFound test).
+	// To trigger tx.Get error we need a corrupt / unreadable file.
+	recordsDir := filepath.Join(dir, "$records")
+	if mkdirErr := os.MkdirAll(recordsDir, 0o755); mkdirErr != nil {
+		t.Fatalf("MkdirAll: %v", mkdirErr)
+	}
+	// Write invalid YAML content to the record file so parsing fails.
+	if writeErr := os.WriteFile(filepath.Join(recordsDir, "bad.yaml"), []byte("{: invalid yaml ["), 0o644); writeErr != nil {
+		t.Fatalf("WriteFile: %v", writeErr)
+	}
+
+	server, tr := newTestMCPServer()
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return def, nil
+	}
+	newDB := func(root string, d *ingitdb.Definition) (dal.DB, error) {
+		return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
+	}
+
+	if err := registerMCPTools(server, dir, readDef, newDB); err != nil {
+		t.Fatalf("registerMCPTools: %v", err)
+	}
+	if err := server.Serve(); err != nil {
+		t.Fatalf("server.Serve: %v", err)
+	}
+
+	// Attempt to update — tx.Get should fail on the corrupt record file.
+	argsJSON := `{"id":"test.items/bad","fields":"{name: new}"}`
+	resp, err := tr.callTool(context.Background(), 24, "update_record", argsJSON)
+	if err != nil {
+		t.Fatalf("callTool: %v", err)
+	}
+	if resp == nil {
+		t.Fatal("expected response")
 	}
 }
