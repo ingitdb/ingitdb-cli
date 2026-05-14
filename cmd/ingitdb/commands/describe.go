@@ -56,17 +56,50 @@ func Describe(
 }
 
 // bareNameDescribe is invoked when the user runs `describe <name>`
-// without a kind. The full implementation lives in Task 7; this stub
-// keeps the wiring honest.
+// without a kind. Resolves to a collection first; falls back to a
+// view; errors loudly on collection/view name collision.
 func bareNameDescribe(
-	_ *cobra.Command,
+	cmd *cobra.Command,
 	name string,
-	_ func() (string, error),
-	_ func() (string, error),
-	_ func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
+	homeDir func() (string, error),
+	getWd func() (string, error),
+	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 ) error {
-	_ = name
-	return fmt.Errorf("describe: bare-name resolution not yet implemented")
+	pathVal, _ := cmd.Flags().GetString("path")
+	remoteVal, _ := cmd.Flags().GetString("remote")
+	if pathVal != "" && remoteVal != "" {
+		return fmt.Errorf("--path and --remote are mutually exclusive")
+	}
+	if remoteVal != "" {
+		return fmt.Errorf("describe --remote not yet implemented")
+	}
+
+	dirPath, err := resolveDBPath(cmd, homeDir, getWd)
+	if err != nil {
+		return err
+	}
+	def, readErr := readDefinition(dirPath)
+	if readErr != nil {
+		return fmt.Errorf("failed to read database definition: %w", readErr)
+	}
+
+	_, collectionMatch := def.Collections[name]
+	viewMatches := findViewMatches(dirPath, def, name, "")
+	hasView := len(viewMatches) > 0
+
+	switch {
+	case collectionMatch && hasView:
+		return fmt.Errorf(
+			"name %q is ambiguous — exists as both collection and view; use 'describe collection %s' or 'describe view %s'",
+			name, name, name,
+		)
+	case collectionMatch:
+		return runDescribeCollection(cmd, name, homeDir, getWd, readDefinition)
+	case hasView:
+		return runDescribeView(cmd, name, "", homeDir, getWd, readDefinition)
+	default:
+		return fmt.Errorf("no collection or view named %q in database at %s", name, dirPath)
+	}
 }
 
 func describeCollectionCmd(

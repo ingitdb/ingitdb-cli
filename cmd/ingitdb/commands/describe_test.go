@@ -422,3 +422,57 @@ func TestDescribeView_NotFoundAnywhere(t *testing.T) {
 		t.Fatalf("want view-not-found error; got: %v", err)
 	}
 }
+
+func TestDescribeBareName_ResolvesToCollection(t *testing.T) {
+	t.Parallel()
+	dir := describeFixtureDB(t, map[string]*ingitdb.CollectionDef{
+		"users": {
+			ID:         "users",
+			RecordFile: &ingitdb.RecordFileDef{Name: "{key}.yaml", Format: "yaml", RecordType: ingitdb.SingleRecord},
+			Columns:    map[string]*ingitdb.ColumnDef{"id": {Type: ingitdb.ColumnTypeString}},
+		},
+	}, nil)
+	cmd := Describe(func() (string, error) { return "/tmp", nil },
+		func() (string, error) { return dir, nil },
+		ingitdbValidatorReadDef)
+	bareOut := captureStdout(t, func() {
+		_ = runCobraCommand(cmd, "users", "--path="+dir)
+	})
+	collOut := captureStdout(t, func() {
+		_ = runCobraCommand(cmd, "collection", "users", "--path="+dir)
+	})
+	if bareOut != collOut {
+		t.Errorf("bare-name output differs from explicit collection")
+	}
+}
+
+func TestDescribeBareName_AmbiguousErrors(t *testing.T) {
+	t.Parallel()
+	dir := describeFixtureDB(t,
+		map[string]*ingitdb.CollectionDef{
+			"archive": {
+				ID:         "archive",
+				RecordFile: &ingitdb.RecordFileDef{Name: "{key}.yaml", Format: "yaml", RecordType: ingitdb.SingleRecord},
+				Columns:    map[string]*ingitdb.ColumnDef{"id": {Type: ingitdb.ColumnTypeString}},
+			},
+			"users": {
+				ID:         "users",
+				RecordFile: &ingitdb.RecordFileDef{Name: "{key}.yaml", Format: "yaml", RecordType: ingitdb.SingleRecord},
+				Columns:    map[string]*ingitdb.ColumnDef{"id": {Type: ingitdb.ColumnTypeString}},
+			},
+		},
+		map[string]map[string]*ingitdb.ViewDef{
+			"users": {"archive": {Top: 10}},
+		},
+	)
+	cmd := Describe(func() (string, error) { return "/tmp", nil },
+		func() (string, error) { return dir, nil },
+		ingitdbValidatorReadDef)
+	err := runCobraCommand(cmd, "archive", "--path="+dir)
+	if err == nil ||
+		!strings.Contains(err.Error(), `name "archive" is ambiguous`) ||
+		!strings.Contains(err.Error(), `'describe collection archive'`) ||
+		!strings.Contains(err.Error(), `'describe view archive'`) {
+		t.Fatalf("want ambiguous-name error; got: %v", err)
+	}
+}
