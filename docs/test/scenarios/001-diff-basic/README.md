@@ -12,7 +12,8 @@ output formats (`text`, `json`), collection scoping, and exit codes.
 
 ## Database
 
-Single `countries` collection. Schema matches `demo-dbs/test-db/countries`.
+Single `countries` collection. Schema mirrors the `countries` collection from
+the [demo-ingitdb](https://github.com/ingitdb/demo-ingitdb) `geo` module.
 
 Records committed to `main`:
 
@@ -77,4 +78,5 @@ feature: (branched here) → [modify ie] → [delete fr] → [add es]
 
 - Feature spec: [`ingitdb-specs/docs/features/diff.md`](https://github.com/ingitdb/ingitdb-specs/blob/main/docs/features/diff.md)
 - CLI reference: [`docs/cli/commands/diff.md`](../../cli/commands/diff.md)
-- Schema reference: [`demo-dbs/test-db/countries/.collection/definition.yaml`](../../../demo-dbs/test-db/countries/.collection/definition.yaml)
+- Schema reference: `countries/.collection/definition.yaml` from the
+  [demo-ingitdb](https://github.com/ingitdb/demo-ingitdb) `geo` module.

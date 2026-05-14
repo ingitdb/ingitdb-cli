@@ -6,12 +6,12 @@ to one collection directory path. No wrapper key is needed.
 ```yaml
 # .ingitdb/root-collections.yaml
 
-companies: demo-dbs/test-db/companies
+companies: data/companies
 
 # Namespace import: imports all root collections from another .ingitdb/root-collections.yaml
 # with the key prefix (e.g., todo.* imports todo.statuses, todo.tags, todo.tasks)
-todo.*: demo-dbs/todo
-agile.*: demo-dbs/agile-ledger
+todo.*: data/todo
+agile.*: data/agile-ledger
 ```
 
 ## Namespace Imports
@@ -21,10 +21,10 @@ using the `.*` suffix. The prefix before `.*` is prepended to each imported coll
 
 ```yaml
 # .ingitdb/root-collections.yaml
-agile.*: demo-dbs/agile-ledger
+agile.*: data/agile-ledger
 ```
 
-If `demo-dbs/agile-ledger/.ingitdb/root-collections.yaml` contains:
+If `data/agile-ledger/.ingitdb/root-collections.yaml` contains:
 
 ```yaml
 teams: teams
@@ -33,7 +33,7 @@ teams: teams
 Then the result is equivalent to:
 
 ```yaml
-agile.teams: demo-dbs/agile-ledger/teams
+agile.teams: data/agile-ledger/teams
 ```
 
 ### Path resolution
@@ -59,13 +59,13 @@ An error is returned when:
 The optional `default_namespace` field in `.ingitdb/settings.yaml` specifies a namespace prefix
 for collections when the DB is opened directly (not imported via a namespace import).
 
-For example, if `demo-dbs/todo/.ingitdb/settings.yaml` contains:
+For example, if `data/todo/.ingitdb/settings.yaml` contains:
 
 ```yaml
 default_namespace: todo
 ```
 
-And `demo-dbs/todo/.ingitdb/root-collections.yaml` contains:
+And `data/todo/.ingitdb/root-collections.yaml` contains:
 
 ```yaml
 statuses: statuses
@@ -76,19 +76,15 @@ tasks: tasks
 Then when this DB is opened directly, the collections are presented as
 `todo.statuses`, `todo.tags`, and `todo.tasks`.
 
-When imported via a namespace import (e.g. `todo.*: demo-dbs/todo`),
+When imported via a namespace import (e.g. `todo.*: data/todo`),
 the import alias is used instead of `default_namespace`.
 
 # 📘 Examples
 
-- [/.ingitdb/root-collections.yaml](../../.ingitdb/root-collections.yaml) — config for inGitDB
-  in this repository.
-- [/demo-dbs/todo/.ingitdb/root-collections.yaml](../../demo-dbs/todo/.ingitdb/root-collections.yaml)
-  — todo collections.
-- [/demo-dbs/todo/.ingitdb/settings.yaml](../../demo-dbs/todo/.ingitdb/settings.yaml)
-  — todo `default_namespace`.
-- [/demo-dbs/agile-ledger/.ingitdb/root-collections.yaml](../../demo-dbs/agile-ledger/.ingitdb/root-collections.yaml)
-  — agile-ledger collections with `default_namespace`.
+Worked examples live in the sibling
+[demo-ingitdb](https://github.com/ingitdb/demo-ingitdb) repository, which hosts
+the canonical demo databases (commerce, geo, todo, etc.) used in documentation
+and end-to-end tests.
 
 ---
 

@@ -76,5 +76,6 @@ The collection exists but has no records. The list output shows `countries` with
 
 ## Notes
 
-- Schema is identical to `demo-dbs/test-db/countries/.collection/definition.yaml`.
+- Schema mirrors the `countries` collection from the
+  [demo-ingitdb](https://github.com/ingitdb/demo-ingitdb) `geo` module.
 - Record path pattern is `{key}/{key}.yaml` inside a `$records/` directory.

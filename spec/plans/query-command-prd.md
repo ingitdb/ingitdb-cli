@@ -117,7 +117,10 @@ Comprehensive table-driven tests for all parsers:
 - **`TestWriteYAML`**: valid YAML list output
 
 ### 11. `pkg/dalgo2fsingitdb/tx_query_test.go` _(new file)_
-Integration-level tests against `demo-dbs/test-db/countries`:
+Integration-level tests against a `countries` fixture built from scratch in
+the test (or pulled from a pinned commit of
+[demo-ingitdb](https://github.com/ingitdb/demo-ingitdb) when end-to-end
+infrastructure is in place):
 - Query all records (`*` fields) returns expected count
 - WHERE filter (`population>100000000`) returns subset
 - ORDER BY ascending / descending produces correct order

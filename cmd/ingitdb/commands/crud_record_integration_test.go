@@ -14,22 +14,65 @@ import (
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/validator"
 )
 
+const (
+	tagsDefinitionYAML = `titles:
+  en: Tags
+
+record_file:
+  name: "tags.json"
+  type: "map[$record_id]map[$field_name]any"
+  format: json
+
+columns:
+  title:
+    type: string
+    locale: en
+    required: true
+
+  titles:
+    type: "map[locale]string"
+    required: false
+
+  description:
+    type: string
+    required: false
+`
+	tagsViewYAML = `order_by: title
+columns:
+  - title
+  - description
+template: .ingitdb-view.README.md
+file_name: README.md
+records_var_name: tags
+`
+	tagsViewTemplate = "# Tags\n\n| Title | Description |\n| ----- | ----------- |\n" +
+		"{{- range .tags }}\n| **{{ .title }}** | {{ .description }} |\n{{- end }}\n"
+)
+
+// TestCRUDRecord_UpdatesTagsReadme builds a minimal todo.tags collection
+// from scratch (no external fixtures) and verifies that Insert, Update,
+// and Delete each update tags.json and re-materialize the README view.
 func TestCRUDRecord_UpdatesTagsReadme(t *testing.T) {
-	repoRoot := findRepoRoot(t)
 	tmpDir := t.TempDir()
 
-	// Copy the shared todo dir (schema + data) to tmp.
-	srcTodoDir := filepath.Join(repoRoot, "demo-dbs", "todo")
-	dstTodoDir := filepath.Join(tmpDir, "demo-dbs", "todo")
-	if err := copyDir(srcTodoDir, dstTodoDir); err != nil {
-		t.Fatalf("copy todo dir: %v", err)
+	// Lay out a minimal shared-layout collection at tmpDir/tags-data/.
+	// DirPath resolves to the parent of .collections/ (tmpDir/tags-data),
+	// so tags.json and README.md are written there.
+	dataDir := filepath.Join(tmpDir, "tags-data")
+	schemaDir := filepath.Join(dataDir, ".collections", "tags")
+	viewsDir := filepath.Join(schemaDir, "$views")
+	if err := os.MkdirAll(viewsDir, 0o755); err != nil {
+		t.Fatalf("mkdir views: %v", err)
 	}
+	writeFile(t, filepath.Join(schemaDir, "definition.yaml"), tagsDefinitionYAML)
+	writeFile(t, filepath.Join(viewsDir, "README.yaml"), tagsViewYAML)
+	writeFile(t, filepath.Join(dataDir, ".ingitdb-view.README.md"), tagsViewTemplate)
 
 	ingitDBDir := filepath.Join(tmpDir, ".ingitdb")
-	if err := os.MkdirAll(ingitDBDir, 0755); err != nil {
+	if err := os.MkdirAll(ingitDBDir, 0o755); err != nil {
 		t.Fatalf("create .ingitdb dir: %v", err)
 	}
-	rootCollections := []byte("todo.tags: demo-dbs/todo/.collections/tags\n")
+	rootCollections := []byte("todo.tags: tags-data/.collections/tags\n")
 	if err := os.WriteFile(filepath.Join(ingitDBDir, "root-collections.yaml"), rootCollections, 0o644); err != nil {
 		t.Fatalf("write root collections: %v", err)
 	}
@@ -46,22 +89,29 @@ func TestCRUDRecord_UpdatesTagsReadme(t *testing.T) {
 	if err := runCobraCommand(insertCmd, "--path="+tmpDir, "--into=todo.tags", "--key=urgent", `--data={"title": "Urgent"}`); err != nil {
 		t.Fatalf("Insert: %v", err)
 	}
-	assertTagTitle(t, dstTodoDir, "urgent", "Urgent")
-	assertReadmeContains(t, dstTodoDir, "**Urgent**")
+	assertTagTitle(t, dataDir, "urgent", "Urgent")
+	assertReadmeContains(t, dataDir, "**Urgent**")
 
 	updateCmd := Update(homeDir, getWd, readDef, newDB, logf)
 	if err := runCobraCommand(updateCmd, "--path="+tmpDir, "--id=todo.tags/urgent", "--set=titles={en: Updated}"); err != nil {
 		t.Fatalf("Update: %v", err)
 	}
-	assertTagTitle(t, dstTodoDir, "urgent", "Updated")
-	assertReadmeContains(t, dstTodoDir, "**Updated**")
+	assertTagTitle(t, dataDir, "urgent", "Updated")
+	assertReadmeContains(t, dataDir, "**Updated**")
 
 	deleteCmd := Delete(homeDir, getWd, readDef, newDB, logf)
 	if err := runCobraCommand(deleteCmd, "--path="+tmpDir, "--id=todo.tags/urgent"); err != nil {
 		t.Fatalf("Delete record: %v", err)
 	}
-	assertTagMissing(t, dstTodoDir, "urgent")
-	assertReadmeNotContains(t, dstTodoDir, "**Updated**")
+	assertTagMissing(t, dataDir, "urgent")
+	assertReadmeNotContains(t, dataDir, "**Updated**")
+}
+
+func writeFile(t *testing.T, path, content string) {
+	t.Helper()
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("write %s: %v", path, err)
+	}
 }
 
 func assertTagTitle(t *testing.T, tagsDir, key, title string) {

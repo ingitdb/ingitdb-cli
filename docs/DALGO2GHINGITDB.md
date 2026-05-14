@@ -179,7 +179,7 @@ func main() {
         Collections: map[string]*ingitdb.CollectionDef{
             "todo.tags": {
                 ID:      "todo.tags",
-                DirPath: "demo-dbs/todo/tags",
+                DirPath: "data/todo/tags",
                 RecordFile: &ingitdb.RecordFileDef{
                     Name:       "{key}.yaml",
                     Format:     "yaml",
