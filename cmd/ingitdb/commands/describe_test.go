@@ -277,3 +277,148 @@ func TestDescribeCollection_NativeResolvesToYAML(t *testing.T) {
 		t.Errorf("--format=native ≠ --format=yaml on ingitdb")
 	}
 }
+
+func TestDescribeView_BasicShape(t *testing.T) {
+	t.Parallel()
+	dir := describeFixtureDB(t,
+		map[string]*ingitdb.CollectionDef{
+			"users": {
+				ID:         "users",
+				RecordFile: &ingitdb.RecordFileDef{Name: "{key}.yaml", Format: "yaml", RecordType: ingitdb.SingleRecord},
+				Columns:    map[string]*ingitdb.ColumnDef{"id": {Type: ingitdb.ColumnTypeString}},
+			},
+		},
+		map[string]map[string]*ingitdb.ViewDef{
+			"users": {
+				"top_buyers": {OrderBy: "total_spend DESC", Top: 100, Template: "md-table"},
+			},
+		},
+	)
+	cmd := Describe(func() (string, error) { return "/tmp", nil },
+		func() (string, error) { return dir, nil },
+		ingitdbValidatorReadDef)
+	out := captureStdout(t, func() {
+		if err := runCobraCommand(cmd, "view", "top_buyers", "--path="+dir); err != nil {
+			t.Fatalf("view top_buyers: %v", err)
+		}
+	})
+	var parsed map[string]any
+	if err := yaml.Unmarshal([]byte(out), &parsed); err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	meta := parsed["_meta"].(map[string]any)
+	if meta["kind"] != "view" || meta["collection"] != "users" {
+		t.Errorf("unexpected meta: %v", meta)
+	}
+	if meta["definition_path"] != "users/$views/top_buyers.yaml" {
+		t.Errorf("unexpected definition_path: %v", meta["definition_path"])
+	}
+}
+
+func TestDescribeView_AmbiguousRequiresIn(t *testing.T) {
+	t.Parallel()
+	dir := describeFixtureDB(t,
+		map[string]*ingitdb.CollectionDef{
+			"users": {
+				ID:         "users",
+				RecordFile: &ingitdb.RecordFileDef{Name: "{key}.yaml", Format: "yaml", RecordType: ingitdb.SingleRecord},
+				Columns:    map[string]*ingitdb.ColumnDef{"id": {Type: ingitdb.ColumnTypeString}},
+			},
+			"orders": {
+				ID:         "orders",
+				RecordFile: &ingitdb.RecordFileDef{Name: "{key}.yaml", Format: "yaml", RecordType: ingitdb.SingleRecord},
+				Columns:    map[string]*ingitdb.ColumnDef{"id": {Type: ingitdb.ColumnTypeString}},
+			},
+		},
+		map[string]map[string]*ingitdb.ViewDef{
+			"users":  {"recent": {Top: 10}},
+			"orders": {"recent": {Top: 10}},
+		},
+	)
+	cmd := Describe(func() (string, error) { return "/tmp", nil },
+		func() (string, error) { return dir, nil },
+		ingitdbValidatorReadDef)
+	err := runCobraCommand(cmd, "view", "recent", "--path="+dir)
+	if err == nil || !strings.Contains(err.Error(),
+		`view "recent" is ambiguous — exists in collections: [orders, users]; use --in=<collection>`) {
+		t.Fatalf("want ambiguous error; got: %v", err)
+	}
+}
+
+func TestDescribeView_ResolvedByIn(t *testing.T) {
+	t.Parallel()
+	dir := describeFixtureDB(t,
+		map[string]*ingitdb.CollectionDef{
+			"users": {
+				ID:         "users",
+				RecordFile: &ingitdb.RecordFileDef{Name: "{key}.yaml", Format: "yaml", RecordType: ingitdb.SingleRecord},
+				Columns:    map[string]*ingitdb.ColumnDef{"id": {Type: ingitdb.ColumnTypeString}},
+			},
+			"orders": {
+				ID:         "orders",
+				RecordFile: &ingitdb.RecordFileDef{Name: "{key}.yaml", Format: "yaml", RecordType: ingitdb.SingleRecord},
+				Columns:    map[string]*ingitdb.ColumnDef{"id": {Type: ingitdb.ColumnTypeString}},
+			},
+		},
+		map[string]map[string]*ingitdb.ViewDef{
+			"users":  {"recent": {Top: 10}},
+			"orders": {"recent": {Top: 20}},
+		},
+	)
+	cmd := Describe(func() (string, error) { return "/tmp", nil },
+		func() (string, error) { return dir, nil },
+		ingitdbValidatorReadDef)
+	out := captureStdout(t, func() {
+		_ = runCobraCommand(cmd, "view", "recent", "--in=orders", "--path="+dir)
+	})
+	var parsed map[string]any
+	if err := yaml.Unmarshal([]byte(out), &parsed); err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	meta := parsed["_meta"].(map[string]any)
+	if meta["collection"] != "orders" {
+		t.Errorf("want collection=orders; got %v", meta["collection"])
+	}
+}
+
+func TestDescribeView_InCollectionMissing(t *testing.T) {
+	t.Parallel()
+	dir := describeFixtureDB(t,
+		map[string]*ingitdb.CollectionDef{
+			"users": {
+				ID:         "users",
+				RecordFile: &ingitdb.RecordFileDef{Name: "{key}.yaml", Format: "yaml", RecordType: ingitdb.SingleRecord},
+				Columns:    map[string]*ingitdb.ColumnDef{"id": {Type: ingitdb.ColumnTypeString}},
+			},
+		},
+		nil,
+	)
+	cmd := Describe(func() (string, error) { return "/tmp", nil },
+		func() (string, error) { return dir, nil },
+		ingitdbValidatorReadDef)
+	err := runCobraCommand(cmd, "view", "anything", "--in=ghosts", "--path="+dir)
+	if err == nil || !strings.Contains(err.Error(), `collection "ghosts" (from --in) not found`) {
+		t.Fatalf("want missing --in error; got: %v", err)
+	}
+}
+
+func TestDescribeView_NotFoundAnywhere(t *testing.T) {
+	t.Parallel()
+	dir := describeFixtureDB(t,
+		map[string]*ingitdb.CollectionDef{
+			"users": {
+				ID:         "users",
+				RecordFile: &ingitdb.RecordFileDef{Name: "{key}.yaml", Format: "yaml", RecordType: ingitdb.SingleRecord},
+				Columns:    map[string]*ingitdb.ColumnDef{"id": {Type: ingitdb.ColumnTypeString}},
+			},
+		},
+		nil,
+	)
+	cmd := Describe(func() (string, error) { return "/tmp", nil },
+		func() (string, error) { return dir, nil },
+		ingitdbValidatorReadDef)
+	err := runCobraCommand(cmd, "view", "ghost", "--path="+dir)
+	if err == nil || !strings.Contains(err.Error(), `view "ghost" not found in any collection`) {
+		t.Fatalf("want view-not-found error; got: %v", err)
+	}
+}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -198,18 +199,124 @@ func emitNode(node *yaml.Node, format string) error {
 }
 
 func describeViewCmd(
-	_ func() (string, error),
-	_ func() (string, error),
-	_ func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
+	homeDir func() (string, error),
+	getWd func() (string, error),
+	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 ) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "view <name>",
 		Short: "Describe a view (definition, source, template)",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, _ []string) error {
-			return fmt.Errorf("describe view: not yet implemented")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+			scopeCol, _ := cmd.Flags().GetString("in")
+			return runDescribeView(cmd, name, scopeCol, homeDir, getWd, readDefinition)
 		},
 	}
 	cmd.Flags().String("in", "", "limit the search to a specific collection (disambiguates duplicate view names)")
 	return cmd
+}
+
+func runDescribeView(
+	cmd *cobra.Command,
+	name, scopeCol string,
+	homeDir func() (string, error),
+	getWd func() (string, error),
+	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
+) error {
+	pathVal, _ := cmd.Flags().GetString("path")
+	remoteVal, _ := cmd.Flags().GetString("remote")
+	if pathVal != "" && remoteVal != "" {
+		return fmt.Errorf("--path and --remote are mutually exclusive")
+	}
+	if remoteVal != "" {
+		return fmt.Errorf("describe --remote not yet implemented")
+	}
+
+	rawFormat, _ := cmd.Flags().GetString("format")
+	format, err := resolveFormat(rawFormat, engineIngitDB)
+	if err != nil {
+		return err
+	}
+
+	dirPath, err := resolveDBPath(cmd, homeDir, getWd)
+	if err != nil {
+		return err
+	}
+	def, readErr := readDefinition(dirPath)
+	if readErr != nil {
+		return fmt.Errorf("failed to read database definition: %w", readErr)
+	}
+
+	if scopeCol != "" {
+		if _, ok := def.Collections[scopeCol]; !ok {
+			return fmt.Errorf("collection %q (from --in) not found", scopeCol)
+		}
+	}
+
+	matches := findViewMatches(dirPath, def, name, scopeCol)
+	switch len(matches) {
+	case 0:
+		if scopeCol != "" {
+			return fmt.Errorf("view %q not found in collection %q", name, scopeCol)
+		}
+		return fmt.Errorf("view %q not found in any collection", name)
+	case 1:
+		// fall through
+	default:
+		cols := make([]string, 0, len(matches))
+		for _, m := range matches {
+			cols = append(cols, m.collection)
+		}
+		sort.Strings(cols)
+		return fmt.Errorf(
+			"view %q is ambiguous — exists in collections: [%s]; use --in=<collection>",
+			name, strings.Join(cols, ", "),
+		)
+	}
+
+	m := matches[0]
+	raw, readErr := os.ReadFile(m.absPath)
+	if readErr != nil {
+		return fmt.Errorf("read view file %s: %w", m.relPath, readErr)
+	}
+	viewDef := &ingitdb.ViewDef{}
+	if uErr := yaml.Unmarshal(raw, viewDef); uErr != nil {
+		return fmt.Errorf("parse view file %s: %w", m.relPath, uErr)
+	}
+	viewDef.ID = name
+
+	node, err := buildViewPayload(viewDef, viewOutputCtx{
+		owningCollection: m.collection,
+		relPath:          m.relPath,
+	})
+	if err != nil {
+		return fmt.Errorf("build payload: %w", err)
+	}
+	return emitNode(node, format)
+}
+
+type viewMatch struct {
+	collection string
+	absPath    string
+	relPath    string
+}
+
+// findViewMatches walks each collection's $views/ directory looking
+// for <name>.yaml. When scopeCol is non-empty, restricts the search
+// to that collection.
+func findViewMatches(dbDir string, def *ingitdb.Definition, name, scopeCol string) []viewMatch {
+	var out []viewMatch
+	for colID := range def.Collections {
+		if scopeCol != "" && colID != scopeCol {
+			continue
+		}
+		rel := colID + "/$views/" + name + ".yaml"
+		abs := filepath.Join(dbDir, colID, "$views", name+".yaml")
+		if _, err := os.Stat(abs); err != nil {
+			continue
+		}
+		out = append(out, viewMatch{collection: colID, absPath: abs, relPath: rel})
+	}
+	return out
 }
