@@ -25,6 +25,13 @@ import (
 // from the dbschema.CollectionDef. Validates name and field types before
 // any filesystem write. With ddl.IfNotExists, an existing collection is a
 // no-op; without it, an existing collection is an error.
+//
+// After the definition.yaml write succeeds, the collection is registered
+// in <projectPath>/.ingitdb/root-collections.yaml (REQ:auto-register-in-root-collections)
+// so the validator-backed CollectionsReader picks it up. Registry conflicts
+// (an existing entry mapping the same name to a non-default path) return
+// ErrCollectionPathConflict; the definition.yaml is left in place — see
+// AC:create-collection-rejects-registry-conflict for the recovery story.
 func (db *Database) CreateCollection(_ context.Context, c dbschema.CollectionDef, opts ...ddl.Option) error {
 	options := ddl.ResolveOptions(opts...)
 	if err := validateCollectionName(c.Name); err != nil {
@@ -43,6 +50,12 @@ func (db *Database) CreateCollection(_ context.Context, c dbschema.CollectionDef
 
 	if _, statErr := os.Stat(defPath); statErr == nil {
 		if options.IfNotExists {
+			// Idempotent path: confirm the registry entry too (it may have
+			// been removed externally or never been written by an older
+			// driver version).
+			if err := registerInRootCollections(db.projectPath, c.Name); err != nil {
+				return fmt.Errorf("CreateCollection %q: %w", c.Name, err)
+			}
 			return nil
 		}
 		return fmt.Errorf("CreateCollection: collection %q already exists", c.Name)
@@ -58,9 +71,17 @@ func (db *Database) CreateCollection(_ context.Context, c dbschema.CollectionDef
 		log.Printf("dalgo2ingitdb: CreateCollection %q ignoring %d index declaration(s) — inGitDB has no per-collection index support", c.Name, len(c.Indexes))
 	}
 
-	return withExclusiveLock(defPath, func() error {
+	if err := withExclusiveLock(defPath, func() error {
 		return writeCollectionDefYAML(defPath, colDef)
-	})
+	}); err != nil {
+		return err
+	}
+
+	// Registry update — REQ:auto-register-in-root-collections.
+	if err := registerInRootCollections(db.projectPath, c.Name); err != nil {
+		return fmt.Errorf("CreateCollection %q: %w", c.Name, err)
+	}
+	return nil
 }
 
 // DropCollection removes <projectPath>/<name>/ from disk. The directory
@@ -89,6 +110,11 @@ func (db *Database) DropCollection(_ context.Context, name string, opts ...ddl.O
 	// Safety net: only remove directories that look like collection roots.
 	if err := os.RemoveAll(colDir); err != nil {
 		return fmt.Errorf("DropCollection: remove %s: %w", colDir, err)
+	}
+
+	// Registry cleanup — REQ:auto-deregister-from-root-collections.
+	if err := deregisterFromRootCollections(db.projectPath, name); err != nil {
+		return fmt.Errorf("DropCollection %q: %w", name, err)
 	}
 	return nil
 }

@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
@@ -339,6 +340,41 @@ func readSettingsFromFile(dirPath string, _ ingitdb.ReadOptions, readFile func(s
 // If the file does not exist, returns nil map with no error.
 func ReadRootCollectionsFromFile(dirPath string, o ingitdb.ReadOptions) (map[string]string, error) {
 	return readRootCollectionsFromFile(dirPath, o, os.ReadFile)
+}
+
+// WriteRootCollectionsToFile writes the given id→path map to
+// <dirPath>/.ingitdb/root-collections.yaml as a flat YAML map. Keys are
+// emitted in sorted order for deterministic on-disk content. Creates the
+// .ingitdb/ directory if absent. An empty map writes a zero-byte file
+// (intentional — see REQ:auto-deregister-from-root-collections in the
+// dalgo2ingitdb-dbschema-ddl-coverage Feature spec).
+func WriteRootCollectionsToFile(dirPath string, m map[string]string) error {
+	if dirPath == "" {
+		dirPath = "."
+	}
+	cfgDir := filepath.Join(dirPath, IngitDBDirName)
+	if err := os.MkdirAll(cfgDir, 0o755); err != nil {
+		return fmt.Errorf("failed to create %s: %w", cfgDir, err)
+	}
+	filePath := filepath.Join(cfgDir, RootCollectionsFileName)
+
+	var buf bytes.Buffer
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		// YAML scalar serialization for a flat string→string map. Both keys
+		// and values are emitted as plain scalars — they are validated as
+		// safe identifiers upstream (collection-name validation in
+		// dalgo2ingitdb's CreateCollection).
+		_, _ = fmt.Fprintf(&buf, "%s: %s\n", k, m[k])
+	}
+	if err := os.WriteFile(filePath, buf.Bytes(), 0o644); err != nil {
+		return fmt.Errorf("failed to write root collections file: %w", err)
+	}
+	return nil
 }
 
 func readRootCollectionsFromFile(dirPath string, _ ingitdb.ReadOptions, readFile func(string) ([]byte, error)) (map[string]string, error) {

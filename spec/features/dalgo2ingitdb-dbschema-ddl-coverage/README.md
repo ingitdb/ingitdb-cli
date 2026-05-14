@@ -141,8 +141,21 @@ Round-trip note: mapping is **lossy** in one direction. `dbschema.Time` maps bac
 4. Create the directory `<projectPath>/<c.Name>/.collection/` (including parent `<projectPath>/<c.Name>/`).
 5. Write `<projectPath>/<c.Name>/.collection/definition.yaml` from a canonical `ingitdb.CollectionDef` built from `c.Fields` (in declared order), with `RecordFile` set to a default of `{name: "{key}.yaml", format: yaml, type: "map[string]any"}`.
 6. If `c.Indexes` is non-empty, log a warning and silently skip index creation (no per-collection index concept today; see Outstanding Questions).
+7. Register the collection in `<projectPath>/.ingitdb/root-collections.yaml` so the validator-backed `CollectionsReader` (used by `loadDefinition` for record transactions) sees it. See REQ:auto-register-in-root-collections for the exact contract.
 
 All filesystem errors MUST be returned wrapped with `fmt.Errorf`/`%w`.
+
+#### REQ: auto-register-in-root-collections
+
+After steps 1-6 of REQ:create-collection succeed (i.e. the on-disk `definition.yaml` has been written), the driver MUST update `<projectPath>/.ingitdb/root-collections.yaml` to map `c.Name → c.Name`. Specifically:
+
+1. Ensure the directory `<projectPath>/.ingitdb/` exists (`os.MkdirAll` with `0o755`).
+2. Read the existing flat YAML map at `<projectPath>/.ingitdb/root-collections.yaml` (treat a missing file as an empty map).
+3. If the map already contains `c.Name` and the stored value equals `c.Name`, leave it alone (idempotent — re-running CreateCollection with `WithIfNotExists` MUST NOT churn the file).
+4. If the map already contains `c.Name` with a DIFFERENT path, leave the existing entry alone and return a non-nil error wrapping `ErrCollectionPathConflict` (defined in this package). This protects user-authored entries from being silently overwritten by an auto-registration with a path-equals-name convention.
+5. Otherwise add the entry `c.Name: c.Name` to the map and re-write the file in sorted-by-key order.
+
+The `definition.yaml` write in step 5 of REQ:create-collection is the durable record of the collection. The root-collections.yaml update in this REQ is a derived index. If the index update fails after the definition.yaml write, the driver MUST return a wrapped error naming the registry path; the collection is still on disk and the user can recover by re-running with `WithIfNotExists` (which will retry the registry step idempotently per (3) above).
 
 #### REQ: drop-collection
 
@@ -152,8 +165,19 @@ All filesystem errors MUST be returned wrapped with `fmt.Errorf`/`%w`.
 2. Check whether `<projectPath>/<name>/.collection/definition.yaml` exists. If it does NOT exist and `ddl.WithIfExists()` is set, return nil. If it does NOT exist and `IfExists` is NOT set, return an error.
 3. As a safety check, verify that `<projectPath>/<name>/.collection/definition.yaml` is present before removing anything. This guards against accidentally deleting a directory that is not an inGitDB collection.
 4. Remove the entire `<projectPath>/<name>/` directory tree via `os.RemoveAll`.
+5. Remove the entry from `<projectPath>/.ingitdb/root-collections.yaml` per REQ:auto-deregister-from-root-collections.
 
 `DropCollection` MUST NOT check whether the collection directory contains record files before removing — that is the caller's responsibility. If callers want to guard against data loss, they SHOULD call `ListCollections` and count records first.
+
+#### REQ: auto-deregister-from-root-collections
+
+After step 4 of REQ:drop-collection succeeds (the on-disk collection directory has been removed), the driver MUST update `<projectPath>/.ingitdb/root-collections.yaml`:
+
+1. If the registry file does not exist, do nothing (the collection was never registered; not an error).
+2. If the registry file exists, read it, remove the entry whose key is `name` (regardless of its stored path value — DropCollection's safety check already confirmed the on-disk presence, so the registry entry is fair game), and re-write the file in sorted-by-key order.
+3. If the map becomes empty after removal, the registry file MUST be left as an empty file (the file's presence is a project-shape signal even when no collections are registered).
+
+The `os.RemoveAll` in step 4 of REQ:drop-collection is the durable removal. The registry update in this REQ is index maintenance — if it fails after the directory has been removed, the driver MUST return a wrapped error naming the registry path; the directory is gone and a subsequent re-run with `WithIfExists` will be a no-op for the directory but will retry the index cleanup.
 
 #### REQ: alter-collection
 
@@ -338,6 +362,38 @@ Source files implementing this feature (annotated with
 **When** the caller invokes `ddl.CreateCollection(ctx, db, c)`
 **Then** the call returns a non-nil error before any filesystem write; the error message names the offending field; no directories or files are created.
 
+### AC: create-collection-registers-in-root-collections
+
+**Requirements:** dalgo2ingitdb-dbschema-ddl-coverage#req:create-collection, dalgo2ingitdb-dbschema-ddl-coverage#req:auto-register-in-root-collections
+
+**Given** an empty project directory with no `.ingitdb/root-collections.yaml` file and a `dbschema.CollectionDef` for `tags`
+**When** the caller invokes `ddl.CreateCollection(ctx, db, c)`
+**Then** the call returns `nil`; `<projectPath>/.ingitdb/root-collections.yaml` exists; parsing it via `yaml.Unmarshal` into a `map[string]string` yields exactly one entry `tags: tags`; a subsequent `validator.NewCollectionsReader().ReadDefinition(projectPath)` returns a `*ingitdb.Definition` whose `Collections` map contains `tags`.
+
+### AC: create-collection-appends-to-existing-root-collections
+
+**Requirements:** dalgo2ingitdb-dbschema-ddl-coverage#req:auto-register-in-root-collections
+
+**Given** a project directory with a pre-existing `.ingitdb/root-collections.yaml` containing exactly `tags: tags`
+**When** the caller invokes `ddl.CreateCollection(ctx, db, cForLabels)` (a new collection `labels`)
+**Then** the registry file now contains both entries `labels: labels` and `tags: tags`, in sorted-by-key order; neither entry has been mutated.
+
+### AC: create-collection-idempotent-registry-with-if-not-exists
+
+**Requirements:** dalgo2ingitdb-dbschema-ddl-coverage#req:auto-register-in-root-collections
+
+**Given** a project directory where `tags` is already created (its `definition.yaml` exists and the registry contains `tags: tags`)
+**When** the caller invokes `ddl.CreateCollection(ctx, db, cTags, ddl.WithIfNotExists())`
+**Then** the call returns `nil`; the registry file contents (including byte order) are unchanged.
+
+### AC: create-collection-rejects-registry-conflict
+
+**Requirements:** dalgo2ingitdb-dbschema-ddl-coverage#req:auto-register-in-root-collections
+
+**Given** a project directory where `.ingitdb/root-collections.yaml` contains `tags: legacy/tags-path` (a user-authored entry mapping the `tags` id to a non-default path)
+**When** the caller invokes `ddl.CreateCollection(ctx, db, cTags)`
+**Then** the call returns a non-nil error wrapping `ErrCollectionPathConflict`; the registry file is unchanged; the `<projectPath>/tags/.collection/definition.yaml` may have been written by the earlier steps and SHOULD be cleaned up by the caller, but the driver does NOT roll it back. (The error message names both the registry entry and the conflict so the user can resolve it.)
+
 ### AC: drop-collection
 
 **Requirements:** dalgo2ingitdb-dbschema-ddl-coverage#req:drop-collection
@@ -361,6 +417,22 @@ Source files implementing this feature (annotated with
 **Given** a project directory with a plain `docs/` subdirectory that does NOT contain `.collection/definition.yaml`
 **When** the caller invokes `ddl.DropCollection(ctx, db, "docs")`
 **Then** the call returns a non-nil error; the `docs/` directory is NOT removed.
+
+### AC: drop-collection-deregisters-from-root-collections
+
+**Requirements:** dalgo2ingitdb-dbschema-ddl-coverage#req:drop-collection, dalgo2ingitdb-dbschema-ddl-coverage#req:auto-deregister-from-root-collections
+
+**Given** a project directory where `tags` and `labels` are both registered (`<projectPath>/.ingitdb/root-collections.yaml` contains `labels: labels` and `tags: tags`)
+**When** the caller invokes `ddl.DropCollection(ctx, db, "tags")`
+**Then** the call returns `nil`; the `tags/` directory is removed; the registry file now contains exactly `labels: labels` (`tags` removed); a subsequent `validator.NewCollectionsReader().ReadDefinition(projectPath)` returns a definition whose `Collections` map contains only `labels`.
+
+### AC: drop-collection-tolerates-missing-registry
+
+**Requirements:** dalgo2ingitdb-dbschema-ddl-coverage#req:auto-deregister-from-root-collections
+
+**Given** a project directory where `tags` exists on disk but `.ingitdb/root-collections.yaml` does NOT exist (e.g. created by an older driver version before auto-registration shipped)
+**When** the caller invokes `ddl.DropCollection(ctx, db, "tags")`
+**Then** the call returns `nil`; the `tags/` directory is removed; the absence of the registry file is not treated as an error.
 
 ### AC: alter-collection-add-field
 
