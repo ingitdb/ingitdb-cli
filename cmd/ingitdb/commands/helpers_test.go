@@ -37,7 +37,7 @@ func runCobraCommand(cmd *cobra.Command, args ...string) error {
 		SilenceErrors: true,
 	}
 	root.AddCommand(cmd)
-	argv := append([]string{cmd.Use}, args...)
+	argv := append([]string{cmd.Name()}, args...)
 	root.SetArgs(argv)
 	return root.ExecuteContext(context.Background())
 }

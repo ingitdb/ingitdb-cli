@@ -79,6 +79,7 @@ func run(
 		commands.Docs(homeDir, getWd, readDefinition, logf),
 		commands.Serve(homeDir, getWd, readDefinition, newDB, logf),
 		commands.List(homeDir, getWd, readDefinition),
+		commands.Describe(homeDir, getWd, readDefinition),
 		commands.Select(homeDir, getWd, readDefinition, newDB, logf),
 		commands.Insert(homeDir, getWd, readDefinition, newDB, logf, nil, nil, nil),
 		commands.Update(homeDir, getWd, readDefinition, newDB, logf),
