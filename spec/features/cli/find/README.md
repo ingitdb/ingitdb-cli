@@ -1,6 +1,6 @@
 # Feature: Find Command
 
-**Status:** Draft
+**Status:** Withdrawn — moved to DataTug CLI. The `ingitdb find` command will not be implemented in this repo; the cross-tool record-search feature belongs in DataTug. This document is preserved as a historical record of the original design.
 
 ## Summary
 

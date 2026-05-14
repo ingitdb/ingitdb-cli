@@ -1,6 +1,6 @@
 # Feature: Migrate Command
 
-**Status:** Draft
+**Status:** Withdrawn (deferred) — scope and design are not clear enough to implement today. The feature may be revived once concrete migration use cases and patterns emerge. This document is preserved as a historical record of the original draft.
 
 ## Summary
 

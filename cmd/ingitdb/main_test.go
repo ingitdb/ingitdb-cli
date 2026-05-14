@@ -355,14 +355,11 @@ func TestRun_AllCommands(t *testing.T) {
 		{name: "watch help", args: []string{"ingitdb", "watch", "--help"}},
 		{name: "serve help", args: []string{"ingitdb", "serve", "--help"}},
 		{name: "list help", args: []string{"ingitdb", "list", "--help"}},
-		{name: "find help", args: []string{"ingitdb", "find", "--help"}},
 		{name: "select help", args: []string{"ingitdb", "select", "--help"}},
 		{name: "insert help", args: []string{"ingitdb", "insert", "--help"}},
 		{name: "update help", args: []string{"ingitdb", "update", "--help"}},
 		{name: "drop help", args: []string{"ingitdb", "drop", "--help"}},
 		{name: "delete help", args: []string{"ingitdb", "delete", "--help"}},
-		{name: "truncate help", args: []string{"ingitdb", "truncate", "--help"}},
-		{name: "migrate help", args: []string{"ingitdb", "migrate", "--help"}},
 	}
 
 	for _, tc := range tests {

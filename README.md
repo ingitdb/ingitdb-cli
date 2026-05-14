@@ -139,21 +139,6 @@ ingitdb list collections --in='countries/(ie|gb)'
 # List collections whose name contains "city"
 ingitdb list collections --filter-name='*city*'
 
-# Search records for a substring across all fields
-ingitdb find --substr=Dublin
-
-# Search records using a regular expression, limited to 10 results
-ingitdb find --re='pop.*[0-9]{6,}' --limit=10
-
-# Search only specific fields
-ingitdb find --substr=Dublin --fields=name,capital
-
-# Scope a search to a sub-path
-ingitdb find --exact=Ireland --in='countries/.*' --fields=country
-
-# Delete all records from a collection (keeps the schema)
-ingitdb truncate --collection=countries.counties
-
 # Drop a specific collection and all its records
 ingitdb drop collection countries.counties.dublin
 
@@ -250,10 +235,7 @@ languages:
 | [`delete`](docs/cli/commands/delete.md)           | ✅ done    | Delete records by ID or `--where` filter (local or remote) |
 | [`drop`](docs/cli/commands/drop.md)               | ✅ done    | Drop a collection or view definition                     |
 | [`list collections`](docs/cli/commands/list.md)   | ✅ done    | List collection IDs (local or remote)                    |
-| `list view`                                       | 🟡 planned | List view definition                                     |
-| `list subscribers`                                | 🟡 planned | List subscribers                                         |
-| [`find`](docs/cli/commands/find.md)               | 🟡 planned | Search records by substring, regex, or exact value       |
-| [`truncate`](docs/cli/commands/truncate.md)       | 🟡 planned | Remove all records from a collection, keeping its schema |
+| `list views`                                      | 🟡 planned | List view definitions                                    |
 | [`materialize`](docs/cli/commands/materialize.md) | 🟡 planned | Build materialized views into `$views/`                  |
 | [`diff`](docs/cli/commands/diff.md)               | 🟡 planned | Show record-level changes between two git refs           |
 | [`pull`](docs/cli/commands/pull.md)               | 🟡 planned | Pull remote changes and rebuild views                    |
@@ -261,7 +243,6 @@ languages:
 | [`serve`](docs/cli/commands/serve.md)             | 🟡 planned | Start MCP, HTTP API, or file-watcher server              |
 | [`resolve`](docs/cli/commands/resolve.md)         | 🟡 planned | Interactive TUI for resolving data-file merge conflicts  |
 | [`setup`](docs/cli/commands/setup.md)             | 🟡 planned | Initialise a new database directory                      |
-| [`migrate`](docs/cli/commands/migrate.md)         | 🟡 planned | Migrate records between schema versions                  |
 | [`rebase`](docs/cli/commands/rebase.md)           | ✅ done    | Rebase on top of a base ref and resolve README conflicts |
 
 ### --id format

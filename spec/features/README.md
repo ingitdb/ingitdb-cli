@@ -16,8 +16,6 @@ This directory tracks the SpecScore feature specifications for the **ingitdb-cli
 | [cli/drop](cli/drop/README.md) | Implementing | `ingitdb drop` — drop a collection or view. |
 | [cli/list-collections](cli/list-collections/README.md) | Implementing | `ingitdb list collections` — list collection IDs. |
 | [cli/rebase](cli/rebase/README.md) | Implementing | `ingitdb rebase` — rebase with auto-resolution of generated-file conflicts. |
-| [cli/find](cli/find/README.md) | Draft | `ingitdb find` — search records by substring, regex, or exact value. |
-| [cli/truncate](cli/truncate/README.md) | Draft | `ingitdb truncate` — remove all records from a collection. |
 | [cli/read-record](cli/read-record/README.md) | Superseded by [cli/select](cli/select/README.md) | `ingitdb read record` (removed). |
 | [cli/create-record](cli/create-record/README.md) | Superseded by [cli/insert](cli/insert/README.md) | `ingitdb create record` (removed). |
 | [cli/update-record](cli/update-record/README.md) | Superseded by [cli/update](cli/update/README.md) | `ingitdb update record` (removed). |
@@ -32,7 +30,9 @@ This directory tracks the SpecScore feature specifications for the **ingitdb-cli
 | [cli/serve](cli/serve/README.md) | Draft | `ingitdb serve` — MCP, HTTP API, and file-watcher servers. |
 | [cli/resolve](cli/resolve/README.md) | Draft | `ingitdb resolve` — interactive merge-conflict TUI. |
 | [cli/setup](cli/setup/README.md) | Draft | `ingitdb setup` — initialise a new database directory. |
-| [cli/migrate](cli/migrate/README.md) | Draft | `ingitdb migrate` — migrate records between schema versions. |
+| [cli/find](cli/find/README.md) | Withdrawn — moved to DataTug CLI | `ingitdb find` (not implemented). |
+| [cli/truncate](cli/truncate/README.md) | Withdrawn — use `delete --all` | `ingitdb truncate` (not implemented). |
+| [cli/migrate](cli/migrate/README.md) | Withdrawn (deferred) | `ingitdb migrate` (not implemented). |
 | [id-flag-format](id-flag-format/README.md) | Implementing | Cross-cutting `--id=<collection-id>/<record-key>` syntax. |
 | [output-formats](output-formats/README.md) | Implementing | Cross-cutting `--format=yaml|json` flag and YAML default. |
 | [path-targeting](path-targeting/README.md) | Implementing | Cross-cutting `--path` flag and its relation to `--remote`. |
@@ -68,12 +68,6 @@ Lists collection IDs from a local DB or a GitHub repository, with optional `--in
 ### cli/rebase
 Runs `git rebase` on top of a base ref and auto-resolves conflicts in generated files (collection `README.md`, materialized views, indexes) when the user opts in via `--resolve`.
 
-### cli/find
-Searches record fields by substring, regex, or exact match. Supports field whitelisting, sub-path scoping, and a result limit.
-
-### cli/truncate
-Removes every record from a collection while preserving the collection definition.
-
 ### cli/materialize
 Renders generated artifacts: collection `README.md` files and materialized view files under `$views/`.
 
@@ -94,9 +88,6 @@ Opens an interactive TUI for resolving merge conflicts in inGitDB record files.
 
 ### cli/setup
 Initialises a new inGitDB database directory with a starter `.ingitdb.yaml` and the expected layout.
-
-### cli/migrate
-Migrates records from one schema version to another for a named target.
 
 ### id-flag-format
 Defines the `--id=<collection-id>/<record-key>` syntax used by every CRUD command, including the longest-prefix-match rule and the allowed character set for collection IDs.

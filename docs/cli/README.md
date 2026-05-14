@@ -17,7 +17,6 @@
 - [update](commands/update.md) — patch fields of one or more existing records
 - [delete](commands/delete.md) — delete one or more records
 - [drop](commands/drop.md) — drop a collection or view
-- [truncate](commands/truncate.md) — remove all records from a collection
 - [materialize](commands/materialize.md) — build generated files from records
 - [ci](commands/ci.md) — run CI checks for the database (currently: materialize views)
 - [pull](commands/pull.md) — pull latest changes, resolve conflicts, and rebuild views
@@ -26,6 +25,4 @@
 - [watch](commands/watch.md) — watch database for changes
 - [serve](commands/serve.md) — start one or more servers
 - [list](commands/list.md) — list database objects
-- [find](commands/find.md) — search records by value
-- [migrate](commands/migrate.md) — migrate data between schema versions
 - [rebase](commands/rebase.md) — rebase on top of a base ref and auto-resolve specific documentation conflicts

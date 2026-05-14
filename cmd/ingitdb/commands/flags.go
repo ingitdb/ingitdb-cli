@@ -28,15 +28,6 @@ func addFormatFlag(cmd *cobra.Command, defaultValue string) {
 	cmd.Flags().String("format", defaultValue, "output format")
 }
 
-// addCollectionFlag adds --collection flag. Pass required=true to mark it required.
-// Used by: query, truncate, read collection, delete collection, delete records, docs update.
-func addCollectionFlag(cmd *cobra.Command, required bool) {
-	cmd.Flags().StringP("collection", "c", "", "collection ID (e.g. todo.tags)")
-	if required {
-		_ = cmd.MarkFlagRequired("collection")
-	}
-}
-
 // addMaterializeFlags adds the flags shared by materialize and ci commands.
 func addMaterializeFlags(cmd *cobra.Command) {
 	addPathFlag(cmd)

@@ -27,8 +27,6 @@ are kept as historical records and are marked **Superseded** in the index below.
 | [drop](drop/README.md) | Implementing | `ingitdb drop` |
 | [list-collections](list-collections/README.md) | Implementing | `ingitdb list collections` |
 | [rebase](rebase/README.md) | Implementing | `ingitdb rebase` |
-| [find](find/README.md) | Draft | `ingitdb find` |
-| [truncate](truncate/README.md) | Draft | `ingitdb truncate` |
 | [materialize](materialize/README.md) | Draft | `ingitdb materialize` |
 | [diff](diff/README.md) | Draft | `ingitdb diff` |
 | [pull](pull/README.md) | Draft | `ingitdb pull` |
@@ -36,7 +34,9 @@ are kept as historical records and are marked **Superseded** in the index below.
 | [serve](serve/README.md) | Draft | `ingitdb serve` |
 | [resolve](resolve/README.md) | Draft | `ingitdb resolve` |
 | [setup](setup/README.md) | Draft | `ingitdb setup` |
-| [migrate](migrate/README.md) | Draft | `ingitdb migrate` |
+| [find](find/README.md) | Withdrawn — moved to DataTug CLI | `ingitdb find` (not implemented) |
+| [truncate](truncate/README.md) | Withdrawn — use `delete --all` | `ingitdb truncate` (not implemented) |
+| [migrate](migrate/README.md) | Withdrawn (deferred) | `ingitdb migrate` (not implemented) |
 | [read-record](read-record/README.md) | Superseded by [select](select/README.md) | `ingitdb read record` (removed) |
 | [create-record](create-record/README.md) | Superseded by [insert](insert/README.md) | `ingitdb create record` (removed) |
 | [update-record](update-record/README.md) | Superseded by [update](update/README.md) | `ingitdb update record` (removed) |

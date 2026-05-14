@@ -51,10 +51,10 @@ ingitdb list collections --in='countries/(ie|gb)'
 ingitdb list collections --filter-name='*city*'
 ```
 
-#### 🔸 list view`
+#### 🔸 list views` _(not yet implemented)_
 
 ```
-ingitdb list view [--path=PATH] [--in=REGEXP] [--filter-name=PATTERN]
+ingitdb list views [--path=PATH] [--in=REGEXP] [--filter-name=PATTERN]
 ```
 
 Lists all view definitions in the database.
@@ -63,28 +63,10 @@ Lists all view definitions in the database.
 
 ```shell
 # 🧾 List all views
-ingitdb list view
+ingitdb list views
 
 # 🔁 List views under a specific path
-ingitdb list view --in='countries/.*'
-```
-
-#### 🔸 list subscribers`
-
-```
-ingitdb list subscribers [--path=PATH] [--in=REGEXP] [--filter-name=PATTERN]
-```
-
-Lists all subscriber definitions in the database.
-
-**Examples:**
-
-```shell
-# 📘 List all subscribers
-ingitdb list subscribers
-
-# 📘 List subscribers filtered by name
-ingitdb list subscribers --filter-name='*webhook*'
+ingitdb list views --in='countries/.*'
 ```
 
 ---

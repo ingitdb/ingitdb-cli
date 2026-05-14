@@ -96,7 +96,7 @@ func TestListCollectionsLocal_ResolvePathError(t *testing.T) {
 	}
 }
 
-func TestListView_NotYetImplemented(t *testing.T) {
+func TestListViews_NotYetImplemented(t *testing.T) {
 	t.Parallel()
 
 	homeDir := func() (string, error) { return "/tmp/home", nil }
@@ -106,23 +106,7 @@ func TestListView_NotYetImplemented(t *testing.T) {
 	}
 
 	cmd := List(homeDir, getWd, readDef)
-	err := runCobraCommand(cmd, "view")
-	if err == nil {
-		t.Fatal("expected error for not-yet-implemented command")
-	}
-}
-
-func TestSubscribers_NotYetImplemented(t *testing.T) {
-	t.Parallel()
-
-	homeDir := func() (string, error) { return "/tmp/home", nil }
-	getWd := func() (string, error) { return "/tmp/db", nil }
-	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
-		return &ingitdb.Definition{}, nil
-	}
-
-	cmd := List(homeDir, getWd, readDef)
-	err := runCobraCommand(cmd, "subscribers")
+	err := runCobraCommand(cmd, "views")
 	if err == nil {
 		t.Fatal("expected error for not-yet-implemented command")
 	}

@@ -79,14 +79,11 @@ func run(
 		commands.Docs(homeDir, getWd, readDefinition, logf),
 		commands.Serve(homeDir, getWd, readDefinition, newDB, logf),
 		commands.List(homeDir, getWd, readDefinition),
-		commands.Find(),
 		commands.Select(homeDir, getWd, readDefinition, newDB, logf),
 		commands.Insert(homeDir, getWd, readDefinition, newDB, logf, nil, nil, nil),
 		commands.Update(homeDir, getWd, readDefinition, newDB, logf),
 		commands.Delete(homeDir, getWd, readDefinition, newDB, logf),
 		commands.Drop(homeDir, getWd, readDefinition, newDB, logf),
-		commands.Truncate(homeDir, getWd, readDefinition, logf),
-		commands.Migrate(),
 	)
 
 	rootCmd.SetArgs(args[1:])

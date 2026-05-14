@@ -22,9 +22,9 @@ func List(
 ) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "List database objects (collections, views, or subscribers)",
+		Short: "List database objects (collections or views)",
 	}
-	cmd.AddCommand(collections(homeDir, getWd, readDefinition), listView(), subscribers())
+	cmd.AddCommand(collections(homeDir, getWd, readDefinition), listViews())
 	return cmd
 }
 
@@ -125,11 +125,11 @@ func listCollectionsRemoteWithSpec(ctx context.Context, spec remoteSpec, token s
 	return nil
 }
 
-// listView is named with the parent prefix because "view" also appears as a
-// subcommand of delete.
-func listView() *cobra.Command {
+// listViews is named with the parent prefix because "view" also appears as a
+// subcommand of drop.
+func listViews() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "view",
+		Use:   "views",
 		Short: "List views in the database",
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return fmt.Errorf("not yet implemented")
@@ -138,19 +138,5 @@ func listView() *cobra.Command {
 	addPathFlag(cmd)
 	cmd.Flags().String("in", "", "regular expression for the starting-point path")
 	cmd.Flags().String("filter-name", "", "pattern to filter view names (e.g. *substr*)")
-	return cmd
-}
-
-func subscribers() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "subscribers",
-		Short: "List subscribers in the database",
-		RunE: func(_ *cobra.Command, _ []string) error {
-			return fmt.Errorf("not yet implemented")
-		},
-	}
-	addPathFlag(cmd)
-	cmd.Flags().String("in", "", "regular expression for the starting-point path")
-	cmd.Flags().String("filter-name", "", "pattern to filter subscriber names (e.g. *substr*)")
 	return cmd
 }

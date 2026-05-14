@@ -1,6 +1,6 @@
 # Feature: Truncate Command
 
-**Status:** Draft
+**Status:** Withdrawn — superseded by `delete --from=COLLECTION --all`. A standalone `truncate` verb would duplicate `delete`'s set-mode semantics for no benefit, so the SQL `delete --all` path covers this use case. This document is preserved as a historical record of the original design.
 
 ## Summary
 

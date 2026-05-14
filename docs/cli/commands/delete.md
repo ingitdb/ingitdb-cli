@@ -29,7 +29,7 @@ ingitdb delete --id=ID --remote=HOST/OWNER/REPO[@REF] [--token=TOKEN]
 | `--token=TOKEN`                  | no                 | Personal access token. Required for `--remote` writes.                                       |
 
 To remove an entire collection or view, see [`drop`](drop.md). To empty a collection while
-preserving its definition, see [`truncate`](truncate.md).
+preserving its definition, use `delete --from=COLLECTION --all`.
 
 **Examples:**
 
