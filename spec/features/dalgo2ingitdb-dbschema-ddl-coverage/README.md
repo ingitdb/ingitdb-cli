@@ -91,7 +91,7 @@ The package MUST export `dalgo2ingitdb.NewDatabase(projectPath string, reader in
 
 - `Name`: echoed from `ref.Name`
 - `Fields`: one `dbschema.FieldDef` per entry in `CollectionDef.ColumnsOrder` (or alphabetical order when `ColumnsOrder` is absent), mapped via REQ:type-mapping; `Nullable` is `true` unless the column has `Required: true`
-- `PrimaryKey`: a single-element slice `["$key"]` synthesized from the record-key convention (inGitDB does not declare PKs explicitly; the record's filesystem key is the de-facto primary key). Drivers MUST NOT include `$key` in `Fields`; it is a synthetic PK only
+- `PrimaryKey`: when `definition.yaml` carries a `primary_key` field (a list of column names), echoed back as `[]dal.FieldName`. Otherwise (legacy projects that predate PK persistence), a single-element slice `["$key"]` synthesized from the record-key convention. Persisting `primary_key` is REQUIRED by REQ:create-collection step 5 — newly-created collections always round-trip the source PK column names losslessly. Drivers MUST NOT include `$key` in `Fields`; when used, it is a synthetic PK only.
 - `Indexes`: an empty slice (inGitDB collections have no per-collection index declarations today; see REQ:list-indexes and Outstanding Questions)
 
 If the collection directory does not exist or its `definition.yaml` is absent, `DescribeCollection` MUST return `(nil, err)` where `err.Error()` contains the substring `"not found"` and the collection name. The exact error type is plan-time (see Outstanding Questions).
@@ -102,7 +102,7 @@ If the collection directory does not exist or its `definition.yaml` is absent, `
 
 #### REQ: list-constraints
 
-`Database.ListConstraints(ctx context.Context, ref *dal.CollectionRef) ([]dbschema.ConstraintDef, error)` MUST return a one-element slice containing a synthesized primary-key constraint for the record key (mirroring `DescribeCollection.PrimaryKey`), and a nil error. The element MUST have `Type == dbschema.PrimaryKeyConstraint` and `Fields == []dal.FieldName{"$key"}`. inGitDB has no other declared constraints (NOT NULL, CHECK, FK are not stored in `definition.yaml`).
+`Database.ListConstraints(ctx context.Context, ref *dal.CollectionRef) ([]dbschema.ConstraintDef, error)` MUST return a one-element slice containing a synthesized primary-key constraint, and a nil error. The element MUST have `Type == dbschema.PrimaryKeyConstraint`. The richer PK column information lives on `DescribeCollection.PrimaryKey`; `dbschema.ConstraintDef` is intentionally minimal (Name + Type only). inGitDB has no other declared constraints (NOT NULL, CHECK, FK are not stored in `definition.yaml`).
 
 #### REQ: list-referrers
 
@@ -139,7 +139,7 @@ Round-trip note: mapping is **lossy** in one direction. `dbschema.Time` maps bac
 2. Validate that all fields map to a supported `ingitdb.ColumnType` via REQ:type-mapping. A field with `Type == dbschema.Null` or any unrepresentable type MUST return an error naming the field before any filesystem write.
 3. Check whether `<projectPath>/<c.Name>/.collection/` already exists. If it exists and `ddl.WithIfNotExists()` is NOT set, return an error. If it exists and `IfNotExists` IS set, return nil without writing.
 4. Create the directory `<projectPath>/<c.Name>/.collection/` (including parent `<projectPath>/<c.Name>/`).
-5. Write `<projectPath>/<c.Name>/.collection/definition.yaml` from a canonical `ingitdb.CollectionDef` built from `c.Fields` (in declared order), with `RecordFile` set to a default of `{name: "{key}.yaml", format: yaml, type: "map[string]any"}`.
+5. Write `<projectPath>/<c.Name>/.collection/definition.yaml` from a canonical `ingitdb.CollectionDef` built from `c.Fields` (in declared order), with `RecordFile` set to a default of `{name: "{key}.yaml", format: yaml, type: "map[string]any"}`. When `c.PrimaryKey` is non-empty, persist the PK column names as `primary_key: [...]` in the YAML so `DescribeCollection` can later round-trip them losslessly (see REQ:describe-collection). When `c.PrimaryKey` is empty, omit the field — `DescribeCollection` will synthesize `["$key"]` for backward compatibility.
 6. If `c.Indexes` is non-empty, log a warning and silently skip index creation (no per-collection index concept today; see Outstanding Questions).
 7. Register the collection in `<projectPath>/.ingitdb/root-collections.yaml` so the validator-backed `CollectionsReader` (used by `loadDefinition` for record transactions) sees it. See REQ:auto-register-in-root-collections for the exact contract.
 
@@ -361,6 +361,30 @@ Source files implementing this feature (annotated with
 **Given** a `dbschema.CollectionDef` whose `Fields` includes one entry with `Type == dbschema.Null`
 **When** the caller invokes `ddl.CreateCollection(ctx, db, c)`
 **Then** the call returns a non-nil error before any filesystem write; the error message names the offending field; no directories or files are created.
+
+### AC: create-describe-pk-roundtrip-single
+
+**Requirements:** dalgo2ingitdb-dbschema-ddl-coverage#req:create-collection, dalgo2ingitdb-dbschema-ddl-coverage#req:describe-collection
+
+**Given** a `dbschema.CollectionDef` `c` with `PrimaryKey: []dal.FieldName{"AlbumId"}`
+**When** the caller invokes `ddl.CreateCollection(ctx, db, c)` followed by `reader.DescribeCollection(ctx, &ref)`
+**Then** the returned `*dbschema.CollectionDef.PrimaryKey` equals `[]dal.FieldName{"AlbumId"}` (NOT the synthesized `["$key"]`); the on-disk `definition.yaml` contains a `primary_key: [AlbumId]` field.
+
+### AC: create-describe-pk-roundtrip-composite
+
+**Requirements:** dalgo2ingitdb-dbschema-ddl-coverage#req:create-collection, dalgo2ingitdb-dbschema-ddl-coverage#req:describe-collection
+
+**Given** a `dbschema.CollectionDef` `c` with `PrimaryKey: []dal.FieldName{"PlaylistId", "TrackId"}`
+**When** the caller invokes `ddl.CreateCollection(ctx, db, c)` followed by `reader.DescribeCollection(ctx, &ref)`
+**Then** the returned `PrimaryKey` equals `["PlaylistId", "TrackId"]` in that order; `Fields` includes both columns.
+
+### AC: describe-collection-legacy-no-pk-field
+
+**Requirements:** dalgo2ingitdb-dbschema-ddl-coverage#req:describe-collection
+
+**Given** a hand-written `definition.yaml` with NO `primary_key` field (an older project that predates PK persistence)
+**When** the caller invokes `reader.DescribeCollection(ctx, &ref)`
+**Then** the returned `PrimaryKey` equals `[]dal.FieldName{"$key"}` (backward-compatible synthesized PK).
 
 ### AC: create-collection-registers-in-root-collections
 

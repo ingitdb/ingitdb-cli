@@ -140,12 +140,27 @@ func (db *Database) DescribeCollection(_ context.Context, ref *dal.CollectionRef
 		})
 	}
 
+	pk := primaryKeyFromColDef(colDef)
 	return &dbschema.CollectionDef{
 		Name:       name,
 		Fields:     fields,
-		PrimaryKey: []dal.FieldName{pkFieldName},
+		PrimaryKey: pk,
 		Indexes:    []dbschema.IndexDef{},
 	}, nil
+}
+
+// primaryKeyFromColDef extracts the persisted PrimaryKey column names from
+// definition.yaml when present, falling back to the synthesized [pkFieldName]
+// for legacy projects that predate PK persistence. See REQ:describe-collection.
+func primaryKeyFromColDef(colDef ingitdb.CollectionDef) []dal.FieldName {
+	if len(colDef.PrimaryKey) == 0 {
+		return []dal.FieldName{pkFieldName}
+	}
+	pk := make([]dal.FieldName, len(colDef.PrimaryKey))
+	for i, name := range colDef.PrimaryKey {
+		pk[i] = dal.FieldName(name)
+	}
+	return pk
 }
 
 // ListIndexes returns a non-nil empty slice and nil error. inGitDB has
@@ -155,8 +170,10 @@ func (db *Database) ListIndexes(_ context.Context, _ *dal.CollectionRef) ([]dbsc
 }
 
 // ListConstraints returns a synthesized single-element slice describing
-// the record-key PK as the only structural constraint. ingitdb does not
-// store other constraint kinds in definition.yaml.
+// the primary-key constraint. ingitdb does not store other constraint
+// kinds in definition.yaml. The richer PK column information lives on
+// `DescribeCollection.PrimaryKey`; dbschema.ConstraintDef is intentionally
+// minimal (Name + Type only).
 func (db *Database) ListConstraints(_ context.Context, _ *dal.CollectionRef) ([]dbschema.ConstraintDef, error) {
 	return []dbschema.ConstraintDef{{Name: "$key-pk", Type: "primary-key"}}, nil
 }

@@ -13,7 +13,13 @@ type CollectionDef struct {
 	DataDir      string                `yaml:"data_dir,omitempty"`
 	Columns      map[string]*ColumnDef `yaml:"columns"`
 	ColumnsOrder []string              `yaml:"columns_order,omitempty"`
-	DefaultView  *ViewDef              `yaml:"default_view,omitempty"`
+	// PrimaryKey lists the column names composing the source primary key,
+	// in declared order. Persisted by CreateCollection so that
+	// DescribeCollection can round-trip the real PK column names instead of
+	// the synthesized "$key" placeholder. Omitted from older
+	// definition.yaml files; callers should fall back to "$key" when empty.
+	PrimaryKey  []string `yaml:"primary_key,omitempty"`
+	DefaultView *ViewDef `yaml:"default_view,omitempty"`
 	// SubCollections are not part of the collection definition file,
 	// they are stored in the "subcollections" subdirectory as directories,
 	// each containing their own .collection/definition.yaml.

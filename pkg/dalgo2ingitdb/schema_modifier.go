@@ -334,11 +334,19 @@ func buildIngitdbCollectionDef(c dbschema.CollectionDef) (*ingitdb.CollectionDef
 		cols[name] = &ingitdb.ColumnDef{Type: colType, Required: !f.Nullable}
 		order = append(order, name)
 	}
+	var pk []string
+	if len(c.PrimaryKey) > 0 {
+		pk = make([]string, len(c.PrimaryKey))
+		for i, f := range c.PrimaryKey {
+			pk[i] = string(f)
+		}
+	}
 	return &ingitdb.CollectionDef{
 		ID:           c.Name,
 		RecordFile:   defaultRecordFile(),
 		Columns:      cols,
 		ColumnsOrder: order,
+		PrimaryKey:   pk,
 	}, nil
 }
 
