@@ -59,8 +59,12 @@ func TestDBSchemaTypeToIngitdb(t *testing.T) {
 		{dbschema.String, ingitdb.ColumnTypeString, false},
 		{dbschema.Time, ingitdb.ColumnTypeDateTime, false},
 		{dbschema.Null, "", true},
-		{dbschema.Bytes, "", true},
-		{dbschema.Decimal, "", true},
+		// Decimal and Bytes now map lossily to existing column types so
+		// cross-engine copies (e.g. SQLite NUMERIC(p,s) → inGitDB) don't
+		// fail at schema-creation time. See doc comment on
+		// dbschemaTypeToIngitdb for the precision-loss caveat.
+		{dbschema.Bytes, ingitdb.ColumnTypeString, false},
+		{dbschema.Decimal, ingitdb.ColumnTypeFloat, false},
 	}
 	for _, tc := range cases {
 		got, err := dbschemaTypeToIngitdb(tc.in)

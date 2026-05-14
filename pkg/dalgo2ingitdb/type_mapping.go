@@ -43,12 +43,21 @@ func ingitdbTypeToDBSchema(t ingitdb.ColumnType) (dbschema.Type, error) {
 }
 
 // dbschemaTypeToIngitdb converts a portable dbschema.Type to its ingitdb
-// column-type equivalent. Returns an error for types ingitdb cannot
-// represent (dbschema.Null, dbschema.Bytes, dbschema.Decimal).
+// column-type equivalent. Returns an error only for types ingitdb cannot
+// represent at all (dbschema.Null).
 //
-// dbschema.Time always maps to ingitdb.ColumnTypeDateTime (the most
-// general time type). Callers that need date- or time-of-day-only
-// granularity must override the type manually after a round-trip.
+// Lossy mappings (documented per case):
+//
+//   - dbschema.Time → ingitdb.ColumnTypeDateTime (the most general time
+//     type). Callers that need date- or time-of-day-only granularity must
+//     override the type manually after a round-trip.
+//   - dbschema.Decimal → ingitdb.ColumnTypeFloat. inGitDB has no native
+//     fixed-precision decimal column type; values are stored as YAML
+//     doubles which round-trip cleanly for typical money/measurement
+//     scales but can lose precision at very high precision/scale.
+//   - dbschema.Bytes → ingitdb.ColumnTypeString. inGitDB stores binary
+//     data base64-encoded in string columns (caller-side encoding;
+//     the column type is the carrier).
 func dbschemaTypeToIngitdb(t dbschema.Type) (ingitdb.ColumnType, error) {
 	switch t {
 	case dbschema.Bool:
@@ -57,7 +66,13 @@ func dbschemaTypeToIngitdb(t dbschema.Type) (ingitdb.ColumnType, error) {
 		return ingitdb.ColumnTypeInt, nil
 	case dbschema.Float:
 		return ingitdb.ColumnTypeFloat, nil
+	case dbschema.Decimal:
+		// Lossy: no native fixed-precision decimal in inGitDB; YAML doubles.
+		return ingitdb.ColumnTypeFloat, nil
 	case dbschema.String:
+		return ingitdb.ColumnTypeString, nil
+	case dbschema.Bytes:
+		// Lossy: callers base64-encode the value into the string carrier.
 		return ingitdb.ColumnTypeString, nil
 	case dbschema.Time:
 		return ingitdb.ColumnTypeDateTime, nil
