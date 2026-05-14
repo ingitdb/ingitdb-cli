@@ -3,9 +3,14 @@ package commands
 // specscore: feature/cli/describe
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
@@ -64,20 +69,132 @@ func bareNameDescribe(
 }
 
 func describeCollectionCmd(
-	_ func() (string, error),
-	_ func() (string, error),
-	_ func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
+	homeDir func() (string, error),
+	getWd func() (string, error),
+	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 ) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "collection <name>",
 		Aliases: []string{"table"},
 		Short:   "Describe a collection (schema, columns, primary key, views)",
 		Args:    cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, _ []string) error {
-			return fmt.Errorf("describe collection: not yet implemented")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+			return runDescribeCollection(cmd, name, homeDir, getWd, readDefinition)
 		},
 	}
 	return cmd
+}
+
+// runDescribeCollection is split out so the bare-name resolver in
+// Task 7 can call it with the same dependencies.
+func runDescribeCollection(
+	cmd *cobra.Command,
+	name string,
+	homeDir func() (string, error),
+	getWd func() (string, error),
+	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
+) error {
+	pathVal, _ := cmd.Flags().GetString("path")
+	remoteVal, _ := cmd.Flags().GetString("remote")
+	if pathVal != "" && remoteVal != "" {
+		return fmt.Errorf("--path and --remote are mutually exclusive")
+	}
+	if remoteVal != "" {
+		return fmt.Errorf("describe --remote not yet implemented")
+	}
+
+	rawFormat, _ := cmd.Flags().GetString("format")
+	format, err := resolveFormat(rawFormat, engineIngitDB)
+	if err != nil {
+		return err
+	}
+
+	dirPath, err := resolveDBPath(cmd, homeDir, getWd)
+	if err != nil {
+		return err
+	}
+	def, readErr := readDefinition(dirPath)
+	if readErr != nil {
+		return fmt.Errorf("failed to read database definition: %w", readErr)
+	}
+	col, ok := def.Collections[name]
+	if !ok {
+		return fmt.Errorf("collection %q not found in database at %s", name, dirPath)
+	}
+
+	views, subcols, err := discoverCollectionChildren(dirPath, name)
+	if err != nil {
+		return err
+	}
+
+	node, err := buildCollectionPayload(col, collectionOutputCtx{
+		relPath:            name,
+		viewNames:          views,
+		subcollectionNames: subcols,
+	})
+	if err != nil {
+		return fmt.Errorf("build payload: %w", err)
+	}
+	return emitNode(node, format)
+}
+
+// discoverCollectionChildren walks the on-disk collection directory
+// to find views (under $views/) and subcollections (directories that
+// are neither $views nor .collection and contain a .collection/
+// subdirectory). Returns names sorted by buildCollectionPayload.
+func discoverCollectionChildren(dbDir, colName string) (views, subcols []string, err error) {
+	colDir := filepath.Join(dbDir, colName)
+	viewsDir := filepath.Join(colDir, "$views")
+	if entries, statErr := os.ReadDir(viewsDir); statErr == nil {
+		for _, e := range entries {
+			if e.IsDir() {
+				continue
+			}
+			if strings.HasSuffix(e.Name(), ".yaml") {
+				views = append(views, strings.TrimSuffix(e.Name(), ".yaml"))
+			}
+		}
+	}
+	entries, _ := os.ReadDir(colDir)
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		if e.Name() == "$views" || e.Name() == ".collection" {
+			continue
+		}
+		if _, statErr := os.Stat(filepath.Join(colDir, e.Name(), ".collection")); statErr == nil {
+			subcols = append(subcols, e.Name())
+		}
+	}
+	return
+}
+
+// emitNode writes a yaml.Node to stdout in the chosen format.
+func emitNode(node *yaml.Node, format string) error {
+	switch format {
+	case "yaml":
+		out, err := yaml.Marshal(node)
+		if err != nil {
+			return fmt.Errorf("marshal yaml: %w", err)
+		}
+		_, _ = fmt.Fprint(os.Stdout, string(out))
+		return nil
+	case "json":
+		var v any
+		if err := node.Decode(&v); err != nil {
+			return fmt.Errorf("convert node: %w", err)
+		}
+		raw, err := json.MarshalIndent(v, "", "  ")
+		if err != nil {
+			return fmt.Errorf("marshal json: %w", err)
+		}
+		_, _ = fmt.Fprintln(os.Stdout, string(raw))
+		return nil
+	default:
+		return fmt.Errorf("unsupported format %q", format)
+	}
 }
 
 func describeViewCmd(
