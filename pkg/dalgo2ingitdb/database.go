@@ -15,15 +15,16 @@ import (
 
 // Database is the dal.DB implementation for inGitDB projects on the local
 // filesystem. It implements the schema-management capability interfaces
-// (dbschema.SchemaReader, ddl.SchemaModifier, ddl.TransactionalDDL) and
-// reports dal.ConcurrencyAvailable via the embedded helper struct —
-// concurrent connections are safe because every read and write path
-// goes through gofrs/flock file locking.
+// (dbschema.SchemaReader, ddl.SchemaModifier, ddl.TransactionalDDL), the
+// dal.DB record-access methods, and reports dal.ConcurrencyAvailable via
+// the embedded helper struct — concurrent connections are safe because
+// every read and write path goes through gofrs/flock file locking.
 //
-// Record-access methods (Get / GetMulti / Exists / RunReadonlyTransaction
-// / RunReadwriteTransaction / ExecuteQuery*) are stubbed with
-// dal.ErrNotSupported. The MVP scope is schema management; record CRUD is
-// covered by the sibling dalgo2fsingitdb driver and is a follow-up here.
+// Record access loads the project Definition once per transaction via the
+// injected CollectionsReader; individual file operations take a shared
+// (read) or exclusive (write) advisory lock on the affected file.
+// ExecuteQueryToRecordsetReader is not yet implemented and returns
+// dal.ErrNotSupported.
 type Database struct {
 	// dal.ConcurrencyAvailable: gofrs/flock provides cross-platform file
 	// locking (syscall.Flock on Unix, LockFileEx on Windows), so two DB
@@ -36,9 +37,10 @@ type Database struct {
 }
 
 // NewDatabase constructs a Database rooted at projectPath. The reader is
-// stored for future use (record-access methods will need it when
-// implemented). Returns an error if projectPath is empty or does not
-// exist; the constructor does NOT load any collection definitions.
+// used to load the project Definition at the start of each transaction
+// and inside DB-level record-access methods. Returns an error if
+// projectPath is empty or does not exist; the constructor does NOT load
+// any collection definitions.
 func NewDatabase(projectPath string, reader ingitdb.CollectionsReader) (dal.DB, error) {
 	if projectPath == "" {
 		return nil, errors.New("dalgo2ingitdb: projectPath is required")
@@ -79,46 +81,90 @@ func (db *Database) Schema() dal.Schema { return nil }
 // applied; the caller receives a *ddl.PartialSuccessError.
 func (db *Database) SupportsTransactionalDDL() bool { return false }
 
-// RunReadonlyTransaction is a stub returning dal.ErrNotSupported. The
-// schema-management surface does not need transactions; record access
-// will be added in a follow-up.
-func (db *Database) RunReadonlyTransaction(_ context.Context, _ dal.ROTxWorker, _ ...dal.TransactionOption) error {
-	return dal.ErrNotSupported
+// loadDefinition reads the project's Definition via the injected reader.
+// Returns an error when no reader has been wired up.
+func (db *Database) loadDefinition() (*ingitdb.Definition, error) {
+	if db.reader == nil {
+		return nil, errors.New("dalgo2ingitdb: no CollectionsReader configured")
+	}
+	def, err := db.reader.ReadDefinition(db.projectPath)
+	if err != nil {
+		return nil, fmt.Errorf("dalgo2ingitdb: read definition: %w", err)
+	}
+	return def, nil
 }
 
-// RunReadwriteTransaction is a stub returning dal.ErrNotSupported. See
-// RunReadonlyTransaction.
-func (db *Database) RunReadwriteTransaction(_ context.Context, _ dal.RWTxWorker, _ ...dal.TransactionOption) error {
-	return dal.ErrNotSupported
+// RunReadonlyTransaction loads the project Definition and invokes the
+// worker with a readonly transaction. The Definition is captured at the
+// start of the transaction; subsequent on-disk schema changes are not
+// observed within the transaction.
+func (db *Database) RunReadonlyTransaction(ctx context.Context, f dal.ROTxWorker, _ ...dal.TransactionOption) error {
+	def, err := db.loadDefinition()
+	if err != nil {
+		return err
+	}
+	return f(ctx, readonlyTx{db: db, def: def})
 }
 
-// Get is a stub returning dal.ErrNotSupported.
-func (db *Database) Get(_ context.Context, _ dal.Record) error {
-	return dal.ErrNotSupported
+// RunReadwriteTransaction loads the project Definition and invokes the
+// worker with a read-write transaction. inGitDB does not guarantee
+// atomicity across multiple file writes within a transaction; each
+// individual file write is locked exclusively, but a worker that fails
+// after writing some files leaves those writes in place.
+func (db *Database) RunReadwriteTransaction(ctx context.Context, f dal.RWTxWorker, _ ...dal.TransactionOption) error {
+	def, err := db.loadDefinition()
+	if err != nil {
+		return err
+	}
+	return f(ctx, readwriteTx{readonlyTx: readonlyTx{db: db, def: def}})
 }
 
-// Exists is a stub returning dal.ErrNotSupported.
-func (db *Database) Exists(_ context.Context, _ *dal.Key) (bool, error) {
-	return false, dal.ErrNotSupported
+// Get loads a single record. See readonlyTx.Get for semantics.
+func (db *Database) Get(ctx context.Context, record dal.Record) error {
+	def, err := db.loadDefinition()
+	if err != nil {
+		return err
+	}
+	return readonlyTx{db: db, def: def}.Get(ctx, record)
 }
 
-// GetMulti is a stub returning dal.ErrNotSupported.
-func (db *Database) GetMulti(_ context.Context, _ []dal.Record) error {
-	return dal.ErrNotSupported
+// Exists reports whether the record identified by key exists on disk.
+func (db *Database) Exists(ctx context.Context, key *dal.Key) (bool, error) {
+	def, err := db.loadDefinition()
+	if err != nil {
+		return false, err
+	}
+	return readonlyTx{db: db, def: def}.Exists(ctx, key)
 }
 
-// ExecuteQueryToRecordsReader is a stub returning dal.ErrNotSupported.
-func (db *Database) ExecuteQueryToRecordsReader(_ context.Context, _ dal.Query) (dal.RecordsReader, error) {
-	return nil, dal.ErrNotSupported
+// GetMulti loads multiple records.
+func (db *Database) GetMulti(ctx context.Context, records []dal.Record) error {
+	def, err := db.loadDefinition()
+	if err != nil {
+		return err
+	}
+	return readonlyTx{db: db, def: def}.GetMulti(ctx, records)
 }
 
-// ExecuteQueryToRecordsetReader is a stub returning dal.ErrNotSupported.
+// ExecuteQueryToRecordsReader runs a structured query against a single
+// collection. See readonlyTx.ExecuteQueryToRecordsReader for supported
+// query features.
+func (db *Database) ExecuteQueryToRecordsReader(ctx context.Context, query dal.Query) (dal.RecordsReader, error) {
+	def, err := db.loadDefinition()
+	if err != nil {
+		return nil, err
+	}
+	return readonlyTx{db: db, def: def}.ExecuteQueryToRecordsReader(ctx, query)
+}
+
+// ExecuteQueryToRecordsetReader is not implemented yet; callers should
+// use ExecuteQueryToRecordsReader instead.
 func (db *Database) ExecuteQueryToRecordsetReader(_ context.Context, _ dal.Query, _ ...recordset.Option) (dal.RecordsetReader, error) {
 	return nil, dal.ErrNotSupported
 }
 
 // Compile-time interface checks. SchemaReader / SchemaModifier assertions
-// live in schema_reader.go / schema_modifier.go once those methods land.
+// live in schema_reader.go / schema_modifier.go.
 var (
 	_ dal.DB               = (*Database)(nil)
 	_ ddl.TransactionalDDL = (*Database)(nil)
