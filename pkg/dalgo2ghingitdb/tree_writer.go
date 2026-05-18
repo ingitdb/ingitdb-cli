@@ -35,7 +35,7 @@ func NewTreeWriter(cfg Config) (*TreeWriter, error) {
 	if err := cfg.validate(); err != nil {
 		return nil, err
 	}
-	opts := make([]github.ClientOptionsFunc, 0, 3)
+	opts := make([]github.ClientOptionsFunc, 0, 3) // max 3: HTTPClient + Token + APIBaseURL
 	httpClient := cfg.HTTPClient
 	if httpClient == nil {
 		httpClient = http.DefaultClient
