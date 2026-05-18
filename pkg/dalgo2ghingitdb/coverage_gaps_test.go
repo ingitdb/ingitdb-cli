@@ -110,7 +110,7 @@ func makeBatchServer(t *testing.T, fixtures map[string]string) *httptest.Server 
 				"object": map[string]any{"sha": "new-commit-sha"},
 			})
 		case r.Method == "GET" && strings.Contains(p, "/contents/"):
-			prefix := "/repos/ingitdb/ingitdb-cli/contents/"
+			prefix := "/api/v3/repos/ingitdb/ingitdb-cli/contents/"
 			repoPath := strings.TrimPrefix(p, prefix)
 			content, ok := fixtures[repoPath]
 			if !ok {

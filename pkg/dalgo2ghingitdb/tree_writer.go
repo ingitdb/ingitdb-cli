@@ -5,10 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 
-	"github.com/google/go-github/v86/github"
+	"github.com/google/go-github/v87/github"
 )
 
 // TreeChange describes a single path modification within a tree. Content nil
@@ -36,25 +35,25 @@ func NewTreeWriter(cfg Config) (*TreeWriter, error) {
 	if err := cfg.validate(); err != nil {
 		return nil, err
 	}
+	opts := make([]github.ClientOptionsFunc, 0, 3) // max 3: HTTPClient + Token + APIBaseURL
 	httpClient := cfg.HTTPClient
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
-	client := github.NewClient(httpClient)
+	opts = append(opts, github.WithHTTPClient(httpClient))
 	if cfg.Token != "" {
-		client = client.WithAuthToken(cfg.Token)
+		opts = append(opts, github.WithAuthToken(cfg.Token))
 	}
 	if cfg.APIBaseURL != "" {
 		baseURL := cfg.APIBaseURL
 		if !strings.HasSuffix(baseURL, "/") {
 			baseURL += "/"
 		}
-		parsedURL, parseErr := url.Parse(baseURL)
-		if parseErr != nil {
-			return nil, fmt.Errorf("invalid api base url: %w", parseErr)
-		}
-		client.BaseURL = parsedURL
-		client.UploadURL = parsedURL
+		opts = append(opts, github.WithEnterpriseURLs(baseURL, baseURL))
+	}
+	client, err := github.NewClient(opts...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create github client: %w", err)
 	}
 	return &TreeWriter{cfg: cfg, client: client}, nil
 }

@@ -60,7 +60,7 @@ func newReadWriteFailServer(t *testing.T, fixtures []githubFileFixture) *httptes
 	}
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		pathPrefix := "/repos/ingitdb/ingitdb-cli/contents/"
+		pathPrefix := "/api/v3/repos/ingitdb/ingitdb-cli/contents/"
 		if !strings.HasPrefix(r.URL.Path, pathPrefix) {
 			http.NotFound(w, r)
 			return

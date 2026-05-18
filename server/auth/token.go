@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/go-github/v86/github"
+	"github.com/google/go-github/v87/github"
 )
 
 // ResolveTokenFromRequest resolves token from Authorization header first, then cookie.
@@ -33,8 +33,15 @@ func ValidateGitHubToken(ctx context.Context, token string, httpClient *http.Cli
 	if strings.TrimSpace(token) == "" {
 		return fmt.Errorf("token is required")
 	}
-	client := github.NewClient(httpClient).WithAuthToken(token)
-	_, _, err := client.Users.Get(ctx, "")
+	opts := []github.ClientOptionsFunc{github.WithAuthToken(token)}
+	if httpClient != nil {
+		opts = append(opts, github.WithHTTPClient(httpClient))
+	}
+	client, err := github.NewClient(opts...)
+	if err != nil {
+		return fmt.Errorf("failed to create github client: %w", err)
+	}
+	_, _, err = client.Users.Get(ctx, "")
 	if err != nil {
 		return fmt.Errorf("github token validation failed: %w", err)
 	}
