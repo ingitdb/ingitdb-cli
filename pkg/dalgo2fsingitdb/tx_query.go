@@ -136,20 +136,16 @@ func readAllSingleRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
 		return nil, fmt.Errorf("failed to glob records in %s: %w", basePath, err)
 	}
 
-	keyExtractor, err := buildKeyExtractor(nameTemplate)
-	if err != nil {
-		return nil, err
-	}
+	keyExtractor := buildKeyExtractor(nameTemplate)
 
 	records := make([]dal.Record, 0, len(matches))
 	for _, match := range matches {
 		if colDef.RecordFile.IsExcluded(filepath.Base(match)) {
 			continue
 		}
-		relPath, relErr := filepath.Rel(basePath, match)
-		if relErr != nil {
-			return nil, relErr
-		}
+		// filepath.Rel cannot fail here: both basePath and match originate
+		// from the same filepath.Glob call and share the same root.
+		relPath, _ := filepath.Rel(basePath, match)
 		recordKey := keyExtractor(relPath)
 		if recordKey == "" {
 			continue
@@ -201,13 +197,13 @@ func readAllMapOfRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
 
 // buildKeyExtractor creates a function that extracts the record key from a path
 // relative to the records base directory, using the name template.
-func buildKeyExtractor(nameTemplate string) (func(relPath string) string, error) {
+func buildKeyExtractor(nameTemplate string) func(relPath string) string {
 	idx := strings.Index(nameTemplate, "{key}")
 	if idx < 0 {
 		// Fixed filename — derive key from the base of the relative path
 		return func(relPath string) string {
 			return strings.TrimSuffix(filepath.Base(relPath), filepath.Ext(relPath))
-		}, nil
+		}
 	}
 
 	// Build a regex: escape the template, replace first {key} with a capture group,
@@ -216,11 +212,9 @@ func buildKeyExtractor(nameTemplate string) (func(relPath string) string, error)
 	remainder := nameTemplate[idx+len("{key}"):]
 	suffix := regexp.QuoteMeta(strings.ReplaceAll(remainder, "{key}", "\x00"))
 	suffix = strings.ReplaceAll(suffix, "\x00", ".*")
-	// On Windows, filepath.Glob uses OS separator; keep posix separators in regex.
-	re, err := regexp.Compile("^" + prefix + "(.*?)" + suffix + "$")
-	if err != nil {
-		return nil, fmt.Errorf("failed to build key extractor regex from template %q: %w", nameTemplate, err)
-	}
+	// regexp.MustCompile is safe here: prefix and suffix are QuoteMeta-escaped,
+	// and the fixed parts ("^", "(.*?)", ".*", "$") are always valid regex.
+	re := regexp.MustCompile("^" + prefix + "(.*?)" + suffix + "$")
 	return func(relPath string) string {
 		// Normalize to forward slashes for consistent regex matching.
 		normalised := filepath.ToSlash(relPath)
@@ -229,7 +223,7 @@ func buildKeyExtractor(nameTemplate string) (func(relPath string) string, error)
 			return ""
 		}
 		return m[1]
-	}, nil
+	}
 }
 
 // evaluateCondition evaluates a dal.Condition against a record's field map.

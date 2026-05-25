@@ -681,10 +681,7 @@ func TestExecuteQueryToRecordsReader_NilDef(t *testing.T) {
 
 func TestBuildKeyExtractor_FixedFilename(t *testing.T) {
 	t.Parallel()
-	extractor, err := buildKeyExtractor("records.yaml")
-	if err != nil {
-		t.Fatalf("buildKeyExtractor: %v", err)
-	}
+	extractor := buildKeyExtractor("records.yaml")
 	got := extractor("some/path/records.yaml")
 	if got != "records" {
 		t.Errorf("buildKeyExtractor fixed = %q, want %q", got, "records")
@@ -694,10 +691,7 @@ func TestBuildKeyExtractor_FixedFilename(t *testing.T) {
 // TestBuildKeyExtractor_NoMatch covers the regex-no-match → empty string branch.
 func TestBuildKeyExtractor_NoMatch(t *testing.T) {
 	t.Parallel()
-	extractor, err := buildKeyExtractor("{key}.yaml")
-	if err != nil {
-		t.Fatalf("buildKeyExtractor: %v", err)
-	}
+	extractor := buildKeyExtractor("{key}.yaml")
 	// Pass a path that doesn't match the *.yaml pattern.
 	got := extractor("badfile.txt")
 	if got != "" {
@@ -1518,5 +1512,58 @@ func TestExecuteQueryToRecordsReader_NonCollectionRefFrom(t *testing.T) {
 	const want = "FROM source must be a CollectionRef"
 	if len(err.Error()) < len(want) || err.Error()[:len(want)] != want {
 		t.Errorf("error = %q, want prefix %q", err.Error(), want)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// readAllSingleRecords – empty key from a file named ".yaml" (no basename)
+// ---------------------------------------------------------------------------
+
+func TestReadAllSingleRecords_EmptyKey(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	def := makeQueryTestDef(t, dir)
+	recordsDir := filepath.Join(dir, "$records")
+	if err := os.MkdirAll(recordsDir, 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	// A real record.
+	writeQueryFixture(t, filepath.Join(recordsDir, "real.yaml"), map[string]any{"name": "Real", "score": float64(1)})
+	// A file named ".yaml" (empty basename) — glob matches it but the
+	// key extractor returns "" so it must be skipped.
+	if err := os.WriteFile(filepath.Join(recordsDir, ".yaml"), []byte("name: Ghost\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile .yaml: %v", err)
+	}
+
+	db := openTestDB(t, dir, def)
+	ctx := context.Background()
+
+	qb := dal.NewQueryBuilder(dal.From(dal.NewRootCollectionRef("test.items", "")))
+	q := qb.SelectIntoRecord(func() dal.Record {
+		return dal.NewRecordWithData(dal.NewKeyWithID("test.items", ""), map[string]any{})
+	})
+
+	var count int
+	err := db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
+		reader, err := tx.ExecuteQueryToRecordsReader(ctx, q)
+		if err != nil {
+			return err
+		}
+		defer func() { _ = reader.Close() }()
+		for {
+			_, nextErr := reader.Next()
+			if nextErr != nil {
+				break
+			}
+			count++
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("query: %v", err)
+	}
+	// Only the real record; ".yaml" (empty key) is skipped.
+	if count != 1 {
+		t.Errorf("expected 1 record (empty key skipped), got %d", count)
 	}
 }
