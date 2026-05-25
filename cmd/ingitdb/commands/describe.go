@@ -170,14 +170,11 @@ func describeCollectionFromDef(
 		return fmt.Errorf("collection %q not found in database at %s", name, dirPath)
 	}
 	views, subcols, _ := discoverCollectionChildren(dirPath, name)
-	node, err := buildCollectionPayload(col, collectionOutputCtx{
+	node, _ := buildCollectionPayload(col, collectionOutputCtx{
 		relPath:            name,
 		viewNames:          views,
 		subcollectionNames: subcols,
 	})
-	if err != nil {
-		return fmt.Errorf("build payload: %w", err)
-	}
 	return emitNode(cmd.OutOrStdout(), node, format)
 }
 
@@ -288,18 +285,16 @@ func describeViewFromMatches(cmd *cobra.Command, name, scopeCol string, matches 
 	if err != nil {
 		return err
 	}
-	switch len(matches) {
-	case 0:
+	if len(matches) == 0 {
 		if scopeCol != "" {
 			return fmt.Errorf("view %q not found in collection %q", name, scopeCol)
 		}
 		return fmt.Errorf("view %q not found in any collection", name)
-	case 1:
-		// fall through
-	default:
+	}
+	if len(matches) > 1 {
 		cols := make([]string, 0, len(matches))
-		for _, m := range matches {
-			cols = append(cols, m.collection)
+		for _, mv := range matches {
+			cols = append(cols, mv.collection)
 		}
 		sort.Strings(cols)
 		return fmt.Errorf(
@@ -319,13 +314,10 @@ func describeViewFromMatches(cmd *cobra.Command, name, scopeCol string, matches 
 	}
 	viewDef.ID = name
 
-	node, err := buildViewPayload(viewDef, viewOutputCtx{
+	node, _ := buildViewPayload(viewDef, viewOutputCtx{
 		owningCollection: m.collection,
 		relPath:          m.relPath,
 	})
-	if err != nil {
-		return fmt.Errorf("build payload: %w", err)
-	}
 	return emitNode(cmd.OutOrStdout(), node, format)
 }
 

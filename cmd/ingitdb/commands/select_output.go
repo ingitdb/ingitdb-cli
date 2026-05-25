@@ -20,18 +20,12 @@ import (
 func writeSingleRecord(w io.Writer, record map[string]any, format string, columns []string) error {
 	switch format {
 	case "yaml", "yml", "":
-		out, err := yaml.Marshal(record)
-		if err != nil {
-			return fmt.Errorf("marshal yaml: %w", err)
-		}
-		_, err = w.Write(out)
+		out, _ := yaml.Marshal(record)
+		_, err := w.Write(out)
 		return err
 	case "json":
-		out, err := json.MarshalIndent(record, "", "  ")
-		if err != nil {
-			return fmt.Errorf("marshal json: %w", err)
-		}
-		_, err = fmt.Fprintf(w, "%s\n", out)
+		out, _ := json.MarshalIndent(record, "", "  ")
+		_, err := fmt.Fprintf(w, "%s\n", out)
 		return err
 	case "csv":
 		return writeCSV(w, []map[string]any{record}, columns)

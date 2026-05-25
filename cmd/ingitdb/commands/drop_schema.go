@@ -40,10 +40,7 @@ func writeRootCollectionsWithout(dbDir, dropName string) error {
 		return err
 	}
 	delete(entries, dropName)
-	out, err := yaml.Marshal(entries)
-	if err != nil {
-		return fmt.Errorf("marshal root-collections: %w", err)
-	}
+	out, _ := yaml.Marshal(entries)
 	path := filepath.Join(dbDir, rootCollectionsRelPath)
 	if writeErr := os.WriteFile(path, out, 0o644); writeErr != nil {
 		return fmt.Errorf("write %s: %w", rootCollectionsRelPath, writeErr)

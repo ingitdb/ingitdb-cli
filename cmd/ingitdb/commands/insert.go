@@ -53,16 +53,10 @@ func Insert(
 			// Batch mode validation: --format must be one of the four supported
 			// stream formats. Empty means single-record mode.
 			format, _ := cmd.Flags().GetString("format")
-			if cmd.Flags().Changed("format") {
-				switch format {
-				case "jsonl", "yaml", "ingr", "csv":
-					// valid; batch mode active
-				default:
-					return fmt.Errorf("invalid --format=%q; supported batch formats are: jsonl, yaml, ingr, csv (markdown is supported as a storage format only, not as a stream format)", format)
-				}
-			}
-
 			batchMode := cmd.Flags().Changed("format")
+			if batchMode && format != "jsonl" && format != "yaml" && format != "ingr" && format != "csv" {
+				return fmt.Errorf("invalid --format=%q; supported batch formats are: jsonl, yaml, ingr, csv (markdown is supported as a storage format only, not as a stream format)", format)
+			}
 
 			// Reject shared flags that don't apply to insert.
 			for _, flag := range []string{"from", "id", "where", "set", "unset", "all", "min-affected", "order-by", "fields"} {
@@ -90,13 +84,6 @@ func Insert(
 				if !batchMode || format != "csv" {
 					return fmt.Errorf("--key-column is valid only with --format=csv")
 				}
-			}
-
-			// --fields is rejected outside single-record (existing logic above)
-			// AND outside batch-CSV. The shared-flag loop rejects it in
-			// single-record mode; here we add the batch-non-csv guard.
-			if batchMode && format != "csv" && cmd.Flags().Changed("fields") {
-				return fmt.Errorf("--fields is valid only with --format=csv (used to override the CSV header row or drive parsing when no header is present)")
 			}
 
 			into, _ := cmd.Flags().GetString("into")

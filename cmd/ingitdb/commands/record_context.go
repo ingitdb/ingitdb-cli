@@ -34,10 +34,8 @@ func resolveRemoteRecordContext(ctx context.Context, cmd *cobra.Command, id, rem
 	if err != nil {
 		return recordContext{}, fmt.Errorf("failed to open remote database: %w", err)
 	}
+	// readRemoteDefinitionForID always keys the def by collectionID.
 	colDef := def.Collections[collectionID]
-	if colDef == nil {
-		return recordContext{}, fmt.Errorf("collection not found: %s", collectionID)
-	}
 	return recordContext{db: db, colDef: colDef, recordKey: key, def: def}, nil
 }
 

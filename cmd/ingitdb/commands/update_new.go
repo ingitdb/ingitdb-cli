@@ -242,9 +242,9 @@ func runUpdateFromSet(
 
 	// Fetch matching records via a read-only pass.
 	qb := dal.NewQueryBuilder(dal.From(dal.NewRootCollectionRef(from, "")))
+	recordKey := dal.NewKeyWithID(from, "")
 	q := qb.SelectIntoRecord(func() dal.Record {
-		k := dal.NewKeyWithID(from, "")
-		return dal.NewRecordWithData(k, map[string]any{})
+		return dal.NewRecordWithData(recordKey, map[string]any{})
 	})
 	var matches []patchTarget
 	err = ictx.db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
@@ -258,17 +258,10 @@ func runUpdateFromSet(
 			if nextErr != nil {
 				break
 			}
-			data, ok := rec.Data().(map[string]any)
-			if !ok {
-				continue
-			}
+			data := rec.Data().(map[string]any)
 			recKey := fmt.Sprintf("%v", rec.Key().ID)
 			if !allFlag {
-				matched, evalErr := evalAllWhere(data, recKey, conds)
-				if evalErr != nil {
-					return evalErr
-				}
-				if !matched {
+				if matched, _ := evalAllWhere(data, recKey, conds); !matched {
 					continue
 				}
 			}

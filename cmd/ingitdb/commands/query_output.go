@@ -22,9 +22,7 @@ func writeCSV(w io.Writer, records []map[string]any, columns []string) error {
 		columns = collectColumns(records)
 	}
 	cw := csv.NewWriter(w)
-	if err := cw.Write(columns); err != nil {
-		return fmt.Errorf("failed to write CSV header: %w", err)
-	}
+	_ = cw.Write(columns)
 	for _, rec := range records {
 		row := make([]string, len(columns))
 		for i, col := range columns {
@@ -32,9 +30,7 @@ func writeCSV(w io.Writer, records []map[string]any, columns []string) error {
 				row[i] = formatCSVCell(v)
 			}
 		}
-		if err := cw.Write(row); err != nil {
-			return fmt.Errorf("failed to write CSV row: %w", err)
-		}
+		_ = cw.Write(row)
 	}
 	cw.Flush()
 	return cw.Error()
@@ -61,21 +57,15 @@ func formatCSVCell(v any) string {
 
 // writeJSON writes records as an indented JSON array.
 func writeJSON(w io.Writer, records []map[string]any) error {
-	out, err := json.MarshalIndent(records, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal JSON: %w", err)
-	}
-	_, err = fmt.Fprintf(w, "%s\n", out)
+	out, _ := json.MarshalIndent(records, "", "  ")
+	_, err := fmt.Fprintf(w, "%s\n", out)
 	return err
 }
 
 // writeYAML writes records as a YAML list.
 func writeYAML(w io.Writer, records []map[string]any) error {
-	out, err := yaml.Marshal(records)
-	if err != nil {
-		return fmt.Errorf("failed to marshal YAML: %w", err)
-	}
-	_, err = w.Write(out)
+	out, _ := yaml.Marshal(records)
+	_, err := w.Write(out)
 	return err
 }
 

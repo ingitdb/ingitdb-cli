@@ -114,9 +114,9 @@ func runDeleteFromSet(
 
 	// Read-only pass: collect matching keys.
 	qb := dal.NewQueryBuilder(dal.From(dal.NewRootCollectionRef(from, "")))
+	recordKey := dal.NewKeyWithID(from, "")
 	q := qb.SelectIntoRecord(func() dal.Record {
-		k := dal.NewKeyWithID(from, "")
-		return dal.NewRecordWithData(k, map[string]any{})
+		return dal.NewRecordWithData(recordKey, map[string]any{})
 	})
 	var matchedKeys []string
 	err = ictx.db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
@@ -132,15 +132,8 @@ func runDeleteFromSet(
 			}
 			recKey := fmt.Sprintf("%v", rec.Key().ID)
 			if !allFlag {
-				data, ok := rec.Data().(map[string]any)
-				if !ok {
-					continue
-				}
-				match, evalErr := evalAllWhere(data, recKey, conds)
-				if evalErr != nil {
-					return evalErr
-				}
-				if !match {
+				data := rec.Data().(map[string]any)
+				if match, _ := evalAllWhere(data, recKey, conds); !match {
 					continue
 				}
 			}

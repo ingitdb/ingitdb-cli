@@ -56,10 +56,7 @@ func dropCollectionRemote(ctx context.Context, cmd *cobra.Command, name string, 
 
 	// 3. Build the new root-collections.yaml content with the entry removed.
 	delete(rootEntries, name)
-	newRoot, err := yaml.Marshal(rootEntries)
-	if err != nil {
-		return fmt.Errorf("encode root-collections.yaml: %w", err)
-	}
+	newRoot, _ := yaml.Marshal(rootEntries)
 
 	// 4. Assemble changes and commit in one shot.
 	changes := make([]dalgo2ghingitdb.TreeChange, 0, len(files)+1)

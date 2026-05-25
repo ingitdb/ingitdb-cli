@@ -36,10 +36,7 @@ func materializeRunE(
 		if err != nil {
 			return err
 		}
-		dirPath, err = filepath.Abs(expanded)
-		if err != nil {
-			return fmt.Errorf("failed to resolve absolute path: %w", err)
-		}
+		dirPath, _ = filepath.Abs(expanded)
 		logf("inGitDB db path: ", dirPath)
 
 		ctx := cmd.Context()

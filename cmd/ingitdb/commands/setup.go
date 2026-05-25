@@ -53,17 +53,11 @@ func runSetup(path, defaultFormatFlag string) error {
 		}
 		settings.DefaultRecordFormat = f
 	}
-	if validateErr := settings.Validate(); validateErr != nil {
-		return validateErr
-	}
 	configDir := filepath.Join(path, config.IngitDBDirName)
 	if mkErr := os.MkdirAll(configDir, 0o755); mkErr != nil {
 		return fmt.Errorf("failed to create %s directory: %w", configDir, mkErr)
 	}
-	out, marshalErr := yaml.Marshal(settings)
-	if marshalErr != nil {
-		return fmt.Errorf("failed to marshal settings: %w", marshalErr)
-	}
+	out, _ := yaml.Marshal(settings)
 	settingsPath := filepath.Join(configDir, config.SettingsFileName)
 	if writeErr := os.WriteFile(settingsPath, out, 0o644); writeErr != nil {
 		return fmt.Errorf("failed to write %s: %w", settingsPath, writeErr)

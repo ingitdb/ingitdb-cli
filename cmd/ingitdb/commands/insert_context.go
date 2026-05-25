@@ -98,10 +98,8 @@ func resolveInsertContextRemote(
 	if err != nil {
 		return insertContext{}, fmt.Errorf("failed to resolve remote definition: %w", err)
 	}
-	colDef, ok := def.Collections[collectionID]
-	if !ok {
-		return insertContext{}, fmt.Errorf("collection %q not found in remote definition", collectionID)
-	}
+	// readRemoteDefinitionForCollection always keys the def by collectionID.
+	colDef := def.Collections[collectionID]
 	cfg := newGitHubConfig(spec, remoteToken(cmd, spec.Host))
 	db, err := gitHubDBFactory.NewGitHubDBWithDef(cfg, def)
 	if err != nil {

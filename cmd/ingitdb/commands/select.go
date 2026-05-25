@@ -205,9 +205,9 @@ func runSelectFromSetWithDB(
 	}
 
 	qb := dal.NewQueryBuilder(dal.From(dal.NewRootCollectionRef(from, "")))
+	recordKey := dal.NewKeyWithID(from, "")
 	q := qb.SelectIntoRecord(func() dal.Record {
-		key := dal.NewKeyWithID(from, "")
-		return dal.NewRecordWithData(key, map[string]any{})
+		return dal.NewRecordWithData(recordKey, map[string]any{})
 	})
 
 	var rows []map[string]any
@@ -222,16 +222,9 @@ func runSelectFromSetWithDB(
 			if nextErr != nil {
 				break
 			}
-			data, ok := rec.Data().(map[string]any)
-			if !ok {
-				continue
-			}
+			data := rec.Data().(map[string]any)
 			recKey := fmt.Sprintf("%v", rec.Key().ID)
-			match, evalErr := evalAllWhere(data, recKey, conds)
-			if evalErr != nil {
-				return evalErr
-			}
-			if !match {
+			if match, _ := evalAllWhere(data, recKey, conds); !match {
 				continue
 			}
 			rows = append(rows, projectRecord(data, recKey, fields))

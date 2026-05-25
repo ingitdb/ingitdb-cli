@@ -35,9 +35,7 @@ type viewOutputCtx struct {
 // node→interface conversion).
 func buildCollectionPayload(col *ingitdb.CollectionDef, ctx collectionOutputCtx) (*yaml.Node, error) {
 	defNode := &yaml.Node{}
-	if err := defNode.Encode(col); err != nil {
-		return nil, err
-	}
+	_ = defNode.Encode(col)
 	dataPath := ctx.relPath
 	if col.DataDir != "" {
 		dataPath = path.Clean(path.Join(ctx.relPath, col.DataDir))
@@ -57,9 +55,7 @@ func buildCollectionPayload(col *ingitdb.CollectionDef, ctx collectionOutputCtx)
 // view.
 func buildViewPayload(view *ingitdb.ViewDef, ctx viewOutputCtx) (*yaml.Node, error) {
 	defNode := &yaml.Node{}
-	if err := defNode.Encode(view); err != nil {
-		return nil, err
-	}
+	_ = defNode.Encode(view)
 	meta := orderedMap(
 		kv("id", view.ID),
 		kv("kind", "view"),

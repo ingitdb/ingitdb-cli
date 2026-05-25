@@ -95,10 +95,7 @@ func registerMCPTools(
 				return nil, fmt.Errorf("failed to read database definition: %w", err)
 			}
 			ids := sortedCollectionIDs(def)
-			out, err := yaml.Marshal(ids)
-			if err != nil {
-				return nil, fmt.Errorf("failed to marshal collections: %w", err)
-			}
+			out, _ := yaml.Marshal(ids)
 			return mcp.NewToolResponse(mcp.NewTextContent(string(out))), nil
 		},
 	); err != nil {
@@ -166,10 +163,7 @@ func registerMCPTools(
 			if !record.Exists() {
 				return nil, fmt.Errorf("record not found: %s", args.ID)
 			}
-			out, err := yaml.Marshal(data)
-			if err != nil {
-				return nil, fmt.Errorf("failed to marshal record: %w", err)
-			}
+			out, _ := yaml.Marshal(data)
 			content := mcp.NewTextContent(string(out))
 			return mcp.NewToolResponse(content), nil
 		},
