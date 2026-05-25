@@ -3,6 +3,7 @@ package commands
 // specscore: feature/cli/rebase
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -97,34 +98,12 @@ func Rebase(
 
 				logf("README.md conflicts resolved. checking git status...")
 
-				// Commit if rebase stopped
-				msgFile := filepath.Join(wd, ".git", "rebase-merge", "message")
-				msgBytes, readMsgErr := os.ReadFile(msgFile)
-				commitMsg := "chore(ingitdb): resolved README.md conflicts"
-				if readMsgErr == nil {
-					commitMsg = "chore(ingitdb): " + string(msgBytes)
-				} else {
-					msgFileApply := filepath.Join(wd, ".git", "rebase-apply", "msg")
-					if b, err2 := os.ReadFile(msgFileApply); err2 == nil {
-						commitMsg = "chore(ingitdb): " + string(b)
-					}
+				commitMsg := readRebaseCommitMessage(wd)
+				if commitErr := gitCommitNoVerify(ctx, wd, commitMsg); commitErr != nil {
+					return commitErr
 				}
-
-				cCmd := exec.CommandContext(ctx, "git", "commit", "--no-verify", "-m", commitMsg)
-				cCmd.Dir = wd
-				if out, commitErr := cCmd.CombinedOutput(); commitErr != nil {
-					return fmt.Errorf("failed to commit resolved files:\n%s\n%v", out, commitErr)
-				}
-
-				// Continue rebase
-				env := os.Environ()
-				env = append(env, "GIT_EDITOR=true")
-				contCmd := exec.CommandContext(ctx, "git", "rebase", "--continue")
-				contCmd.Dir = wd
-				contCmd.Env = env
-				contOut, contErr := contCmd.CombinedOutput()
-				if contErr != nil {
-					return fmt.Errorf("failed to continue rebase:\n%s", contOut)
+				if contErr := gitRebaseContinue(ctx, wd); contErr != nil {
+					return contErr
 				}
 			}
 
@@ -135,4 +114,44 @@ func Rebase(
 	cmd.Flags().String("base_ref", "", "Base reference to rebase on top of (defaults to BASE_REF or GITHUB_BASE_REF env var)")
 	cmd.Flags().String("resolve", "", "comma-separated list of file names to resolve conflicts for (e.g. 'readme,views')")
 	return cmd
+}
+
+// readRebaseCommitMessage reads the pending commit message from git's
+// rebase state directory. Checks rebase-merge first (modern default),
+// then rebase-apply (patch-mode fallback).
+func readRebaseCommitMessage(wd string) string {
+	msgFile := filepath.Join(wd, ".git", "rebase-merge", "message")
+	if b, err := os.ReadFile(msgFile); err == nil {
+		return "chore(ingitdb): " + string(b)
+	}
+	msgFileApply := filepath.Join(wd, ".git", "rebase-apply", "msg")
+	if b, err := os.ReadFile(msgFileApply); err == nil {
+		return "chore(ingitdb): " + string(b)
+	}
+	return "chore(ingitdb): resolved README.md conflicts"
+}
+
+// gitCommitNoVerify stages and commits with --no-verify.
+func gitCommitNoVerify(ctx context.Context, wd, message string) error {
+	cCmd := exec.CommandContext(ctx, "git", "commit", "--no-verify", "-m", message)
+	cCmd.Dir = wd
+	out, err := cCmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to commit resolved files:\n%s\n%v", out, err)
+	}
+	return nil
+}
+
+// gitRebaseContinue runs git rebase --continue with GIT_EDITOR=true.
+func gitRebaseContinue(ctx context.Context, wd string) error {
+	env := os.Environ()
+	env = append(env, "GIT_EDITOR=true")
+	contCmd := exec.CommandContext(ctx, "git", "rebase", "--continue")
+	contCmd.Dir = wd
+	contCmd.Env = env
+	contOut, err := contCmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to continue rebase:\n%s", contOut)
+	}
+	return nil
 }

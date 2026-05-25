@@ -1665,3 +1665,76 @@ func TestNewQueryForCollection(t *testing.T) {
 		t.Fatal("query has nil From")
 	}
 }
+
+// ============================================================
+// rebase.go – readRebaseCommitMessage, gitCommitNoVerify, gitRebaseContinue
+// ============================================================
+
+func TestReadRebaseCommitMessage_RebaseMerge(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	mergeDir := filepath.Join(dir, ".git", "rebase-merge")
+	if err := os.MkdirAll(mergeDir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(mergeDir, "message"), []byte("fix: something"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	got := readRebaseCommitMessage(dir)
+	if got != "chore(ingitdb): fix: something" {
+		t.Errorf("expected rebase-merge message, got: %q", got)
+	}
+}
+
+func TestReadRebaseCommitMessage_RebaseApply(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	// No rebase-merge dir, but rebase-apply exists
+	applyDir := filepath.Join(dir, ".git", "rebase-apply")
+	if err := os.MkdirAll(applyDir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(applyDir, "msg"), []byte("patch: applied"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	got := readRebaseCommitMessage(dir)
+	if got != "chore(ingitdb): patch: applied" {
+		t.Errorf("expected rebase-apply message, got: %q", got)
+	}
+}
+
+func TestReadRebaseCommitMessage_Default(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	// Neither rebase-merge nor rebase-apply exists
+	got := readRebaseCommitMessage(dir)
+	if got != "chore(ingitdb): resolved README.md conflicts" {
+		t.Errorf("expected default message, got: %q", got)
+	}
+}
+
+func TestGitCommitNoVerify_NonGitDir(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	// Not a git repo → git commit fails
+	err := gitCommitNoVerify(context.Background(), dir, "test commit")
+	if err == nil {
+		t.Fatal("expected error when running git commit in non-git dir")
+	}
+	if !strings.Contains(err.Error(), "failed to commit") {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+func TestGitRebaseContinue_NonGitDir(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	// Not a git repo → git rebase --continue fails
+	err := gitRebaseContinue(context.Background(), dir)
+	if err == nil {
+		t.Fatal("expected error when running git rebase --continue in non-git dir")
+	}
+	if !strings.Contains(err.Error(), "failed to continue rebase") {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
