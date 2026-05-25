@@ -602,9 +602,56 @@ func TestRunTUI_NonTTY(t *testing.T) {
 		return nil, nil
 	}
 	newDB := func(string, *ingitdb.Definition) (dal.DB, error) { return nil, nil }
+	isTerminal := func() bool { return false }
 
-	err := runTUI(ctx, "", homeDir, getWd, readDefinition, newDB)
+	err := runTUI(ctx, "", homeDir, getWd, readDefinition, newDB, isTerminal)
 	if err != nil {
 		t.Fatalf("expected nil error for non-TTY, got %v", err)
+	}
+}
+
+func TestRunTUI_TTY(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel immediately so bubbletea exits quickly
+
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return "/tmp/wd", nil }
+	readDefinition := func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return &ingitdb.Definition{}, nil
+	}
+	newDB := func(string, *ingitdb.Definition) (dal.DB, error) { return nil, nil }
+	isTerminal := func() bool { return true }
+
+	// launchTUI may return an error because there is no real terminal;
+	// we only care that the TTY branch is exercised without panic.
+	_ = runTUI(ctx, "/tmp/db", homeDir, getWd, readDefinition, newDB, isTerminal)
+}
+
+func TestDefaultNewDB(t *testing.T) {
+	t.Parallel()
+
+	db, err := defaultNewDB("/tmp/test", &ingitdb.Definition{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if db == nil {
+		t.Fatal("expected non-nil db")
+	}
+}
+
+func TestMakeViewBuilderLogf(t *testing.T) {
+	t.Parallel()
+
+	var got []any
+	logf := func(args ...any) { got = args }
+	vbl := makeViewBuilderLogf(logf)
+	vbl("hello %s", "world")
+	if len(got) != 1 {
+		t.Fatalf("expected 1 arg, got %d", len(got))
+	}
+	if got[0] != "hello world" {
+		t.Fatalf("expected 'hello world', got %v", got[0])
 	}
 }

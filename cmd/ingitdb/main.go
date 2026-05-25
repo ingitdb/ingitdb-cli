@@ -38,6 +38,14 @@ func main() {
 	run(os.Args, os.UserHomeDir, os.Getwd, validator.ReadDefinition, fatal, logf)
 }
 
+func defaultNewDB(rootDirPath string, def *ingitdb.Definition) (dal.DB, error) {
+	return dalgo2fsingitdb.NewLocalDBWithDef(rootDirPath, def)
+}
+
+func makeViewBuilderLogf(logf func(...any)) func(string, ...any) {
+	return func(f string, a ...any) { logf(fmt.Sprintf(f, a...)) }
+}
+
 func run(
 	args []string,
 	homeDir func() (string, error),
@@ -46,11 +54,9 @@ func run(
 	fatal func(error),
 	logf func(...any),
 ) {
-	newDB := func(rootDirPath string, def *ingitdb.Definition) (dal.DB, error) {
-		return dalgo2fsingitdb.NewLocalDBWithDef(rootDirPath, def)
-	}
+	newDB := defaultNewDB
 
-	viewBuilderLogf := func(f string, a ...any) { logf(fmt.Sprintf(f, a...)) }
+	viewBuilderLogf := makeViewBuilderLogf(logf)
 	vb := materializer.NewViewBuilder(materializer.NewFileRecordsReader(), viewBuilderLogf)
 
 	rootCmd := &cobra.Command{
@@ -60,7 +66,8 @@ func run(
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			dirPath, _ := cmd.Flags().GetString("path")
-			return runTUI(cmd.Context(), dirPath, homeDir, getWd, readDefinition, newDB)
+			isTerminal := func() bool { return term.IsTerminal(os.Stdout.Fd()) }
+			return runTUI(cmd.Context(), dirPath, homeDir, getWd, readDefinition, newDB, isTerminal)
 		},
 	}
 	rootCmd.Flags().String("path", "", "path to the database directory (default: current directory)")
@@ -105,8 +112,9 @@ func runTUI(
 	getWd func() (string, error),
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	newDB func(string, *ingitdb.Definition) (dal.DB, error),
+	isTerminal func() bool,
 ) error {
-	if !term.IsTerminal(os.Stdout.Fd()) {
+	if !isTerminal() {
 		return nil
 	}
 	return launchTUI(ctx, dirPath, homeDir, getWd, readDefinition, newDB)
