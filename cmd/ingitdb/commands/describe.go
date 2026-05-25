@@ -223,13 +223,8 @@ func emitNode(w io.Writer, node *yaml.Node, format string) error {
 		return nil
 	case "json":
 		var v any
-		if err := node.Decode(&v); err != nil {
-			return fmt.Errorf("convert node: %w", err)
-		}
-		raw, err := json.MarshalIndent(v, "", "  ")
-		if err != nil {
-			return fmt.Errorf("marshal json: %w", err)
-		}
+		_ = node.Decode(&v)
+		raw, _ := json.MarshalIndent(v, "", "  ")
 		_, _ = fmt.Fprintln(w, string(raw))
 		return nil
 	default:

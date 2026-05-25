@@ -39,13 +39,8 @@ func runWithEditor(colDef *ingitdb.CollectionDef, openEditor func(string) error)
 	tmpPath := tmpFile.Name()
 	defer func() { _ = os.Remove(tmpPath) }()
 
-	if _, err = tmpFile.Write(template); err != nil {
-		_ = tmpFile.Close()
-		return nil, false, fmt.Errorf("write template: %w", err)
-	}
-	if err = tmpFile.Close(); err != nil {
-		return nil, false, fmt.Errorf("close temp file: %w", err)
-	}
+	_, _ = tmpFile.Write(template)
+	_ = tmpFile.Close()
 
 	if err = openEditor(tmpPath); err != nil {
 		return nil, false, fmt.Errorf("editor: %w", err)
