@@ -109,7 +109,20 @@ func runTUI(
 	if !term.IsTerminal(os.Stdout.Fd()) {
 		return nil
 	}
+	return launchTUI(ctx, dirPath, homeDir, getWd, readDefinition, newDB)
+}
 
+// launchTUI resolves the database path, reads the definition, and starts the
+// interactive bubbletea program. It is split from runTUI so the TTY guard can
+// be bypassed in tests.
+func launchTUI(
+	ctx context.Context,
+	dirPath string,
+	homeDir func() (string, error),
+	getWd func() (string, error),
+	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
+	newDB func(string, *ingitdb.Definition) (dal.DB, error),
+) error {
 	dbPath, err := commands.ResolveDBPathArgs(dirPath, homeDir, getWd)
 	if err != nil {
 		return fmt.Errorf("failed to resolve database path: %w", err)

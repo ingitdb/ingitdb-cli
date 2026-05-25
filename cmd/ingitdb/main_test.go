@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"os"
 	"testing"
 
+	"github.com/dal-go/dalgo/dal"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
@@ -504,4 +506,105 @@ func TestMain_Logf(t *testing.T) {
 	<-done
 
 	// Test passed - logf was used by version command
+}
+
+func TestLaunchTUI_ResolvePathError(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	homeDir := func() (string, error) { return "", errors.New("no home") }
+	getWd := func() (string, error) { return "", errors.New("no wd") }
+	readDefinition := func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return nil, nil
+	}
+	newDB := func(string, *ingitdb.Definition) (dal.DB, error) { return nil, nil }
+
+	err := launchTUI(ctx, "", homeDir, getWd, readDefinition, newDB)
+	if err == nil {
+		t.Fatal("expected error when path resolution fails")
+	}
+	const want = "failed to resolve database path"
+	if got := err.Error(); len(got) < len(want) || got[:len(want)] != want {
+		t.Fatalf("expected error starting with %q, got %q", want, got)
+	}
+}
+
+func TestLaunchTUI_ReadDefinitionError(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return "/tmp/wd", nil }
+	readDefinition := func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return nil, errors.New("bad config")
+	}
+	newDB := func(string, *ingitdb.Definition) (dal.DB, error) { return nil, nil }
+
+	err := launchTUI(ctx, "/tmp/db", homeDir, getWd, readDefinition, newDB)
+	if err == nil {
+		t.Fatal("expected error when readDefinition fails")
+	}
+	const want = "not an inGitDB repository (no .ingitdb config found)"
+	if got := err.Error(); len(got) < len(want) || got[:len(want)] != want {
+		t.Fatalf("expected error starting with %q, got %q", want, got)
+	}
+}
+
+func TestLaunchTUI_NilDefinition(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return "/tmp/wd", nil }
+	readDefinition := func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return nil, nil
+	}
+	newDB := func(string, *ingitdb.Definition) (dal.DB, error) { return nil, nil }
+
+	err := launchTUI(ctx, "/tmp/db", homeDir, getWd, readDefinition, newDB)
+	if err == nil {
+		t.Fatal("expected error when definition is nil")
+	}
+	const want = "not an inGitDB repository"
+	if err.Error() != want {
+		t.Fatalf("expected %q, got %q", want, err.Error())
+	}
+}
+
+func TestLaunchTUI_ValidDefinition(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel immediately so bubbletea exits quickly
+
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return "/tmp/wd", nil }
+	readDefinition := func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return &ingitdb.Definition{}, nil
+	}
+	newDB := func(string, *ingitdb.Definition) (dal.DB, error) { return nil, nil }
+
+	// In a non-TTY test environment, term.GetSize will fail, exercising
+	// the fallback branch (w,h = 120,40). bubbletea.Run may return an
+	// error because there is no real terminal — we only care that it
+	// does not panic.
+	_ = launchTUI(ctx, "/tmp/db", homeDir, getWd, readDefinition, newDB)
+}
+
+func TestRunTUI_NonTTY(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return "/tmp/wd", nil }
+	readDefinition := func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		t.Fatal("readDefinition should not be called when not a TTY")
+		return nil, nil
+	}
+	newDB := func(string, *ingitdb.Definition) (dal.DB, error) { return nil, nil }
+
+	err := runTUI(ctx, "", homeDir, getWd, readDefinition, newDB)
+	if err != nil {
+		t.Fatalf("expected nil error for non-TTY, got %v", err)
+	}
 }
