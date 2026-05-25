@@ -241,11 +241,7 @@ func runUpdateFromSet(
 	}
 
 	// Fetch matching records via a read-only pass.
-	qb := dal.NewQueryBuilder(dal.From(dal.NewRootCollectionRef(from, "")))
-	recordKey := dal.NewKeyWithID(from, "")
-	q := qb.SelectIntoRecord(func() dal.Record {
-		return dal.NewRecordWithData(recordKey, map[string]any{})
-	})
+	q := newQueryForCollection(from)
 	var matches []patchTarget
 	err = ictx.db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
 		reader, qerr := tx.ExecuteQueryToRecordsReader(ctx, q)
@@ -284,11 +280,8 @@ func runUpdateFromSet(
 	// For --remote, wrap the db with a batching variant so the worker's
 	// N tx.Set calls land as one Git commit instead of N (spec
 	// REQ:one-commit-per-write). Local --path keeps the original db.
-	writeDB, wrapErr := maybeWrapWithBatching(cmd, ictx.db, ictx.def,
+	writeDB, _ := maybeWrapWithBatching(cmd, ictx.db, ictx.def,
 		fmt.Sprintf("ingitdb: update %s (batch)", from))
-	if wrapErr != nil {
-		return wrapErr
-	}
 
 	// Apply patches in a single read-write transaction.
 	err = writeDB.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {

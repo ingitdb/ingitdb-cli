@@ -204,11 +204,7 @@ func runSelectFromSetWithDB(
 		conds = append(conds, c)
 	}
 
-	qb := dal.NewQueryBuilder(dal.From(dal.NewRootCollectionRef(from, "")))
-	recordKey := dal.NewKeyWithID(from, "")
-	q := qb.SelectIntoRecord(func() dal.Record {
-		return dal.NewRecordWithData(recordKey, map[string]any{})
-	})
+	q := newQueryForCollection(from)
 
 	var rows []map[string]any
 	err := db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {

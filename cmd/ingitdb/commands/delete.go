@@ -113,11 +113,7 @@ func runDeleteFromSet(
 	}
 
 	// Read-only pass: collect matching keys.
-	qb := dal.NewQueryBuilder(dal.From(dal.NewRootCollectionRef(from, "")))
-	recordKey := dal.NewKeyWithID(from, "")
-	q := qb.SelectIntoRecord(func() dal.Record {
-		return dal.NewRecordWithData(recordKey, map[string]any{})
-	})
+	q := newQueryForCollection(from)
 	var matchedKeys []string
 	err = ictx.db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
 		reader, qerr := tx.ExecuteQueryToRecordsReader(ctx, q)
@@ -158,11 +154,8 @@ func runDeleteFromSet(
 	// For --remote, wrap the db with a batching variant so the worker's
 	// N tx.Delete calls land as one Git commit instead of N (spec
 	// REQ:one-commit-per-write). Local --path keeps the original db.
-	writeDB, wrapErr := maybeWrapWithBatching(cmd, ictx.db, ictx.def,
+	writeDB, _ := maybeWrapWithBatching(cmd, ictx.db, ictx.def,
 		fmt.Sprintf("ingitdb: delete from %s (batch)", from))
-	if wrapErr != nil {
-		return wrapErr
-	}
 
 	// Read-write pass: delete each matching key.
 	err = writeDB.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {

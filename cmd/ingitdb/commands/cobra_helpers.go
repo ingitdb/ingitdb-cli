@@ -113,6 +113,22 @@ func resolveRemoteFromFlags(cmd *cobra.Command, value string) (remoteSpec, error
 	return spec, nil
 }
 
+// newQueryForCollection builds the SelectIntoRecord query used by the
+// set-mode CRUD commands (delete --from, update --from, select --from).
+func newQueryForCollection(collectionID string) dal.StructuredQuery {
+	qb := dal.NewQueryBuilder(dal.From(dal.NewRootCollectionRef(collectionID, "")))
+	return qb.SelectIntoRecord(newEmptyRecordFactory(collectionID))
+}
+
+// newEmptyRecordFactory returns a factory that creates empty records keyed
+// by collectionID. Extracted so the closure body is directly testable.
+func newEmptyRecordFactory(collectionID string) func() dal.Record {
+	key := dal.NewKeyWithID(collectionID, "")
+	return func() dal.Record {
+		return dal.NewRecordWithData(key, map[string]any{})
+	}
+}
+
 // maybeWrapWithBatching returns a BatchingGitHubDB wrapping db when --remote
 // is set, otherwise returns db unchanged. Set-mode write callers
 // (update --from, delete --from) use this so a worker that touches N records
