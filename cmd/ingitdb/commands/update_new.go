@@ -62,10 +62,8 @@ func Update(
 			switch mode {
 			case sqlflags.ModeID:
 				return runUpdateByID(cmd.Context(), cmd, id, setExprs, unsetExprs, homeDir, getWd, readDefinition, newDB)
-			case sqlflags.ModeFrom:
+			default: // ModeFrom — the only other value ResolveMode returns
 				return runUpdateFromSet(cmd.Context(), cmd, from, setExprs, unsetExprs, homeDir, getWd, readDefinition, newDB)
-			default:
-				return fmt.Errorf("invalid mode")
 			}
 		},
 	}

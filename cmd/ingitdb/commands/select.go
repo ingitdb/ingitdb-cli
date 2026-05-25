@@ -53,10 +53,8 @@ func Select(
 			switch mode {
 			case sqlflags.ModeID:
 				return runSelectByID(ctx, cmd, id, fields, format, homeDir, getWd, readDefinition, newDB)
-			case sqlflags.ModeFrom:
+			default: // ModeFrom — the only other value ResolveMode returns
 				return runSelectFromSet(ctx, cmd, from, fields, format, homeDir, getWd, readDefinition, newDB)
-			default:
-				return fmt.Errorf("invalid mode")
 			}
 		},
 	}

@@ -52,10 +52,8 @@ func Delete(
 			switch mode {
 			case sqlflags.ModeID:
 				return runDeleteByID(cmd.Context(), cmd, id, homeDir, getWd, readDefinition, newDB)
-			case sqlflags.ModeFrom:
+			default: // ModeFrom — the only other value ResolveMode returns
 				return runDeleteFromSet(cmd.Context(), cmd, from, homeDir, getWd, readDefinition, newDB)
-			default:
-				return fmt.Errorf("invalid mode")
 			}
 		},
 	}

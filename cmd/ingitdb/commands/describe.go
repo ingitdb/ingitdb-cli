@@ -169,10 +169,7 @@ func describeCollectionFromDef(
 	if !ok {
 		return fmt.Errorf("collection %q not found in database at %s", name, dirPath)
 	}
-	views, subcols, err := discoverCollectionChildren(dirPath, name)
-	if err != nil {
-		return err
-	}
+	views, subcols, _ := discoverCollectionChildren(dirPath, name)
 	node, err := buildCollectionPayload(col, collectionOutputCtx{
 		relPath:            name,
 		viewNames:          views,
