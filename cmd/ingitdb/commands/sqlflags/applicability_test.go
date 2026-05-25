@@ -129,3 +129,12 @@ func TestRejectSetModeFlags_ModeFrom_AllOnly(t *testing.T) {
 		t.Errorf("unexpected error with --all in ModeFrom: %v", err)
 	}
 }
+
+func TestRejectSetModeFlags_ModeID_NoFlags(t *testing.T) {
+	t.Parallel()
+	// All flags false in ModeID — should succeed (return nil).
+	err := RejectSetModeFlags(SetModeFlags{}, ModeID)
+	if err != nil {
+		t.Errorf("expected nil error with no flags in ModeID, got: %v", err)
+	}
+}

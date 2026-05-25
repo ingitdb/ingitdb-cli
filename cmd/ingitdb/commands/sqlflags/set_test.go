@@ -60,6 +60,26 @@ func TestParseSet(t *testing.T) {
 	}
 }
 
+func TestParseSet_YAMLUnmarshalError(t *testing.T) {
+	t.Parallel()
+	// A value that starts a YAML sequence but never closes it causes
+	// yaml.Unmarshal to return an error, exercising the parseYAMLScalar
+	// error path inside ParseSet.
+	_, err := ParseSet("field=[unterminated")
+	if err == nil {
+		t.Fatal("expected error for unterminated YAML sequence value")
+	}
+}
+
+func TestParseYAMLScalar_UnmarshalError(t *testing.T) {
+	t.Parallel()
+	// Directly exercises the yaml.Unmarshal error branch in parseYAMLScalar.
+	_, err := parseYAMLScalar("[unterminated")
+	if err == nil {
+		t.Fatal("expected error for unterminated YAML value")
+	}
+}
+
 // equalAny compares two interface values, including nil and basic
 // scalar kinds. Used to keep table tests readable.
 func equalAny(a, b any) bool {

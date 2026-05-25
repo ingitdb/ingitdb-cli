@@ -91,3 +91,18 @@ func TestMinAffectedFromCmd(t *testing.T) {
 		})
 	}
 }
+
+func TestMinAffectedFromCmd_GetIntError(t *testing.T) {
+	t.Parallel()
+	// Register --min-affected as a string flag (wrong type) so that
+	// GetInt returns an error when the flag is marked as changed.
+	cmd := &cobra.Command{Use: "test"}
+	cmd.Flags().String("min-affected", "", "wrong type for GetInt")
+	if err := cmd.Flags().Set("min-affected", "notanint"); err != nil {
+		t.Fatalf("set flag: %v", err)
+	}
+	_, _, err := MinAffectedFromCmd(cmd)
+	if err == nil {
+		t.Fatal("expected error when GetInt fails on a string flag")
+	}
+}
