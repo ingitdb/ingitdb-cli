@@ -98,6 +98,34 @@ func (r FileRecordsReader) ReadRecords(
 			}
 		}
 		return nil
+	case ingitdb.ListOfRecords:
+		if _, err := r.statFile(path); err != nil {
+			if os.IsNotExist(err) {
+				return nil
+			}
+			return fmt.Errorf("failed to stat %s: %w", path, err)
+		}
+		content, err := r.readFile(path)
+		if err != nil {
+			return fmt.Errorf("failed to read records file %s: %w", path, err)
+		}
+		rows, err := dalgo2ingitdb.ParseListOfRecordsContent(content, col.RecordFile.Format)
+		if err != nil {
+			return fmt.Errorf("failed to parse records file %s: %w", path, err)
+		}
+		for _, row := range rows {
+			key, ok := dalgo2ingitdb.ResolveListRecordKey(row, col)
+			if !ok {
+				return fmt.Errorf("list record in %s has no resolvable key (set primary_key or a $id/id field)", path)
+			}
+			d := dalgo2ingitdb.ApplyLocaleToRead(row, col.Columns)
+			d["$ID"] = key
+			entry := ingitdb.NewMapRecordEntry(key, d)
+			if err := yield(entry); err != nil {
+				return err
+			}
+		}
+		return nil
 	default:
 		return fmt.Errorf("record type %q is not supported", col.RecordFile.RecordType)
 	}
