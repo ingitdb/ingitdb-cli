@@ -1,6 +1,6 @@
 # Idea: List-of-Records Files: Top-Level YAML/JSON Sequences + JSONL
 
-**Status:** Draft
+**Status:** Approved
 **Date:** 2026-05-29
 **Owner:** alexander.trakhimenok@gmail.com
 **Promotes To:** —

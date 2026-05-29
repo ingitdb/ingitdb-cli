@@ -10,6 +10,12 @@ Three small, additive extensions to inGitDB's existing record-format machinery: 
 
 This umbrella does NOT ship the existing six formats — those already exist in code (`pkg/ingitdb/constants.go`, `pkg/dalgo2ingitdb/parse.go`, `pkg/dalgo2ghingitdb/tx_readwrite.go`). The three child Features are surgical additions.
 
+## Contents
+
+| Child | Description |
+|---|---|
+| [list-of-records](list-of-records/README.md) | Wire the `ListOfRecords` layout for YAML/JSON sequences and add a JSONL format — read, write, validate, auto-merge. |
+
 ## Problem
 
 inGitDB today supports six record formats but the choice is **only** per-collection. There is no project-level default, no `--format` flag on creation commands, and no CSV support. The DALgo schema-modification work (now Implemented in `dal-go/dalgo`) and the cross-engine `db copy` consumer in `datatug-cli` will start writing inGitDB content programmatically; both need a defensible answer to "what format do I write when the user hasn't told me." Today the answer is a hard-coded fallback in code; this Feature makes the fallback a configurable project setting with a clear resolution order.
