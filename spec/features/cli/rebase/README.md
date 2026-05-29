@@ -1,10 +1,18 @@
 # Feature: Rebase Command
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/rebase?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/rebase?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/rebase?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/rebase?op=request-change) |
 **Status:** Implementing
 
 ## Summary
 
 The `ingitdb rebase` command runs `git rebase` on top of a base reference and automatically resolves common inGitDB-specific conflicts in generated files (collection `README.md` files, materialized views, data indexes). Conflicts in source files (`.ingitdb.yaml`, hand-edited records, Go source) abort the rebase and are reported to the user.
+
+## Relationship to related commands
+
+`rebase` is an *initiator*: it drives the `git rebase` itself, then hands conflict resolution to the shared engine.
+
+- **[`resolve`](../resolve/README.md)** — the working-tree conflict engine `rebase` delegates to. `resolve` auto-resolves generated-file conflicts and resolves source conflicts interactively, independent of how the conflict arose. Use `resolve` directly when you ran `git rebase`/`git merge` yourself and only need the conflicts cleaned up; use `rebase` when you want inGitDB to run the rebase end-to-end.
+- **[`pull`](../pull/README.md)** — the same pattern for `git pull`: pull, delegate to `resolve`, rebuild views, summarize.
 
 ## Problem
 
@@ -29,6 +37,8 @@ The `--base_ref=REF` flag MUST set the git ref to rebase onto. When omitted, the
 The `--resolve=FILES` flag MUST accept a comma-separated list of categories of generated files that the command is allowed to auto-resolve. The value `readme` opts in to auto-resolving collection `README.md` conflicts. When the flag is omitted, no categories are auto-resolved.
 
 ### Conflict handling
+
+The regenerate-and-stage logic below is the [`resolve`](../resolve/README.md) engine's `auto-resolve-generated` behavior; `rebase` invokes it rather than reimplementing it.
 
 #### REQ: detects-and-resolves-readmes
 
@@ -59,7 +69,7 @@ Given a branch whose only conflict against `main` is in collection `README.md` f
 
 When a conflict touches a source file (e.g. a hand-edited record YAML), `ingitdb rebase` does not silently resolve it; instead it aborts the rebase and lists the conflicting paths. The user must resolve them and continue manually.
 
-## Outstanding Questions
+## Open Questions
 
 - Should `--resolve=views` and `--resolve=indexes` be promoted from "supported categories" to documented and tested behavior on par with `readme`?
 - Should the command default `--resolve` to a curated set when run inside CI (detected via `GITHUB_ACTIONS` etc.)?

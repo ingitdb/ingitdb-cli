@@ -1,10 +1,18 @@
 # Feature: Pull Command
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/pull?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/pull?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/pull?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/pull?op=request-change) |
 **Status:** Draft
 
 ## Summary
 
 The `ingitdb pull` command runs `git pull` (rebase by default, or merge), automatically resolves conflicts in generated files by regenerating them, opens an interactive TUI for source-data conflicts, rebuilds materialized views, and prints a summary of records added, updated, and deleted by the pull.
+
+## Relationship to related commands
+
+`pull` is an *initiator*: it drives `git pull`, then delegates conflict handling to the shared engine and adds view rebuilding plus a change summary on top.
+
+- **[`resolve`](../resolve/README.md)** — the working-tree conflict engine `pull` delegates to (step 2–3 of the pipeline below). It auto-resolves generated-file conflicts and resolves source conflicts interactively.
+- **[`rebase`](../rebase/README.md)** — the same initiator pattern for `git rebase` onto a base ref. `pull` is for syncing with a remote; `rebase` is for replaying the current branch onto an updated base.
 
 ## Problem
 
@@ -51,7 +59,7 @@ Source files implementing this feature (annotated with
 
 Not defined yet.
 
-## Outstanding Questions
+## Open Questions
 
 - Acceptance criteria not yet defined for this feature.
 - Should the interactive TUI step be skippable via a `--no-interactive` flag for CI?
