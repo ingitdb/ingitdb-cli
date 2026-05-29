@@ -3,7 +3,6 @@ package commands
 import (
 	"context"
 	"fmt"
-	"os/exec"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -71,63 +70,25 @@ func docsUpdate(
 func runDocsUpdate(ctx context.Context, dirPath string, def *ingitdb.Definition, collectionGlob string, resolveStr string, logf func(...any)) error {
 	var result *ingitdb.MaterializeResult
 	if resolveStr != "" {
-		// Parse resolve items
-		resolveItems := make(map[string]bool)
-		for _, p := range strings.Split(resolveStr, ",") {
-			resolveItems[strings.ToLower(strings.TrimSpace(p))] = true
-		}
+		resolveItems := parseResolveItems(resolveStr)
 
-		// Get conflicted files
-		gitCmd := exec.Command("git", "diff", "--name-only", "--diff-filter=U")
-		gitCmd.Dir = dirPath
-		out, err := gitCmd.Output()
+		conflictedFiles, err := gitConflictedFiles(ctx, dirPath)
 		if err != nil {
-			return fmt.Errorf("failed to get conflicted files: %w", err)
+			return err
 		}
-
-		var conflictedFiles []string
-		outStr := strings.TrimSpace(string(out))
-		if outStr != "" {
-			conflictedFiles = strings.Split(outStr, "\n")
-		}
-
 		if len(conflictedFiles) == 0 {
 			logf("no conflicts found to resolve")
 			return nil
 		}
 
-		collectionsToUpdate, readmesToUpdate, unresolved := docsbuilder.FindCollectionsForConflictingFiles(def, dirPath, conflictedFiles, resolveItems)
-
+		res, _, unresolved, resolveErr := resolveGeneratedConflicts(ctx, dirPath, def, resolveItems, conflictedFiles)
+		if resolveErr != nil {
+			return resolveErr
+		}
 		if len(unresolved) > 0 {
 			return fmt.Errorf("unresolved conflicts remain:\n%s", strings.Join(unresolved, "\n"))
 		}
-
-		recordsReader := materializer.NewFileRecordsReader()
-		result = &ingitdb.MaterializeResult{}
-		for _, col := range collectionsToUpdate {
-			changed, err := docsbuilder.ProcessCollection(ctx, def, col, dirPath, recordsReader)
-			if err != nil {
-				result.Errors = append(result.Errors, fmt.Errorf("collection %s: %w", col.ID, err))
-				continue
-			}
-			if changed {
-				result.FilesUpdated++
-			} else {
-				result.FilesUnchanged++
-			}
-		}
-
-		// Stage the resolved items
-		if len(collectionsToUpdate) > 0 {
-			args := []string{"add"}
-			args = append(args, readmesToUpdate...)
-			addCmd := exec.Command("git", args...)
-			addCmd.Dir = dirPath
-			if err := addCmd.Run(); err != nil {
-				return fmt.Errorf("failed to stage resolved files: %w", err)
-			}
-		}
-
+		result = res
 	} else {
 		recordsReader := materializer.NewFileRecordsReader()
 		result, _ = docsbuilder.UpdateDocs(ctx, def, collectionGlob, dirPath, recordsReader)

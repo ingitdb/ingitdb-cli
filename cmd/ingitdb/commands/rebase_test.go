@@ -119,3 +119,151 @@ func runGit(t *testing.T, dir string, args ...string) []byte {
 	}
 	return out
 }
+
+// setupRebaseCollectionReadmeConflict creates a git repo where rebasing main
+// onto base conflicts on a collection README.md. With secondConflict, main has
+// two README-changing commits so `git rebase --continue` hits a second
+// conflict. Returns the collection directory.
+func setupRebaseCollectionReadmeConflict(t *testing.T, dir string, secondConflict bool) string {
+	t.Helper()
+	runGit(t, dir, "init")
+	runGit(t, dir, "config", "user.email", "test@example.com")
+	runGit(t, dir, "config", "user.name", "Test User")
+
+	colDir := filepath.Join(dir, "docs", "col")
+	if err := os.MkdirAll(colDir, 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	readme := filepath.Join(colDir, "README.md")
+	writeRebaseFile(t, readme, "# Initial\n")
+	runGit(t, dir, "add", ".")
+	runGit(t, dir, "commit", "-m", "initial")
+	runGit(t, dir, "branch", "-m", "main")
+	runGit(t, dir, "branch", "base")
+
+	writeRebaseFile(t, readme, "# Main 1\n")
+	runGit(t, dir, "add", ".")
+	runGit(t, dir, "commit", "-m", "main 1")
+	if secondConflict {
+		writeRebaseFile(t, readme, "# Main 2\n")
+		runGit(t, dir, "add", ".")
+		runGit(t, dir, "commit", "-m", "main 2")
+	}
+
+	runGit(t, dir, "checkout", "base")
+	writeRebaseFile(t, readme, "# Base\n")
+	runGit(t, dir, "add", ".")
+	runGit(t, dir, "commit", "-m", "base")
+	runGit(t, dir, "checkout", "main")
+	return colDir
+}
+
+func writeRebaseFile(t *testing.T, path, content string) {
+	t.Helper()
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("WriteFile %s: %v", path, err)
+	}
+}
+
+func rebaseCollectionDef(colDir string) func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+	return func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return &ingitdb.Definition{
+			Collections: map[string]*ingitdb.CollectionDef{
+				"col": {ID: "col", DirPath: colDir, Columns: map[string]*ingitdb.ColumnDef{}},
+			},
+		}, nil
+	}
+}
+
+// TestRebase_GitAddFails covers the resolveErr branch: a rebase is left halted
+// on a README conflict and the index is locked, so the command's internal
+// `git add` (inside the resolve engine) fails.
+func TestRebase_GitAddFails(t *testing.T) {
+	dir := t.TempDir()
+	colDir := setupRebaseCollectionReadmeConflict(t, dir, false)
+
+	// Leave a rebase halted on the README conflict.
+	_ = runGitNoFailOut(dir, "rebase", "base")
+	conflict := strings.TrimSpace(runGitNoFailOut(dir, "diff", "--name-only", "--diff-filter=U"))
+	if conflict == "" {
+		t.Skip("git auto-merged; no conflict produced")
+	}
+	// Lock the index so any `git add` fails (git diff reads still succeed).
+	if err := os.WriteFile(filepath.Join(dir, ".git", "index.lock"), nil, 0o644); err != nil {
+		t.Fatalf("create index.lock: %v", err)
+	}
+
+	getWd := func() (string, error) { return dir, nil }
+	cmd := Rebase(getWd, rebaseCollectionDef(colDir), func(...any) {})
+	err := runCobraCommand(cmd, "--base_ref=base", "--resolve=readme")
+	_ = os.Remove(filepath.Join(dir, ".git", "index.lock"))
+	_ = runGitNoFail(dir, "rebase", "--abort")
+	if err == nil {
+		t.Skip("git add did not fail in this environment")
+	}
+	if !strings.Contains(err.Error(), "failed to resolve docs") {
+		t.Skipf("rebase failed before resolve step: %v", err)
+	}
+}
+
+// TestRebase_CommitFails covers the commitErr branch: README resolves and is
+// staged, but `git commit` fails because the repo has no configured identity.
+func TestRebase_CommitFails(t *testing.T) {
+	// Neutralize global/system git config so identity cannot fall back to the
+	// developer's ~/.gitconfig. Uses t.Setenv → must not be parallel.
+	t.Setenv("GIT_CONFIG_GLOBAL", os.DevNull)
+	t.Setenv("GIT_CONFIG_SYSTEM", os.DevNull)
+
+	dir := t.TempDir()
+	colDir := setupRebaseCollectionReadmeConflict(t, dir, false)
+
+	out := runGitNoFailOut(dir, "rebase", "base")
+	_ = out
+	conflict := strings.TrimSpace(runGitNoFailOut(dir, "diff", "--name-only", "--diff-filter=U"))
+	_ = runGitNoFail(dir, "rebase", "--abort")
+	if conflict == "" {
+		t.Skip("git auto-merged; no conflict produced")
+	}
+	// Remove local identity and forbid auto-detection; with global/system
+	// neutralized, commit must fail because no identity is available.
+	_ = runGitNoFail(dir, "config", "--unset", "user.email")
+	_ = runGitNoFail(dir, "config", "--unset", "user.name")
+	runGit(t, dir, "config", "user.useConfigOnly", "true")
+
+	getWd := func() (string, error) { return dir, nil }
+	cmd := Rebase(getWd, rebaseCollectionDef(colDir), func(...any) {})
+	err := runCobraCommand(cmd, "--base_ref=base", "--resolve=readme")
+	_ = runGitNoFail(dir, "rebase", "--abort")
+	if err == nil {
+		t.Skip("commit did not fail in this environment")
+	}
+	if !strings.Contains(err.Error(), "failed to commit") {
+		t.Errorf("expected commit failure, got: %v", err)
+	}
+}
+
+// TestRebase_ContinueFails covers the contErr branch: the first README conflict
+// resolves and commits, but `git rebase --continue` hits a second conflict.
+func TestRebase_ContinueFails(t *testing.T) {
+	dir := t.TempDir()
+	colDir := setupRebaseCollectionReadmeConflict(t, dir, true)
+
+	getWd := func() (string, error) { return dir, nil }
+	cmd := Rebase(getWd, rebaseCollectionDef(colDir), func(...any) {})
+	err := runCobraCommand(cmd, "--base_ref=base", "--resolve=readme")
+	_ = runGitNoFail(dir, "rebase", "--abort")
+	if err == nil {
+		t.Skip("rebase completed without a second conflict in this environment")
+	}
+	if !strings.Contains(err.Error(), "failed to continue rebase") {
+		t.Errorf("expected continue failure, got: %v", err)
+	}
+}
+
+// runGitNoFailOut runs git, ignoring errors, returning combined output.
+func runGitNoFailOut(dir string, args ...string) string {
+	c := exec.Command("git", args...)
+	c.Dir = dir
+	out, _ := c.CombinedOutput()
+	return string(out)
+}

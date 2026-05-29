@@ -49,41 +49,18 @@ func Rebase(
 			rebaseOut, rebaseErr := rebaseCmd.CombinedOutput()
 
 			if rebaseErr != nil {
-				// Rebase failed, probably conflict
-				diffCmd := exec.CommandContext(ctx, "git", "diff", "--name-only", "--diff-filter=U")
-				diffCmd.Dir = wd
-				diffOut, diffErr := diffCmd.Output()
+				// Rebase halted, probably on a conflict. Delegate conflict
+				// handling to the shared resolve engine.
+				conflictedFiles, diffErr := gitConflictedFiles(ctx, wd)
 				if diffErr != nil {
-					return fmt.Errorf("rebase failed:\n%s\nfailed to check conflicts: %v", rebaseOut, diffErr)
+					return fmt.Errorf("rebase failed:\n%s\nfailed to check conflicts: %w", rebaseOut, diffErr)
+				}
+				if len(conflictedFiles) == 0 {
+					return fmt.Errorf("rebase failed:\n%s", rebaseOut)
 				}
 
 				resolveStr, _ := cmd.Flags().GetString("resolve")
-				resolveItems := make(map[string]bool)
-				if resolveStr != "" {
-					for _, p := range strings.Split(resolveStr, ",") {
-						resolveItems[strings.ToLower(strings.TrimSpace(p))] = true
-					}
-				}
-
-				conflictedFiles := strings.Split(strings.TrimSpace(string(diffOut)), "\n")
-				var hasNonReadmeConflicts bool
-				var actualConflictedFiles []string
-				for _, f := range conflictedFiles {
-					if f == "" {
-						continue
-					}
-					actualConflictedFiles = append(actualConflictedFiles, f)
-					if strings.ToLower(filepath.Base(f)) != "readme.md" {
-						hasNonReadmeConflicts = true
-					}
-				}
-
-				if hasNonReadmeConflicts || len(actualConflictedFiles) == 0 {
-					return fmt.Errorf("rebase failed with unresolved conflicts in files other than README.md:\n%s\nOutput:\n%s",
-						strings.Join(actualConflictedFiles, "\n"), rebaseOut)
-				}
-
-				logf("only README.md files are in conflict. resolving via docs update...")
+				resolveItems := parseResolveItems(resolveStr)
 
 				validateOpt := ingitdb.Validate()
 				def, readErr := readDefinition(wd, validateOpt)
@@ -91,9 +68,16 @@ func Rebase(
 					return fmt.Errorf("failed to read database definition: %v", readErr)
 				}
 
-				docsErr := runDocsUpdate(ctx, wd, def, "", resolveStr, logf)
-				if docsErr != nil {
-					return fmt.Errorf("failed to resolve docs:\n%v", docsErr)
+				result, _, unresolved, resolveErr := resolveGeneratedConflicts(ctx, wd, def, resolveItems, conflictedFiles)
+				if resolveErr != nil {
+					return fmt.Errorf("failed to resolve docs:\n%w", resolveErr)
+				}
+				if len(unresolved) > 0 {
+					return fmt.Errorf("rebase failed with unresolved conflicts in files other than README.md:\n%s\nOutput:\n%s",
+						strings.Join(unresolved, "\n"), rebaseOut)
+				}
+				if len(result.Errors) > 0 {
+					return fmt.Errorf("failed to resolve docs:\n%v", result.Errors[0])
 				}
 
 				logf("README.md conflicts resolved. checking git status...")

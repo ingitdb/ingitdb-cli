@@ -80,7 +80,7 @@ func run(
 		commands.CI(homeDir, getWd, readDefinition, vb, logf),
 		commands.Pull(),
 		commands.Setup(),
-		commands.Resolve(),
+		commands.Resolve(homeDir, getWd, readDefinition, logf),
 		commands.Rebase(getWd, readDefinition, logf),
 		commands.Watch(),
 		commands.Docs(homeDir, getWd, readDefinition, logf),
