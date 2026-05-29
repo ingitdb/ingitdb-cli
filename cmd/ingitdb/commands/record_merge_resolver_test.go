@@ -134,6 +134,46 @@ func TestGitStageContent_MissingStageReturnsNil(t *testing.T) {
 	}
 }
 
+func TestResolveRecordMergeConflicts_CSVListEndToEnd(t *testing.T) {
+	t.Parallel()
+	rel := filepath.Join("c", "data.csv")
+	dir := setupDataConflict(t, rel,
+		"$id,v\nx,0\n",
+		"$id,v\nx,0\na,1\n",
+		"$id,v\nx,0\nb,2\n",
+	)
+	colDir := filepath.Dir(filepath.Join(dir, rel))
+	def := &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"c": {
+				ID:           "c",
+				DirPath:      colDir,
+				ColumnsOrder: []string{"$id", "v"},
+				RecordFile: &ingitdb.RecordFileDef{
+					Name: "data.csv", Format: ingitdb.RecordFormatCSV, RecordType: ingitdb.ListOfRecords,
+				},
+			},
+		},
+	}
+
+	resolved, unresolved, err := resolveRecordMergeConflicts(context.Background(), dir, def, []string{rel})
+	if err != nil {
+		t.Fatalf("unexpected err: %v", err)
+	}
+	if len(resolved) != 1 || len(unresolved) != 0 {
+		t.Fatalf("resolved=%v unresolved=%v, want CSV merged", resolved, unresolved)
+	}
+	content, readErr := os.ReadFile(filepath.Join(dir, rel))
+	if readErr != nil {
+		t.Fatalf("read merged: %v", readErr)
+	}
+	for _, want := range []string{"$id,v", "x,0", "a,1", "b,2"} {
+		if !strings.Contains(string(content), want) {
+			t.Errorf("merged CSV missing %q:\n%s", want, content)
+		}
+	}
+}
+
 func TestResolveRecordMergeConflicts_CollisionEscalates(t *testing.T) {
 	t.Parallel()
 	rel := filepath.Join("c", "data.yaml")
@@ -327,13 +367,65 @@ func TestSerializeMergedRecords(t *testing.T) {
 		}
 	})
 
-	t.Run("unsupported layout errors", func(t *testing.T) {
+	t.Run("unknown layout errors", func(t *testing.T) {
 		t.Parallel()
 		col := &ingitdb.CollectionDef{RecordFile: &ingitdb.RecordFileDef{
-			Name: "data.csv", Format: ingitdb.RecordFormatCSV, RecordType: ingitdb.ListOfRecords,
+			Name: "data.x", Format: ingitdb.RecordFormatYAML, RecordType: ingitdb.RecordType("bogus"),
 		}}
 		if _, err := serializeMergedRecords(nil, col); err == nil {
-			t.Fatal("expected error for unsupported layout")
+			t.Fatal("expected error for unknown layout")
+		}
+	})
+
+	t.Run("list csv", func(t *testing.T) {
+		t.Parallel()
+		col := &ingitdb.CollectionDef{
+			ColumnsOrder: []string{"$id", "v"},
+			RecordFile: &ingitdb.RecordFileDef{
+				Name: "data.csv", Format: ingitdb.RecordFormatCSV, RecordType: ingitdb.ListOfRecords,
+			},
+		}
+		records := []recordmerge.Record{
+			{Key: "a", Fields: map[string]any{"$id": "a", "v": "1"}},
+			{Key: "b", Fields: map[string]any{"$id": "b", "v": "2"}},
+		}
+		got, err := serializeMergedRecords(records, col)
+		if err != nil {
+			t.Fatalf("err: %v", err)
+		}
+		if !strings.Contains(string(got), "$id,v") || !strings.Contains(string(got), "a,1") {
+			t.Errorf("csv output = %q", got)
+		}
+	})
+
+	t.Run("list ingr", func(t *testing.T) {
+		t.Parallel()
+		col := &ingitdb.CollectionDef{
+			ColumnsOrder: []string{"v"},
+			RecordFile: &ingitdb.RecordFileDef{
+				Name: "rs", Format: ingitdb.RecordFormatINGR, RecordType: ingitdb.ListOfRecords,
+			},
+		}
+		records := []recordmerge.Record{{Key: "a", Fields: map[string]any{"$ID": "a", "v": "1"}}}
+		got, err := serializeMergedRecords(records, col)
+		if err != nil {
+			t.Fatalf("err: %v", err)
+		}
+		if len(got) == 0 {
+			t.Error("expected INGR output")
+		}
+	})
+
+	t.Run("unsupported list format errors", func(t *testing.T) {
+		t.Parallel()
+		col := &ingitdb.CollectionDef{
+			ColumnsOrder: []string{"v"},
+			RecordFile: &ingitdb.RecordFileDef{
+				Name: "data.yaml", Format: ingitdb.RecordFormatYAML, RecordType: ingitdb.ListOfRecords,
+			},
+		}
+		if _, err := serializeMergedRecords(nil, col); err == nil {
+			t.Fatal("expected error for unsupported list format")
 		}
 	})
 }

@@ -103,7 +103,30 @@ func serializeMergedRecords(records []recordmerge.Record, col *ingitdb.Collectio
 		return dalgo2ingitdb.EncodeMapOfRecordsContent(data, col.RecordFile.Format, col.RecordFile.Name, col.ColumnsOrder)
 	case ingitdb.SingleRecord:
 		return dalgo2ingitdb.EncodeRecordContentForCollection(records[0].Fields, col)
+	case ingitdb.ListOfRecords:
+		return serializeListRecords(records, col)
 	default:
 		return nil, fmt.Errorf("unsupported record layout %q", col.RecordFile.RecordType)
+	}
+}
+
+// serializeListRecords renders merged list records: CSV rows are written in
+// merge order; INGR reuses the keyed map-of-records encoder.
+func serializeListRecords(records []recordmerge.Record, col *ingitdb.CollectionDef) ([]byte, error) {
+	switch col.RecordFile.Format {
+	case ingitdb.RecordFormatCSV:
+		rows := make([]map[string]any, len(records))
+		for i, r := range records {
+			rows[i] = r.Fields
+		}
+		return dalgo2ingitdb.EncodeRecordContentForCollection(rows, col)
+	case ingitdb.RecordFormatINGR:
+		data := make(map[string]map[string]any, len(records))
+		for _, r := range records {
+			data[r.Key] = r.Fields
+		}
+		return dalgo2ingitdb.EncodeMapOfRecordsContent(data, col.RecordFile.Format, col.RecordFile.Name, col.ColumnsOrder)
+	default:
+		return nil, fmt.Errorf("unsupported list format %q", col.RecordFile.Format)
 	}
 }

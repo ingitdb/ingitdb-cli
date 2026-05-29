@@ -3,6 +3,7 @@ package recordmerge
 import (
 	"testing"
 
+	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
@@ -136,6 +137,113 @@ func TestMergeFiles_SingleRecord(t *testing.T) {
 	})
 }
 
+func csvCol(columnsOrder, primaryKey []string) *ingitdb.CollectionDef {
+	return &ingitdb.CollectionDef{
+		ColumnsOrder: columnsOrder,
+		PrimaryKey:   primaryKey,
+		RecordFile: &ingitdb.RecordFileDef{
+			Name:       "data.csv",
+			Format:     ingitdb.RecordFormatCSV,
+			RecordType: ingitdb.ListOfRecords,
+		},
+	}
+}
+
+func TestMergeFiles_ListCSV(t *testing.T) {
+	t.Parallel()
+
+	t.Run("disjoint additions unioned by $id", func(t *testing.T) {
+		t.Parallel()
+		col := csvCol([]string{"$id", "v"}, nil)
+		got := MergeFiles(
+			[]byte("$id,v\nx,0\n"),
+			[]byte("$id,v\nx,0\na,1\n"),
+			[]byte("$id,v\nx,0\nb,2\n"),
+			col, Options{})
+		if got.Escalate {
+			t.Fatalf("unexpected escalate: %s", got.Reason)
+		}
+		if len(got.Merged) != 3 {
+			t.Fatalf("merged = %v, want 3 rows (x,a,b)", got.Merged)
+		}
+	})
+
+	t.Run("keyed by declared primary key", func(t *testing.T) {
+		t.Parallel()
+		col := csvCol([]string{"code", "v"}, []string{"code"})
+		got := MergeFiles(
+			[]byte("code,v\nx,0\n"),
+			[]byte("code,v\nx,0\na,1\n"),
+			[]byte("code,v\nx,0\nb,2\n"),
+			col, Options{})
+		if got.Escalate || len(got.Merged) != 3 {
+			t.Fatalf("escalate=%v merged=%v, want 3 rows", got.Escalate, got.Merged)
+		}
+	})
+
+	t.Run("no usable key column escalates", func(t *testing.T) {
+		t.Parallel()
+		col := csvCol([]string{"foo", "bar"}, nil)
+		got := MergeFiles([]byte("foo,bar\n1,2\n"), nil, nil, col, Options{})
+		if !got.Escalate {
+			t.Fatal("expected escalate without a key column")
+		}
+	})
+
+	t.Run("parse failure escalates", func(t *testing.T) {
+		t.Parallel()
+		col := csvCol([]string{"$id", "v"}, nil)
+		// Header does not match columns_order -> parse error.
+		got := MergeFiles([]byte("wrong,header\n1,2\n"), nil, nil, col, Options{})
+		if !got.Escalate {
+			t.Fatal("expected escalate on csv parse failure")
+		}
+	})
+
+	t.Run("unsupported list format escalates", func(t *testing.T) {
+		t.Parallel()
+		col := &ingitdb.CollectionDef{
+			ColumnsOrder: []string{"$id", "v"},
+			RecordFile: &ingitdb.RecordFileDef{
+				Name: "data.yaml", Format: ingitdb.RecordFormatYAML, RecordType: ingitdb.ListOfRecords,
+			},
+		}
+		got := MergeFiles(nil, nil, nil, col, Options{})
+		if !got.Escalate {
+			t.Fatal("expected escalate for unsupported list format")
+		}
+	})
+}
+
+func TestMergeFiles_ListINGR(t *testing.T) {
+	t.Parallel()
+	col := &ingitdb.CollectionDef{
+		ColumnsOrder: []string{"v"},
+		RecordFile: &ingitdb.RecordFileDef{
+			Name: "rs", Format: ingitdb.RecordFormatINGR, RecordType: ingitdb.ListOfRecords,
+		},
+	}
+	enc := func(ids ...string) []byte {
+		data := make(map[string]map[string]any, len(ids))
+		for _, id := range ids {
+			data[id] = map[string]any{"$ID": id, "v": "1"}
+		}
+		b, err := dalgo2ingitdb.EncodeMapOfRecordsContent(data, ingitdb.RecordFormatINGR, "rs", []string{"v"})
+		if err != nil {
+			t.Fatalf("encode INGR: %v", err)
+		}
+		return b
+	}
+
+	got := MergeFiles(enc("x"), enc("x", "a"), enc("x", "b"), col, Options{})
+	if got.Escalate {
+		t.Fatalf("unexpected escalate: %s", got.Reason)
+	}
+	if len(got.Merged) != 3 {
+		t.Fatalf("merged = %v, want 3 records (x,a,b)", got.Merged)
+	}
+}
+
 func TestMergeFiles_Unmergeable(t *testing.T) {
 	t.Parallel()
 
@@ -147,14 +255,14 @@ func TestMergeFiles_Unmergeable(t *testing.T) {
 		}
 	})
 
-	t.Run("unsupported layout escalates", func(t *testing.T) {
+	t.Run("unknown layout escalates", func(t *testing.T) {
 		t.Parallel()
 		col := &ingitdb.CollectionDef{RecordFile: &ingitdb.RecordFileDef{
-			Name: "data.csv", Format: ingitdb.RecordFormatCSV, RecordType: ingitdb.ListOfRecords,
+			Name: "data.x", Format: ingitdb.RecordFormatYAML, RecordType: ingitdb.RecordType("bogus"),
 		}}
 		got := MergeFiles(nil, nil, nil, col, Options{})
 		if !got.Escalate {
-			t.Fatal("expected escalate for unsupported list layout")
+			t.Fatal("expected escalate for unknown record layout")
 		}
 	})
 }

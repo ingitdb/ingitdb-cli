@@ -2,7 +2,10 @@
 package recordmerge
 
 import (
+	"fmt"
+	"slices"
 	"sort"
+	"strings"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
@@ -27,9 +30,77 @@ func MergeFiles(base, ours, theirs []byte, col *ingitdb.CollectionDef, opts Opti
 		return mergeMapOfRecords(base, ours, theirs, col, opts)
 	case ingitdb.SingleRecord:
 		return mergeSingleRecord(base, ours, theirs, col, opts)
+	case ingitdb.ListOfRecords:
+		return mergeListOfRecords(base, ours, theirs, col, opts)
 	default:
 		return escalate("record layout %q is not auto-mergeable yet", col.RecordFile.RecordType)
 	}
+}
+
+// mergeListOfRecords handles the list layout. CSV rows are keyed by the
+// collection's key column(s); INGR records are keyed by their `$ID` and reuse
+// the map-of-records path.
+func mergeListOfRecords(base, ours, theirs []byte, col *ingitdb.CollectionDef, opts Options) Outcome {
+	switch col.RecordFile.Format {
+	case ingitdb.RecordFormatCSV:
+		return mergeListCSV(base, ours, theirs, col, opts)
+	case ingitdb.RecordFormatINGR:
+		return mergeMapOfRecords(base, ours, theirs, col, opts)
+	default:
+		return escalate("list layout with format %q is not auto-mergeable yet", col.RecordFile.Format)
+	}
+}
+
+// csvKeyColumns returns the column name(s) that identify a CSV row: the
+// declared primary key, else a `$id` or `id` column, else nil when none is
+// available (in which case the conflict escalates).
+func csvKeyColumns(col *ingitdb.CollectionDef) []string {
+	if len(col.PrimaryKey) > 0 {
+		return col.PrimaryKey
+	}
+	for _, candidate := range []string{"$id", "id"} {
+		if slices.Contains(col.ColumnsOrder, candidate) {
+			return []string{candidate}
+		}
+	}
+	return nil
+}
+
+// parseCSVRecords parses one stage of a CSV list into keyed records, joining
+// the key-column values into each record's Key. Empty content yields no
+// records.
+func parseCSVRecords(content []byte, col *ingitdb.CollectionDef, keyCols []string) ([]Record, error) {
+	if len(content) == 0 {
+		return nil, nil
+	}
+	parsed, err := dalgo2ingitdb.ParseRecordContentForCollection(content, col)
+	if err != nil {
+		return nil, err
+	}
+	rows, _ := parsed["$records"].([]map[string]any)
+	records := make([]Record, 0, len(rows))
+	for _, row := range rows {
+		parts := make([]string, len(keyCols))
+		for i, kc := range keyCols {
+			parts[i] = fmt.Sprintf("%v", row[kc])
+		}
+		records = append(records, Record{Key: strings.Join(parts, "\x1f"), Fields: row})
+	}
+	return records, nil
+}
+
+func mergeListCSV(base, ours, theirs []byte, col *ingitdb.CollectionDef, opts Options) Outcome {
+	keyCols := csvKeyColumns(col)
+	if keyCols == nil {
+		return escalate("csv list has no usable key column (set primary_key or a $id/id column)")
+	}
+	b, err1 := parseCSVRecords(base, col, keyCols)
+	o, err2 := parseCSVRecords(ours, col, keyCols)
+	t, err3 := parseCSVRecords(theirs, col, keyCols)
+	if err := firstErr(err1, err2, err3); err != nil {
+		return escalate("failed to parse a conflict side: %v", err)
+	}
+	return Merge(b, o, t, opts)
 }
 
 // parseMap parses one stage of a map-of-records file into ordered records
