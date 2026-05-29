@@ -62,7 +62,17 @@ func Resolve(
 				return err
 			}
 			if len(unresolved) > 0 {
-				return reportSourceConflicts(ctx, unresolved, isTerminal, runConflictsTUI, logf)
+				mergedFiles, stillUnresolved, mErr := resolveRecordMergeConflicts(ctx, dirPath, def, unresolved)
+				if mErr != nil {
+					return mErr
+				}
+				if len(mergedFiles) > 0 {
+					logf(fmt.Sprintf("auto-merged %d data file(s)", len(mergedFiles)))
+				}
+				if len(stillUnresolved) > 0 {
+					return reportSourceConflicts(ctx, stillUnresolved, isTerminal, runConflictsTUI, logf)
+				}
+				return nil
 			}
 			if len(result.Errors) > 0 {
 				for _, e := range result.Errors {
