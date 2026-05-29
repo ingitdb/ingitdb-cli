@@ -45,6 +45,27 @@ placeholder so the user is never left guessing:
   (record added/removed) rather than the field level.
 - An optional non-interactive `--strategy=ours|theirs` for scripting/CI.
 
+## Naming: why "manual", not "interactive"
+
+This subfeature is named `manual-resolve` (not `interactive-resolve`)
+deliberately:
+
+- **It is the clean antonym of [`auto-resolve`](../auto-resolve/README.md).**
+  The defining axis between the two subfeatures is *who decides the outcome* —
+  the tool (`auto`) vs a human (`manual`). "Interactive" describes a *UX*, not
+  the absence of automation, so it doesn't pair cleanly with "auto".
+- **It stays consistent with the planned `--strategy=ours|theirs`.** That option
+  is human-directed but *non-interactive*; calling the subfeature "interactive"
+  would make a non-interactive flag inside it self-contradictory. Both the TUI
+  and `--strategy` are "manual" (human-chosen), just different UX modes.
+- **It matches git's conflict-resolution vocabulary.** Git reserves
+  "interactive" for the `-i` family (`rebase -i`, `add -i`) — commit/hunk
+  editing, not conflict resolution — and describes resolving conflicts as doing
+  it *manually* (vs a merge tool).
+
+"Interactive" is the right word for the *mode/flag* within this subfeature (the
+TUI is the interactive mode), not for the subfeature itself.
+
 ## Behavior
 
 ### REQ: placeholder-until-implemented
