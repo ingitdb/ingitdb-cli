@@ -1,7 +1,7 @@
 # Feature: Auto-Merge Logically Non-Conflicting Record Data
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/resolve/auto-resolve/record-merge?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/resolve/auto-resolve/record-merge?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/resolve/auto-resolve/record-merge?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/resolve/auto-resolve/record-merge?op=request-change) |
-**Status:** Approved
+**Status:** Implementing
 **Parent Feature:** [`cli/resolve/auto-resolve`](../README.md)
 
 ## Summary
@@ -234,10 +234,24 @@ fails schema validation
 
 ## Implementation
 
-Not implemented yet. Will share the conflicted-file discovery already in
-[`cmd/ingitdb/commands/conflict_resolver.go`](../../../../../../cmd/ingitdb/commands/conflict_resolver.go)
-and the record parsing/validation in `pkg/dalgo2ingitdb` and
-`pkg/ingitdb/datavalidator`.
+Source files (annotated with `// specscore: feature/cli/resolve/auto-resolve/record-merge`):
+
+- [`pkg/ingitdb/recordmerge/merge.go`](../../../../../../pkg/ingitdb/recordmerge/merge.go) —
+  pure three-way merge engine (strict typed equality, record-set diff,
+  field-level merge).
+- [`pkg/ingitdb/recordmerge/bridge.go`](../../../../../../pkg/ingitdb/recordmerge/bridge.go) —
+  layout-aware parsing of conflict stages into records (`MapOfRecords`,
+  `SingleRecord`).
+- [`pkg/ingitdb/conflict_resolution.go`](../../../../../../pkg/ingitdb/conflict_resolution.go) —
+  `conflict_resolution.record_merge` config and the per-collection override
+  cascade (`ResolveRecordMerge`).
+- [`cmd/ingitdb/commands/record_merge_resolver.go`](../../../../../../cmd/ingitdb/commands/record_merge_resolver.go) —
+  reads BASE/OURS/THEIRS git stages, runs the merge, serializes and stages the
+  result, escalating the rest; wired into `resolve` ahead of `manual-resolve`.
+
+Layouts supported today: `MapOfRecords` and `SingleRecord`. `ListOfRecords`
+(CSV/INGR) and markdown serialization are not yet wired and escalate to
+`manual-resolve`. New code is covered by tests at 100%.
 
 ## Open Questions
 

@@ -81,7 +81,7 @@ conflicts straight to `manual-resolve`.
 
 <!-- No ACs deferred. -->
 
-## Outstanding Questions
+## Open Questions
 
 - `manual-resolve` is currently a placeholder screen, so escalated conflicts (Tasks 3–5)
   have no interactive destination yet; this plan stages them as unresolved and exits
