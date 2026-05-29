@@ -6,10 +6,20 @@
 
 ## Summary
 
-Non-interactive resolution of merge conflicts in **generated / reproducible**
-files. When a conflicted file's content is fully derivable from source records,
-`resolve` regenerates it from those records and stages the result, so a human
-never hand-merges a reproducible artifact.
+Non-interactive resolution of merge conflicts that need no human decision, via
+two distinct mechanisms:
+
+- **Regeneration** — when a conflicted file's content is fully derivable from
+  source records (collection `README.md`, materialized views, data indexes),
+  `resolve` regenerates it from those records and stages the result, so a human
+  never hand-merges a reproducible artifact.
+- **[Record-merge](record-merge/README.md)** — when a conflicted **source-data**
+  file's two sides do not logically conflict (e.g. two users add records with
+  distinct IDs, or edit different fields of the same record), `resolve` performs
+  a record-aware three-way merge and stages the union.
+
+Both share one rule: resolve automatically only what is unambiguous; hand
+everything else to [`manual-resolve`](../manual-resolve/README.md).
 
 ## Problem
 
@@ -64,6 +74,13 @@ reported by `git diff --name-only --diff-filter=U`.
 **Given** conflict markers left by a manual `git merge` (not an `ingitdb rebase`)
 **When** `ingitdb resolve` runs
 **Then** the generated-file conflicts are resolved the same way as for a rebase.
+
+## Subfeatures
+
+- **[record-merge](record-merge/README.md)** — record-aware three-way merge of
+  conflicted source-data files when the two sides are logically non-conflicting.
+  Includes the full catalogue of auto-resolvable vs. escalated conflict cases.
+  **Status: Draft.**
 
 ## Dependencies
 

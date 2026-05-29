@@ -10,7 +10,7 @@ The `ingitdb resolve` command is the working-tree conflict engine for inGitDB. I
 It handles two classes of conflict differently:
 
 - **Generated / reproducible files** (collection `README.md`, materialized views, data indexes) are auto-resolved non-interactively by regenerating them from the source records and staging them.
-- **Source-data files** (hand-edited record YAML/JSON) are resolved through an interactive, record-aware terminal UI.
+- **Source-data files** (hand-edited record YAML/JSON) are first run through a record-aware three-way merge that auto-resolves logically non-conflicting changes (e.g. records added with distinct IDs); only the genuinely contested ones fall through to an interactive, record-aware terminal UI.
 
 With `--file=FILE` it targets a single conflicted file; without it, every conflicted file in the database is processed in turn.
 
