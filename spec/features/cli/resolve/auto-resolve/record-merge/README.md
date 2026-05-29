@@ -151,50 +151,12 @@ Cases DM-1 through DM-8 (disjoint or non-divergent — sides never contest the
 same record's field value) MUST be auto-resolved by default and the merged file
 staged with `git add`, without prompting.
 
-#### AC-1: disjoint-additions-unioned
-
-**Given** a conflicted `[]map[string]any` collection file where OURS appended a
-record with ID `a` and THEIRS appended a record with ID `b` (`a ≠ b`)
-**When** `ingitdb resolve` runs
-**Then** the merged file contains both records, parses and validates, is staged,
-and is no longer reported by `git diff --name-only --diff-filter=U`.
-
-#### AC-2: identical-addition-deduplicated
-
-**Given** both sides added a record with the same ID and semantically equal
-content
-**When** `ingitdb resolve` runs
-**Then** the merged file contains exactly one copy of that record and is staged.
-
-#### AC-3: representation-noise-resolved
-
-**Given** a conflict where the two sides differ only in key ordering / whitespace
-but parse to identical records
-**When** `ingitdb resolve` runs
-**Then** the file is written in canonical form and staged, with no records added
-or lost.
-
 ### REQ: same-record-merge-opt-in
 
 Cases DM-9 through DM-11 (same record, no contested field value) MUST be
 auto-resolved **only** when same-record merging is enabled for that scope
 (`record_merge.same_record: true`). When disabled, they MUST escalate to
 `manual-resolve`.
-
-#### AC-4: different-fields-merged-when-enabled
-
-**Given** `same_record: true` and a conflict where OURS changed field `name` and
-THEIRS changed field `email` of the **same** record, with no other divergence
-**When** `ingitdb resolve` runs
-**Then** the merged record contains both the new `name` and the new `email`, is
-staged, and validates against the schema.
-
-#### AC-5: same-record-escalates-when-disabled
-
-**Given** the same conflict as AC-4 but `same_record: false`
-**When** `ingitdb resolve` runs
-**Then** the file is left for `manual-resolve` and is still reported as
-unresolved.
 
 ### REQ: never-drop-a-change
 
@@ -209,14 +171,54 @@ values, delete/modify, divergent field types, ambiguous list ordering, and any
 merge whose result fails schema validation — MUST NOT be auto-resolved and MUST
 be handed to `manual-resolve`.
 
-#### AC-6: contested-field-escalates
+## Acceptance Criteria
+
+### AC: disjoint-additions-unioned
+
+**Given** a conflicted `[]map[string]any` collection file where OURS appended a
+record with ID `a` and THEIRS appended a record with ID `b` (`a ≠ b`)
+**When** `ingitdb resolve` runs
+**Then** the merged file contains both records, parses and validates, is staged,
+and is no longer reported by `git diff --name-only --diff-filter=U`.
+
+### AC: identical-addition-deduplicated
+
+**Given** both sides added a record with the same ID and semantically equal
+content
+**When** `ingitdb resolve` runs
+**Then** the merged file contains exactly one copy of that record and is staged.
+
+### AC: representation-noise-resolved
+
+**Given** a conflict where the two sides differ only in key ordering / whitespace
+but parse to identical records
+**When** `ingitdb resolve` runs
+**Then** the file is written in canonical form and staged, with no records added
+or lost.
+
+### AC: different-fields-merged-when-enabled
+
+**Given** `same_record: true` and a conflict where OURS changed field `name` and
+THEIRS changed field `email` of the **same** record, with no other divergence
+**When** `ingitdb resolve` runs
+**Then** the merged record contains both the new `name` and the new `email`, is
+staged, and validates against the schema.
+
+### AC: same-record-escalates-when-disabled
+
+**Given** the same conflict as in `different-fields-merged-when-enabled` but with `same_record: false`
+**When** `ingitdb resolve` runs
+**Then** the file is left for `manual-resolve` and is still reported as
+unresolved.
+
+### AC: contested-field-escalates
 
 **Given** a conflict where both sides set the **same** field of the **same**
 record to **different** values
 **When** `ingitdb resolve` runs
 **Then** no auto-merge is written and the file is handed to `manual-resolve`.
 
-#### AC-7: invalid-merge-escalates
+### AC: invalid-merge-escalates
 
 **Given** a conflict whose otherwise-disjoint merge would produce a file that
 fails schema validation
