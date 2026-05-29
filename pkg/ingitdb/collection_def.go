@@ -29,6 +29,10 @@ type CollectionDef struct {
 	Views map[string]*ViewDef `yaml:"-" json:"-"`
 
 	Readme *CollectionReadmeDef `yaml:"readme,omitempty" json:"readme,omitempty"`
+
+	// ConflictResolution overrides the database-level conflict-resolution
+	// settings for this collection. Nil fields inherit the database default.
+	ConflictResolution *ConflictResolutionConfig `yaml:"conflict_resolution,omitempty" json:"conflict_resolution,omitempty"`
 }
 
 type CollectionReadmeDef struct {
