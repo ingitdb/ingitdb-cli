@@ -444,16 +444,81 @@ func TestSerializeMergedRecords(t *testing.T) {
 		}
 	})
 
+	t.Run("list yaml/json/jsonl", func(t *testing.T) {
+		t.Parallel()
+		records := []recordmerge.Record{
+			{Key: "a", Fields: map[string]any{"$id": "a", "v": "1"}},
+			{Key: "b", Fields: map[string]any{"$id": "b", "v": "2"}},
+		}
+		for _, format := range []ingitdb.RecordFormat{
+			ingitdb.RecordFormatYAML, ingitdb.RecordFormatJSON, ingitdb.RecordFormatJSONL,
+		} {
+			col := &ingitdb.CollectionDef{
+				ColumnsOrder: []string{"$id", "v"},
+				RecordFile:   &ingitdb.RecordFileDef{Name: "data", Format: format, RecordType: ingitdb.ListOfRecords},
+			}
+			out, err := serializeMergedRecords(records, col)
+			if err != nil {
+				t.Fatalf("%s: %v", format, err)
+			}
+			if !strings.Contains(string(out), "a") || !strings.Contains(string(out), "b") {
+				t.Errorf("%s: output missing records: %q", format, out)
+			}
+		}
+	})
+
 	t.Run("unsupported list format errors", func(t *testing.T) {
 		t.Parallel()
 		col := &ingitdb.CollectionDef{
 			ColumnsOrder: []string{"v"},
 			RecordFile: &ingitdb.RecordFileDef{
-				Name: "data.yaml", Format: ingitdb.RecordFormatYAML, RecordType: ingitdb.ListOfRecords,
+				Name: "data.toml", Format: ingitdb.RecordFormatTOML, RecordType: ingitdb.ListOfRecords,
 			},
 		}
 		if _, err := serializeMergedRecords(nil, col); err == nil {
 			t.Fatal("expected error for unsupported list format")
 		}
 	})
+}
+
+func TestResolveRecordMergeConflicts_YAMLListEndToEnd(t *testing.T) {
+	t.Parallel()
+	rel := filepath.Join("c", "data.yaml")
+	dir := setupDataConflict(t, rel,
+		"- $id: x\n  v: '0'\n",
+		"- $id: x\n  v: '0'\n- $id: a\n  v: '1'\n",
+		"- $id: x\n  v: '0'\n- $id: b\n  v: '2'\n",
+	)
+	colDir := filepath.Dir(filepath.Join(dir, rel))
+	def := &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"c": {
+				ID:           "c",
+				DirPath:      colDir,
+				ColumnsOrder: []string{"$id", "v"},
+				RecordFile: &ingitdb.RecordFileDef{
+					Name: "data.yaml", Format: ingitdb.RecordFormatYAML, RecordType: ingitdb.ListOfRecords,
+				},
+			},
+		},
+	}
+
+	resolved, unresolved, err := resolveRecordMergeConflicts(context.Background(), dir, def, []string{rel})
+	if err != nil {
+		t.Fatalf("unexpected err: %v", err)
+	}
+	if len(resolved) != 1 || len(unresolved) != 0 {
+		t.Fatalf("resolved=%v unresolved=%v, want YAML list merged", resolved, unresolved)
+	}
+	content, readErr := os.ReadFile(filepath.Join(dir, rel))
+	if readErr != nil {
+		t.Fatalf("read merged: %v", readErr)
+	}
+	rows, parseErr := dalgo2ingitdb.ParseListOfRecordsContent(content, ingitdb.RecordFormatYAML)
+	if parseErr != nil {
+		t.Fatalf("parse merged: %v\n%s", parseErr, content)
+	}
+	if len(rows) != 3 {
+		t.Errorf("merged rows = %d, want 3 (x,a,b):\n%s", len(rows), content)
+	}
 }

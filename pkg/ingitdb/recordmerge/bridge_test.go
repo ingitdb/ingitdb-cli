@@ -200,19 +200,6 @@ func TestMergeFiles_ListCSV(t *testing.T) {
 		}
 	})
 
-	t.Run("unsupported list format escalates", func(t *testing.T) {
-		t.Parallel()
-		col := &ingitdb.CollectionDef{
-			ColumnsOrder: []string{"$id", "v"},
-			RecordFile: &ingitdb.RecordFileDef{
-				Name: "data.yaml", Format: ingitdb.RecordFormatYAML, RecordType: ingitdb.ListOfRecords,
-			},
-		}
-		got := MergeFiles(nil, nil, nil, col, Options{})
-		if !got.Escalate {
-			t.Fatal("expected escalate for unsupported list format")
-		}
-	})
 }
 
 func TestMergeFiles_ListINGR(t *testing.T) {
@@ -242,6 +229,88 @@ func TestMergeFiles_ListINGR(t *testing.T) {
 	if len(got.Merged) != 3 {
 		t.Fatalf("merged = %v, want 3 records (x,a,b)", got.Merged)
 	}
+}
+
+func seqCol(format ingitdb.RecordFormat, primaryKey []string) *ingitdb.CollectionDef {
+	return &ingitdb.CollectionDef{
+		PrimaryKey: primaryKey,
+		RecordFile: &ingitdb.RecordFileDef{
+			Name: "data", Format: format, RecordType: ingitdb.ListOfRecords,
+		},
+	}
+}
+
+func TestMergeFiles_ListSequence(t *testing.T) {
+	t.Parallel()
+
+	t.Run("yaml disjoint additions", func(t *testing.T) {
+		t.Parallel()
+		col := seqCol(ingitdb.RecordFormatYAML, nil)
+		got := MergeFiles(
+			[]byte("- $id: x\n  v: 0\n"),
+			[]byte("- $id: x\n  v: 0\n- $id: a\n  v: 1\n"),
+			[]byte("- $id: x\n  v: 0\n- $id: b\n  v: 2\n"),
+			col, Options{})
+		if got.Escalate {
+			t.Fatalf("unexpected escalate: %s", got.Reason)
+		}
+		if len(got.Merged) != 3 {
+			t.Fatalf("merged = %v, want 3 (x,a,b)", got.Merged)
+		}
+	})
+
+	t.Run("json array disjoint additions", func(t *testing.T) {
+		t.Parallel()
+		col := seqCol(ingitdb.RecordFormatJSON, nil)
+		got := MergeFiles(
+			[]byte(`[{"$id":"x"}]`),
+			[]byte(`[{"$id":"x"},{"$id":"a"}]`),
+			[]byte(`[{"$id":"x"},{"$id":"b"}]`),
+			col, Options{})
+		if got.Escalate || len(got.Merged) != 3 {
+			t.Fatalf("escalate=%v merged=%v", got.Escalate, got.Merged)
+		}
+	})
+
+	t.Run("jsonl disjoint additions", func(t *testing.T) {
+		t.Parallel()
+		col := seqCol(ingitdb.RecordFormatJSONL, nil)
+		got := MergeFiles(
+			[]byte("{\"$id\":\"x\"}\n"),
+			[]byte("{\"$id\":\"x\"}\n{\"$id\":\"a\"}\n"),
+			[]byte("{\"$id\":\"x\"}\n{\"$id\":\"b\"}\n"),
+			col, Options{})
+		if got.Escalate || len(got.Merged) != 3 {
+			t.Fatalf("escalate=%v merged=%v", got.Escalate, got.Merged)
+		}
+	})
+
+	t.Run("keyless row escalates", func(t *testing.T) {
+		t.Parallel()
+		col := seqCol(ingitdb.RecordFormatYAML, nil)
+		got := MergeFiles(nil, []byte("- name: Alex\n"), nil, col, Options{})
+		if !got.Escalate {
+			t.Fatal("expected escalate for keyless list row")
+		}
+	})
+
+	t.Run("parse failure escalates", func(t *testing.T) {
+		t.Parallel()
+		col := seqCol(ingitdb.RecordFormatJSON, nil)
+		got := MergeFiles(nil, []byte("[not json"), nil, col, Options{})
+		if !got.Escalate {
+			t.Fatal("expected escalate on parse failure")
+		}
+	})
+
+	t.Run("unsupported list format escalates", func(t *testing.T) {
+		t.Parallel()
+		col := seqCol(ingitdb.RecordFormatTOML, nil)
+		got := MergeFiles(nil, nil, nil, col, Options{})
+		if !got.Escalate {
+			t.Fatal("expected escalate for toml list layout")
+		}
+	})
 }
 
 func TestMergeFiles_Unmergeable(t *testing.T) {

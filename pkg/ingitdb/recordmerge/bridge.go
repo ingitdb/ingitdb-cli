@@ -46,9 +46,44 @@ func mergeListOfRecords(base, ours, theirs []byte, col *ingitdb.CollectionDef, o
 		return mergeListCSV(base, ours, theirs, col, opts)
 	case ingitdb.RecordFormatINGR:
 		return mergeMapOfRecords(base, ours, theirs, col, opts)
+	case ingitdb.RecordFormatYAML, ingitdb.RecordFormatYML,
+		ingitdb.RecordFormatJSON, ingitdb.RecordFormatJSONL:
+		return mergeListSequence(base, ours, theirs, col, opts)
 	default:
 		return escalate("list layout with format %q is not auto-mergeable yet", col.RecordFile.Format)
 	}
+}
+
+// parseSequenceRecords parses one stage of a YAML/JSON/JSONL list into keyed
+// records using the shared key-resolution rule. Empty content yields no
+// records; a row with no resolvable key is an error (the conflict escalates).
+func parseSequenceRecords(content []byte, col *ingitdb.CollectionDef) ([]Record, error) {
+	if len(content) == 0 {
+		return nil, nil
+	}
+	rows, err := dalgo2ingitdb.ParseListOfRecordsContent(content, col.RecordFile.Format)
+	if err != nil {
+		return nil, err
+	}
+	records := make([]Record, 0, len(rows))
+	for _, row := range rows {
+		key, ok := dalgo2ingitdb.ResolveListRecordKey(row, col)
+		if !ok {
+			return nil, fmt.Errorf("list record has no resolvable key")
+		}
+		records = append(records, Record{Key: key, Fields: row})
+	}
+	return records, nil
+}
+
+func mergeListSequence(base, ours, theirs []byte, col *ingitdb.CollectionDef, opts Options) Outcome {
+	b, err1 := parseSequenceRecords(base, col)
+	o, err2 := parseSequenceRecords(ours, col)
+	t, err3 := parseSequenceRecords(theirs, col)
+	if err := firstErr(err1, err2, err3); err != nil {
+		return escalate("failed to parse a conflict side: %v", err)
+	}
+	return Merge(b, o, t, opts)
 }
 
 // csvKeyColumns returns the column name(s) that identify a CSV row: the

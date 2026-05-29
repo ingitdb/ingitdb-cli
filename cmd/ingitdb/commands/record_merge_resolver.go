@@ -136,6 +136,13 @@ func serializeListRecords(records []recordmerge.Record, col *ingitdb.CollectionD
 			data[r.Key] = r.Fields
 		}
 		return dalgo2ingitdb.EncodeMapOfRecordsContent(data, col.RecordFile.Format, col.RecordFile.Name, col.ColumnsOrder)
+	case ingitdb.RecordFormatYAML, ingitdb.RecordFormatYML,
+		ingitdb.RecordFormatJSON, ingitdb.RecordFormatJSONL:
+		rows := make([]map[string]any, len(records))
+		for i, r := range records {
+			rows[i] = r.Fields
+		}
+		return dalgo2ingitdb.EncodeListOfRecordsContent(rows, col.RecordFile.Format, col.ColumnsOrder)
 	default:
 		return nil, fmt.Errorf("unsupported list format %q", col.RecordFile.Format)
 	}
