@@ -1,0 +1,106 @@
+// specscore: feature/cli/resolve/auto-resolve/record-merge
+package recordmerge
+
+import (
+	"sort"
+
+	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
+	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+)
+
+// MergeFiles parses the BASE/OURS/THEIRS bytes of a conflicted record file into
+// typed records and runs the three-way merge. A nil or empty stage is treated
+// as an absent record set (added on one side, or deleted).
+//
+// It returns an Outcome whose Merged holds the union of non-conflicting changes
+// on success, or Escalate=true (with a reason) when the conflict is not
+// auto-resolvable — including unsupported record layouts and parse failures.
+// Serialization of the merged records back to file bytes is the caller's
+// responsibility.
+func MergeFiles(base, ours, theirs []byte, col *ingitdb.CollectionDef, opts Options) Outcome {
+	if col == nil || col.RecordFile == nil {
+		return escalate("collection has no record-file definition")
+	}
+
+	switch col.RecordFile.RecordType {
+	case ingitdb.MapOfRecords:
+		return mergeMapOfRecords(base, ours, theirs, col, opts)
+	case ingitdb.SingleRecord:
+		return mergeSingleRecord(base, ours, theirs, col, opts)
+	default:
+		return escalate("record layout %q is not auto-mergeable yet", col.RecordFile.RecordType)
+	}
+}
+
+// parseMap parses one stage of a map-of-records file into ordered records
+// (sorted by key for determinism). Empty content yields no records.
+func parseMap(content []byte, format ingitdb.RecordFormat) ([]Record, error) {
+	if len(content) == 0 {
+		return nil, nil
+	}
+	m, err := dalgo2ingitdb.ParseMapOfRecordsContent(content, format)
+	if err != nil {
+		return nil, err
+	}
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	records := make([]Record, 0, len(m))
+	for _, k := range keys {
+		records = append(records, Record{Key: k, Fields: m[k]})
+	}
+	return records, nil
+}
+
+func mergeMapOfRecords(base, ours, theirs []byte, col *ingitdb.CollectionDef, opts Options) Outcome {
+	format := col.RecordFile.Format
+	b, err1 := parseMap(base, format)
+	o, err2 := parseMap(ours, format)
+	t, err3 := parseMap(theirs, format)
+	if err := firstErr(err1, err2, err3); err != nil {
+		return escalate("failed to parse a conflict side: %v", err)
+	}
+	return Merge(b, o, t, opts)
+}
+
+// parseSingle parses one stage of a single-record file into at most one record
+// (keyed by the empty string). Empty content yields no record.
+func parseSingle(content []byte, col *ingitdb.CollectionDef) ([]Record, error) {
+	if len(content) == 0 {
+		return nil, nil
+	}
+	m, err := dalgo2ingitdb.ParseRecordContentForCollection(content, col)
+	if err != nil {
+		return nil, err
+	}
+	return []Record{{Key: "", Fields: m}}, nil
+}
+
+func mergeSingleRecord(base, ours, theirs []byte, col *ingitdb.CollectionDef, opts Options) Outcome {
+	b, err1 := parseSingle(base, col)
+	o, err2 := parseSingle(ours, col)
+	t, err3 := parseSingle(theirs, col)
+	if err := firstErr(err1, err2, err3); err != nil {
+		return escalate("failed to parse a conflict side: %v", err)
+	}
+
+	outcome := Merge(b, o, t, opts)
+	if outcome.Escalate {
+		return outcome
+	}
+	if len(outcome.Merged) != 1 {
+		return escalate("single-record merge did not yield exactly one record")
+	}
+	return outcome
+}
+
+func firstErr(errs ...error) error {
+	for _, e := range errs {
+		if e != nil {
+			return e
+		}
+	}
+	return nil
+}
