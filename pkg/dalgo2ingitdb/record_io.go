@@ -133,7 +133,7 @@ func deleteSingleRecordFile(path string) error {
 		return fmt.Errorf("stat %s: %w", path, statErr)
 	}
 	return withExclusiveLock(path, func() error {
-		err := os.Remove(path)
+		err := osRemove(path)
 		if errors.Is(err, fs.ErrNotExist) {
 			return dal.ErrRecordNotFound
 		}

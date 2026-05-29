@@ -63,7 +63,7 @@ func (db *Database) CreateCollection(_ context.Context, c dbschema.CollectionDef
 		return fmt.Errorf("CreateCollection: stat %s: %w", defPath, statErr)
 	}
 
-	if err := os.MkdirAll(colDir, 0o755); err != nil {
+	if err := osMkdirAll(colDir, 0o755); err != nil {
 		return fmt.Errorf("CreateCollection: mkdir %s: %w", colDir, err)
 	}
 
@@ -365,7 +365,7 @@ func writeCollectionDefYAML(defPath string, colDef *ingitdb.CollectionDef) error
 	if err != nil {
 		return fmt.Errorf("marshal definition.yaml: %w", err)
 	}
-	if err := os.WriteFile(defPath, data, 0o644); err != nil {
+	if err := osWriteFile(defPath, data, 0o644); err != nil {
 		return fmt.Errorf("write %s: %w", defPath, err)
 	}
 	return nil
@@ -407,7 +407,7 @@ func rewriteRecordFiles(recordsDir string, format ingitdb.RecordFormat, mutate f
 			return nil
 		}
 		return withExclusiveLock(path, func() error {
-			content, err := os.ReadFile(path)
+			content, err := osReadFile(path)
 			if err != nil {
 				return fmt.Errorf("read %s: %w", path, err)
 			}

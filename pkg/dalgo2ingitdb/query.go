@@ -99,7 +99,7 @@ func readAllSingleRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
 		if recordKey == "" {
 			continue
 		}
-		data, found, readErr := readSingleRecordFile(match, colDef)
+		data, found, readErr := readSingleRecord(match, colDef)
 		if readErr != nil {
 			return nil, readErr
 		}

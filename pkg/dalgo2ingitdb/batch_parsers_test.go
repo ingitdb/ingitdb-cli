@@ -2,8 +2,10 @@ package dalgo2ingitdb
 
 import (
 	"bytes"
+	"errors"
 	"strings"
 	"testing"
+	"testing/iotest"
 
 	"github.com/ingr-io/ingr-go/ingr"
 )
@@ -201,6 +203,47 @@ func TestParseBatchINGR_EmptyStream(t *testing.T) {
 	}
 }
 
+func TestParseBatchINGR_NonStringID(t *testing.T) {
+	t.Parallel()
+	// Build a valid INGR stream, then rewrite the $ID value to a bareword
+	// JSON number. ingr.Unmarshal parses each cell as JSON, so an unquoted
+	// number decodes to a non-string value, exercising the type check.
+	var buf strings.Builder
+	w := ingr.NewRecordsWriter(&buf)
+	if _, err := w.WriteHeader("test", []ingr.ColDef{{Name: "$ID"}, {Name: "name"}}); err != nil {
+		t.Fatalf("WriteHeader: %v", err)
+	}
+	if _, err := w.WriteRecords(0, ingr.NewMapRecordEntry("r1", map[string]any{"name": "foo"})); err != nil {
+		t.Fatalf("WriteRecords: %v", err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+	content := strings.Replace(buf.String(), `"r1"`, "123", 1)
+
+	_, err := ParseBatchINGR(strings.NewReader(content))
+	if err == nil {
+		t.Fatal("want error for non-string $ID")
+	}
+	if !strings.Contains(err.Error(), "must be a string") {
+		t.Errorf("error = %v, want it to mention $ID must be a string", err)
+	}
+}
+
+func TestParseBatchCSV_HeaderReadError(t *testing.T) {
+	t.Parallel()
+	// ParseBatchCSV takes the reader as a parameter, so a reader whose Read
+	// returns a non-EOF error makes cr.Read() (the header read) fail.
+	r := iotest.ErrReader(errors.New("boom"))
+	_, err := ParseBatchCSV(r, CSVParseOptions{})
+	if err == nil {
+		t.Fatal("want error when reading csv header fails")
+	}
+	if !strings.Contains(err.Error(), "read csv header") {
+		t.Errorf("error = %v, want it to mention reading csv header", err)
+	}
+}
+
 func TestParseBatchCSV_HeaderWithDollarID(t *testing.T) {
 	t.Parallel()
 	in := strings.NewReader("$id,name,population\nie,Ireland,5\nfr,France,68\n")
@@ -338,7 +381,6 @@ func TestValidateRecordKey(t *testing.T) {
 		{name: "max-length-ok", key: strings.Repeat("a", 255), wantErr: false},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			err := validateRecordKey(tc.key)

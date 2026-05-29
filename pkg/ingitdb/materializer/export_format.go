@@ -103,9 +103,7 @@ func escapeTSV(s string) string {
 func formatCSV(headers []string, records []ingitdb.IRecordEntry) ([]byte, error) {
 	var buf bytes.Buffer
 	w := csv.NewWriter(&buf)
-	if err := w.Write(headers); err != nil {
-		return nil, err // untestable: csv.Writer writing to bytes.Buffer never errors
-	}
+	_ = w.Write(headers) // sticky error surfaced by w.Error() below
 	for _, rec := range records {
 		row := make([]string, len(headers))
 		d := rec.GetData()
@@ -116,9 +114,7 @@ func formatCSV(headers []string, records []ingitdb.IRecordEntry) ([]byte, error)
 				}
 			}
 		}
-		if err := w.Write(row); err != nil {
-			return nil, err // untestable: csv.Writer writing to bytes.Buffer never errors
-		}
+		_ = w.Write(row) // sticky error surfaced by w.Error() below
 	}
 	w.Flush()
 	if err := w.Error(); err != nil {

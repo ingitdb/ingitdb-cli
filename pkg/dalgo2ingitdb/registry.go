@@ -49,7 +49,7 @@ func registerInRootCollections(projectPath, name string) error {
 		m = make(map[string]string, 1)
 	}
 	m[name] = name
-	if err := config.WriteRootCollectionsToFile(projectPath, m); err != nil {
+	if err := writeRootCollections(projectPath, m); err != nil {
 		return fmt.Errorf("write root-collections.yaml: %w", err)
 	}
 	return nil
@@ -77,7 +77,7 @@ func deregisterFromRootCollections(projectPath, name string) error {
 		return nil
 	}
 	delete(m, name)
-	if err := config.WriteRootCollectionsToFile(projectPath, m); err != nil {
+	if err := writeRootCollections(projectPath, m); err != nil {
 		return fmt.Errorf("write root-collections.yaml: %w", err)
 	}
 	return nil

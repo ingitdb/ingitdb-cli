@@ -53,7 +53,9 @@ Test data lives in `test-ingitdb/` and `.ingitdb.yaml` at the repo root points t
 - **Output**: use `fmt.Fprintf(os.Stderr, ...)` — never `fmt.Println`/`fmt.Printf` — to avoid interfering with TUI
   stdout.
 - **Unused params**: mark intentionally unused function parameters with `_, _ = a1, a2`.
-- **No package-level variables**: pass dependencies via struct fields or function parameters.
+- **No package-level state variables**: pass dependencies via struct fields or function parameters.
+  Stateless package-level vars used as test seams (e.g. `var osMkdirAll = os.MkdirAll`) are allowed;
+  the swapping test must not call `t.Parallel()`.
 - **Tests**: call `t.Parallel()` as the first statement in every top-level test.
 - **Build validation**: if any Go code or `go.mod` is modified, run `go build ./...` and `go test ./...` before
   reporting the task as done to ensure the code compiles and tests are passing.

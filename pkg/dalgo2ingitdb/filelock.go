@@ -2,9 +2,16 @@ package dalgo2ingitdb
 
 import (
 	"fmt"
-
-	"github.com/gofrs/flock"
 )
+
+// fileLocker is the advisory-lock surface used by withSharedLock and
+// withExclusiveLock. *flock.Flock satisfies it; tests inject a mock via the
+// newFileLocker seam to exercise lock-acquisition failures.
+type fileLocker interface {
+	Lock() error
+	RLock() error
+	Unlock() error
+}
 
 // withSharedLock acquires a shared (read) advisory lock on the file at
 // path, calls fn, then releases the lock. On Unix the lock is provided by
@@ -17,7 +24,7 @@ import (
 //
 // The lock is released even when fn returns an error.
 func withSharedLock(path string, fn func() error) error {
-	lk := flock.New(path)
+	lk := newFileLocker(path)
 	if err := lk.RLock(); err != nil {
 		return fmt.Errorf("acquire shared lock on %s: %w", path, err)
 	}
@@ -34,7 +41,7 @@ func withSharedLock(path string, fn func() error) error {
 //
 // The lock is released even when fn returns an error.
 func withExclusiveLock(path string, fn func() error) error {
-	lk := flock.New(path)
+	lk := newFileLocker(path)
 	if err := lk.Lock(); err != nil {
 		return fmt.Errorf("acquire exclusive lock on %s: %w", path, err)
 	}
