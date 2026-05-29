@@ -38,6 +38,7 @@ func (r readonlyTx) Get(_ context.Context, record dal.Record) error {
 	case ingitdb.SingleRecord:
 		data, found, readErr := readSingleRecordFile(path, colDef)
 		if readErr != nil {
+			record.SetError(readErr)
 			return readErr
 		}
 		if !found {
@@ -51,6 +52,7 @@ func (r readonlyTx) Get(_ context.Context, record dal.Record) error {
 	case ingitdb.MapOfRecords:
 		allRecords, found, readErr := readMapOfRecordsFile(path, colDef.RecordFile.Format)
 		if readErr != nil {
+			record.SetError(readErr)
 			return readErr
 		}
 		if !found {

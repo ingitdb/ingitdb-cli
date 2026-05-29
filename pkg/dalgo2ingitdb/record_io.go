@@ -26,7 +26,15 @@ func resolveRecordPath(colDef *ingitdb.CollectionDef, recordKey string) string {
 // readSingleRecordFile reads one record file under a shared lock and
 // returns the decoded record. Markdown and CSV formats are decoded via
 // ParseRecordContentForCollection so column filtering and content_field
-// handling apply. Returns (nil, false, nil) when the file does not exist.
+// handling apply.
+//
+// The bool reports whether the file exists, independent of read success:
+//   - (nil, false, nil): the file does not exist.
+//   - (nil, true, err):  the file exists but reading/parsing it failed.
+//   - (data, true, nil): the file exists and decoded successfully.
+//
+// A stat failure other than "not exist" leaves existence unconfirmed and is
+// returned as (nil, false, err).
 func readSingleRecordFile(path string, colDef *ingitdb.CollectionDef) (map[string]any, bool, error) {
 	if _, statErr := os.Stat(path); statErr != nil {
 		if errors.Is(statErr, fs.ErrNotExist) {
@@ -49,7 +57,8 @@ func readSingleRecordFile(path string, colDef *ingitdb.CollectionDef) (map[strin
 		}
 		return nil
 	}); err != nil {
-		return nil, false, err
+		// stat succeeded, so the file exists; only reading/parsing failed.
+		return nil, true, err
 	}
 	return data, true, nil
 }

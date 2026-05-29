@@ -1393,6 +1393,11 @@ func TestReadonlyTx_Get_SingleRecord_ReadError(t *testing.T) {
 	if err == nil {
 		t.Fatal("Get: want error for corrupt YAML record")
 	}
+	// The error must also be set on the record, per the dalgo contract:
+	// Exists()/Data() panic if SetError was never called after Get.
+	if !errors.Is(rec.Error(), err) {
+		t.Errorf("rec.Error() = %v, want it to carry the Get error %v", rec.Error(), err)
+	}
 }
 
 // TestReadonlyTx_Exists_SingleRecord_ReadError exercises the readSingleRecordFile
@@ -2202,6 +2207,9 @@ func TestReadSingleRecordFile_StatNonExistError(t *testing.T) {
 // passes os.Stat and can be flock'd, but os.ReadFile fails with "is a
 // directory". Unlike the chmod approach, this works as root because the lock
 // open succeeds and the failure happens in os.ReadFile itself.
+//
+// It also asserts the found==true semantic: the file exists (stat passed), so
+// found is true even though reading failed.
 func TestReadSingleRecordFile_ReadDirError(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
@@ -2217,12 +2225,15 @@ func TestReadSingleRecordFile_ReadDirError(t *testing.T) {
 			RecordType: ingitdb.SingleRecord,
 		},
 	}
-	_, _, err := readSingleRecordFile(p, colDef)
+	_, found, err := readSingleRecordFile(p, colDef)
 	if err == nil {
 		t.Fatal("readSingleRecordFile: want error reading a directory as a file")
 	}
 	if !strings.Contains(err.Error(), "read ") {
 		t.Errorf("error = %v, want it to wrap the read failure", err)
+	}
+	if !found {
+		t.Error("found = false, want true (the file exists; only reading it failed)")
 	}
 }
 
@@ -2675,6 +2686,11 @@ func TestReadonlyTx_Get_MapOfRecords_ReadError(t *testing.T) {
 	err = tx.Get(context.Background(), rec)
 	if err == nil {
 		t.Fatal("Get MapOfRecords: want error for corrupt file")
+	}
+	// The error must be set on the record too (dalgo contract: Exists()/Data()
+	// panic if SetError was never called after Get).
+	if !errors.Is(rec.Error(), err) {
+		t.Errorf("rec.Error() = %v, want it to carry the Get error %v", rec.Error(), err)
 	}
 }
 
