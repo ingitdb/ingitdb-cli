@@ -13,6 +13,7 @@ const (
 	RecordFormatTOML     RecordFormat = "toml"
 	RecordFormatINGR     RecordFormat = "ingr"
 	RecordFormatCSV      RecordFormat = "csv"
+	RecordFormatJSONL    RecordFormat = "jsonl"
 )
 
 // DefaultMarkdownContentField is the default name of the column that holds

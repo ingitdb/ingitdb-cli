@@ -63,6 +63,26 @@ func TestRecordFileDefValidate(t *testing.T) {
 			def:  RecordFileDef{Name: "records.csv", Format: RecordFormatCSV, RecordType: ListOfRecords},
 			err:  "",
 		},
+		{
+			name: "jsonl_rejects_single_record",
+			def:  RecordFileDef{Name: "records.jsonl", Format: RecordFormatJSONL, RecordType: SingleRecord},
+			err:  "format \"jsonl\" requires record type \"[]map[string]any\"",
+		},
+		{
+			name: "jsonl_rejects_map_of_records",
+			def:  RecordFileDef{Name: "records.jsonl", Format: RecordFormatJSONL, RecordType: MapOfRecords},
+			err:  "format \"jsonl\" requires record type \"[]map[string]any\"",
+		},
+		{
+			name: "jsonl_accepts_list_of_records",
+			def:  RecordFileDef{Name: "records.jsonl", Format: RecordFormatJSONL, RecordType: ListOfRecords},
+			err:  "",
+		},
+		{
+			name: "yaml_accepts_list_of_records",
+			def:  RecordFileDef{Name: "records.yaml", Format: RecordFormatYAML, RecordType: ListOfRecords},
+			err:  "",
+		},
 	}
 
 	for _, tt := range tests {

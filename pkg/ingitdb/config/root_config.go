@@ -61,6 +61,7 @@ var supportedRecordFormats = []ingitdb.RecordFormat{
 	ingitdb.RecordFormatTOML,
 	ingitdb.RecordFormatINGR,
 	ingitdb.RecordFormatCSV,
+	ingitdb.RecordFormatJSONL,
 }
 
 // Validate checks that Settings field values are well-formed. An empty

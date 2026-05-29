@@ -78,6 +78,7 @@ func parseDefaultFormat(raw string) (ingitdb.RecordFormat, error) {
 		ingitdb.RecordFormatTOML,
 		ingitdb.RecordFormatINGR,
 		ingitdb.RecordFormatCSV,
+		ingitdb.RecordFormatJSONL,
 	}
 	for _, f := range valid {
 		if string(f) == raw {
