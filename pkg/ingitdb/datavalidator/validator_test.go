@@ -307,3 +307,147 @@ func TestValidate_EmptyDir(t *testing.T) {
 		t.Errorf("GetRecordCount(empty) = %d, want 0", count)
 	}
 }
+
+func TestValidate_RecordFileExtensionFilter(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	recordsDir := filepath.Join(dir, "notes", "$records")
+	if err := os.MkdirAll(recordsDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir: %v", err)
+	}
+
+	// Create .md files (should match) and .yaml files (should NOT match)
+	for _, name := range []string{"note1.md", "note2.md"} {
+		if err := os.WriteFile(filepath.Join(recordsDir, name), []byte("# "+name), 0o644); err != nil {
+			t.Fatalf("setup: write file %s: %v", name, err)
+		}
+	}
+	// This .yaml file should NOT be counted because RecordFile.Name specifies .md extension
+	if err := os.WriteFile(filepath.Join(recordsDir, "stray.yaml"), []byte("id: stray"), 0o644); err != nil {
+		t.Fatalf("setup: write stray.yaml: %v", err)
+	}
+
+	colDir := filepath.Join(dir, "notes")
+	def := &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"notes": {
+				DirPath: colDir,
+				RecordFile: &ingitdb.RecordFileDef{
+					Name: "{key}.md",
+				},
+			},
+		},
+	}
+
+	v := NewValidator()
+	result, err := v.Validate(context.Background(), dir, def)
+	if err != nil {
+		t.Fatalf("Validate() unexpected error: %v", err)
+	}
+
+	count := result.GetRecordCount("notes")
+	if count != 2 {
+		t.Errorf("GetRecordCount(notes) = %d, want 2 (only .md files counted)", count)
+	}
+}
+
+func TestValidate_RecordFileExcludeRegex(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	recordsDir := filepath.Join(dir, "docs", "$records")
+	if err := os.MkdirAll(recordsDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir: %v", err)
+	}
+
+	// Create record files
+	for _, name := range []string{"page1.md", "page2.md", "README.md"} {
+		if err := os.WriteFile(filepath.Join(recordsDir, name), []byte("# "+name), 0o644); err != nil {
+			t.Fatalf("setup: write file %s: %v", name, err)
+		}
+	}
+
+	colDir := filepath.Join(dir, "docs")
+	def := &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"docs": {
+				DirPath: colDir,
+				RecordFile: &ingitdb.RecordFileDef{
+					Name:         "{key}.md",
+					ExcludeRegex: `^README\.md$`,
+				},
+			},
+		},
+	}
+
+	v := NewValidator()
+	result, err := v.Validate(context.Background(), dir, def)
+	if err != nil {
+		t.Fatalf("Validate() unexpected error: %v", err)
+	}
+
+	count := result.GetRecordCount("docs")
+	if count != 2 {
+		t.Errorf("GetRecordCount(docs) = %d, want 2 (README.md excluded)", count)
+	}
+}
+
+func TestExpectedRecordExtensions_NoRecordFile(t *testing.T) {
+	t.Parallel()
+
+	colDef := &ingitdb.CollectionDef{}
+	exts := expectedRecordExtensions(colDef)
+
+	for _, ext := range []string{".yaml", ".yml", ".json"} {
+		if _, ok := exts[ext]; !ok {
+			t.Errorf("expected extension %q in legacy set, got missing", ext)
+		}
+	}
+	if len(exts) != 3 {
+		t.Errorf("expected 3 legacy extensions, got %d", len(exts))
+	}
+}
+
+func TestExpectedRecordExtensions_EmptyName(t *testing.T) {
+	t.Parallel()
+
+	colDef := &ingitdb.CollectionDef{
+		RecordFile: &ingitdb.RecordFileDef{Name: ""},
+	}
+	exts := expectedRecordExtensions(colDef)
+
+	if len(exts) != 3 {
+		t.Errorf("expected 3 legacy extensions for empty name, got %d", len(exts))
+	}
+}
+
+func TestExpectedRecordExtensions_WithExtension(t *testing.T) {
+	t.Parallel()
+
+	colDef := &ingitdb.CollectionDef{
+		RecordFile: &ingitdb.RecordFileDef{Name: "{key}.json"},
+	}
+	exts := expectedRecordExtensions(colDef)
+
+	if len(exts) != 1 {
+		t.Errorf("expected 1 extension, got %d", len(exts))
+	}
+	if _, ok := exts[".json"]; !ok {
+		t.Error("expected .json extension")
+	}
+}
+
+func TestExpectedRecordExtensions_NoExtInName(t *testing.T) {
+	t.Parallel()
+
+	// Name has no extension (no dot) — falls back to legacy set
+	colDef := &ingitdb.CollectionDef{
+		RecordFile: &ingitdb.RecordFileDef{Name: "records"},
+	}
+	exts := expectedRecordExtensions(colDef)
+
+	if len(exts) != 3 {
+		t.Errorf("expected 3 legacy extensions when name has no ext, got %d", len(exts))
+	}
+}
