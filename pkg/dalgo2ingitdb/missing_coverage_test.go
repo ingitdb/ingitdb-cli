@@ -392,20 +392,17 @@ func TestApplyWhere_EvaluateConditionError(t *testing.T) {
 	}
 }
 
-// TestEvaluateGroupCondition_Or exercises the dal.Or case in
-// evaluateGroupCondition by constructing a GroupCondition with Or operator.
-// Since dal.GroupCondition fields are unexported, we can only construct one
-// inside the dal package. We work around this by calling evaluateCondition
-// through a real query that uses Or.
+// TestEvaluateGroupCondition_And_ViaQuery exercises the dal.And case in
+// evaluateGroupCondition through a real query whose multi-condition Where
+// path always builds a GroupCondition with the And operator.
 //
-// The dal.StructuredQuery.Or() method is on the unexported structuredQuery
-// concrete type and is not accessible from this package. We therefore call
-// evaluateGroupCondition directly with a GroupCondition built via the
-// query builder's multi-condition Where path (which always uses And).
-// The Or and default branches of evaluateGroupCondition are unreachable
-// without either: (a) being inside package dal, or (b) modifying production
-// code. This test documents that state.
-func TestEvaluateGroupCondition_Or_ViaQuery(t *testing.T) {
+// The Or and default branches of evaluateGroupCondition are unreachable via
+// the public dal API: dal.GroupCondition's fields are unexported, the only
+// exported builder (QueryBuilder) always emits the And operator, and the
+// Or() method lives on the unexported structuredQuery type. Covering those
+// branches would require constructing a dal.GroupCondition with reflect+unsafe;
+// we deliberately don't, so they remain documented dead-via-public-API code.
+func TestEvaluateGroupCondition_And_ViaQuery(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
 	dir := filepath.Join(root, "things", "$records")
@@ -1947,6 +1944,25 @@ func TestParseCSVForCollection_RowLengthMismatch(t *testing.T) {
 	_, err := parseCSVForCollection(content, colDef)
 	if err == nil {
 		t.Fatal("parseCSVForCollection: want error for row with wrong column count")
+	}
+}
+
+// TestParseCSVForCollection_HeaderReadError exercises the "failed to read csv
+// header" branch (csv.go line 36-38): the first csv.Read returns a non-EOF
+// parse error rather than io.EOF.
+func TestParseCSVForCollection_HeaderReadError(t *testing.T) {
+	t.Parallel()
+	colDef := &ingitdb.CollectionDef{
+		ID:           "c",
+		ColumnsOrder: []string{"a", "b"},
+		RecordFile:   &ingitdb.RecordFileDef{Format: ingitdb.RecordFormatCSV},
+	}
+	// The header line itself has an unclosed quote, so the very first
+	// csv.Read fails with a parse error (not io.EOF).
+	content := []byte("\"unclosed,value\n")
+	_, err := parseCSVForCollection(content, colDef)
+	if err == nil {
+		t.Fatal("parseCSVForCollection: want error for malformed csv header")
 	}
 }
 
