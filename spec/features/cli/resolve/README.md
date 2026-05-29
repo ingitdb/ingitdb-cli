@@ -39,15 +39,25 @@ The command MUST be invoked as `ingitdb resolve`. All flags are optional.
 
 The `--file=FILE` flag MUST scope the operation to a single conflicted file. When omitted the command MUST iterate through every conflicted file in the database. The `--path=PATH` flag MUST select the database directory; when omitted the current working directory is used.
 
-### Behavior
+### Conflict handling
 
-#### REQ: auto-resolve-generated
+`resolve` routes each conflicted file to one of two subfeatures by conflict
+class. See each subfeature for its requirements, current state, and roadmap.
 
-For conflicted files that are generated / reproducible (collection `README.md`, materialized views, data indexes), the command MUST resolve them non-interactively by regenerating the file from the source records and staging it (`git add`), without prompting the user. This applies regardless of which git operation produced the conflict.
+## Subfeatures
 
-#### REQ: tui-loop
+- **[auto-resolve](auto-resolve/README.md)** — non-interactive regeneration of
+  conflicted generated / reproducible files (collection `README.md` today;
+  materialized views and data indexes planned). **Status: Implementing** —
+  README auto-resolution is implemented and shared with `rebase`.
+- **[manual-resolve](manual-resolve/README.md)** — interactive, record-aware
+  resolution of source-data conflicts that need a human decision.
+  **Status: Draft** — currently a placeholder screen that describes the
+  envisioned UI and reports that it is not implemented yet.
 
-For conflicted source-data files, the command MUST run an interactive TUI that presents conflicts and accepts the user's choice for each. After each file is fully resolved the command MUST stage it (`git add`) and proceed to the next file. The command MUST exit `0` when all targeted files are resolved and non-zero when the user aborts or a file remains unresolved.
+After the auto-resolve pass, any remaining (source-data) conflicts are handed
+to manual-resolve. The command exits `0` only when every targeted conflict is
+resolved, and non-zero otherwise.
 
 ## Dependencies
 
@@ -55,20 +65,17 @@ For conflicted source-data files, the command MUST run an interactive TUI that p
 
 ## Implementation
 
-Source files implementing this feature (annotated with
+Source files implementing the shared command shell (annotated with
 `// specscore: feature/cli/resolve`):
 
-- [`cmd/ingitdb/commands/resolve.go`](../../../cmd/ingitdb/commands/resolve.go)
+- [`cmd/ingitdb/commands/resolve.go`](../../../../cmd/ingitdb/commands/resolve.go)
 
-## Acceptance Criteria
-
-Not defined yet.
+Per-subfeature implementation is listed in each subfeature's spec.
 
 ## Open Questions
 
-- Acceptance criteria not yet defined for this feature.
-- Should `resolve` support a non-interactive `--strategy=ours|theirs` for scripting?
-- How should the TUI present conflicts in `MapOfIDRecords` files where the conflict is at the key level rather than the field level?
+- Should `resolve` support a non-interactive `--strategy=ours|theirs` for
+  scripting (applies mainly to manual-resolve)?
 
 ---
 *This document follows the https://specscore.md/feature-specification*

@@ -3,9 +3,9 @@ package commands
 // specscore: feature/cli/resolve
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -15,12 +15,16 @@ import (
 // Resolve returns the resolve command. It is the working-tree conflict engine:
 // it auto-resolves merge conflicts in generated files (collection README.md) by
 // regenerating them from source records and staging them, independent of which
-// git operation produced the conflict.
+// git operation produced the conflict. Source-data conflicts that need a human
+// decision are handed to runConflictsTUI (interactive) on a terminal, or
+// reported as text otherwise.
 func Resolve(
 	homeDir func() (string, error),
 	getWd func() (string, error),
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
 	logf func(...any),
+	isTerminal func() bool,
+	runConflictsTUI func(ctx context.Context, files []string) error,
 ) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "resolve",
@@ -58,8 +62,7 @@ func Resolve(
 				return err
 			}
 			if len(unresolved) > 0 {
-				return fmt.Errorf("could not auto-resolve %d conflict(s); resolve manually:\n%s",
-					len(unresolved), strings.Join(unresolved, "\n"))
+				return reportSourceConflicts(ctx, unresolved, isTerminal, runConflictsTUI, logf)
 			}
 			if len(result.Errors) > 0 {
 				for _, e := range result.Errors {
@@ -90,4 +93,31 @@ func filterConflictedByFile(conflictedFiles []string, onlyFile string) []string 
 		}
 	}
 	return kept
+}
+
+// reportSourceConflicts hands source-data conflicts to the interactive resolver
+// on a terminal, or prints a text placeholder otherwise. Either way it returns a
+// non-nil error because manual resolution is not implemented yet, so unresolved
+// conflicts always produce a non-zero exit.
+func reportSourceConflicts(
+	ctx context.Context,
+	files []string,
+	isTerminal func() bool,
+	runConflictsTUI func(context.Context, []string) error,
+	logf func(...any),
+) error {
+	if isTerminal() {
+		if err := runConflictsTUI(ctx, files); err != nil {
+			return err
+		}
+	} else {
+		logf("Interactive conflict resolution")
+		logf("The following files have source-data conflicts that need a human decision:")
+		for _, f := range files {
+			logf("  - " + f)
+		}
+		logf("Planned: pick a winner per field instead of editing raw conflict markers.")
+		logf("Sorry, not implemented yet.")
+	}
+	return fmt.Errorf("interactive resolution of source-data conflicts is not implemented yet")
 }

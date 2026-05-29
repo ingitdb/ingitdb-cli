@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -13,6 +14,10 @@ import (
 )
 
 var errReadDef = errors.New("readDefinition failed")
+
+func falseTerminal() bool { return false }
+
+func noopConflictsTUI(context.Context, []string) error { return nil }
 
 func testHomeDir() (string, error) { return "/home/test", nil }
 
@@ -75,7 +80,7 @@ func testDefWithCollection(dir string) *ingitdb.Definition {
 func TestResolve_ReturnsCommand(t *testing.T) {
 	t.Parallel()
 
-	cmd := Resolve(testHomeDir, func() (string, error) { return ".", nil }, nil, func(...any) {})
+	cmd := Resolve(testHomeDir, func() (string, error) { return ".", nil }, nil, func(...any) {}, falseTerminal, noopConflictsTUI)
 	if cmd == nil {
 		t.Fatal("Resolve() returned nil")
 		return
@@ -110,7 +115,7 @@ func TestResolve_AutoResolvesReadmeConflict(t *testing.T) {
 	}
 	_ = logs
 
-	cmd := Resolve(testHomeDir, getWd, readDef, logf)
+	cmd := Resolve(testHomeDir, getWd, readDef, logf, falseTerminal, noopConflictsTUI)
 	if err := runCobraCommand(cmd); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -142,7 +147,7 @@ func TestResolve_NoConflicts(t *testing.T) {
 		}
 	}
 
-	cmd := Resolve(testHomeDir, getWd, readDef, logf)
+	cmd := Resolve(testHomeDir, getWd, readDef, logf, falseTerminal, noopConflictsTUI)
 	if err := runCobraCommand(cmd); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -167,13 +172,82 @@ func TestResolve_UnresolvedNonReadmeConflict(t *testing.T) {
 		return &ingitdb.Definition{}, nil
 	}
 
-	cmd := Resolve(testHomeDir, getWd, readDef, func(...any) {})
+	var logs []string
+	logf := func(args ...any) {
+		for _, a := range args {
+			logs = append(logs, fmt.Sprint(a))
+		}
+	}
+
+	cmd := Resolve(testHomeDir, getWd, readDef, logf, falseTerminal, noopConflictsTUI)
 	err := runCobraCommand(cmd)
 	if err == nil {
 		t.Skip("git auto-merged; no conflict produced")
 	}
-	if !strings.Contains(err.Error(), "could not auto-resolve") {
-		t.Errorf("expected 'could not auto-resolve' error, got: %v", err)
+	if !strings.Contains(err.Error(), "not implemented yet") {
+		t.Errorf("expected 'not implemented yet' error, got: %v", err)
+	}
+	// Non-terminal path prints the placeholder text.
+	joined := strings.Join(logs, "\n")
+	if !strings.Contains(joined, "Interactive conflict resolution") {
+		t.Errorf("expected placeholder text in logs, got: %v", logs)
+	}
+}
+
+// TestResolve_SourceConflicts_TerminalLaunchesTUI covers the terminal branch:
+// the interactive resolver is invoked, then a non-zero error is returned
+// because manual resolution is not implemented yet.
+func TestResolve_SourceConflicts_TerminalLaunchesTUI(t *testing.T) {
+	t.Parallel()
+
+	dir := setupMergeConflict(t, "data.txt")
+
+	getWd := func() (string, error) { return dir, nil }
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return &ingitdb.Definition{}, nil
+	}
+	tuiCalled := false
+	runTUI := func(_ context.Context, files []string) error {
+		tuiCalled = true
+		if len(files) == 0 {
+			t.Error("expected conflicted files passed to TUI")
+		}
+		return nil
+	}
+
+	cmd := Resolve(testHomeDir, getWd, readDef, func(...any) {}, func() bool { return true }, runTUI)
+	err := runCobraCommand(cmd)
+	if err == nil {
+		t.Skip("git auto-merged; no conflict produced")
+	}
+	if !tuiCalled {
+		t.Error("expected interactive resolver to be invoked on a terminal")
+	}
+	if !strings.Contains(err.Error(), "not implemented yet") {
+		t.Errorf("expected 'not implemented yet' error, got: %v", err)
+	}
+}
+
+// TestResolve_SourceConflicts_TUIError covers the branch where the interactive
+// resolver itself returns an error.
+func TestResolve_SourceConflicts_TUIError(t *testing.T) {
+	t.Parallel()
+
+	dir := setupMergeConflict(t, "data.txt")
+
+	getWd := func() (string, error) { return dir, nil }
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return &ingitdb.Definition{}, nil
+	}
+	runTUI := func(context.Context, []string) error { return errReadDef }
+
+	cmd := Resolve(testHomeDir, getWd, readDef, func(...any) {}, func() bool { return true }, runTUI)
+	err := runCobraCommand(cmd)
+	if err == nil {
+		t.Skip("git auto-merged; no conflict produced")
+	}
+	if !errors.Is(err, errReadDef) {
+		t.Errorf("expected the TUI error to propagate, got: %v", err)
 	}
 }
 
@@ -187,7 +261,7 @@ func TestResolve_GitDiffError(t *testing.T) {
 		return &ingitdb.Definition{}, nil
 	}
 
-	cmd := Resolve(testHomeDir, getWd, readDef, func(...any) {})
+	cmd := Resolve(testHomeDir, getWd, readDef, func(...any) {}, falseTerminal, noopConflictsTUI)
 	err := runCobraCommand(cmd)
 	if err == nil {
 		t.Fatal("expected error in non-git directory")
@@ -208,7 +282,7 @@ func TestResolve_ReadDefinitionError(t *testing.T) {
 		return nil, errReadDef
 	}
 
-	cmd := Resolve(testHomeDir, getWd, readDef, func(...any) {})
+	cmd := Resolve(testHomeDir, getWd, readDef, func(...any) {}, falseTerminal, noopConflictsTUI)
 	err := runCobraCommand(cmd)
 	if err == nil {
 		t.Skip("git auto-merged; no conflict produced")
@@ -234,7 +308,7 @@ func TestResolve_FileFilter_NoMatch(t *testing.T) {
 		}
 	}
 
-	cmd := Resolve(testHomeDir, getWd, readDef, logf)
+	cmd := Resolve(testHomeDir, getWd, readDef, logf, falseTerminal, noopConflictsTUI)
 	// --file points at a path that is not among the conflicts → nothing to do.
 	if err := runCobraCommand(cmd, "--file", "nonexistent.md"); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -258,7 +332,7 @@ func TestResolve_GetWdError(t *testing.T) {
 		return &ingitdb.Definition{}, nil
 	}
 
-	cmd := Resolve(testHomeDir, getWd, readDef, func(...any) {})
+	cmd := Resolve(testHomeDir, getWd, readDef, func(...any) {}, falseTerminal, noopConflictsTUI)
 	err := runCobraCommand(cmd)
 	if err == nil {
 		t.Fatal("expected error when getWd fails")
@@ -293,7 +367,7 @@ func TestResolve_GitAddFails(t *testing.T) {
 		return testDefWithCollection(dir), nil
 	}
 
-	cmd := Resolve(testHomeDir, getWd, readDef, func(...any) {})
+	cmd := Resolve(testHomeDir, getWd, readDef, func(...any) {}, falseTerminal, noopConflictsTUI)
 	err := runCobraCommand(cmd)
 	if err == nil {
 		t.Fatal("expected git add to fail with index.lock present")
@@ -326,7 +400,7 @@ func TestResolve_ProcessCollectionError(t *testing.T) {
 		return testDefWithCollection(dir), nil
 	}
 
-	cmd := Resolve(testHomeDir, getWd, readDef, func(...any) {})
+	cmd := Resolve(testHomeDir, getWd, readDef, func(...any) {}, falseTerminal, noopConflictsTUI)
 	err := runCobraCommand(cmd)
 	if err == nil {
 		t.Fatal("expected error when ProcessCollection fails")
@@ -365,7 +439,6 @@ func TestFilterConflictedByFile(t *testing.T) {
 		{"no match", "missing.go", 0, ""},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			got := filterConflictedByFile(files, tt.only)

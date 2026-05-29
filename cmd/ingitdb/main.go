@@ -66,8 +66,7 @@ func run(
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			dirPath, _ := cmd.Flags().GetString("path")
-			isTerminal := func() bool { return term.IsTerminal(os.Stdout.Fd()) }
-			return runTUI(cmd.Context(), dirPath, homeDir, getWd, readDefinition, newDB, isTerminal)
+			return runTUI(cmd.Context(), dirPath, homeDir, getWd, readDefinition, newDB, defaultIsTerminal)
 		},
 	}
 	rootCmd.Flags().String("path", "", "path to the database directory (default: current directory)")
@@ -80,7 +79,7 @@ func run(
 		commands.CI(homeDir, getWd, readDefinition, vb, logf),
 		commands.Pull(),
 		commands.Setup(),
-		commands.Resolve(homeDir, getWd, readDefinition, logf),
+		commands.Resolve(homeDir, getWd, readDefinition, logf, defaultIsTerminal, launchConflictsTUI),
 		commands.Rebase(getWd, readDefinition, logf),
 		commands.Watch(),
 		commands.Docs(homeDir, getWd, readDefinition, logf),
@@ -152,4 +151,19 @@ func launchTUI(
 	p := bubbletea.NewProgram(m, bubbletea.WithContext(ctx))
 	_, runErr := p.Run()
 	return runErr
+}
+
+// defaultIsTerminal reports whether stdout is a real TTY.
+func defaultIsTerminal() bool {
+	return term.IsTerminal(os.Stdout.Fd())
+}
+
+// launchConflictsTUI starts the interactive (manual) source-conflict resolution
+// screen for the given files, sizing it to the current terminal.
+func launchConflictsTUI(ctx context.Context, files []string) error {
+	w, h, sizeErr := term.GetSize(os.Stdout.Fd())
+	if sizeErr != nil || w == 0 {
+		w, h = 120, 40
+	}
+	return tui.RunConflicts(ctx, files, w, h)
 }

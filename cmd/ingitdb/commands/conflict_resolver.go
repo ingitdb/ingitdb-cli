@@ -1,6 +1,6 @@
 package commands
 
-// specscore: feature/cli/resolve
+// specscore: feature/cli/resolve/auto-resolve
 
 import (
 	"context"

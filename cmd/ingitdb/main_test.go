@@ -591,6 +591,24 @@ func TestLaunchTUI_ValidDefinition(t *testing.T) {
 	_ = launchTUI(ctx, "/tmp/db", homeDir, getWd, readDefinition, newDB)
 }
 
+func TestDefaultIsTerminal(t *testing.T) {
+	t.Parallel()
+	// In the test environment stdout is not a TTY; just exercise the call.
+	_ = defaultIsTerminal()
+}
+
+func TestLaunchConflictsTUI(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel immediately so bubbletea exits quickly
+
+	// Non-TTY env: term.GetSize fails → fallback size branch. bubbletea.Run
+	// may return an error without a real terminal — we only care it does not
+	// panic.
+	_ = launchConflictsTUI(ctx, []string{"data/users/u1.yaml"})
+}
+
 func TestRunTUI_NonTTY(t *testing.T) {
 	t.Parallel()
 
