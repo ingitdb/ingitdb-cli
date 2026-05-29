@@ -1,5 +1,6 @@
 # Feature: Read Record Command
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/read-record?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/read-record?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/read-record?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/read-record?op=request-change) |
 **Status:** Superseded by [spec/features/cli/select/](../select/README.md). The `ingitdb read record` command has been removed; use `ingitdb select --id=...` instead. This document is preserved as a historical record.
 
 ## Summary
@@ -59,7 +60,7 @@ Given a local database with a record at `geo.nations/ie`, `ingitdb read record -
 
 `ingitdb read record --remote=github.com/owner/repo --id=countries/ie` resolves the record from the default branch of the given repository without requiring a local clone. Pinning to a ref (`github.com/owner/repo@main`) reads from that ref instead.
 
-## Outstanding Questions
+## Open Questions
 
 - Should the command emit a structured "not found" error code distinct from generic failures?
 

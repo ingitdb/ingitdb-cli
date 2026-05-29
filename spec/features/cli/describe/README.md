@@ -1,5 +1,6 @@
 # Feature: Describe Command
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/describe?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/describe?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/describe?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/describe?op=request-change) |
 **Status:** Approved
 
 ## Summary
@@ -365,7 +366,7 @@ not a reference implementation.
 **When** any subcommand of `describe` runs
 **Then** the command exits non-zero and stderr contains `--path and --remote are mutually exclusive`.
 
-## Outstanding Questions
+## Open Questions
 
 None at this time. The originating Idea's open questions on column ordering
 and `data_dir` divergence are answered by REQ:columns-order-deterministic and

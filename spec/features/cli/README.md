@@ -1,5 +1,6 @@
 # CLI Features
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli?op=request-change) |
 This directory contains feature specifications for individual `ingitdb` CLI subcommands.
 Each subdirectory corresponds to one command. Older verb-noun specs (e.g. `create-record`)
 are kept as historical records and are marked **Superseded** in the index below.
@@ -13,6 +14,7 @@ are kept as historical records and are marked **Superseded** in the index below.
 | [update](update/README.md) | The `update` verb applies patch-style changes to records: `--set` adds/changes fields, `--unset` removes fields. Two modes inherited from shared-cli-flags: single-record (`--id`) and set (`--from` + `--where`/`--all`). Shallow patch semantics. Silent on success. `--require-match` opts into non-zero exit when set mode finds zero records. Renames `update-record`. |
 | [delete](delete/README.md) | The `delete` verb removes records from a collection. Two modes inherited from shared-cli-flags: single-record (`--id`) and set (`--from` + `--where`/`--all`). `--min-affected=N` opts into non-zero exit when fewer than N records are deleted. Silent on success. Replaces `delete-record` and `delete-records`. |
 | [drop](drop/README.md) | The `drop` verb removes schema objects from the database. Two kinds today: `drop collection <name>` and `drop view <name>`. Removes both the schema entry in `.ingitdb.yaml` and any associated data directory in a single git commit. `--if-exists` makes the operation idempotent; `--cascade` also drops dependents. Replaces `delete-collection` and `delete-view`. |
+| [describe](describe/README.md) | TODO: Add description. |
 
 ## Index
 
@@ -45,7 +47,7 @@ are kept as historical records and are marked **Superseded** in the index below.
 | [delete-collection](delete-collection/README.md) | Superseded by [drop](drop/README.md) | `ingitdb delete collection` (removed) |
 | [query](query/README.md) | Superseded by [select](select/README.md) | `ingitdb query` (removed) |
 
-## Outstanding Questions
+## Open Questions
 
 None at this time.
 

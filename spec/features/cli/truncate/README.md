@@ -1,5 +1,6 @@
 # Feature: Truncate Command
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/truncate?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/truncate?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/truncate?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/truncate?op=request-change) |
 **Status:** Withdrawn — superseded by `delete --from=COLLECTION --all`. A standalone `truncate` verb would duplicate `delete`'s set-mode semantics for no benefit, so the SQL `delete --all` path covers this use case. This document is preserved as a historical record of the original design.
 
 ## Summary
@@ -36,7 +37,7 @@ The `--path=PATH` flag MUST select the database directory; when omitted the curr
 
 Not defined yet.
 
-## Outstanding Questions
+## Open Questions
 
 - Acceptance criteria not yet defined for this feature.
 - Should `truncate` require an interactive confirmation, or rely on the user's git history for safety?

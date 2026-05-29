@@ -1,5 +1,6 @@
 # Feature: Delete Collection Command
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/delete-collection?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/delete-collection?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/delete-collection?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/delete-collection?op=request-change) |
 **Status:** Superseded by [spec/features/cli/drop/](../drop/README.md). The `ingitdb delete collection` command has been replaced by `ingitdb drop collection <name>`. This document is preserved as a historical record.
 
 ## Summary
@@ -36,7 +37,7 @@ The `--path=PATH` flag MUST select the database directory; when omitted the curr
 
 Not defined yet.
 
-## Outstanding Questions
+## Open Questions
 
 - Acceptance criteria not yet defined for this feature.
 - Should the command refuse to delete a collection that other collections or views reference?

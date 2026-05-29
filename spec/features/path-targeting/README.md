@@ -1,5 +1,6 @@
 # Feature: Path Targeting
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/path-targeting?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/path-targeting?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/path-targeting?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/path-targeting?op=request-change) |
 **Status:** Implementing
 
 ## Summary
@@ -48,7 +49,7 @@ A command run without `--path` from a directory containing a valid `.ingitdb.yam
 
 Any command supporting both flags rejects `--path=. --remote=github.com/owner/repo` with a clear error message and a non-zero exit code, before performing any I/O.
 
-## Outstanding Questions
+## Open Questions
 
 - Should `--path` accept a URL-style scheme (e.g. `file://`) for symmetry with future remote storage backends?
 

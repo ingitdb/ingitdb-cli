@@ -1,5 +1,6 @@
 # Feature: Diff Command
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/diff?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/diff?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/diff?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/diff?op=request-change) |
 **Status:** Draft
 
 ## Summary
@@ -48,7 +49,7 @@ The command MUST exit `0` when no changes are found, `1` when changes are found,
 
 Not defined yet.
 
-## Outstanding Questions
+## Open Questions
 
 - Acceptance criteria not yet defined for this feature.
 - Should `--depth=full` redact secrets the way some logging frameworks do?

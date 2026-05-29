@@ -1,5 +1,6 @@
 # Feature: CSV Format Support
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/csv-support?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/csv-support?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/csv-support?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/csv-support?op=request-change) |
 **Status:** Implemented
 **Source Idea:** [`default-record-format`](../../../ideas/default-record-format.md)
 **Parent Feature:** [`record-format`](../README.md)
@@ -137,7 +138,7 @@ Source files implementing this feature (annotated with
 
 - [`pkg/dalgo2ingitdb/csv.go`](../../../pkg/dalgo2ingitdb/csv.go)
 
-## Outstanding Questions
+## Open Questions
 
 - **Empty/null cell handling.** Go's `encoding/csv` writes an empty string for empty cells. Does inGitDB's read path treat `""` as the empty string OR as a null/missing value? Decide at plan time; document in godoc on the CSV read path.
 - **Boolean serialization.** CSV has no native boolean type. Write as `true`/`false`? `1`/`0`? Empty for false? Go convention is `true`/`false` text — defaulting to that unless a contrary precedent exists in the codebase.

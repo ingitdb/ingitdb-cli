@@ -1,5 +1,6 @@
 # Feature: List Collections Command
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/list-collections?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/list-collections?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/list-collections?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/list-collections?op=request-change) |
 **Status:** Implementing
 
 ## Summary
@@ -64,7 +65,7 @@ Source files implementing this feature (annotated with
 
 `ingitdb list collections --in='countries/(ie|gb)' --filter-name='*city*'` returns only collections whose starting-point path matches the regex AND whose name matches the glob.
 
-## Outstanding Questions
+## Open Questions
 
 - Should `list collections` emit JSON when `--format=json` is passed (consistent with `read record`)?
 

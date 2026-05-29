@@ -1,5 +1,6 @@
 # Feature: Output Formats
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/output-formats?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/output-formats?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/output-formats?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/output-formats?op=request-change) |
 **Status:** Implementing
 
 ## Summary
@@ -53,7 +54,7 @@ Running any read-style command without `--format` produces YAML output. The outp
 
 Adding `--format=json` to a read-style command produces output that parses cleanly as JSON. No log lines or progress output leak into stdout.
 
-## Outstanding Questions
+## Open Questions
 
 - Should multi-record commands emit JSON arrays, NDJSON, or both behind a flag?
 

@@ -69,7 +69,7 @@ The MVP MUST also demonstrate cross-format persistence: feeding `--format=jsonl`
 - **Existing Features affected:** [`cli/insert`](../features/cli/insert/README.md) (adds `--format`, defines mutual exclusion with `--data`/`--edit`/`--empty`); [`shared-cli-flags`](../features/shared-cli-flags/README.md) (`$id` pseudo-field semantics carry into the stream); possibly [`output-formats`](../features/output-formats/README.md) for the shared `--format` registry.
 - **Dependencies:** none blocking; the `ingr` format's `RecordsDelimiter` story should be confirmed stable before MVP.
 
-## Outstanding Questions
+## Open Questions
 
 - Should `--format` default to the collection's storage format when stdin is non-TTY and no other data source is supplied, or always be explicit?
 - For CSV with a header row, how is `$id` named in the header — literal `$id`, or by configurable alias?

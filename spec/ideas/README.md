@@ -17,7 +17,7 @@ Use `specscore idea new <slug>` to scaffold a new idea.
 | [markdown-insert-ux](markdown-insert-ux.md) | Draft | 2026-05-12 | alexander.trakhimenok@gmail.com | — |
 | [where-like-regex](where-like-regex.md) | Draft | 2026-05-12 | alexander.trakhimenok@gmail.com | — |
 
-## Outstanding Questions
+## Open Questions
 
 None at this time.
 

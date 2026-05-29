@@ -1,5 +1,6 @@
 # Feature: Delete
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/delete?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/delete?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/delete?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/delete?op=request-change) |
 **Status:** Approved
 
 ## Summary
@@ -226,7 +227,7 @@ be rejected (per `shared-cli-flags#req:order-by-applicability`).
 `ingitdb delete --from=countries --where='…' --fields=name` MUST be
 rejected (per `shared-cli-flags#req:fields-applicability`).
 
-## Outstanding Questions
+## Open Questions
 
 - Should single-record `delete --id=…` against a missing record
   support an `--ignore-missing` flag (idempotent delete, like

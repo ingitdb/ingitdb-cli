@@ -1,5 +1,6 @@
 # Feature: Create Record Command
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/create-record?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/create-record?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/create-record?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/create-record?op=request-change) |
 **Status:** Superseded by [spec/features/cli/insert/](../insert/README.md). The `ingitdb create record` command has been removed; use `ingitdb insert --into=... --key=...` instead. This document is preserved as a historical record.
 
 ## Summary
@@ -248,7 +249,7 @@ controllable `EDITOR` environment variable. No Rehearse stubs are scaffolded bec
 project uses Go integration tests (`*_test.go`) rather than Rehearse test files; coverage is
 tracked in `go test`.
 
-## Outstanding Questions
+## Open Questions
 
 - This spec is scoped to `SingleRecord` (i.e. `map[string]any`) collections only. Support for
   `[]map[string]any` and `map[$record_id]map[$field_name]any` types is out of scope.

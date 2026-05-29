@@ -1,5 +1,6 @@
 # Feature: Version Command
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/version?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/version?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/version?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/version?op=request-change) |
 **Status:** Implementing
 
 ## Summary
@@ -55,7 +56,7 @@ Running `ingitdb version` prints a single output containing the build version st
 
 Running `ingitdb version` always exits with status `0` on a working install. CI scripts can use the command as a smoke test by checking only the exit code.
 
-## Outstanding Questions
+## Open Questions
 
 - Should `version` accept a `--format=json` flag for machine-readable output?
 - Should the command include the Go runtime version and OS/arch (as `go version` does)?

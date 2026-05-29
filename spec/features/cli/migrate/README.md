@@ -1,5 +1,6 @@
 # Feature: Migrate Command
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/migrate?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/migrate?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/migrate?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/migrate?op=request-change) |
 **Status:** Withdrawn (deferred) — scope and design are not clear enough to implement today. The feature may be revived once concrete migration use cases and patterns emerge. This document is preserved as a historical record of the original draft.
 
 ## Summary
@@ -38,7 +39,7 @@ The pair `(--from, --to)` MUST determine the transformation applied to each reco
 
 Not defined yet.
 
-## Outstanding Questions
+## Open Questions
 
 - Acceptance criteria not yet defined for this feature.
 - How are migration rules registered — code, config file, or external plugin?

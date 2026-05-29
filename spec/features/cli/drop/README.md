@@ -1,5 +1,6 @@
 # Feature: Drop
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/drop?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/drop?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/drop?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/drop?op=request-change) |
 **Status:** Approved
 
 ## Summary
@@ -269,7 +270,7 @@ rejected.
 `ingitdb drop collection cities --min-affected=1` MUST be rejected
 (per `shared-cli-flags#req:min-affected-applicability`).
 
-## Outstanding Questions
+## Open Questions
 
 - Should `drop` support additional kinds in MVP (`drop index <name>`,
   `drop materialized-view <name>`), or are `collection` and `view`

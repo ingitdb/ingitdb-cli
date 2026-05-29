@@ -11,7 +11,7 @@ verifiable tasks with clear acceptance criteria and dependency ordering.
 | [query-command-prd](query-command-prd.md) | cli/query | Done |
 | [2026-05-12-create-record-stdin-edit](2026-05-12-create-record-stdin-edit.md) | cli/create-record | Ready |
 
-## Outstanding Questions
+## Open Questions
 
 None at this time.
 

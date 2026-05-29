@@ -1,5 +1,6 @@
 # Feature: Select
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/select?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/select?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/select?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/select?op=request-change) |
 **Status:** Approved
 
 ## Summary
@@ -316,7 +317,7 @@ resolve the record from the default branch and emit it as YAML
 `ingitdb select --from=countries --set='active=true'` MUST be
 rejected. `ingitdb select --from=countries --all` MUST be rejected.
 
-## Outstanding Questions
+## Open Questions
 
 - Should the `read-record` exit code (currently a generic non-zero)
   become a structured code distinct from generic flag errors? Carried

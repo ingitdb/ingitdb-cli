@@ -109,7 +109,7 @@ Verification: round-trip a 3-table demo project (with flat-only schemas) through
   - [`dal-go/dalgo` Idea `dalgo-schema-modification`](https://github.com/dal-go/dalgo/blob/main/spec/ideas/dalgo-schema-modification.md) — DDL writes schema files via `dalgo2ingitdb`; will pick up the project-level format choice via the fallback resolver.
   - [`datatug/datatug-cli` Idea `cross-engine-db-copy`](https://github.com/datatug/datatug-cli/blob/main/spec/ideas/cross-engine-db-copy.md) — `db copy --to ingitdb://...` will materialize content in the configured format.
 
-## Outstanding Questions
+## Open Questions
 
 - ~~Project-config file name and location.~~ **Resolved:** `.ingitdb/settings.yaml`, governed by `pkg/ingitdb/config.Settings` struct (constants `IngitDBDirName` and `SettingsFileName`).
 - ~~Existing project-config infrastructure.~~ **Resolved:** `config.RootConfig` + `config.Settings` already exist. Extension: add a `RecordFormat` field with `yaml:"record_format,omitempty"`. The loader already handles missing optional fields correctly.

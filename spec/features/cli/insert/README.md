@@ -1,6 +1,6 @@
 # Feature: Insert
 
-> [View in SpecStudio](https://specstudio.synchestra.io/project/features?id=ingitdb-cli@ingitdb@github.com&path=spec%2Ffeatures%2Fcli%2Finsert) — graph, discussions, approvals
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/insert?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/insert?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/insert?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/insert?op=request-change) |
 
 **Status:** Approved
 
@@ -759,7 +759,7 @@ inserting N records via `--format=jsonl` MUST trigger view
 materialization exactly once (after the transaction commits), not N
 times.
 
-## Outstanding Questions
+## Open Questions
 
 ### Resolved during this Feature spec
 

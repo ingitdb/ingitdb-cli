@@ -24,5 +24,9 @@ specscore spec lint                # validate all spec artifacts
 specscore feature list             # list features and their status
 ```
 
+## Open Questions
+
+None at this time.
+
 ---
 *This document follows the https://specscore.md/spec-root-specification*

@@ -1,5 +1,6 @@
 # Feature: Record Format Extensions
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format?op=request-change) |
 **Status:** Implemented
 **Source Idea:** [`default-record-format`](../../ideas/default-record-format.md)
 
@@ -92,7 +93,7 @@ From the source Idea:
 | Must-be-true: CSV writer cleanly refuses nested/array-valued fields | Carried; encoded in `csv-support` REQ:csv-nested-field-error. |
 | Should-be-true: CSV header row in schema order is useful for Excel/Pandas users | Carried; encoded in `csv-support` REQ:csv-write-header-row. |
 
-## Outstanding Questions
+## Open Questions
 
 - **`ingitdb setup` Feature is in Draft** with the current setup spec mentioning `.ingitdb.yaml` (single file). The actual codebase uses `.ingitdb/settings.yaml` (directory + file). The `cli-default-format-flag` Feature MUST write to the codebase-real path. Recommend reconciling the `cli/setup` Feature spec at the same time but out of scope here.
 - **`yml` vs `yaml`** — these are aliases today (both map to YAML parsing). When `default_record_format: yml` is written to `.ingitdb/settings.yaml`, does the validator accept it or canonicalize to `yaml`? Resolved in `project-default` Feature.

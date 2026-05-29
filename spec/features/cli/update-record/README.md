@@ -1,5 +1,6 @@
 # Feature: Update Record Command
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/update-record?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/update-record?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/update-record?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/update-record?op=request-change) |
 **Status:** Superseded by [spec/features/cli/update/](../update/README.md). The `ingitdb update record` command has been renamed to `ingitdb update`. This document is preserved as a historical record.
 
 ## Summary
@@ -58,7 +59,7 @@ Given a record `{name: Ireland, population: 5000000}`, running `ingitdb update r
 
 With a valid token, `ingitdb update record --remote=github.com/owner/repo --id=countries/ie --set='{capital: Dublin}'` produces exactly one commit in `owner/repo` whose diff is limited to the patched fields.
 
-## Outstanding Questions
+## Open Questions
 
 - Should the patch be deep-merged into nested maps, or remain shallow at the top level?
 

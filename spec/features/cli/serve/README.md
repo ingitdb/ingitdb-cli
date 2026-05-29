@@ -1,5 +1,6 @@
 # Feature: Serve Command
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/serve?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/serve?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/serve?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/serve?op=request-change) |
 **Status:** Draft
 
 ## Summary
@@ -51,7 +52,7 @@ Source files implementing this feature (annotated with
 
 Not defined yet.
 
-## Outstanding Questions
+## Open Questions
 
 - Acceptance criteria not yet defined for this feature.
 - Should the HTTP and MCP servers expose the same operations behind two protocol facades, or have distinct surfaces?

@@ -1,5 +1,6 @@
 # Feature: Delete Record Command
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/delete-record?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/delete-record?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/delete-record?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/delete-record?op=request-change) |
 **Status:** Superseded by [spec/features/cli/delete/](../delete/README.md). The `ingitdb delete record` command has been removed; use `ingitdb delete --id=...` instead. This document is preserved as a historical record.
 
 ## Summary
@@ -58,7 +59,7 @@ Given a `SingleRecord` collection containing the record `countries/ie`, running 
 
 Given a `MapOfIDRecords` collection whose shared file contains keys `ie` and `gb`, deleting `--id=collection/ie` removes the `ie` key from the file but leaves `gb` and any other keys untouched.
 
-## Outstanding Questions
+## Open Questions
 
 - None at this time.
 

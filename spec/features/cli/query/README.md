@@ -1,5 +1,6 @@
 # Feature: Query Command
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/query?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/query?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/query?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/query?op=request-change) |
 **Status:** Superseded by [spec/features/cli/select/](../select/README.md). The `ingitdb query` command has been replaced by `ingitdb select --from=... --where=...`. This document is preserved as a historical record.
 
 ## Summary
@@ -44,7 +45,7 @@ The `--format` flag MUST accept `csv` (default, with header row), `json`, `yaml`
 
 Not defined yet.
 
-## Outstanding Questions
+## Open Questions
 
 - Acceptance criteria not yet defined for this feature.
 - Should `--where` support `OR` and parentheses in addition to repeated AND clauses?

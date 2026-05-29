@@ -1,5 +1,6 @@
 # Feature: Remote Repository Access
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/remote-repo-access?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/remote-repo-access?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/remote-repo-access?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/remote-repo-access?op=request-change) |
 **Status:** Implementing
 
 ## Summary
@@ -189,7 +190,7 @@ With only `GITHUB_TOKEN` set, `ingitdb update --remote=github.com/owner/repo --i
 
 With `GIT_CORP_EXAMPLE_TOKEN` set and `--provider=github-enterprise`, `ingitdb select --remote=git.corp.example.com/owner/repo --id=x/y` MUST authenticate using that token without requiring `--token` on the command line.
 
-## Outstanding Questions
+## Open Questions
 
 - How should the command behave when the provider rate-limits the caller mid-operation? (carried over from `github-direct-access`)
 - Should the commit message format be configurable per command or fixed by convention? (carried over)

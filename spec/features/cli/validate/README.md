@@ -1,5 +1,6 @@
 # Feature: Validate Command
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/validate?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/validate?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/validate?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/validate?op=request-change) |
 **Status:** Implementing
 
 ## Summary
@@ -69,7 +70,7 @@ Running `ingitdb validate` with no flags from a directory containing a valid `.i
 
 `ingitdb validate --only=records --from-commit=A --to-commit=B` checks only records that changed between commits `A` and `B` and skips definition validation. Records outside the commit range are not opened.
 
-## Outstanding Questions
+## Open Questions
 
 - Should `--only=definition` ignore record files entirely, or only skip schema enforcement on them?
 

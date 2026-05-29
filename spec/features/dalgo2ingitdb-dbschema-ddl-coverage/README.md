@@ -1,5 +1,6 @@
 # Feature: dbschema + ddl + ConcurrencyAware Coverage for inGitDB
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/dalgo2ingitdb-dbschema-ddl-coverage?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/dalgo2ingitdb-dbschema-ddl-coverage?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/dalgo2ingitdb-dbschema-ddl-coverage?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/dalgo2ingitdb-dbschema-ddl-coverage?op=request-change) |
 **Status:** Draft
 **Source Idea:** —
 **Date:** 2026-05-13
@@ -498,7 +499,7 @@ Source files implementing this feature (annotated with
 **When** the caller invokes `ddl.CreateCollection(ctx, db, c)` then `reader.DescribeCollection(ctx, &dal.CollectionRef{Name: "events"})`
 **Then** the second call returns a `*dbschema.CollectionDef` with `Name == "events"`, `PrimaryKey == ["$key"]`, and `Fields` matching `c.Fields` except that `starts_at.Type` is `Time` (round-trips via `datetime` intermediate). `Indexes` is empty.
 
-## Outstanding Questions
+## Open Questions
 
 - **Per-collection index declarations.** inGitDB's `definition.yaml` does not declare secondary indexes today. `AddIndex`/`DropIndex` are currently no-ops. If inGitDB adds an `indexes` field to `CollectionDef`, this Feature must be revised. Tracked as a follow-up once the inGitDB schema supports it.
 - **Collection-not-found error type.** The `dbschema` package exports `*NotSupportedError` but not a `NotFoundError`. `DescribeCollection`'s contract is currently content-based (`err.Error()` contains `"not found"` + collection name). Plan-time options: (a) add `dbschema.NotFoundError` to `dal-go/dalgo` first; (b) define `dalgo2ingitdb.ErrCollectionNotFound` locally. The AC pins only the message-content contract so both options pass.

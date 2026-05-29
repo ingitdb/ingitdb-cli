@@ -1,5 +1,6 @@
 # Feature: Project-Level Default Record Format
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/project-default?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/project-default?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/project-default?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/project-default?op=request-change) |
 **Status:** Implemented
 **Source Idea:** [`default-record-format`](../../../ideas/default-record-format.md)
 **Parent Feature:** [`record-format`](../README.md)
@@ -151,7 +152,7 @@ In-package Go tests using YAML-encoded `.ingitdb/settings.yaml` content fixtures
 
 All ACs are testable via `go test ./pkg/ingitdb/config/...`. No external scaffolding needed.
 
-## Outstanding Questions
+## Open Questions
 
 - **Audit of existing call sites.** Plan-time work: identify every place in the codebase that currently consults `RecordFileDef.Format` directly and update each to use `ResolveRecordFormat`. The audit is plan-scope, not spec-scope, but the count matters for plan sizing.
 - ~~`yml` canonicalization.~~ **Resolved:** preserve `yml` as-written. The existing reader at `pkg/dalgo2ingitdb/parse.go:23` already accepts both `RecordFormatYAML` and `RecordFormatYML` in the same switch case, so downstream code already handles both. Canonicalizing at load would force a write-time edit to user-supplied config — a worse trade than the trivial dual-accept that already exists.

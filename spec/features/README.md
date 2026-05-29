@@ -38,6 +38,8 @@ This directory tracks the SpecScore feature specifications for the **ingitdb-cli
 | [path-targeting](path-targeting/README.md) | Implementing | Cross-cutting `--path` flag and its relation to `--remote`. |
 | [remote-repo-access](remote-repo-access/README.md) | Implementing | Cross-cutting `--remote=<URL>` flag, provider dispatch, and token resolution for remote Git hosting services. |
 | [shared-cli-flags](shared-cli-flags/README.md) | Single source of truth for the CLI flag grammar shared across select, insert, update, delete, and drop verbs: --from, --into, --where, --set, --id, --all, --order-by, --fields. Defines parsing rules, operator semantics (==, ===, !=, !==, >=, <=, >, <), value-type model, and flag mutual-exclusion rules. |
+| [cli](cli/README.md) | Unknown | TODO: Add description. |
+| [dalgo2ingitdb-dbschema-ddl-coverage](dalgo2ingitdb-dbschema-ddl-coverage/README.md) | Draft | TODO: Add description. |
 
 ## Feature Summaries
 
@@ -101,7 +103,7 @@ Defines the `--path` flag, its default of the current working directory, and its
 ### remote-repo-access
 Defines the `--remote=<URL>` flag for direct access to remote Git hosting services (GitHub, GitLab, Bitbucket, and self-hosted instances), with built-in provider inference, `--provider` override for unknown hosts, host-derived token environment variables, and the one-commit-per-write rule.
 
-## Outstanding Questions
+## Open Questions
 
 - None at this time.
 

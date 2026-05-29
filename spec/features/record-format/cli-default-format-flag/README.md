@@ -1,5 +1,6 @@
 # Feature: `ingitdb setup --default-format` Flag
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/cli-default-format-flag?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/cli-default-format-flag?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/cli-default-format-flag?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/cli-default-format-flag?op=request-change) |
 **Status:** Implemented
 **Source Idea:** [`default-record-format`](../../../ideas/default-record-format.md)
 **Parent Feature:** [`record-format`](../README.md)
@@ -86,7 +87,7 @@ Integration-style tests against a temp directory: run the `setup` command's unde
 
 ACs are testable via `go test ./cmd/ingitdb/commands/...`. No external scaffolding needed.
 
-## Outstanding Questions
+## Open Questions
 
 - **Existing `cli/setup` Feature spec mentions `.ingitdb.yaml`** (a single file) while the actual codebase uses `.ingitdb/settings.yaml` (directory + file). This Feature's contract assumes the codebase reality. The `cli/setup` Feature spec needs reconciliation in a separate task. Flag at plan time.
 - **Case sensitivity of the flag value.** AC-2 in REQ:flag-validation captures the contract that the behavior MUST be deterministic; the plan picks "accept and lowercase" vs "reject" based on usability preference.

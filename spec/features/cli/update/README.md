@@ -1,5 +1,6 @@
 # Feature: Update
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/update?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/update?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/update?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/update?op=request-change) |
 **Status:** Approved
 
 ## Summary
@@ -298,7 +299,7 @@ to the patched fields.
 `ingitdb update --remote=github.com/owner/repo --from=countries --all --set='checked=true'`
 MUST also produce exactly one commit, even when many records change.
 
-## Outstanding Questions
+## Open Questions
 
 - Dot-path traversal in `--set`/`--unset` (e.g.
   `--set='metadata.author=alice'`) as an opt-in mode? Defer to a

@@ -1,5 +1,6 @@
 # Feature: Find Command
 
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/find?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/find?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/find?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/find?op=request-change) |
 **Status:** Withdrawn — moved to DataTug CLI. The `ingitdb find` command will not be implemented in this repo; the cross-tool record-search feature belongs in DataTug. This document is preserved as a historical record of the original design.
 
 ## Summary
@@ -38,7 +39,7 @@ The command MUST print one matching record per output unit (line or block) and M
 
 Not defined yet.
 
-## Outstanding Questions
+## Open Questions
 
 - Acceptance criteria not yet defined for this feature.
 - Should `find` accept `--format=yaml|json` for machine-readable output?
