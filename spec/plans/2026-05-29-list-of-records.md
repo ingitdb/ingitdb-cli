@@ -71,7 +71,7 @@ Replace the YAML/JSON/JSONL `default → escalate` branch in
 `pkg/ingitdb/recordmerge/bridge.go` with the keyed-list three-way merge already
 used for CSV, so these conflicts auto-merge instead of escalating.
 
-## Outstanding Questions
+## Open Questions
 
 - `record-merge`'s list serialization for the new formats must round-trip
   through the Task 4 writer; confirm the merge path and the CRUD write path

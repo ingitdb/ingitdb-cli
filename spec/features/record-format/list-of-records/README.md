@@ -1,7 +1,7 @@
 # Feature: List-of-Records Files (YAML/JSON Sequences + JSONL)
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/list-of-records?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/list-of-records?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/list-of-records?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/list-of-records?op=request-change) |
-**Status:** Approved
+**Status:** Implementing
 **Parent Feature:** [`record-format`](../README.md)
 **Source Idea:** [`list-of-records-files`](../../../ideas/list-of-records-files.md)
 
@@ -172,6 +172,26 @@ record with a distinct key, producing a merge conflict
 **When** `ingitdb resolve` runs
 **Then** both records are present in the merged file and it is staged (no longer
 reported by `git diff --name-only --diff-filter=U`).
+
+## Implementation
+
+Source files (annotated with `// specscore: feature/record-format/list-of-records`):
+
+- [`pkg/ingitdb/constants.go`](../../../../pkg/ingitdb/constants.go) /
+  [`record_file_def.go`](../../../../pkg/ingitdb/record_file_def.go) — the
+  `jsonl` format constant and the list-layout validation rules.
+- [`pkg/dalgo2ingitdb/list_records.go`](../../../../pkg/dalgo2ingitdb/list_records.go) —
+  `ParseListOfRecordsContent`, `EncodeListOfRecordsContent`, and the shared
+  `ResolveListRecordKey` rule (primary_key → `$id` → `id`).
+- [`pkg/ingitdb/materializer/records_reader_fs.go`](../../../../pkg/ingitdb/materializer/records_reader_fs.go) —
+  the `ListOfRecords` reader case (ordered, keyed, keyless-rejected).
+- [`pkg/ingitdb/recordmerge/bridge.go`](../../../../pkg/ingitdb/recordmerge/bridge.go)
+  and [`cmd/ingitdb/commands/record_merge_resolver.go`](../../../../cmd/ingitdb/commands/record_merge_resolver.go) —
+  YAML/JSON/JSONL list auto-merge, serializing through the one shared encoder.
+
+CRUD write-back of individual list rows (dalgo write path) is not yet wired —
+the encoder exists and the merge/reader paths use it; see Open Questions. New
+code is covered by tests at 100%.
 
 ## Out of Scope
 
