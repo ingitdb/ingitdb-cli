@@ -220,7 +220,36 @@ func EncodeRecordContentForCollection(value any, colDef *ingitdb.CollectionDef) 
 	if colDef.RecordFile.Format == ingitdb.RecordFormatCSV {
 		return encodeCSVForCollection(value, colDef)
 	}
+	if colDef.RecordFile.Format == ingitdb.RecordFormatMarkdown {
+		return encodeMarkdownForCollection(value, colDef)
+	}
 	return marshalForFormat(value, colDef.RecordFile.Format)
+}
+
+// encodeMarkdownForCollection is the write-side counterpart of the markdown
+// branch of ParseRecordContentForCollection: it splits the content field out
+// as the markdown body and writes the remaining keys as YAML frontmatter.
+// value MUST be a map[string]any (a single record).
+func encodeMarkdownForCollection(value any, colDef *ingitdb.CollectionDef) ([]byte, error) {
+	record, ok := value.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("markdown record must be a map[string]any, got %T", value)
+	}
+	contentField := colDef.RecordFile.ResolvedContentField()
+	frontmatter := make(map[string]any, len(record))
+	var body []byte
+	for key, val := range record {
+		if key == contentField {
+			s, isString := val.(string)
+			if !isString {
+				return nil, fmt.Errorf("markdown content field %q must be a string, got %T", contentField, val)
+			}
+			body = []byte(s)
+			continue
+		}
+		frontmatter[key] = val
+	}
+	return markdown.Serialize(frontmatter, colDef.ColumnsOrder, body)
 }
 
 func resolveINGRColumns(data map[string]map[string]any, columnsOrder []string) []string {

@@ -249,10 +249,10 @@ Source files (annotated with `// specscore: feature/cli/resolve/auto-resolve/rec
   reads BASE/OURS/THEIRS git stages, runs the merge, serializes and stages the
   result, escalating the rest; wired into `resolve` ahead of `manual-resolve`.
 
-Layouts supported today: `MapOfRecords`, `SingleRecord`, and `ListOfRecords`
-(CSV keyed by primary key / `$id` / `id`, and INGR keyed by `$ID`). Markdown
-single-record serialization is not yet wired and escalates to `manual-resolve`.
-New code is covered by tests at 100%.
+Layouts supported today: `MapOfRecords`, `SingleRecord` (including markdown,
+merged field-by-field on the frontmatter and re-serialized), and
+`ListOfRecords` (CSV keyed by primary key / `$id` / `id`, and INGR keyed by
+`$ID`). New code is covered by tests at 100%.
 
 ## Open Questions
 

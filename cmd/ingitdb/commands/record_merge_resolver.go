@@ -43,14 +43,8 @@ func resolveRecordMergeConflicts(
 		ours := gitStageContent(ctx, dirPath, f, 2)
 		theirs := gitStageContent(ctx, dirPath, f, 3)
 
-		outcome := recordmerge.MergeFiles(base, ours, theirs, col, recordmerge.Options{SameRecord: eff.SameRecord})
-		if outcome.Escalate {
-			unresolved = append(unresolved, f)
-			continue
-		}
-
-		merged, serErr := serializeMergedRecords(outcome.Merged, col)
-		if serErr != nil {
+		merged, ok := mergeAndSerialize(base, ours, theirs, col, recordmerge.Options{SameRecord: eff.SameRecord})
+		if !ok {
 			unresolved = append(unresolved, f)
 			continue
 		}
@@ -67,6 +61,22 @@ func resolveRecordMergeConflicts(
 		resolved = append(resolved, f)
 	}
 	return resolved, unresolved, nil
+}
+
+// mergeAndSerialize runs the three-way merge of a conflicted file's stages and
+// serializes the result. ok is false — meaning the file must escalate to manual
+// resolution — when the merge escalates or the merged records cannot be
+// serialized for the collection's format.
+func mergeAndSerialize(base, ours, theirs []byte, col *ingitdb.CollectionDef, opts recordmerge.Options) ([]byte, bool) {
+	outcome := recordmerge.MergeFiles(base, ours, theirs, col, opts)
+	if outcome.Escalate {
+		return nil, false
+	}
+	merged, err := serializeMergedRecords(outcome.Merged, col)
+	if err != nil {
+		return nil, false
+	}
+	return merged, true
 }
 
 // findCollectionForRecordFile maps a conflicted file (relative to dirPath) to

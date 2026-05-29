@@ -297,3 +297,46 @@ func TestParseRecordContentForCollection_Markdown_NoCollision(t *testing.T) {
 		t.Errorf("$content: got %q, want %q", data[ingitdb.DefaultMarkdownContentField], "Body here.\n")
 	}
 }
+
+func TestEncodeRecordContentForCollection_Markdown_RoundTrip(t *testing.T) {
+	t.Parallel()
+
+	col := markdownColDef("")
+	col.ColumnsOrder = []string{"title"}
+	record := map[string]any{
+		"title":                             "Product 1",
+		ingitdb.DefaultMarkdownContentField: "Body here.\n",
+	}
+	encoded, err := EncodeRecordContentForCollection(record, col)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	back, err := ParseRecordContentForCollection(encoded, col)
+	if err != nil {
+		t.Fatalf("re-parse error: %v\n%s", err, encoded)
+	}
+	if back["title"] != "Product 1" {
+		t.Errorf("title round-trip: got %v", back["title"])
+	}
+	if back[ingitdb.DefaultMarkdownContentField] != "Body here.\n" {
+		t.Errorf("body round-trip: got %q", back[ingitdb.DefaultMarkdownContentField])
+	}
+}
+
+func TestEncodeRecordContentForCollection_Markdown_NotAMap(t *testing.T) {
+	t.Parallel()
+
+	_, err := EncodeRecordContentForCollection([]any{1, 2}, markdownColDef(""))
+	testutil.MustErrContain(t, err, "map[string]any")
+}
+
+func TestEncodeRecordContentForCollection_Markdown_ContentFieldNotString(t *testing.T) {
+	t.Parallel()
+
+	record := map[string]any{
+		"title":                             "x",
+		ingitdb.DefaultMarkdownContentField: 42,
+	}
+	_, err := EncodeRecordContentForCollection(record, markdownColDef(""))
+	testutil.MustErrContain(t, err, "content field", "must be a string")
+}

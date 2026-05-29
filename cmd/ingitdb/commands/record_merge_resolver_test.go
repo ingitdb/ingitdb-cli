@@ -306,11 +306,10 @@ func TestResolveRecordMergeConflicts_GitAddError(t *testing.T) {
 	}
 }
 
-func TestResolveRecordMergeConflicts_SerializeFailureEscalates(t *testing.T) {
+func TestResolveRecordMergeConflicts_MarkdownDifferentFieldsMerge(t *testing.T) {
 	t.Parallel()
 	// A markdown single-record conflict whose two sides edit different
-	// frontmatter fields: the engine merges them, but markdown re-serialization
-	// is not supported, so the merge must escalate (serialize-error guard).
+	// frontmatter fields: the engine merges them and markdown is re-serialized.
 	rel := filepath.Join("c", "note.md")
 	dir := setupDataConflict(t, rel,
 		"---\ntitle: x\nstatus: a\n---\nbody\n",
@@ -330,6 +329,7 @@ func TestResolveRecordMergeConflicts_SerializeFailureEscalates(t *testing.T) {
 					Format:     ingitdb.RecordFormatMarkdown,
 					RecordType: ingitdb.SingleRecord,
 				},
+				ColumnsOrder: []string{"title", "status"},
 				Columns: map[string]*ingitdb.ColumnDef{
 					"title":  {Type: ingitdb.ColumnTypeString},
 					"status": {Type: ingitdb.ColumnTypeString},
@@ -345,8 +345,36 @@ func TestResolveRecordMergeConflicts_SerializeFailureEscalates(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
-	if len(resolved) != 0 || len(unresolved) != 1 {
-		t.Fatalf("resolved=%v unresolved=%v, want escalate on unserializable merge", resolved, unresolved)
+	if len(resolved) != 1 || len(unresolved) != 0 {
+		t.Fatalf("resolved=%v unresolved=%v, want markdown merged", resolved, unresolved)
+	}
+	content, readErr := os.ReadFile(filepath.Join(dir, rel))
+	if readErr != nil {
+		t.Fatalf("read merged: %v", readErr)
+	}
+	merged, parseErr := dalgo2ingitdb.ParseRecordContentForCollection(content, def.Collections["c"])
+	if parseErr != nil {
+		t.Fatalf("parse merged markdown: %v\n%s", parseErr, content)
+	}
+	if merged["title"] != "y" || merged["status"] != "b" {
+		t.Errorf("merged frontmatter = title=%v status=%v, want y/b", merged["title"], merged["status"])
+	}
+}
+
+func TestMergeAndSerialize_SerializeFailureNotOK(t *testing.T) {
+	t.Parallel()
+	// A single-record collection declared with the CSV format parses (header
+	// matches) but cannot be serialized as a single record map, so the merge
+	// is reported as not-ok (escalate) rather than producing a broken file.
+	col := &ingitdb.CollectionDef{
+		ColumnsOrder: []string{"$id", "v"},
+		RecordFile: &ingitdb.RecordFileDef{
+			Name: "x.csv", Format: ingitdb.RecordFormatCSV, RecordType: ingitdb.SingleRecord,
+		},
+	}
+	csv := []byte("$id,v\nx,1\n")
+	if _, ok := mergeAndSerialize(csv, csv, csv, col, recordmerge.Options{}); ok {
+		t.Fatal("expected mergeAndSerialize to report not-ok on serialize failure")
 	}
 }
 
