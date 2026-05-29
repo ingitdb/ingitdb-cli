@@ -787,12 +787,9 @@ func TestReadwriteTx_Update_WithPreconditions(t *testing.T) {
 func TestReadMapOfRecordsFile_Missing(t *testing.T) {
 	t.Parallel()
 	p := filepath.Join(t.TempDir(), "missing.yaml")
-	result, found, err := readMapOfRecordsFile(p, ingitdb.RecordFormatYAML)
+	result, err := readMapOfRecordsFile(p, ingitdb.RecordFormatYAML)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
-	}
-	if found {
-		t.Error("found: want false for missing file")
 	}
 	if result != nil {
 		t.Errorf("result: want nil, got %v", result)
@@ -806,7 +803,7 @@ func TestReadMapOfRecordsFile_InvalidYAML(t *testing.T) {
 	if err := os.WriteFile(p, []byte("{broken yaml"), 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
-	_, _, err := readMapOfRecordsFile(p, ingitdb.RecordFormatYAML)
+	_, err := readMapOfRecordsFile(p, ingitdb.RecordFormatYAML)
 	if err == nil {
 		t.Fatal("want error for invalid YAML")
 	}
@@ -829,12 +826,9 @@ func TestReadWriteMapOfRecordsFile_RoundTrip(t *testing.T) {
 	if err := writeMapOfRecordsFile(p, colDef, original); err != nil {
 		t.Fatalf("writeMapOfRecordsFile: %v", err)
 	}
-	result, found, err := readMapOfRecordsFile(p, ingitdb.RecordFormatYAML)
+	result, err := readMapOfRecordsFile(p, ingitdb.RecordFormatYAML)
 	if err != nil {
 		t.Fatalf("readMapOfRecordsFile: %v", err)
-	}
-	if !found {
-		t.Fatal("found: want true")
 	}
 	if len(result) != 2 {
 		t.Errorf("len: got %d, want 2", len(result))

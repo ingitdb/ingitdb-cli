@@ -41,7 +41,7 @@ func (r readwriteTx) Set(_ context.Context, record dal.Record) error {
 			return err
 		}
 	case ingitdb.MapOfRecords:
-		allRecords, _, readErr := readMapOfRecordsFile(path, colDef.RecordFile.Format)
+		allRecords, readErr := readMapOfRecordsFile(path, colDef.RecordFile.Format)
 		if readErr != nil {
 			return readErr
 		}
@@ -90,7 +90,7 @@ func (r readwriteTx) Insert(_ context.Context, record dal.Record, _ ...dal.Inser
 			return err
 		}
 	case ingitdb.MapOfRecords:
-		allRecords, _, readErr := readMapOfRecordsFile(path, colDef.RecordFile.Format)
+		allRecords, readErr := readMapOfRecordsFile(path, colDef.RecordFile.Format)
 		if readErr != nil {
 			return readErr
 		}
@@ -133,12 +133,9 @@ func (r readwriteTx) Delete(_ context.Context, key *dal.Key) error {
 	case ingitdb.SingleRecord:
 		return deleteSingleRecordFile(path)
 	case ingitdb.MapOfRecords:
-		allRecords, found, readErr := readMapOfRecordsFile(path, colDef.RecordFile.Format)
+		allRecords, readErr := readMapOfRecordsFile(path, colDef.RecordFile.Format)
 		if readErr != nil {
 			return readErr
-		}
-		if !found {
-			return dal.ErrRecordNotFound
 		}
 		if _, exists := allRecords[recordKey]; !exists {
 			return dal.ErrRecordNotFound

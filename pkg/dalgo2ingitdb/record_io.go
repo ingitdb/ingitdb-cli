@@ -83,14 +83,17 @@ func writeSingleRecordFile(path string, colDef *ingitdb.CollectionDef, data map[
 	})
 }
 
-// readMapOfRecordsFile reads a map-of-records file under a shared lock.
-// Returns (nil, false, nil) when the file does not exist.
-func readMapOfRecordsFile(path string, format ingitdb.RecordFormat) (map[string]map[string]any, bool, error) {
+// readMapOfRecordsFile reads a map-of-records file under a shared lock and
+// returns all records keyed by ID. A missing file is not an error: it returns
+// (nil, nil). Callers determine per-record existence with a key lookup on the
+// returned map (a nil map yields "not present"), so no file-level "found" flag
+// is needed — unlike single records, where the file is the record.
+func readMapOfRecordsFile(path string, format ingitdb.RecordFormat) (map[string]map[string]any, error) {
 	if _, statErr := os.Stat(path); statErr != nil {
 		if errors.Is(statErr, fs.ErrNotExist) {
-			return nil, false, nil
+			return nil, nil
 		}
-		return nil, false, fmt.Errorf("stat %s: %w", path, statErr)
+		return nil, fmt.Errorf("stat %s: %w", path, statErr)
 	}
 	var result map[string]map[string]any
 	if err := withSharedLock(path, func() error {
@@ -104,9 +107,9 @@ func readMapOfRecordsFile(path string, format ingitdb.RecordFormat) (map[string]
 		}
 		return nil
 	}); err != nil {
-		return nil, false, err
+		return nil, err
 	}
-	return result, true, nil
+	return result, nil
 }
 
 // writeMapOfRecordsFile encodes a full map-of-records dataset and writes

@@ -1808,7 +1808,7 @@ func TestReadMapOfRecordsFile_StatError(t *testing.T) {
 	}
 	defer func() { _ = os.Chmod(dir, 0o755) }()
 
-	_, _, err = readMapOfRecordsFile(p, ingitdb.RecordFormatYAML)
+	_, err = readMapOfRecordsFile(p, ingitdb.RecordFormatYAML)
 	if err == nil {
 		t.Fatal("readMapOfRecordsFile: want error for stat permission failure")
 	}
@@ -2246,7 +2246,7 @@ func TestReadMapOfRecordsFile_ReadDirError(t *testing.T) {
 	if err := os.MkdirAll(p, 0o755); err != nil {
 		t.Fatalf("mkdir: %v", err)
 	}
-	_, _, err := readMapOfRecordsFile(p, ingitdb.RecordFormatYAML)
+	_, err := readMapOfRecordsFile(p, ingitdb.RecordFormatYAML)
 	if err == nil {
 		t.Fatal("readMapOfRecordsFile: want error reading a directory as a file")
 	}

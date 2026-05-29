@@ -50,14 +50,10 @@ func (r readonlyTx) Get(_ context.Context, record dal.Record) error {
 		maps.Copy(target, ApplyLocaleToRead(data, colDef.Columns))
 		return nil
 	case ingitdb.MapOfRecords:
-		allRecords, found, readErr := readMapOfRecordsFile(path, colDef.RecordFile.Format)
+		allRecords, readErr := readMapOfRecordsFile(path, colDef.RecordFile.Format)
 		if readErr != nil {
 			record.SetError(readErr)
 			return readErr
-		}
-		if !found {
-			record.SetError(dal.ErrRecordNotFound)
-			return nil
 		}
 		recordData, exists := allRecords[recordKey]
 		if !exists {
@@ -89,12 +85,9 @@ func (r readonlyTx) Exists(_ context.Context, key *dal.Key) (bool, error) {
 		_ = data
 		return found, nil
 	case ingitdb.MapOfRecords:
-		allRecords, found, readErr := readMapOfRecordsFile(path, colDef.RecordFile.Format)
+		allRecords, readErr := readMapOfRecordsFile(path, colDef.RecordFile.Format)
 		if readErr != nil {
 			return false, readErr
-		}
-		if !found {
-			return false, nil
 		}
 		_, exists := allRecords[recordKey]
 		return exists, nil

@@ -116,12 +116,9 @@ func readAllSingleRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
 
 func readAllMapOfRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
 	path := resolveRecordPath(colDef, "")
-	allData, found, err := readMapOfRecordsFile(path, colDef.RecordFile.Format)
+	allData, err := readMapOfRecordsFile(path, colDef.RecordFile.Format)
 	if err != nil {
 		return nil, err
-	}
-	if !found {
-		return nil, nil
 	}
 	records := make([]dal.Record, 0, len(allData))
 	for id, fields := range allData {
