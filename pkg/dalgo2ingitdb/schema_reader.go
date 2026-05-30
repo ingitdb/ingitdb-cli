@@ -97,7 +97,7 @@ func (db *Database) DescribeCollection(_ context.Context, ref *dal.CollectionRef
 
 	var colDef ingitdb.CollectionDef
 	readErr := withSharedLock(defPath, func() error {
-		content, err := os.ReadFile(defPath)
+		content, err := osReadFile(defPath)
 		if err != nil {
 			return fmt.Errorf("read definition.yaml: %w", err)
 		}

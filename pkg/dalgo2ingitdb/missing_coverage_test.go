@@ -2218,21 +2218,21 @@ func TestReadSingleRecordFile_StatNonExistError(t *testing.T) {
 	}
 }
 
-// TestReadSingleRecordFile_ReadDirError covers the os.ReadFile error branch
-// (record_io.go line 43) deterministically: a directory at the record path
-// passes os.Stat and can be flock'd, but os.ReadFile fails with "is a
-// directory". Unlike the chmod approach, this works as root because the lock
-// open succeeds and the failure happens in os.ReadFile itself.
-//
-// It also asserts the found==true semantic: the file exists (stat passed), so
-// found is true even though reading failed.
-func TestReadSingleRecordFile_ReadDirError(t *testing.T) {
-	t.Parallel()
+// TestReadSingleRecordFile_ReadError covers the read error branch in
+// readSingleRecordFile via the osReadFile seam. A real (empty) file is present
+// so os.Stat and the shared lock succeed; only the read fails — hence found is
+// true even though reading failed. Intentionally NOT parallel: it mutates a
+// package-level seam.
+func TestReadSingleRecordFile_ReadError(t *testing.T) {
 	root := t.TempDir()
 	p := filepath.Join(root, "rec.yaml")
-	if err := os.MkdirAll(p, 0o755); err != nil {
-		t.Fatalf("mkdir: %v", err)
+	if err := os.WriteFile(p, []byte("x: 1\n"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
 	}
+	orig := osReadFile
+	osReadFile = func(string) ([]byte, error) { return nil, os.ErrPermission }
+	defer func() { osReadFile = orig }()
+
 	colDef := &ingitdb.CollectionDef{
 		ID:      "c",
 		DirPath: root,
@@ -2243,7 +2243,7 @@ func TestReadSingleRecordFile_ReadDirError(t *testing.T) {
 	}
 	_, found, err := readSingleRecordFile(p, colDef)
 	if err == nil {
-		t.Fatal("readSingleRecordFile: want error reading a directory as a file")
+		t.Fatal("readSingleRecordFile: want error when the read fails")
 	}
 	if !strings.Contains(err.Error(), "read ") {
 		t.Errorf("error = %v, want it to wrap the read failure", err)
@@ -2253,18 +2253,22 @@ func TestReadSingleRecordFile_ReadDirError(t *testing.T) {
 	}
 }
 
-// TestReadMapOfRecordsFile_ReadDirError covers the os.ReadFile error branch
-// (record_io.go line 89) via the same directory-as-file trick.
-func TestReadMapOfRecordsFile_ReadDirError(t *testing.T) {
-	t.Parallel()
+// TestReadMapOfRecordsFile_ReadError covers the read error branch in
+// readMapOfRecordsFile via the osReadFile seam. Intentionally NOT parallel: it
+// mutates a package-level seam.
+func TestReadMapOfRecordsFile_ReadError(t *testing.T) {
 	root := t.TempDir()
 	p := filepath.Join(root, "records.yaml")
-	if err := os.MkdirAll(p, 0o755); err != nil {
-		t.Fatalf("mkdir: %v", err)
+	if err := os.WriteFile(p, []byte("a:\n  x: 1\n"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
 	}
+	orig := osReadFile
+	osReadFile = func(string) ([]byte, error) { return nil, os.ErrPermission }
+	defer func() { osReadFile = orig }()
+
 	_, err := readMapOfRecordsFile(p, ingitdb.RecordFormatYAML)
 	if err == nil {
-		t.Fatal("readMapOfRecordsFile: want error reading a directory as a file")
+		t.Fatal("readMapOfRecordsFile: want error when the read fails")
 	}
 	if !strings.Contains(err.Error(), "read ") {
 		t.Errorf("error = %v, want it to wrap the read failure", err)
@@ -2296,21 +2300,29 @@ func TestReadAllSingleRecords_GlobBadPattern(t *testing.T) {
 	}
 }
 
-// TestDescribeCollection_ReadDirError covers the os.ReadFile error branch in
-// DescribeCollection (schema_reader.go line 101) via the directory-as-file
-// trick: definition.yaml is a directory, so Stat passes but ReadFile fails.
-func TestDescribeCollection_ReadDirError(t *testing.T) {
-	t.Parallel()
+// TestDescribeCollection_ReadError covers the read error branch in
+// DescribeCollection (schema_reader.go) via the osReadFile seam. A real
+// definition.yaml is present so Stat and the shared lock succeed; only the read
+// fails. Intentionally NOT parallel: it mutates a package-level seam.
+func TestDescribeCollection_ReadError(t *testing.T) {
 	root := t.TempDir()
-	defPath := filepath.Join(root, "things", ingitdb.SchemaDir, ingitdb.CollectionDefFileName)
-	if err := os.MkdirAll(defPath, 0o755); err != nil {
+	defDir := filepath.Join(root, "things", ingitdb.SchemaDir)
+	if err := os.MkdirAll(defDir, 0o755); err != nil {
 		t.Fatalf("mkdir: %v", err)
 	}
+	defPath := filepath.Join(defDir, ingitdb.CollectionDefFileName)
+	if err := os.WriteFile(defPath, []byte("record_file:\n  type: \"map[string]any\"\n"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	orig := osReadFile
+	osReadFile = func(string) ([]byte, error) { return nil, os.ErrPermission }
+	defer func() { osReadFile = orig }()
+
 	db := &Database{projectPath: root}
 	ref := dal.NewCollectionRef("things", "", nil)
 	_, err := db.DescribeCollection(context.Background(), &ref)
 	if err == nil {
-		t.Fatal("DescribeCollection: want error reading a directory as definition.yaml")
+		t.Fatal("DescribeCollection: want error when reading definition.yaml fails")
 	}
 	if !strings.Contains(err.Error(), "read definition.yaml") {
 		t.Errorf("error = %v, want it to wrap the read failure", err)

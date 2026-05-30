@@ -45,7 +45,7 @@ func readSingleRecordFile(path string, colDef *ingitdb.CollectionDef) (map[strin
 		readErr error
 	)
 	if err := withSharedLock(path, func() error {
-		content, err := os.ReadFile(path)
+		content, err := osReadFile(path)
 		if err != nil {
 			return fmt.Errorf("read %s: %w", path, err)
 		}
@@ -95,7 +95,7 @@ func readMapOfRecordsFile(path string, format ingitdb.RecordFormat) (map[string]
 	}
 	var result map[string]map[string]any
 	if err := withSharedLock(path, func() error {
-		content, err := os.ReadFile(path)
+		content, err := osReadFile(path)
 		if err != nil {
 			return fmt.Errorf("read %s: %w", path, err)
 		}
