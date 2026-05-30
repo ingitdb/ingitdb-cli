@@ -821,7 +821,6 @@ func TestHandleMCP_Tool_BadDB(t *testing.T) {
 		{"delete_record", map[string]any{"db": "badformat", "id": "countries/ie"}},
 	}
 	for _, tc := range tools {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			h, _ := newTestHandler()
@@ -849,7 +848,6 @@ func TestHandleMCP_Tool_DefinitionError(t *testing.T) {
 		{"delete_record", map[string]any{"db": "owner/repo", "id": "countries/ie"}},
 	}
 	for _, tc := range tools {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			h, _ := newTestHandler()
@@ -882,7 +880,6 @@ func TestHandleMCP_Tool_DBOpenError(t *testing.T) {
 		{"delete_record", map[string]any{"db": "owner/repo", "id": "countries/ie"}},
 	}
 	for _, tc := range tools {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			h, _ := newTestHandler()
@@ -911,7 +908,6 @@ func TestHandleMCP_Tool_InvalidID(t *testing.T) {
 		{"delete_record", map[string]any{"db": "owner/repo", "id": "unknown/foo"}},
 	}
 	for _, tc := range tools {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			h, _ := newTestHandler()
@@ -1140,7 +1136,6 @@ func TestHandleMCP_Tool_FileReaderError(t *testing.T) {
 		{"delete_record", map[string]any{"db": "owner/repo", "id": "countries/ie"}},
 	}
 	for _, tc := range tools {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			h, _ := newTestHandler()
@@ -1169,7 +1164,6 @@ func TestHandleMCP_Tool_TransactionError(t *testing.T) {
 		{"delete_record", map[string]any{"db": "owner/repo", "id": "countries/ie"}},
 	}
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			h, _ := newTestHandler()

@@ -4,13 +4,37 @@ import (
 	"crypto/sha256"
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"testing"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 	"gopkg.in/yaml.v3"
 )
+
+// fakeErrCSVWriter is a csvWriter whose sticky Error() is non-nil.
+type fakeErrCSVWriter struct{}
+
+func (fakeErrCSVWriter) Write([]string) error { return nil }
+func (fakeErrCSVWriter) Flush()               {}
+func (fakeErrCSVWriter) Error() error         { return errors.New("seam failure") }
+
+// TestFormatCSV_WriterError covers the w.Error() branch in formatCSV
+// (export_format.go line 120-122) via the newCSVWriter seam. In production the
+// writer targets a bytes.Buffer and never errors. Intentionally NOT parallel:
+// it mutates a package-level seam.
+func TestFormatCSV_WriterError(t *testing.T) {
+	orig := newCSVWriter
+	newCSVWriter = func(io.Writer) csvWriter { return fakeErrCSVWriter{} }
+	defer func() { newCSVWriter = orig }()
+
+	_, err := formatCSV([]string{"a"}, nil)
+	if err == nil {
+		t.Fatal("formatCSV: want error when the csv writer reports a sticky error")
+	}
+}
 
 func TestDefaultViewFormatExtension(t *testing.T) {
 	t.Parallel()

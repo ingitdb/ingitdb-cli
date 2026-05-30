@@ -691,7 +691,6 @@ func TestCompareAny(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			got := compareAny(tc.a, tc.b)
@@ -725,7 +724,6 @@ func TestToComparableInt(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			got, ok := toComparableInt(tc.input)
@@ -756,7 +754,6 @@ func TestToComparableFloat(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			got, ok := toComparableFloat(tc.input)

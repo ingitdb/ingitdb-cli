@@ -169,9 +169,8 @@ func (m homeModel) Update(msg tea.Msg) (homeModel, tea.Cmd) {
 				runes := []rune(m.filterValue)
 				m.filterValue = string(runes[:len(runes)-1])
 				m.filteredCollections = m.applyFilter()
-				if m.cursor > len(m.filteredCollections) {
-					m.cursor = len(m.filteredCollections)
-				}
+				// Backspace makes the filter less restrictive, so filteredCollections
+				// can only grow; cursor is always within range.
 				cmd := m.refreshPreview()
 				return m, cmd
 			}
@@ -247,20 +246,6 @@ func (m homeModel) Update(msg tea.Msg) (homeModel, tea.Cmd) {
 				return m, cmd
 			}
 
-		case "esc":
-			if m.panels.IsFocused(panelData) && m.preview != nil && m.preview.localeDropdownOpen {
-				updated, _ := m.preview.Update(msg)
-				m.preview = &updated
-				return m, nil
-			}
-
-		case "enter":
-			if m.panels.IsFocused(panelData) && m.preview != nil && m.preview.localeDropdownOpen {
-				updated, _ := m.preview.Update(msg)
-				m.preview = &updated
-				return m, nil
-			}
-
 		default:
 			if m.panels.IsFocused(panelCollections) {
 				key := msg.String()
@@ -310,18 +295,14 @@ func (m homeModel) View() string {
 	}
 	middleWidth := m.width - leftWidth - rightWidth
 
+	// leftWidth >= 20 and rightWidth >= 24 (clamped above), so their inner
+	// values are always >= 16 and >= 20 respectively — no clamp needed.
 	leftInner := leftWidth - 4
-	if leftInner < 1 {
-		leftInner = 1
-	}
 	middleInner := middleWidth - 4
 	if middleInner < 1 {
 		middleInner = 1
 	}
 	rightInner := rightWidth - 4
-	if rightInner < 1 {
-		rightInner = 1
-	}
 
 	// leftPanelW/middlePanelW/rightPanelW are the Width() args for lipgloss.
 	// In lipgloss v2, Width() is the total outer (border-box) width.

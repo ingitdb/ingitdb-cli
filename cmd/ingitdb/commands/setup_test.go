@@ -67,7 +67,6 @@ func TestSetup_DefaultFormatFlag_RejectsUnsupportedValue(t *testing.T) {
 func TestSetup_DefaultFormatFlag_AcceptsAllSevenFormats(t *testing.T) {
 	t.Parallel()
 	for _, f := range []string{"yaml", "yml", "json", "markdown", "toml", "ingr", "csv"} {
-		f := f
 		t.Run(f, func(t *testing.T) {
 			t.Parallel()
 			dir := t.TempDir()

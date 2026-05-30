@@ -313,7 +313,7 @@ func validateCollectionName(name string) (err error) {
 			return fmt.Errorf("collection name %q has invalid path segment", name)
 		}
 	}
-	if filepath.IsAbs(name) {
+	if filepathIsAbs(name) {
 		return fmt.Errorf("collection name %q must be relative", name)
 	}
 	return nil
@@ -361,7 +361,7 @@ func defaultRecordFile() *ingitdb.RecordFileDef {
 // writeCollectionDefYAML marshals colDef and writes it to defPath. The
 // containing directory is expected to exist.
 func writeCollectionDefYAML(defPath string, colDef *ingitdb.CollectionDef) error {
-	data, err := yaml.Marshal(colDef)
+	data, err := yamlMarshal(colDef)
 	if err != nil {
 		return fmt.Errorf("marshal definition.yaml: %w", err)
 	}
@@ -418,7 +418,7 @@ func rewriteRecordFiles(recordsDir string, format ingitdb.RecordFormat, mutate f
 				}
 			}
 			mutate(rec)
-			out, err := yaml.Marshal(rec)
+			out, err := yamlMarshal(rec)
 			if err != nil {
 				return fmt.Errorf("marshal %s: %w", path, err)
 			}

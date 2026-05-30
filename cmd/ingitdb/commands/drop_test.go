@@ -77,7 +77,6 @@ func TestDrop_RequiresKindAndName(t *testing.T) {
 		{name: "unknown kind", args: []string{"--path=" + dir, "unknownkind", "x"}},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			_, err := runDropCmd(t, homeDir, getWd, readDef, newDB, logf, tc.args...)

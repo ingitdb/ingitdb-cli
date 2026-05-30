@@ -106,7 +106,6 @@ func TestInsert_RejectsForbiddenSharedFlags(t *testing.T) {
 		{name: "where rejected", args: []string{"--into=test.items", "--key=x", "--data={}", "--where=a==1"}, want: "where"},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf, nil, true, nil,
@@ -226,7 +225,6 @@ func TestInsert_DataSource_MutualExclusion(t *testing.T) {
 		{name: "edit + empty", args: []string{"--into=test.items", "--key=x", "--edit", "--empty"}},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			_, err := runInsertCmd(t, homeDir, getWd, readDef, newDB, logf, nil, true, nil,
@@ -512,7 +510,6 @@ func TestInsert_BatchModeRejectsSingleRecordFlags(t *testing.T) {
 		{"--key", []string{"--key=ie"}},
 	}
 	for _, tt := range cases {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			dir := t.TempDir()
@@ -549,7 +546,6 @@ func TestInsert_KeyColumnAndFieldsRequireBatchCSV(t *testing.T) {
 		{"--fields without --format (single record)", []string{"--key=ie", "--data={}", "--fields=name"}},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			dir := t.TempDir()

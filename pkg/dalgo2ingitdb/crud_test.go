@@ -99,12 +99,12 @@ func TestDB_Get_MissingRecordMarksNotFound(t *testing.T) {
 	t.Parallel()
 	db, _ := setupSingleRecordDB(t)
 	rec := dal.NewRecordWithData(dal.NewKeyWithID("countries", "atlantis"), map[string]any{})
-	if err := db.Get(context.Background(), rec); err != nil {
-		t.Fatalf("Get: %v", err)
+	// Per the dalgo Getter contract, Get on a missing record returns
+	// dal.ErrRecordNotFound AND marks the record as not existing.
+	err := db.Get(context.Background(), rec)
+	if !dal.IsNotFound(err) {
+		t.Fatalf("Get: got %v, want dal.ErrRecordNotFound", err)
 	}
-	// dalgo's record.Exists() returns false for a missing record after
-	// the driver has set ErrRecordNotFound via SetError. record.Error()
-	// deliberately swallows that sentinel.
 	if rec.Exists() {
 		t.Errorf("rec.Exists: got true, want false for missing record")
 	}

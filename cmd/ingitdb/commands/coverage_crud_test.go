@@ -1155,7 +1155,6 @@ func TestRegisterMCPTools_AllTools_Wired(t *testing.T) {
 		{"delete_record", `{"id":"test.items/wired1"}`, 205},
 	}
 	for _, tc := range tools {
-		tc := tc
 		resp, err := tr.callTool(context.Background(), tc.id, tc.name, tc.args)
 		if err != nil {
 			t.Errorf("callTool %s: %v", tc.name, err)

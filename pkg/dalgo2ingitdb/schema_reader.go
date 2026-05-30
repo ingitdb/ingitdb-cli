@@ -59,7 +59,7 @@ func (db *Database) ListCollections(_ context.Context, _ *dal.Key) ([]dal.Collec
 		if statErr != nil || info.IsDir() {
 			return nil
 		}
-		rel, relErr := filepath.Rel(db.projectPath, path)
+		rel, relErr := filepathRel(db.projectPath, path)
 		if relErr != nil {
 			return fmt.Errorf("relative path for %s: %w", path, relErr)
 		}

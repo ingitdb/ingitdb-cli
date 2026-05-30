@@ -217,7 +217,7 @@ func runDeleteByID(
 		// on missing keys depending on the backend; we want an
 		// explicit user-facing diagnostic.
 		probe := dal.NewRecordWithData(key, map[string]any{})
-		if getErr := tx.Get(ctx, probe); getErr != nil {
+		if getErr := tx.Get(ctx, probe); getErr != nil && !dal.IsNotFound(getErr) {
 			return getErr
 		}
 		if !probe.Exists() {

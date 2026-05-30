@@ -165,10 +165,9 @@ func (r readwriteTx) Update(ctx context.Context, key *dal.Key, updates []update.
 		return fmt.Errorf("dalgo2ingitdb: Update preconditions are not supported")
 	}
 	rec := dal.NewRecordWithData(key, map[string]any{})
+	// Get returns dal.ErrRecordNotFound for a missing record, so updating a
+	// non-existent record fails here rather than silently creating it.
 	if err := r.Get(ctx, rec); err != nil {
-		return err
-	}
-	if err := rec.Error(); err != nil {
 		return err
 	}
 	data := rec.Data().(map[string]any)

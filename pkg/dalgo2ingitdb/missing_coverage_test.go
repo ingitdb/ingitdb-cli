@@ -2399,6 +2399,43 @@ func TestReadAllSingleRecords_NotFoundAfterGlob(t *testing.T) {
 	}
 }
 
+// TestReadAllSingleRecords_RelError covers the filepath.Rel error branch in
+// readAllSingleRecords (query.go line 95-96) via the filepathRel seam. In
+// production this is unreachable because the match path always comes from
+// filepath.Glob under basePath, so filepath.Rel never fails. The seam returns
+// an error deterministically. A real record file is present so glob yields a
+// match to feed the loop. Intentionally NOT parallel: it mutates a seam.
+func TestReadAllSingleRecords_RelError(t *testing.T) {
+	root := t.TempDir()
+	recDir := filepath.Join(root, "things", "$records")
+	if err := os.MkdirAll(recDir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(recDir, "a.yaml"), []byte("v: 1\n"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	orig := filepathRel
+	filepathRel = func(string, string) (string, error) { return "", os.ErrInvalid }
+	defer func() { filepathRel = orig }()
+
+	colDef := &ingitdb.CollectionDef{
+		ID:      "things",
+		DirPath: filepath.Join(root, "things"),
+		RecordFile: &ingitdb.RecordFileDef{
+			Name:       "{key}.yaml",
+			Format:     ingitdb.RecordFormatYAML,
+			RecordType: ingitdb.SingleRecord,
+		},
+	}
+	_, err := readAllSingleRecords(colDef)
+	if err == nil {
+		t.Fatal("readAllSingleRecords: want error when filepath.Rel fails")
+	}
+	if !strings.Contains(err.Error(), "rel ") {
+		t.Errorf("error = %v, want it to wrap the rel failure", err)
+	}
+}
+
 // mockFileLocker is a fileLocker whose Lock/RLock return a configurable error.
 type mockFileLocker struct{ lockErr error }
 

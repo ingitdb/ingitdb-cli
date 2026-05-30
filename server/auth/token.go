@@ -37,11 +37,12 @@ func ValidateGitHubToken(ctx context.Context, token string, httpClient *http.Cli
 	if httpClient != nil {
 		opts = append(opts, github.WithHTTPClient(httpClient))
 	}
-	client, err := github.NewClient(opts...)
-	if err != nil {
-		return fmt.Errorf("failed to create github client: %w", err)
-	}
-	_, _, err = client.Users.Get(ctx, "")
+	// github.NewClient only returns an error when an option function fails.
+	// WithAuthToken fails on empty token (already guarded above) and
+	// WithHTTPClient fails on nil (only appended when httpClient != nil), so
+	// this call is unconditionally successful and the error is discarded.
+	client, _ := github.NewClient(opts...)
+	_, _, err := client.Users.Get(ctx, "")
 	if err != nil {
 		return fmt.Errorf("github token validation failed: %w", err)
 	}

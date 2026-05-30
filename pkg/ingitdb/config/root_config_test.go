@@ -118,7 +118,6 @@ func TestResolvePath(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			got, err := resolvePath(tt.baseDirPath, tt.path, tt.homeDir)
@@ -355,7 +354,6 @@ func TestRootConfigValidate(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -974,7 +972,6 @@ func TestReadRootConfigFromFile(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -1246,7 +1243,6 @@ func TestSettings_Validate_EachOfSevenAccepted(t *testing.T) {
 		ingitdb.RecordFormatINGR,
 		ingitdb.RecordFormatCSV,
 	} {
-		f := f
 		t.Run(string(f), func(t *testing.T) {
 			t.Parallel()
 			s := Settings{DefaultRecordFormat: f}
@@ -1329,5 +1325,128 @@ func TestResolveRecordFormat_EmptyFormatStringFallsThrough(t *testing.T) {
 	got := ResolveRecordFormat(col, s)
 	if got != ingitdb.RecordFormatJSON {
 		t.Errorf("expected json, got %q", got)
+	}
+}
+
+func TestSettings_Validate_NilReceiver(t *testing.T) {
+	t.Parallel()
+	var s *Settings
+	err := s.Validate()
+	if err != nil {
+		t.Errorf("expected nil error for nil Settings receiver, got %v", err)
+	}
+}
+
+func TestRootConfigValidate_SettingsValidateError(t *testing.T) {
+	t.Parallel()
+	rc := &RootConfig{
+		Settings: Settings{DefaultRecordFormat: "xml"},
+	}
+	err := rc.Validate()
+	if err == nil {
+		t.Fatal("expected error from Settings.Validate, got nil")
+	}
+	if !strings.Contains(err.Error(), "unsupported default_record_format") {
+		t.Errorf("expected 'unsupported default_record_format' in error, got %q", err.Error())
+	}
+}
+
+func TestWriteRootCollectionsToFile_Success(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	m := map[string]string{
+		"companies": "demo-dbs/companies",
+		"todo":      "docs/todo",
+	}
+	err := WriteRootCollectionsToFile(dir, m)
+	if err != nil {
+		t.Fatalf("WriteRootCollectionsToFile() unexpected error: %v", err)
+	}
+	filePath := filepath.Join(dir, IngitDBDirName, RootCollectionsFileName)
+	data, readErr := os.ReadFile(filePath)
+	if readErr != nil {
+		t.Fatalf("reading written file: %v", readErr)
+	}
+	content := string(data)
+	// Keys are emitted in sorted order.
+	wantLine1 := "companies: demo-dbs/companies\n"
+	wantLine2 := "todo: docs/todo\n"
+	if !strings.Contains(content, wantLine1) {
+		t.Errorf("expected %q in output, got:\n%s", wantLine1, content)
+	}
+	if !strings.Contains(content, wantLine2) {
+		t.Errorf("expected %q in output, got:\n%s", wantLine2, content)
+	}
+	if strings.Index(content, "companies") > strings.Index(content, "todo") {
+		t.Errorf("expected 'companies' before 'todo' (sorted), got:\n%s", content)
+	}
+}
+
+func TestWriteRootCollectionsToFile_EmptyMap(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	err := WriteRootCollectionsToFile(dir, map[string]string{})
+	if err != nil {
+		t.Fatalf("WriteRootCollectionsToFile() with empty map unexpected error: %v", err)
+	}
+	filePath := filepath.Join(dir, IngitDBDirName, RootCollectionsFileName)
+	data, readErr := os.ReadFile(filePath)
+	if readErr != nil {
+		t.Fatalf("reading written file: %v", readErr)
+	}
+	if len(data) != 0 {
+		t.Errorf("expected zero-byte file for empty map, got %d bytes: %q", len(data), string(data))
+	}
+}
+
+func TestWriteRootCollectionsToFile_EmptyDirPath(t *testing.T) {
+	t.Parallel()
+	// When dirPath is empty it falls back to "." — just verify no panic or
+	// unexpected error when the current dir is writable (it always is in tests).
+	// We only check that the call does not return an error.
+	err := WriteRootCollectionsToFile("", map[string]string{"a": "b"})
+	// The file is written to ./.ingitdb/root-collections.yaml; clean it up.
+	_ = os.RemoveAll(filepath.Join(".", IngitDBDirName))
+	if err != nil {
+		t.Fatalf("WriteRootCollectionsToFile() with empty dirPath unexpected error: %v", err)
+	}
+}
+
+func TestWriteRootCollectionsToFile_MkdirAllError(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	// Create a regular file where .ingitdb/ directory should be, so MkdirAll fails.
+	blockPath := filepath.Join(dir, IngitDBDirName)
+	if err := os.WriteFile(blockPath, []byte("not a dir"), 0o644); err != nil {
+		t.Fatalf("setup: create blocking file: %v", err)
+	}
+	err := WriteRootCollectionsToFile(dir, map[string]string{"x": "y"})
+	if err == nil {
+		t.Fatal("expected error when .ingitdb path is a file, got nil")
+	}
+	if !strings.Contains(err.Error(), "failed to create") {
+		t.Errorf("expected 'failed to create' in error, got %q", err.Error())
+	}
+}
+
+func TestWriteRootCollectionsToFile_WriteFileError(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	// Pre-create .ingitdb/ directory, then place a directory at the target file
+	// path so os.WriteFile fails (cannot write to a path that is a directory).
+	cfgDir := filepath.Join(dir, IngitDBDirName)
+	if err := os.MkdirAll(cfgDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir .ingitdb: %v", err)
+	}
+	targetAsDir := filepath.Join(cfgDir, RootCollectionsFileName)
+	if err := os.MkdirAll(targetAsDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir target: %v", err)
+	}
+	err := WriteRootCollectionsToFile(dir, map[string]string{"x": "y"})
+	if err == nil {
+		t.Fatal("expected error when target path is a directory, got nil")
+	}
+	if !strings.Contains(err.Error(), "failed to write root collections file") {
+		t.Errorf("expected 'failed to write root collections file' in error, got %q", err.Error())
 	}
 }

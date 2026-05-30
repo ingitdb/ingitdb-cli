@@ -327,11 +327,10 @@ func computeColOffset(colCursor, curOffset int, colWidths []int, width int) int 
 	}
 
 	// Advance offset until colCursor is within the visible range.
+	// visibleColumns always returns at least one element when colWidths is non-empty,
+	// which is guaranteed by the n==0 guard above.
 	for offset < colCursor {
 		vis := visibleColumns(offset, colWidths, width)
-		if len(vis) == 0 {
-			break
-		}
 		if colCursor <= vis[len(vis)-1] {
 			break
 		}

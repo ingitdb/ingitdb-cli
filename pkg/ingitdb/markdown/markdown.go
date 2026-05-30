@@ -17,6 +17,17 @@ import (
 // delimiter is the line that opens and closes the frontmatter block.
 const delimiter = "---"
 
+// marshalYAML is the function used to marshal a yaml.Node to bytes.
+// Overridden in tests to exercise the error path.
+var marshalYAML = yaml.Marshal
+
+// encodeNodeValue encodes a value into a yaml.Node. It is a seam over
+// (*yaml.Node).Encode; tests override it to exercise the error path, which is
+// otherwise unreachable for the plain frontmatter values passed here.
+var encodeNodeValue = func(node *yaml.Node, value any) error {
+	return node.Encode(value)
+}
+
 // Parse splits a Markdown record into frontmatter and body.
 //
 // When the file's first line is exactly "---" and a matching closing "---"
@@ -72,7 +83,7 @@ func Serialize(frontmatter map[string]any, columnsOrder []string, body []byte) (
 		if err != nil {
 			return nil, fmt.Errorf("markdown: build frontmatter node: %w", err)
 		}
-		fmBytes, marshalErr := yaml.Marshal(node)
+		fmBytes, marshalErr := marshalYAML(node)
 		if marshalErr != nil {
 			return nil, fmt.Errorf("markdown: marshal frontmatter: %w", marshalErr)
 		}
@@ -163,7 +174,7 @@ func buildMappingNode(frontmatter map[string]any, keys []string) (*yaml.Node, er
 	for _, k := range keys {
 		keyNode := &yaml.Node{Kind: yaml.ScalarNode, Value: k}
 		valNode := &yaml.Node{}
-		err := valNode.Encode(frontmatter[k])
+		err := encodeNodeValue(valNode, frontmatter[k])
 		if err != nil {
 			return nil, fmt.Errorf("encode value for key %q: %w", k, err)
 		}

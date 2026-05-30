@@ -26,8 +26,9 @@ type readonlyTx struct {
 func (r readonlyTx) Options() dal.TransactionOptions { return r.opts }
 
 // Get loads a single record. SingleRecord and MapOfRecords layouts are
-// supported. A missing record sets dal.ErrRecordNotFound on the record
-// and returns nil.
+// supported. A missing record sets dal.ErrRecordNotFound on the record AND
+// returns it, per the dalgo Getter contract (dalgo-end2end-tests singleGetTest
+// checks dal.IsNotFound on the returned error).
 func (r readonlyTx) Get(_ context.Context, record dal.Record) error {
 	colDef, recordKey, err := r.resolveCollection(record.Key())
 	if err != nil {
@@ -43,7 +44,7 @@ func (r readonlyTx) Get(_ context.Context, record dal.Record) error {
 		}
 		if !found {
 			record.SetError(dal.ErrRecordNotFound)
-			return nil
+			return dal.ErrRecordNotFound
 		}
 		record.SetError(nil)
 		target := record.Data().(map[string]any)
@@ -58,7 +59,7 @@ func (r readonlyTx) Get(_ context.Context, record dal.Record) error {
 		recordData, exists := allRecords[recordKey]
 		if !exists {
 			record.SetError(dal.ErrRecordNotFound)
-			return nil
+			return dal.ErrRecordNotFound
 		}
 		record.SetError(nil)
 		target := record.Data().(map[string]any)
@@ -102,7 +103,10 @@ func (r readonlyTx) Exists(_ context.Context, key *dal.Key) (bool, error) {
 // the convention used by dal's reference drivers.
 func (r readonlyTx) GetMulti(ctx context.Context, records []dal.Record) error {
 	for _, rec := range records {
-		if err := r.Get(ctx, rec); err != nil {
+		// Per-record not-found is reported via record.SetError (set inside Get),
+		// not as a batch-level error — matching the dalgo GetMulti contract
+		// (dalgo-end2end-tests). Only genuine errors abort the batch.
+		if err := r.Get(ctx, rec); err != nil && !dal.IsNotFound(err) {
 			return err
 		}
 	}

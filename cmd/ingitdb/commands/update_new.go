@@ -132,7 +132,7 @@ func runUpdateByID(
 	err = rctx.db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
 		data := map[string]any{}
 		record := dal.NewRecordWithData(key, data)
-		if getErr := tx.Get(ctx, record); getErr != nil {
+		if getErr := tx.Get(ctx, record); getErr != nil && !dal.IsNotFound(getErr) {
 			return getErr
 		}
 		if !record.Exists() {
