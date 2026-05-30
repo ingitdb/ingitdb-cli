@@ -1,10 +1,10 @@
 package dalgo2ingitdb
 
 import (
-	"errors"
 	"testing"
 
 	e2e "github.com/dal-go/dalgo-end2end-tests"
+	"github.com/dal-go/dalgo-end2end-tests/models"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/config"
 )
@@ -22,7 +22,7 @@ func TestDalgoEndToEnd(t *testing.T) {
   type: "map[string]any"
 `
 	collections := map[string]string{}
-	for _, name := range []string{e2e.E2ETestKind1, e2e.E2ETestKind2} {
+	for _, name := range []string{e2e.E2ETestKind1, e2e.E2ETestKind2, models.CitiesCollection} {
 		writeCollectionDef(t, root, name, def)
 		collections[name] = name
 	}
@@ -35,10 +35,7 @@ func TestDalgoEndToEnd(t *testing.T) {
 		t.Fatalf("NewDatabase: %v", err)
 	}
 
-	// The query suite is skipped for now: it uses a DalgoTest_Cities collection
-	// and incomplete-key (auto-generated ID) inserts that this driver does not
-	// yet support. Single/multi CRUD run fully. eventuallyConsistent=false because
-	// the filesystem is immediately consistent.
-	errQuerySupport := errors.New("dalgo2ingitdb: query e2e pending (cities collection + auto-ID inserts)")
-	e2e.TestDalgoDB(t, db, errQuerySupport, false)
+	// errQuerySupport=nil → run the query suite too; eventuallyConsistent=false
+	// because the filesystem is immediately consistent.
+	e2e.TestDalgoDB(t, db, nil, false)
 }
