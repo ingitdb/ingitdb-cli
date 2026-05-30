@@ -1,12 +1,13 @@
 # Feature: Derived Record Keys
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-key/derived-keys?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-key/derived-keys?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-key/derived-keys?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-key/derived-keys?op=request-change) |
-**Status:** Under Review
+**Status:** Approved
 **Date:** 2026-05-30
 **Owner:** alexander.trakhimenok@gmail.com
 **Source Idea:** [`derived-record-keys`](../../../ideas/derived-record-keys.md)
 **Parent Feature:** [`record-key`](../README.md)
 **Supersedes:** —
+**Grade:** A
 
 ## Summary
 
@@ -81,14 +82,15 @@ string or a structured error that names the missing/invalid field.
 
 The MVP transform vocabulary MUST support:
 
-- raw string formatting for fields with no transform;
-- `type: datetime` with an explicit Go-style `output_format`;
+- raw string formatting for fields with no transform, accepting string values only;
+- `type: datetime` with an explicit Go-style `output_format`, accepting parsed
+  `time.Time` values and RFC3339/RFC3339Nano string values;
 - `transform: slug`, implemented through one shared helper that wraps
-  `github.com/gosimple/slug`.
+  `github.com/gosimple/slug`, accepting string values only.
 
 Unknown field options, unknown transforms, malformed datetime layouts, and
-non-string values for `transform: slug` MUST be rejected with diagnostics that
-name the field.
+invalid runtime values for raw, datetime, or slug fields MUST be rejected with
+diagnostics that name the field and the expected value kind.
 
 #### REQ: missing-derivation-fields
 
@@ -169,6 +171,35 @@ map keyed by declared column names
 **Then** validation fails with a diagnostic that derived keys require
 `map[string]any`.
 
+### AC: schema-rejects-empty-template (verifies REQ:derived-key-schema, REQ:invalid-derived-key-config)
+
+**Given** a single-record collection with `record_key.template: ""`
+**When** the collection definition is validated
+**Then** validation fails with a diagnostic naming the empty `record_key.template`.
+
+### AC: schema-rejects-field-without-column (verifies REQ:derived-key-schema, REQ:invalid-derived-key-config)
+
+**Given** a collection whose `record_key.fields` map contains `agent`, but the
+collection has no `agent` column
+**When** the collection definition is validated
+**Then** validation fails with a diagnostic naming the undeclared `agent` field.
+
+### AC: schema-rejects-datetime-without-output-format (verifies REQ:supported-transforms, REQ:invalid-derived-key-config)
+
+**Given** a collection whose `record_key.fields.timestamp.type` is `datetime`,
+but the field has no `output_format`
+**When** the collection definition is validated
+**Then** validation fails with a diagnostic naming the missing
+`timestamp.output_format`.
+
+### AC: storage-template-keeps-key-placeholder (verifies REQ:storage-template-unchanged)
+
+**Given** a derived-key collection with `record_file.name: "{key}.md"` and a
+record whose fields derive `expected-key`
+**When** the record path is resolved
+**Then** the path is resolved by substituting `expected-key` for `{key}` in
+`record_file.name`, not by interpolating record fields into `record_file.name`.
+
 ### AC: resolver-formats-motivating-key (verifies REQ:shared-derived-key-resolver, REQ:supported-transforms)
 
 **Given** parsed record data with timestamp `2026-05-30T12:10:00Z`, agent
@@ -176,6 +207,22 @@ map keyed by declared column names
 **When** the derived-key resolver applies template
 `{timestamp}-{agent}-{category}-{project}`
 **Then** it returns `2026-05-30T12-10-00-go-expert-deep-work-ingitdb-cli`.
+
+### AC: schema-rejects-unsupported-transform (verifies REQ:supported-transforms, REQ:invalid-derived-key-config)
+
+**Given** a derived-key collection whose `record_key.fields.agent.transform` is
+`upper-snake`
+**When** the collection definition is validated
+**Then** validation fails with a diagnostic naming the unsupported `agent`
+transform.
+
+### AC: resolver-rejects-invalid-runtime-value (verifies REQ:shared-derived-key-resolver, REQ:supported-transforms)
+
+**Given** parsed record data where `timestamp` is `not-a-date` and
+`record_key.fields.timestamp.type` is `datetime`
+**When** the derived-key resolver computes the key
+**Then** it fails with a diagnostic naming `timestamp` and the expected datetime
+value kind.
 
 ### AC: validation-detects-filename-drift (verifies REQ:validate-derived-key-matches-filename)
 
@@ -200,6 +247,14 @@ derived key, and the fields used to derive it.
 field needed by `record_key.template`
 **When** `ingitdb insert --into=agent-log --data=<record>` runs without `--key`
 **Then** the created file path uses the key derived from the record fields.
+
+### AC: insert-missing-derived-field-does-not-write (verifies REQ:insert-derives-key, REQ:missing-derivation-fields)
+
+**Given** a derived-key collection and insert data missing a field required by
+`record_key.template`
+**When** `ingitdb insert --into=agent-log --data=<record>` runs without `--key`
+**Then** the command fails before writing a file and reports the missing
+derivation field.
 
 ### AC: insert-supplied-key-must-match (verifies REQ:insert-key-must-match-derived-key)
 
@@ -258,7 +313,7 @@ those tests directly in the existing Go test suites.
 | Idea assumption | Feature treatment |
 |---|---|
 | A derived key can be computed after Markdown/YAML parsing without changing single-record layout. | Carried into REQ:shared-derived-key-resolver, REQ:storage-template-unchanged, and validation ACs. |
-| The transform vocabulary can stay small for the motivating case. | Carried into REQ:supported-transforms; only raw, datetime formatting, and slug are included. |
+| The transform vocabulary can stay small for the motivating case. | Carried into REQ:supported-transforms; only raw string formatting, datetime formatting, and slug are included. |
 | Validation can report drift precisely enough for CI users to fix by hand. | Carried into REQ:validate-derived-key-matches-filename and AC:validation-detects-filename-drift. |
 | `insert --key` can remain strict while allowing derived keys. | Carried into REQ:insert-derives-key and REQ:insert-key-must-match-derived-key. |
 | More transforms may be wanted later. | Deferred until additional schemas justify expanding the vocabulary. |
