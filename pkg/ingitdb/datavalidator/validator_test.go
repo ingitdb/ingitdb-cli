@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
@@ -390,6 +391,126 @@ func TestValidate_RecordFileExcludeRegex(t *testing.T) {
 	count := result.GetRecordCount("docs")
 	if count != 2 {
 		t.Errorf("GetRecordCount(docs) = %d, want 2 (README.md excluded)", count)
+	}
+}
+
+func TestValidate_MalformedMarkdownRecord(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	colDir := filepath.Join(dir, "agent-logs")
+	recordsDir := filepath.Join(colDir, "$records")
+	if err := os.MkdirAll(recordsDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir: %v", err)
+	}
+	recordPath := filepath.Join(recordsDir, "invalid.md")
+	content := []byte("---\nagent: Copilot CLI\nlinks:\n  broken: [unterminated\n---\n\nBroken frontmatter.\n")
+	if err := os.WriteFile(recordPath, content, 0o644); err != nil {
+		t.Fatalf("setup: write malformed record: %v", err)
+	}
+
+	def := &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"agent_logs": {
+				ID:      "agent_logs",
+				DirPath: colDir,
+				RecordFile: &ingitdb.RecordFileDef{
+					Name:         "{key}.md",
+					Format:       ingitdb.RecordFormatMarkdown,
+					RecordType:   ingitdb.SingleRecord,
+					ContentField: "summary",
+				},
+				Columns: map[string]*ingitdb.ColumnDef{
+					"agent":   {Type: ingitdb.ColumnTypeString},
+					"links":   {Type: ingitdb.ColumnTypeAny},
+					"summary": {Type: ingitdb.ColumnTypeString},
+				},
+			},
+		},
+	}
+
+	v := NewValidator()
+	result, err := v.Validate(context.Background(), dir, def)
+	if err != nil {
+		t.Fatalf("Validate() unexpected error: %v", err)
+	}
+	if !result.HasErrors() {
+		t.Fatal("expected malformed markdown record to be reported")
+	}
+	errors := result.Errors()
+	if len(errors) != 1 {
+		t.Fatalf("expected 1 validation error, got %d", len(errors))
+	}
+	if errors[0].FilePath != recordPath {
+		t.Fatalf("expected file path %q, got %q", recordPath, errors[0].FilePath)
+	}
+	if !strings.Contains(errors[0].Error(), "failed to parse markdown record") {
+		t.Fatalf("expected markdown parse error, got: %v", errors[0])
+	}
+	passed, total := result.GetRecordCounts("agent_logs")
+	if passed != 0 || total != 1 {
+		t.Fatalf("expected 0/1 record counts, got %d/%d", passed, total)
+	}
+}
+
+func TestValidate_RecordSchemaViolations(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	colDir := filepath.Join(dir, "countries")
+	recordsDir := filepath.Join(colDir, "$records")
+	if err := os.MkdirAll(recordsDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir: %v", err)
+	}
+	recordPath := filepath.Join(recordsDir, "ie.yaml")
+	if err := os.WriteFile(recordPath, []byte("name: 123\n"), 0o644); err != nil {
+		t.Fatalf("setup: write record: %v", err)
+	}
+
+	def := &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"countries": {
+				ID:      "countries",
+				DirPath: colDir,
+				RecordFile: &ingitdb.RecordFileDef{
+					Name:       "{key}.yaml",
+					Format:     ingitdb.RecordFormatYAML,
+					RecordType: ingitdb.SingleRecord,
+				},
+				Columns: map[string]*ingitdb.ColumnDef{
+					"code": {Type: ingitdb.ColumnTypeString, Required: true},
+					"name": {Type: ingitdb.ColumnTypeString},
+				},
+			},
+		},
+	}
+
+	v := NewValidator()
+	result, err := v.Validate(context.Background(), dir, def)
+	if err != nil {
+		t.Fatalf("Validate() unexpected error: %v", err)
+	}
+	errors := result.Errors()
+	if len(errors) != 2 {
+		t.Fatalf("expected 2 validation errors, got %d: %v", len(errors), errors)
+	}
+	messages := make([]string, 0, len(errors))
+	for _, validationErr := range errors {
+		if validationErr.FilePath != recordPath {
+			t.Fatalf("expected file path %q, got %q", recordPath, validationErr.FilePath)
+		}
+		messages = append(messages, validationErr.Error())
+	}
+	joined := strings.Join(messages, "\n")
+	if !strings.Contains(joined, "missing required field") {
+		t.Fatalf("expected missing required field error, got: %s", joined)
+	}
+	if !strings.Contains(joined, "wrong type") {
+		t.Fatalf("expected wrong type error, got: %s", joined)
+	}
+	passed, total := result.GetRecordCounts("countries")
+	if passed != 0 || total != 1 {
+		t.Fatalf("expected 0/1 record counts, got %d/%d", passed, total)
 	}
 }
 

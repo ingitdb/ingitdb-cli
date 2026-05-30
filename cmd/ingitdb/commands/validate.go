@@ -64,8 +64,8 @@ func Validate(
 					return fmt.Errorf("incremental validation failed: %w", valErr)
 				}
 				if result.HasErrors() {
-					errCount := result.ErrorCount()
-					return fmt.Errorf("incremental validation found %d error(s)", errCount)
+					message := formatValidationFailure("incremental validation", result)
+					return fmt.Errorf("%s", message)
 				}
 				return nil
 			}
@@ -98,8 +98,8 @@ func Validate(
 					return fmt.Errorf("data validation failed: %w", valErr)
 				}
 				if result.HasErrors() {
-					errCount := result.ErrorCount()
-					return fmt.Errorf("data validation found %d error(s)", errCount)
+					message := formatValidationFailure("data validation", result)
+					return fmt.Errorf("%s", message)
 				}
 				// Log completion message for each collection
 				for collectionKey := range def.Collections {
@@ -119,6 +119,44 @@ func Validate(
 	cmd.Flags().String("to-commit", "", "validate only records up to this commit")
 	cmd.Flags().String("only", "", `validate only "definition" or "records" (default: both)`)
 	return cmd
+}
+
+func formatValidationFailure(prefix string, result *ingitdb.ValidationResult) string {
+	details := formatValidationErrors(result.Errors())
+	if details == "" {
+		return fmt.Sprintf("%s found %d error(s)", prefix, result.ErrorCount())
+	}
+	return fmt.Sprintf("%s found %d error(s): %s", prefix, result.ErrorCount(), details)
+}
+
+func formatValidationErrors(errors []ingitdb.ValidationError) string {
+	if len(errors) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(errors))
+	for _, validationErr := range errors {
+		part := formatValidationError(validationErr)
+		parts = append(parts, part)
+	}
+	return strings.Join(parts, "; ")
+}
+
+func formatValidationError(validationErr ingitdb.ValidationError) string {
+	parts := make([]string, 0, 4)
+	if validationErr.FilePath != "" {
+		parts = append(parts, validationErr.FilePath)
+	}
+	if validationErr.RecordKey != "" {
+		recordPart := fmt.Sprintf("record %q", validationErr.RecordKey)
+		parts = append(parts, recordPart)
+	}
+	if validationErr.FieldName != "" {
+		fieldPart := fmt.Sprintf("field %q", validationErr.FieldName)
+		parts = append(parts, fieldPart)
+	}
+	message := validationErr.Error()
+	parts = append(parts, message)
+	return strings.Join(parts, ": ")
 }
 
 func expandHome(path string, homeDir func() (string, error)) (string, error) {

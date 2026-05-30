@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/datavalidator"
 )
 
 type mockDataValidator struct {
@@ -432,6 +435,62 @@ func TestValidate_OnlyRecords(t *testing.T) {
 	}
 	if readDefCalls != 1 {
 		t.Errorf("expected readDefinition to be called once, got %d calls", readDefCalls)
+	}
+}
+
+func TestValidate_OnlyRecordsMalformedMarkdownFails(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	colDir := filepath.Join(dir, "agent-logs")
+	recordsDir := filepath.Join(colDir, "$records")
+	err := os.MkdirAll(recordsDir, 0o755)
+	if err != nil {
+		t.Fatalf("setup: mkdir records: %v", err)
+	}
+	recordPath := filepath.Join(recordsDir, "invalid.md")
+	content := []byte("---\nagent: Copilot CLI\nlinks:\n  broken: [unterminated\n---\n\nBroken frontmatter.\n")
+	err = os.WriteFile(recordPath, content, 0o644)
+	if err != nil {
+		t.Fatalf("setup: write malformed record: %v", err)
+	}
+
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return &ingitdb.Definition{
+			Collections: map[string]*ingitdb.CollectionDef{
+				"agent_logs": {
+					ID:      "agent_logs",
+					DirPath: colDir,
+					RecordFile: &ingitdb.RecordFileDef{
+						Name:         "{key}.md",
+						Format:       ingitdb.RecordFormatMarkdown,
+						RecordType:   ingitdb.SingleRecord,
+						ContentField: "summary",
+					},
+					Columns: map[string]*ingitdb.ColumnDef{
+						"agent":   {Type: ingitdb.ColumnTypeString},
+						"links":   {Type: ingitdb.ColumnTypeAny},
+						"summary": {Type: ingitdb.ColumnTypeString},
+					},
+				},
+			},
+		}, nil
+	}
+	logf := func(...any) {}
+
+	cmd := Validate(homeDir, getWd, readDef, datavalidator.NewValidator(), nil, logf)
+	err = runCobraCommand(cmd, "--path="+dir, "--only=records")
+	if err == nil {
+		t.Fatal("expected malformed markdown record to fail validation")
+	}
+	message := err.Error()
+	if !strings.Contains(message, recordPath) {
+		t.Fatalf("expected error to include record path %q, got: %v", recordPath, err)
+	}
+	if !strings.Contains(message, "failed to parse markdown record") {
+		t.Fatalf("expected markdown parse error, got: %v", err)
 	}
 }
 

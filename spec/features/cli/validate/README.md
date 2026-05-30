@@ -43,6 +43,10 @@ For each collection, the command MUST print a summary line reporting how many re
 
 The command MUST exit with status `0` when validation passes and a non-zero status when any validation error is detected.
 
+#### REQ: record-file-parsing
+
+Record validation MUST parse every candidate record file using the collection's declared `record_file.format` and `record_file.type` before counting it as valid. Unparsable files, including malformed Markdown frontmatter and invalid YAML, JSON, TOML, CSV, JSONL, or INGR content, MUST be reported as validation errors with the offending record path and a useful parse error.
+
 ## Dependencies
 
 - path-targeting
@@ -69,6 +73,12 @@ Running `ingitdb validate` with no flags from a directory containing a valid `.i
 **Requirements:** cli/validate#req:only-flag, cli/validate#req:commit-range
 
 `ingitdb validate --only=records --from-commit=A --to-commit=B` checks only records that changed between commits `A` and `B` and skips definition validation. Records outside the commit range are not opened.
+
+### AC: malformed-record-file
+
+**Requirements:** cli/validate#req:only-flag, cli/validate#req:record-file-parsing, cli/validate#req:exit-code
+
+Given a Markdown-backed collection, `ingitdb validate --only=records` MUST parse each `*.md` record file. If a record contains malformed YAML frontmatter, the command exits non-zero and the error output includes the record path plus the Markdown/YAML parse error.
 
 ## Open Questions
 
