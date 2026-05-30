@@ -42,7 +42,6 @@ func TestParseWhere_AllOperators(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			got, err := ParseWhere(tt.input)
@@ -85,7 +84,6 @@ func TestOperator_IsStrict(t *testing.T) {
 		{op: OpInvalid, want: false},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 			if got := tt.op.IsStrict(); got != tt.want {

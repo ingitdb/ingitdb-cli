@@ -36,6 +36,12 @@ type BatchingGitHubDB struct {
 // commitMessage is the message used when flushing buffered changes; callers
 // supply something human-readable like "ingitdb: update countries (batch)".
 func NewBatchingGitHubDB(cfg Config, def *ingitdb.Definition, commitMessage string) (*BatchingGitHubDB, error) {
+	return newBatchingGitHubDB(cfg, def, commitMessage, NewTreeWriter)
+}
+
+// newBatchingGitHubDB is the internal constructor; treeWriterFn defaults to
+// NewTreeWriter in production and can be replaced in tests to inject failures.
+func newBatchingGitHubDB(cfg Config, def *ingitdb.Definition, commitMessage string, treeWriterFn func(Config) (*TreeWriter, error)) (*BatchingGitHubDB, error) {
 	if def == nil {
 		return nil, fmt.Errorf("definition is required")
 	}
@@ -46,16 +52,12 @@ func NewBatchingGitHubDB(cfg Config, def *ingitdb.Definition, commitMessage stri
 	if err != nil {
 		return nil, err
 	}
-	concrete, ok := inner.(*githubDB)
-	if !ok { // untestable: NewGitHubDBWithDef always returns *githubDB
-		return nil, fmt.Errorf("internal error: expected *githubDB")
-	}
-	writer, err := NewTreeWriter(cfg)
+	writer, err := treeWriterFn(cfg)
 	if err != nil {
 		return nil, err
 	}
 	return &BatchingGitHubDB{
-		githubDB:      concrete,
+		githubDB:      inner.(*githubDB),
 		commitMessage: commitMessage,
 		writer:        writer,
 	}, nil

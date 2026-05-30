@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"sort"
 
 	"github.com/ingr-io/ingr-go/ingr"
@@ -137,7 +138,7 @@ func EncodeMapOfRecordsContent(data map[string]map[string]any, format ingitdb.Re
 func marshalForFormat(value any, format ingitdb.RecordFormat) ([]byte, error) {
 	switch format {
 	case ingitdb.RecordFormatYAML, ingitdb.RecordFormatYML:
-		out, err := yaml.Marshal(value)
+		out, err := yamlMarshal(value)
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal YAML: %w", err)
 		}
@@ -149,7 +150,7 @@ func marshalForFormat(value any, format ingitdb.RecordFormat) ([]byte, error) {
 		}
 		return append(out, '\n'), nil
 	case ingitdb.RecordFormatTOML:
-		out, err := toml.Marshal(value)
+		out, err := tomlMarshal(value)
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal TOML: %w", err)
 		}
@@ -182,15 +183,13 @@ func encodeINGRFromMap(data map[string]map[string]any, recordsetName string, col
 	records := make([]ingr.Record, 0, len(ids))
 	for _, id := range ids {
 		row := make(map[string]any, len(data[id])+1)
-		for k, v := range data[id] {
-			row[k] = v
-		}
+		maps.Copy(row, data[id])
 		row["$ID"] = id
 		records = append(records, ingr.NewMapRecordEntry(id, row))
 	}
 
 	var buf bytes.Buffer
-	w := ingr.NewRecordsWriter(&buf)
+	w := newRecordsWriter(&buf)
 	if _, err := w.WriteHeader(recordsetName, cols); err != nil {
 		return nil, fmt.Errorf("ingr: write header: %w", err)
 	}

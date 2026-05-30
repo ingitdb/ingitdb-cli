@@ -11,6 +11,11 @@ import (
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
+// filepathRel is a seam over filepath.Rel used by recordPatternForKey's key
+// extractor. Tests override it to exercise the error branch, which is otherwise
+// unreachable because filepath.Rel on the absolute paths passed never fails.
+var filepathRel = filepath.Rel
+
 // FileRecordsReader loads records from collection files on disk.
 type FileRecordsReader struct {
 	readFile func(string) ([]byte, error)
@@ -141,27 +146,20 @@ func recordPatternForKey(name, dirPath string) (patternPath string, extractKey f
 	patternPath = filepath.Join(dirPath, globName)
 
 	// Build the key extractor based on the position of the first {key}.
-	idx := strings.Index(name, placeholder)
-	prefix := filepath.ToSlash(name[:idx])
-	rest := name[idx+len(placeholder):]
+	prefixRaw, rest, _ := strings.Cut(name, placeholder)
+	prefix := filepath.ToSlash(prefixRaw)
 	// ID segment ends at the first "/" in rest (or at the end if no slash).
-	endIdx := strings.IndexByte(rest, '/')
-	var keySuffix string
-	if endIdx < 0 {
-		keySuffix = rest
-	} else {
-		keySuffix = rest[:endIdx]
-	}
+	keySuffix, _, _ := strings.Cut(rest, "/")
 
 	extractKey = func(filePath string) string {
-		rel, relErr := filepath.Rel(dirPath, filePath)
+		rel, relErr := filepathRel(dirPath, filePath)
 		if relErr != nil {
-			return filepath.Base(filePath) // untestable: filepath.Rel on absolute paths never fails on Unix/macOS
+			return filepath.Base(filePath)
 		}
 		rel = filepath.ToSlash(rel)
 		s := strings.TrimPrefix(rel, prefix)
-		if slashIdx := strings.IndexByte(s, '/'); slashIdx >= 0 {
-			return strings.TrimSuffix(s[:slashIdx], keySuffix)
+		if before, _, found := strings.Cut(s, "/"); found {
+			return strings.TrimSuffix(before, keySuffix)
 		}
 		return strings.TrimSuffix(s, keySuffix)
 	}

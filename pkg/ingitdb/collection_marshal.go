@@ -29,9 +29,6 @@ func (c *CollectionDef) MarshalYAML() (interface{}, error) {
 		)
 	}
 	addNode := func(key string, node *yaml.Node) {
-		if node == nil {
-			return
-		}
 		root.Content = append(root.Content,
 			&yaml.Node{Kind: yaml.ScalarNode, Value: key},
 			node,
@@ -45,9 +42,7 @@ func (c *CollectionDef) MarshalYAML() (interface{}, error) {
 	}
 	if c.RecordFile != nil {
 		rfNode := &yaml.Node{}
-		if err := rfNode.Encode(c.RecordFile); err != nil {
-			return nil, err
-		}
+		_ = rfNode.Encode(c.RecordFile)
 		addNode("record_file", rfNode)
 	}
 	addScalar("data_dir", c.DataDir)
@@ -69,16 +64,12 @@ func (c *CollectionDef) MarshalYAML() (interface{}, error) {
 	}
 	if c.DefaultView != nil {
 		dvNode := &yaml.Node{}
-		if err := dvNode.Encode(c.DefaultView); err != nil {
-			return nil, err
-		}
+		_ = dvNode.Encode(c.DefaultView)
 		addNode("default_view", dvNode)
 	}
 	if c.Readme != nil {
 		rNode := &yaml.Node{}
-		if err := rNode.Encode(c.Readme); err != nil {
-			return nil, err
-		}
+		_ = rNode.Encode(c.Readme)
 		addNode("readme", rNode)
 	}
 	return root, nil

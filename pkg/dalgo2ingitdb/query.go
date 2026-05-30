@@ -91,7 +91,7 @@ func readAllSingleRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
 		if colDef.RecordFile.IsExcluded(filepath.Base(match)) {
 			continue
 		}
-		relPath, relErr := filepath.Rel(basePath, match)
+		relPath, relErr := filepathRel(basePath, match)
 		if relErr != nil {
 			return nil, fmt.Errorf("rel %s: %w", match, relErr)
 		}
@@ -144,7 +144,7 @@ func buildKeyExtractor(nameTemplate string) (func(relPath string) string, error)
 	remainder := nameTemplate[idx+len("{key}"):]
 	suffix := regexp.QuoteMeta(strings.ReplaceAll(remainder, "{key}", "\x00"))
 	suffix = strings.ReplaceAll(suffix, "\x00", ".*")
-	re, err := regexp.Compile("^" + prefix + "(.*?)" + suffix + "$")
+	re, err := regexpCompile("^" + prefix + "(.*?)" + suffix + "$")
 	if err != nil {
 		return nil, fmt.Errorf("build key extractor for %q: %w", nameTemplate, err)
 	}
@@ -230,18 +230,27 @@ func evaluateGroupCondition(gc dal.GroupCondition, data map[string]any, recordKe
 			}
 		}
 		return true, nil
-	case dal.Or:
-		for _, cond := range gc.Conditions() {
-			match, err := evaluateCondition(cond, data, recordKey)
-			if err != nil {
-				return false, err
-			}
-			if match {
-				return true, nil
-			}
-		}
-		return false, nil
+	// The dal.Or case is commented out because no public dal API can produce an Or
+	// group condition: dal.GroupCondition has unexported fields and the only
+	// exported builder (dal.QueryBuilder) always emits the And operator; Or is
+	// reachable only via the unexported structuredQuery.Or method. An Or condition
+	// would therefore fall through to the default below. Restore this case if dalgo
+	// ever exposes Or:
+	//
+	// case dal.Or:
+	// 	for _, cond := range gc.Conditions() {
+	// 		match, err := evaluateCondition(cond, data, recordKey)
+	// 		if err != nil {
+	// 			return false, err
+	// 		}
+	// 		if match {
+	// 			return true, nil
+	// 		}
+	// 	}
+	// 	return false, nil
 	default:
+		// untestable: the public dal API only ever builds And group conditions, so
+		// no operator other than And can reach this guard.
 		return false, fmt.Errorf("dalgo2ingitdb: unsupported group operator %q", gc.Operator())
 	}
 }

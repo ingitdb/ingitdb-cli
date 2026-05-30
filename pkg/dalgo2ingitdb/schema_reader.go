@@ -59,7 +59,7 @@ func (db *Database) ListCollections(_ context.Context, _ *dal.Key) ([]dal.Collec
 		if statErr != nil || info.IsDir() {
 			return nil
 		}
-		rel, relErr := filepath.Rel(db.projectPath, path)
+		rel, relErr := filepathRel(db.projectPath, path)
 		if relErr != nil {
 			return fmt.Errorf("relative path for %s: %w", path, relErr)
 		}
@@ -97,7 +97,7 @@ func (db *Database) DescribeCollection(_ context.Context, ref *dal.CollectionRef
 
 	var colDef ingitdb.CollectionDef
 	readErr := withSharedLock(defPath, func() error {
-		content, err := os.ReadFile(defPath)
+		content, err := osReadFile(defPath)
 		if err != nil {
 			return fmt.Errorf("read definition.yaml: %w", err)
 		}

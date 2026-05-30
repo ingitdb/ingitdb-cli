@@ -7,6 +7,7 @@ require (
 	charm.land/fang/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.3
 	github.com/charmbracelet/x/term v0.2.2
+	github.com/dal-go/dalgo-end2end-tests v0.0.88
 	github.com/gofrs/flock v0.13.0
 	github.com/google/go-github/v88 v88.0.0
 	github.com/ingr-io/ingr-go v0.0.2
@@ -43,6 +44,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
+	github.com/strongo/validation v0.0.8 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	go.yaml.in/yaml/v4 v4.0.0-rc.4 // indirect
 	golang.org/x/net v0.51.0 // indirect
@@ -67,7 +69,7 @@ require (
 require (
 	github.com/RoaringBitmap/roaring/v2 v2.18.2 // indirect
 	github.com/bits-and-blooms/bitset v1.24.4 // indirect
-	github.com/dal-go/dalgo v0.43.3
+	github.com/dal-go/dalgo v0.44.0
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/strongo/random v0.0.1 // indirect
 )

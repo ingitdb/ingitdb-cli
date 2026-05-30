@@ -2,8 +2,6 @@ package ingitdb
 
 import "testing"
 
-func boolPtr(b bool) *bool { return &b }
-
 func crc(rm *RecordMergeConfig) *ConflictResolutionConfig {
 	return &ConflictResolutionConfig{RecordMerge: rm}
 }
@@ -35,32 +33,32 @@ func TestResolveRecordMerge(t *testing.T) {
 		},
 		{
 			name:        "db disables record merge",
-			def:         &Definition{Settings: Settings{ConflictResolution: crc(&RecordMergeConfig{Enabled: boolPtr(false)})}},
+			def:         &Definition{Settings: Settings{ConflictResolution: crc(&RecordMergeConfig{Enabled: new(false)})}},
 			wantEnabled: false,
 		},
 		{
 			name:           "db enables same-record",
-			def:            &Definition{Settings: Settings{ConflictResolution: crc(&RecordMergeConfig{SameRecord: boolPtr(true)})}},
+			def:            &Definition{Settings: Settings{ConflictResolution: crc(&RecordMergeConfig{SameRecord: new(true)})}},
 			wantEnabled:    true,
 			wantSameRecord: true,
 		},
 		{
 			name:        "collection override disables what db enabled",
-			def:         &Definition{Settings: Settings{ConflictResolution: crc(&RecordMergeConfig{Enabled: boolPtr(true)})}},
-			col:         &CollectionDef{ConflictResolution: crc(&RecordMergeConfig{Enabled: boolPtr(false)})},
+			def:         &Definition{Settings: Settings{ConflictResolution: crc(&RecordMergeConfig{Enabled: new(true)})}},
+			col:         &CollectionDef{ConflictResolution: crc(&RecordMergeConfig{Enabled: new(false)})},
 			wantEnabled: false,
 		},
 		{
 			name:           "collection override enables same-record",
-			def:            &Definition{Settings: Settings{ConflictResolution: crc(&RecordMergeConfig{SameRecord: boolPtr(false)})}},
-			col:            &CollectionDef{ConflictResolution: crc(&RecordMergeConfig{SameRecord: boolPtr(true)})},
+			def:            &Definition{Settings: Settings{ConflictResolution: crc(&RecordMergeConfig{SameRecord: new(false)})}},
+			col:            &CollectionDef{ConflictResolution: crc(&RecordMergeConfig{SameRecord: new(true)})},
 			wantEnabled:    true,
 			wantSameRecord: true,
 		},
 		{
 			name:           "collection sets only same-record, inherits db enabled",
-			def:            &Definition{Settings: Settings{ConflictResolution: crc(&RecordMergeConfig{Enabled: boolPtr(false)})}},
-			col:            &CollectionDef{ConflictResolution: crc(&RecordMergeConfig{SameRecord: boolPtr(true)})},
+			def:            &Definition{Settings: Settings{ConflictResolution: crc(&RecordMergeConfig{Enabled: new(false)})}},
+			col:            &CollectionDef{ConflictResolution: crc(&RecordMergeConfig{SameRecord: new(true)})},
 			wantEnabled:    false,
 			wantSameRecord: true,
 		},

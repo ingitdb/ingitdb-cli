@@ -18,6 +18,10 @@ var _ dal.ReadwriteTransaction = (*readwriteTx)(nil)
 
 type readwriteTx struct {
 	readonlyTx
+	// encodeRecordFn is the function used to encode record content.
+	// It defaults to encodeRecordContent and can be replaced in tests to
+	// inject encode failures into otherwise-unreachable branches.
+	encodeRecordFn func(map[string]any, ingitdb.RecordFormat) ([]byte, error)
 }
 
 func (r readwriteTx) Set(ctx context.Context, record dal.Record) error {
@@ -178,9 +182,12 @@ func (r readwriteTx) Delete(ctx context.Context, key *dal.Key) error {
 		for k, v := range allRecords {
 			toEncode[k] = v
 		}
-		encoded, encodeErr := encodeRecordContent(toEncode, colDef.RecordFile.Format)
-		if encodeErr != nil { // untestable: ParseMapOfRecordsContent already fails for unsupported formats;
-			// for supported formats (json/yaml) parsed data can always be re-encoded
+		encodeFn := r.encodeRecordFn
+		if encodeFn == nil {
+			encodeFn = encodeRecordContent
+		}
+		encoded, encodeErr := encodeFn(toEncode, colDef.RecordFile.Format)
+		if encodeErr != nil {
 			return encodeErr
 		}
 		writeErr := r.db.fileReader.writeFile(ctx, recordPath, "ingitdb: delete "+colDef.ID+"/"+recordKey, encoded, sha)

@@ -104,7 +104,6 @@ func TestUpdate_RejectsForbiddenSharedFlags(t *testing.T) {
 		{name: "fields rejected", args: []string{"--id=test.items/x", "--fields=a,b", "--set=a=1"}},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			_, err := runUpdateCmd(t, homeDir, getWd, readDef, newDB, logf,

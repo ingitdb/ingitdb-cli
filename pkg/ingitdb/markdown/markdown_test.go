@@ -1,9 +1,15 @@
 package markdown
 
 import (
+	"errors"
 	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
+
+// errSeam is a sentinel error injected by seam-swapping tests.
+var errSeam = errors.New("seam failure")
 
 func TestParse_FullDocument(t *testing.T) {
 	t.Parallel()
@@ -213,6 +219,69 @@ func TestSerialize_PreservesBodyBytesVerbatim(t *testing.T) {
 	}
 }
 
+// TestParse_UnclosedNoTrailingNewline exercises the findDelimiter early-exit
+// branch (line 105-107) that fires when the last line of content has no
+// trailing newline and is not a delimiter.  The existing
+// TestParse_UnclosedFrontmatter test covers the case where all lines DO end
+// with '\n' (the for-loop falls through to line 110); this test covers the
+// complementary branch where the loop detects EOF mid-line.
+func TestParse_UnclosedNoTrailingNewline(t *testing.T) {
+	t.Parallel()
+	// Content starts with "---\n" (valid open delimiter) but the body that
+	// follows has no closing "---" and no trailing newline on the last line.
+	input := []byte("---\ntitle: X\nbody without closing newline")
+	_, _, err := Parse(input)
+	if err == nil {
+		t.Fatal("Parse() expected error for unclosed frontmatter with no trailing newline, got nil")
+	}
+	if !strings.Contains(err.Error(), "no matching closing") {
+		t.Errorf("error %q should mention missing closing delimiter", err.Error())
+	}
+}
+
+// TestSerialize_ColumnsOrderKeyAbsentFromFrontmatter covers the branch in
+// orderKeys where a key listed in columnsOrder is not present in frontmatter
+// (the key is silently skipped rather than being synthesised as null).
+func TestSerialize_ColumnsOrderKeyAbsentFromFrontmatter(t *testing.T) {
+	t.Parallel()
+	fm := map[string]any{
+		"title": "Hello",
+		"date":  "2024-01-01",
+	}
+	// "missing" is listed in columnsOrder but is absent from fm; it must be
+	// skipped and must not appear in the output.
+	out, err := Serialize(fm, []string{"title", "missing", "date"}, []byte(""))
+	if err != nil {
+		t.Fatalf("Serialize() unexpected error: %v", err)
+	}
+	got := string(out)
+	want := "---\ntitle: Hello\ndate: \"2024-01-01\"\n---\n"
+	if got != want {
+		t.Errorf("Serialize() output mismatch:\n got: %q\nwant: %q", got, want)
+	}
+}
+
+// TestSerialize_ColumnsOrderDuplicateKey covers the branch in orderKeys where
+// a key appears more than once in columnsOrder; subsequent occurrences must be
+// silently skipped so the key is emitted exactly once.
+func TestSerialize_ColumnsOrderDuplicateKey(t *testing.T) {
+	t.Parallel()
+	fm := map[string]any{
+		"title": "Hello",
+		"date":  "2024-01-01",
+	}
+	// "title" is duplicated in columnsOrder; it must appear only once.
+	out, err := Serialize(fm, []string{"title", "date", "title"}, []byte(""))
+	if err != nil {
+		t.Fatalf("Serialize() unexpected error: %v", err)
+	}
+	got := string(out)
+	want := "---\ntitle: Hello\ndate: \"2024-01-01\"\n---\n"
+	if got != want {
+		t.Errorf("Serialize() output mismatch:\n got: %q\nwant: %q", got, want)
+	}
+}
+
 func TestRoundTrip_ParseSerializeParse(t *testing.T) {
 	t.Parallel()
 	original := []byte("---\ntitle: Hello\ndate: \"2024-01-01\"\n---\n# Body\n\nLine.\n")
@@ -233,5 +302,41 @@ func TestRoundTrip_ParseSerializeParse(t *testing.T) {
 	}
 	if string(body2) != string(body) {
 		t.Errorf("body mismatch after round-trip:\n got: %q\nwant: %q", body2, body)
+	}
+}
+
+// TestSerialize_MarshalError covers the marshal-frontmatter error branch in
+// Serialize (markdown.go line 80-82) via the marshalYAML seam. In production
+// yaml.Marshal of the canonicalized node does not fail. Intentionally NOT
+// parallel: it mutates a package-level seam.
+func TestSerialize_MarshalError(t *testing.T) {
+	orig := marshalYAML
+	marshalYAML = func(any) ([]byte, error) { return nil, errSeam }
+	defer func() { marshalYAML = orig }()
+
+	_, err := Serialize(map[string]any{"k": "v"}, nil, nil)
+	if err == nil {
+		t.Fatal("Serialize: want error when marshalYAML fails")
+	}
+	if !strings.Contains(err.Error(), "marshal frontmatter") {
+		t.Errorf("error = %v, want it to wrap the marshal failure", err)
+	}
+}
+
+// TestSerialize_BuildNodeError covers the build-frontmatter-node error branch in
+// Serialize (markdown.go line 76-78) and the Encode error in buildMappingNode
+// (line 171-173) via the encodeNodeValue seam. In production (*yaml.Node).Encode
+// of a plain value does not fail. Intentionally NOT parallel: it mutates a seam.
+func TestSerialize_BuildNodeError(t *testing.T) {
+	orig := encodeNodeValue
+	encodeNodeValue = func(*yaml.Node, any) error { return errSeam }
+	defer func() { encodeNodeValue = orig }()
+
+	_, err := Serialize(map[string]any{"k": "v"}, nil, nil)
+	if err == nil {
+		t.Fatal("Serialize: want error when encodeNodeValue fails")
+	}
+	if !strings.Contains(err.Error(), "build frontmatter node") {
+		t.Errorf("error = %v, want it to wrap the encode failure", err)
 	}
 }

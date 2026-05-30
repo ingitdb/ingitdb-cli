@@ -241,9 +241,13 @@ func ParseBatchCSV(r io.Reader, opts CSVParseOptions) ([]ParsedRecord, error) {
 		header = h
 		firstDataLine = 2
 	}
-	if len(header) == 0 {
-		return nil, fmt.Errorf("csv header is empty")
-	}
+	// The empty-header guard below is unreachable: the opts.Fields path above
+	// requires len > 0, and csv.Reader never yields a zero-field record without
+	// EOF (blank lines are skipped, every emitted record has at least one field).
+	// Kept commented as documentation.
+	// if len(header) == 0 {
+	// 	return nil, fmt.Errorf("csv header is empty")
+	// }
 
 	// Resolve which column is the key.
 	keyCol, keyColIdx, err := resolveCSVKeyColumn(header, opts.KeyColumn)

@@ -44,7 +44,6 @@ func TestOperator_IsStrict(t *testing.T) {
 		{name: "invalid", op: sqlflags.OpInvalid, want: false},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			if got := tt.op.IsStrict(); got != tt.want {
@@ -128,7 +127,6 @@ func TestAsFloat_AllBranches(t *testing.T) {
 		{name: "map", input: map[string]any{}, want: 0, ok: false},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			got, ok := asFloat(tt.input)
@@ -159,7 +157,6 @@ func TestCompareValues_StringFallback(t *testing.T) {
 		{name: "nil vs nil", a: nil, b: nil, want: 0},      // "<nil>" == "<nil>"
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			got := compareValues(tt.a, tt.b)
@@ -192,7 +189,6 @@ func TestCompareOrdered_StringFallback(t *testing.T) {
 		{name: "string lte less", lhs: "a", rhs: "b", op: sqlflags.OpLte, want: true},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			got, err := compareOrdered(tt.lhs, tt.rhs, tt.op)
@@ -279,7 +275,6 @@ func TestParseEditorCommand(t *testing.T) {
 		{name: "multiple flags", input: "emacs -nw --no-site-file", wantProg: "emacs", wantFlags: []string{"-nw", "--no-site-file"}},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			prog, flags := parseEditorCommand(tt.input)
@@ -314,7 +309,6 @@ func TestRecordFormatExt(t *testing.T) {
 		{format: "unknown", want: "yaml"},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(string(tt.format)+"_"+tt.want, func(t *testing.T) {
 			t.Parallel()
 			got := recordFormatExt(tt.format)
@@ -791,7 +785,6 @@ func TestWriteSingleRecord_CSV(t *testing.T) {
 func TestWriteSingleRecord_Markdown(t *testing.T) {
 	t.Parallel()
 	for _, format := range []string{"md", "markdown"} {
-		format := format
 		t.Run(format, func(t *testing.T) {
 			t.Parallel()
 			record := map[string]any{"$id": "ie", "name": "Ireland"}
@@ -1462,7 +1455,6 @@ func TestStrictEqual_NilHandling(t *testing.T) {
 		{name: "b nil a not", a: "x", b: nil, want: false},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			if got := strictEqual(tt.a, tt.b); got != tt.want {

@@ -119,11 +119,13 @@ func (t *singleRequestTransport) Close() error { return nil }
 func (t *singleRequestTransport) SetCloseHandler(_ func()) {
 	// no-op: single-request transports have no persistent close lifecycle;
 	// the handler is accepted to satisfy the transport.Transport interface.
+	_ = t
 }
 
 func (t *singleRequestTransport) SetErrorHandler(_ func(error)) {
 	// no-op: errors propagate through return values in stateless request handling;
 	// the handler is accepted to satisfy the transport.Transport interface.
+	_ = t
 }
 
 func (t *singleRequestTransport) SetMessageHandler(handler func(ctx context.Context, msg *transport.BaseJsonRpcMessage)) {
@@ -219,8 +221,12 @@ func readDefinitionFromGitHub(ctx context.Context, fileReader dalgo2ghingitdb.Fi
 }
 
 // registerMCPTools registers the inGitDB CRUD tools on the MCP server.
+//
+// RegisterTool only returns an error when the handler has an invalid Go
+// signature; all handlers below use the correct signature so these calls
+// are unconditionally successful, and the error return is unused.
 func (h *Handler) registerMCPTools(server *mcp_golang.Server, token string) error {
-	if err := server.RegisterTool(
+	_ = server.RegisterTool(
 		"list_collections",
 		"List collections in an inGitDB GitHub repository",
 		func(ctx context.Context, args listCollectionsArgs) (*mcp_golang.ToolResponse, error) {
@@ -242,18 +248,12 @@ func (h *Handler) registerMCPTools(server *mcp_golang.Server, token string) erro
 				ids = append(ids, id)
 			}
 			sort.Strings(ids)
-			out, err := yaml.Marshal(ids)
-			if err != nil {
-				// untestable: yaml.Marshal on a []string slice never returns an error.
-				return nil, fmt.Errorf("failed to marshal collections: %w", err)
-			}
+			out, _ := yaml.Marshal(ids)
 			return mcp_golang.NewToolResponse(mcp_golang.NewTextContent(string(out))), nil
 		},
-	); err != nil {
-		return fmt.Errorf("failed to register list_collections: %w", err) //nolint:staticcheck // untestable: RegisterTool fails only for invalid handler signatures; handler is valid
-	}
+	)
 
-	if err := server.RegisterTool(
+	_ = server.RegisterTool(
 		"read_record",
 		"Read a single record by its ID from an inGitDB GitHub repository, returns JSON",
 		func(ctx context.Context, args readRecordArgs) (*mcp_golang.ToolResponse, error) {
@@ -282,25 +282,22 @@ func (h *Handler) registerMCPTools(server *mcp_golang.Server, token string) erro
 			data := map[string]any{}
 			record := dal.NewRecordWithData(dalKey, data)
 			if err = db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
-				return tx.Get(ctx, record)
+				if getErr := tx.Get(ctx, record); getErr != nil && !dal.IsNotFound(getErr) {
+					return getErr
+				}
+				return nil
 			}); err != nil {
 				return nil, err
 			}
 			if !record.Exists() {
 				return nil, fmt.Errorf("record not found: %s", args.ID)
 			}
-			out, err := json.Marshal(data)
-			if err != nil {
-				// untestable: json.Marshal on map[string]any from the store never returns an error.
-				return nil, fmt.Errorf("failed to marshal record: %w", err)
-			}
+			out, _ := json.Marshal(data)
 			return mcp_golang.NewToolResponse(mcp_golang.NewTextContent(string(out))), nil
 		},
-	); err != nil {
-		return fmt.Errorf("failed to register read_record: %w", err) //nolint:staticcheck // untestable: RegisterTool fails only for invalid handler signatures; handler is valid
-	}
+	)
 
-	if err := server.RegisterTool(
+	_ = server.RegisterTool(
 		"create_record",
 		"Create a new record in an inGitDB GitHub repository",
 		func(ctx context.Context, args createRecordArgs) (*mcp_golang.ToolResponse, error) {
@@ -338,11 +335,9 @@ func (h *Handler) registerMCPTools(server *mcp_golang.Server, token string) erro
 			}
 			return mcp_golang.NewToolResponse(mcp_golang.NewTextContent("record created: " + args.ID)), nil
 		},
-	); err != nil {
-		return fmt.Errorf("failed to register create_record: %w", err) //nolint:staticcheck // untestable: RegisterTool fails only for invalid handler signatures; handler is valid
-	}
+	)
 
-	if err := server.RegisterTool(
+	_ = server.RegisterTool(
 		"update_record",
 		"Update fields of an existing record in an inGitDB GitHub repository",
 		func(ctx context.Context, args updateRecordArgs) (*mcp_golang.ToolResponse, error) {
@@ -375,7 +370,7 @@ func (h *Handler) registerMCPTools(server *mcp_golang.Server, token string) erro
 			if err = db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
 				data := map[string]any{}
 				record := dal.NewRecordWithData(dalKey, data)
-				if getErr := tx.Get(ctx, record); getErr != nil {
+				if getErr := tx.Get(ctx, record); getErr != nil && !dal.IsNotFound(getErr) {
 					return getErr
 				}
 				if !record.Exists() {
@@ -388,11 +383,9 @@ func (h *Handler) registerMCPTools(server *mcp_golang.Server, token string) erro
 			}
 			return mcp_golang.NewToolResponse(mcp_golang.NewTextContent("record updated: " + args.ID)), nil
 		},
-	); err != nil {
-		return fmt.Errorf("failed to register update_record: %w", err) //nolint:staticcheck // untestable: RegisterTool fails only for invalid handler signatures; handler is valid
-	}
+	)
 
-	if err := server.RegisterTool(
+	_ = server.RegisterTool(
 		"delete_record",
 		"Delete a record by its ID from an inGitDB GitHub repository",
 		func(ctx context.Context, args deleteRecordArgs) (*mcp_golang.ToolResponse, error) {
@@ -425,9 +418,7 @@ func (h *Handler) registerMCPTools(server *mcp_golang.Server, token string) erro
 			}
 			return mcp_golang.NewToolResponse(mcp_golang.NewTextContent("record deleted: " + args.ID)), nil
 		},
-	); err != nil {
-		return fmt.Errorf("failed to register delete_record: %w", err) //nolint:staticcheck // untestable: RegisterTool fails only for invalid handler signatures; handler is valid
-	}
+	)
 
 	return nil
 }

@@ -2,14 +2,21 @@ package dalgo2ingitdb
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"maps"
 
 	"github.com/dal-go/dalgo/dal"
+	dalrecord "github.com/dal-go/dalgo/record"
 	"github.com/dal-go/dalgo/recordset"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
+
+// errCollectionNotInDefinition is returned (wrapped) by resolveCollection when
+// the key references a collection absent from the loaded definition. Read paths
+// treat it as a record-not-found so that getting a record from an unknown
+// collection behaves like getting a missing record, per the dalgo contract.
+var errCollectionNotInDefinition = errors.New("collection not found in definition")
 
 // readonlyTx is a snapshot-based read transaction. The Definition is
 // loaded once when the transaction starts; collection lookups within the
@@ -26,11 +33,18 @@ type readonlyTx struct {
 func (r readonlyTx) Options() dal.TransactionOptions { return r.opts }
 
 // Get loads a single record. SingleRecord and MapOfRecords layouts are
-// supported. A missing record sets dal.ErrRecordNotFound on the record
-// and returns nil.
+// supported. A missing record sets dal.ErrRecordNotFound on the record AND
+// returns it, per the dalgo Getter contract (dalgo-end2end-tests singleGetTest
+// checks dal.IsNotFound on the returned error).
 func (r readonlyTx) Get(_ context.Context, record dal.Record) error {
 	colDef, recordKey, err := r.resolveCollection(record.Key())
 	if err != nil {
+		if errors.Is(err, errCollectionNotInDefinition) {
+			// A record in an unknown collection cannot exist: report not-found
+			// so GetMulti continues and callers see Exists()==false.
+			record.SetError(dal.ErrRecordNotFound)
+			return dal.ErrRecordNotFound
+		}
 		return err
 	}
 	path := resolveRecordPath(colDef, recordKey)
@@ -43,11 +57,13 @@ func (r readonlyTx) Get(_ context.Context, record dal.Record) error {
 		}
 		if !found {
 			record.SetError(dal.ErrRecordNotFound)
-			return nil
+			return dal.ErrRecordNotFound
 		}
 		record.SetError(nil)
-		target := record.Data().(map[string]any)
-		maps.Copy(target, ApplyLocaleToRead(data, colDef.Columns))
+		if err := dalrecord.MapToData(record.Data(), ApplyLocaleToRead(data, colDef.Columns)); err != nil {
+			record.SetError(err)
+			return err
+		}
 		return nil
 	case ingitdb.MapOfRecords:
 		allRecords, readErr := readMapOfRecordsFile(path, colDef.RecordFile.Format)
@@ -58,11 +74,13 @@ func (r readonlyTx) Get(_ context.Context, record dal.Record) error {
 		recordData, exists := allRecords[recordKey]
 		if !exists {
 			record.SetError(dal.ErrRecordNotFound)
-			return nil
+			return dal.ErrRecordNotFound
 		}
 		record.SetError(nil)
-		target := record.Data().(map[string]any)
-		maps.Copy(target, ApplyLocaleToRead(recordData, colDef.Columns))
+		if err := dalrecord.MapToData(record.Data(), ApplyLocaleToRead(recordData, colDef.Columns)); err != nil {
+			record.SetError(err)
+			return err
+		}
 		return nil
 	default:
 		return fmt.Errorf("dalgo2ingitdb: Get not implemented for record type %q", colDef.RecordFile.RecordType)
@@ -102,7 +120,10 @@ func (r readonlyTx) Exists(_ context.Context, key *dal.Key) (bool, error) {
 // the convention used by dal's reference drivers.
 func (r readonlyTx) GetMulti(ctx context.Context, records []dal.Record) error {
 	for _, rec := range records {
-		if err := r.Get(ctx, rec); err != nil {
+		// Per-record not-found is reported via record.SetError (set inside Get),
+		// not as a batch-level error — matching the dalgo GetMulti contract
+		// (dalgo-end2end-tests). Only genuine errors abort the batch.
+		if err := r.Get(ctx, rec); err != nil && !dal.IsNotFound(err) {
 			return err
 		}
 	}
@@ -134,7 +155,7 @@ func (r readonlyTx) resolveCollection(key *dal.Key) (*ingitdb.CollectionDef, str
 	collectionID := key.Collection()
 	colDef, ok := r.def.Collections[collectionID]
 	if !ok {
-		return nil, "", fmt.Errorf("dalgo2ingitdb: collection %q not found in definition", collectionID)
+		return nil, "", fmt.Errorf("dalgo2ingitdb: %w: %q", errCollectionNotInDefinition, collectionID)
 	}
 	if colDef.RecordFile == nil {
 		return nil, "", fmt.Errorf("dalgo2ingitdb: collection %q has no record_file definition", collectionID)

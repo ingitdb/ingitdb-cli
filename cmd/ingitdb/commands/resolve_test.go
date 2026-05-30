@@ -424,6 +424,72 @@ func TestRunDocsUpdate_GitAddFails_Locked(t *testing.T) {
 	}
 }
 
+// TestResolve_RecordMergeAutoResolves covers the branch where
+// resolveRecordMergeConflicts succeeds and returns non-empty mergedFiles with
+// no stillUnresolved entries (lines 69-71 and 75 of resolve.go).
+func TestResolve_RecordMergeAutoResolves(t *testing.T) {
+	t.Parallel()
+
+	// A YAML map-of-records file with disjoint additions on each branch — the
+	// record-merge engine can auto-resolve this without human input.
+	rel := filepath.Join("c", "data.yaml")
+	dir := setupDataConflict(t, rel,
+		"x:\n  v: '0'\n",
+		"x:\n  v: '0'\na:\n  v: '1'\n",
+		"x:\n  v: '0'\nb:\n  v: '2'\n",
+	)
+	def := mapColDef(dir, rel)
+	getWd := func() (string, error) { return dir, nil }
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return def, nil
+	}
+	var logs []string
+	logf := func(args ...any) {
+		for _, a := range args {
+			logs = append(logs, fmt.Sprint(a))
+		}
+	}
+
+	cmd := Resolve(testHomeDir, getWd, readDef, logf, falseTerminal, noopConflictsTUI)
+	if err := runCobraCommand(cmd); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	joined := strings.Join(logs, "\n")
+	if !strings.Contains(joined, "auto-merged") {
+		t.Errorf("expected 'auto-merged' log, got: %v", logs)
+	}
+}
+
+// TestResolve_RecordMergeInfraError covers the branch where
+// resolveRecordMergeConflicts itself returns an infrastructure error (e.g. a
+// locked git index prevents staging the merged file) — line 66-68 of resolve.go.
+func TestResolve_RecordMergeInfraError(t *testing.T) {
+	t.Parallel()
+
+	rel := filepath.Join("c", "data.yaml")
+	dir := setupDataConflict(t, rel,
+		"x:\n  v: '0'\n",
+		"x:\n  v: '0'\na:\n  v: '1'\n",
+		"x:\n  v: '0'\nb:\n  v: '2'\n",
+	)
+	def := mapColDef(dir, rel)
+	lockGitIndex(t, dir)
+
+	getWd := func() (string, error) { return dir, nil }
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return def, nil
+	}
+
+	cmd := Resolve(testHomeDir, getWd, readDef, func(...any) {}, falseTerminal, noopConflictsTUI)
+	err := runCobraCommand(cmd)
+	if err == nil {
+		t.Fatal("expected an error when git add fails during record merge")
+	}
+	if !strings.Contains(err.Error(), "stage merged") {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
 func TestFilterConflictedByFile(t *testing.T) {
 	t.Parallel()
 

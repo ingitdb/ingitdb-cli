@@ -5,12 +5,26 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 	"gopkg.in/yaml.v3"
 )
+
+// csvWriter captures the encoding/csv.Writer methods used by formatCSV.
+// *csv.Writer satisfies it.
+type csvWriter interface {
+	Write(record []string) error
+	Flush()
+	Error() error
+}
+
+// newCSVWriter is a seam over csv.NewWriter. Tests swap it to inject an Error()
+// failure, which in production never occurs because the writer targets an
+// in-memory bytes.Buffer.
+var newCSVWriter = func(w io.Writer) csvWriter { return csv.NewWriter(w) }
 
 // defaultViewFormatExtension returns the file extension for a given format string.
 // Callers must resolve empty format to "ingr" before calling.
@@ -102,7 +116,7 @@ func escapeTSV(s string) string {
 
 func formatCSV(headers []string, records []ingitdb.IRecordEntry) ([]byte, error) {
 	var buf bytes.Buffer
-	w := csv.NewWriter(&buf)
+	w := newCSVWriter(&buf)
 	_ = w.Write(headers) // sticky error surfaced by w.Error() below
 	for _, rec := range records {
 		row := make([]string, len(headers))

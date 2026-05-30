@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -76,10 +77,8 @@ func (s *Settings) Validate() error {
 	if s.DefaultRecordFormat == "" {
 		return nil
 	}
-	for _, f := range supportedRecordFormats {
-		if s.DefaultRecordFormat == f {
-			return nil
-		}
+	if slices.Contains(supportedRecordFormats, s.DefaultRecordFormat) {
+		return nil
 	}
 	names := make([]string, len(supportedRecordFormats))
 	for i, f := range supportedRecordFormats {

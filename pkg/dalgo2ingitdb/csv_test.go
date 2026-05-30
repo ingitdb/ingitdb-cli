@@ -24,6 +24,25 @@ func newCSVCollectionDef(columns []string) *ingitdb.CollectionDef {
 	}
 }
 
+// TestParseRecordContentForCollection_CSV_RowFieldCountMismatch covers the
+// csv.ErrFieldCount branch in parseCSVForCollection (csv.go): a data row with a
+// different number of columns than the header surfaces as ErrFieldCount from the
+// reader and is reported with a column-count message.
+func TestParseRecordContentForCollection_CSV_RowFieldCountMismatch(t *testing.T) {
+	t.Parallel()
+	col := newCSVCollectionDef([]string{"id", "email", "age"})
+	// The second data row has only 2 columns instead of 3.
+	content := []byte("id,email,age\n1,alice@example.com,30\n2,bob@example.com\n")
+
+	_, err := ParseRecordContentForCollection(content, col)
+	if err == nil {
+		t.Fatal("expected error for a row with the wrong number of columns")
+	}
+	if !strings.Contains(err.Error(), "columns, header has 3") {
+		t.Errorf("error = %v, want a column-count mismatch message", err)
+	}
+}
+
 func TestParseRecordContentForCollection_CSV_Roundtrip(t *testing.T) {
 	t.Parallel()
 	col := newCSVCollectionDef([]string{"id", "email", "age"})

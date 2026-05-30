@@ -5,6 +5,7 @@ package dalgo2ingitdb
 import (
 	"bytes"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 
@@ -46,12 +47,21 @@ func parseCSVForCollection(content []byte, colDef *ingitdb.CollectionDef) (map[s
 			break
 		}
 		if readErr != nil {
+			// The default csv.Reader locks the field count to the header row, so a
+			// row with a different number of columns surfaces here as ErrFieldCount.
+			if errors.Is(readErr, csv.ErrFieldCount) {
+				return nil, fmt.Errorf("csv row %d has %d columns, header has %d",
+					len(rows)+1, len(fields), len(header))
+			}
 			return nil, fmt.Errorf("failed to read csv row %d: %w", len(rows)+1, readErr)
 		}
-		if len(fields) != len(header) {
-			return nil, fmt.Errorf("csv row %d has %d columns, header has %d",
-				len(rows)+1, len(fields), len(header))
-		}
+		// The explicit column-count guard below is unreachable: csv.ErrFieldCount
+		// is already handled above for any mismatched row, so len(fields) always
+		// equals len(header) here. Kept commented as documentation.
+		// if len(fields) != len(header) {
+		// 	return nil, fmt.Errorf("csv row %d has %d columns, header has %d",
+		// 		len(rows)+1, len(fields), len(header))
+		// }
 		row := make(map[string]any, len(header))
 		for i, col := range header {
 			row[col] = fields[i]
@@ -105,7 +115,7 @@ func encodeCSVForCollection(value any, colDef *ingitdb.CollectionDef) ([]byte, e
 		return nil, fmt.Errorf("csv write requires non-empty columns_order on the collection definition")
 	}
 	var buf bytes.Buffer
-	w := csv.NewWriter(&buf)
+	w := newCSVWriter(&buf)
 	if err = w.Write(colDef.ColumnsOrder); err != nil {
 		return nil, fmt.Errorf("failed to write csv header: %w", err)
 	}

@@ -113,7 +113,10 @@ func runSelectByID(
 	key := dal.NewKeyWithID(rctx.colDef.ID, rctx.recordKey)
 	record := dal.NewRecordWithData(key, data)
 	err = rctx.db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
-		return tx.Get(ctx, record)
+		if getErr := tx.Get(ctx, record); getErr != nil && !dal.IsNotFound(getErr) {
+			return getErr
+		}
+		return nil
 	})
 	if err != nil {
 		return err

@@ -300,10 +300,10 @@ func TestReadonlyTx_Get_MapOfRecords_NotFound(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
 	tx, _ := makeMapOfRecordsTx(t, root)
-	// No file on disk → ErrRecordNotFound via SetError.
+	// No file on disk → Get returns ErrRecordNotFound and marks not-found.
 	rec := dal.NewRecordWithData(dal.NewKeyWithID("scores", "alice"), map[string]any{})
-	if err := tx.Get(context.Background(), rec); err != nil {
-		t.Fatalf("Get: unexpected error: %v", err)
+	if err := tx.Get(context.Background(), rec); !dal.IsNotFound(err) {
+		t.Fatalf("Get: got %v, want dal.ErrRecordNotFound", err)
 	}
 	if rec.Exists() {
 		t.Error("rec.Exists: want false for missing map-of-records entry")
@@ -323,8 +323,8 @@ func TestReadonlyTx_Get_MapOfRecords_KeyMissing(t *testing.T) {
 		t.Fatalf("write: %v", err)
 	}
 	rec := dal.NewRecordWithData(dal.NewKeyWithID("scores", "alice"), map[string]any{})
-	if err := tx.Get(context.Background(), rec); err != nil {
-		t.Fatalf("Get: unexpected error: %v", err)
+	if err := tx.Get(context.Background(), rec); !dal.IsNotFound(err) {
+		t.Fatalf("Get: got %v, want dal.ErrRecordNotFound", err)
 	}
 	if rec.Exists() {
 		t.Error("rec.Exists: want false for absent key in map-of-records file")
@@ -683,9 +683,9 @@ func TestReadwriteTx_Delete_MapOfRecords(t *testing.T) {
 	if err := tx.Delete(context.Background(), dal.NewKeyWithID("scores", "eve")); err != nil {
 		t.Fatalf("Delete present key: %v", err)
 	}
-	// Delete absent key — file still exists but key gone.
-	if err := tx.Delete(context.Background(), dal.NewKeyWithID("scores", "eve")); err == nil {
-		t.Fatal("delete absent key: want error")
+	// Delete absent key — file still exists but key gone: idempotent no-op.
+	if err := tx.Delete(context.Background(), dal.NewKeyWithID("scores", "eve")); err != nil {
+		t.Fatalf("delete absent key: want nil (idempotent), got %v", err)
 	}
 }
 
@@ -695,10 +695,10 @@ func TestReadwriteTx_Delete_MapOfRecords_FileMissing(t *testing.T) {
 	if err := os.MkdirAll(colDef.DirPath, 0o755); err != nil {
 		t.Fatalf("mkdir: %v", err)
 	}
-	// No file → ErrRecordNotFound.
+	// No file → idempotent no-op (nil).
 	err := tx.Delete(context.Background(), dal.NewKeyWithID("scores", "ghost"))
-	if err == nil {
-		t.Fatal("want ErrRecordNotFound when file missing")
+	if err != nil {
+		t.Fatalf("want nil (idempotent) when file missing, got %v", err)
 	}
 }
 
@@ -845,10 +845,10 @@ func TestDeleteSingleRecordFile_MissingAndPresent(t *testing.T) {
 	dir := t.TempDir()
 	p := filepath.Join(dir, "rec.yaml")
 
-	// File missing before stat → ErrRecordNotFound.
+	// File missing before stat → idempotent no-op (nil).
 	err := deleteSingleRecordFile(p)
-	if err == nil {
-		t.Fatal("want error for missing file")
+	if err != nil {
+		t.Fatalf("want nil (idempotent) for missing file, got %v", err)
 	}
 
 	// File exists → deleted successfully.
@@ -2737,14 +2737,16 @@ func TestUpdate_RecordNotFound(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(root, "items", "$records"), 0o755); err != nil {
 		t.Fatalf("mkdir: %v", err)
 	}
-	// Update on non-existent record: Get sets ErrRecordNotFound on record but
-	// rec.Error() returns nil for IsNotFound errors (dal convention), so Update
-	// proceeds to applyUpdates on empty data then writes a new record.
+	// Update on a non-existent record must fail with dal.ErrRecordNotFound
+	// (Get returns it), not silently upsert a new record.
 	err := tx.Update(context.Background(), dal.NewKeyWithID("items", "nonexistent"),
 		[]update.Update{update.ByFieldName("name", "new")})
-	// This should succeed (upsert-like behaviour via the dal not-found convention).
-	if err != nil {
-		t.Fatalf("Update on missing record: unexpected error: %v", err)
+	if !dal.IsNotFound(err) {
+		t.Fatalf("Update on missing record: got %v, want dal.ErrRecordNotFound", err)
+	}
+	// And it must not have created the file.
+	if _, statErr := os.Stat(filepath.Join(root, "items", "$records", "nonexistent.yaml")); statErr == nil {
+		t.Error("Update on missing record must not create the record file")
 	}
 }
 
@@ -2797,13 +2799,20 @@ func TestExists_UnknownCollection(t *testing.T) {
 
 func TestGetMulti_PropagatesGetError(t *testing.T) {
 	t.Parallel()
+	// A record in an unknown collection is treated as not-found and must NOT
+	// abort the batch; a genuine error (here: an unsupported record type) must.
 	tx := readonlyTx{
-		db:  &Database{},
-		def: &ingitdb.Definition{Collections: map[string]*ingitdb.CollectionDef{}},
+		db: &Database{},
+		def: &ingitdb.Definition{Collections: map[string]*ingitdb.CollectionDef{
+			"c": {ID: "c", RecordFile: &ingitdb.RecordFileDef{RecordType: "bogus-record-type"}},
+		}},
 	}
-	rec := dal.NewRecordWithData(dal.NewKeyWithID("no_such_col", "k"), map[string]any{})
+	rec := dal.NewRecordWithData(dal.NewKeyWithID("c", "k"), map[string]any{})
 	err := tx.GetMulti(context.Background(), []dal.Record{rec})
 	if err == nil {
-		t.Fatal("GetMulti: want error propagated from Get")
+		t.Fatal("GetMulti: want genuine (non-not-found) error propagated from Get")
+	}
+	if dal.IsNotFound(err) {
+		t.Errorf("GetMulti: not-found must not abort the batch, got %v", err)
 	}
 }

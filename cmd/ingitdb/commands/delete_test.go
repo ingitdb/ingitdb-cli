@@ -122,7 +122,6 @@ func TestDelete_RejectsForbiddenSharedFlags(t *testing.T) {
 		{name: "fields rejected", args: []string{"--id=test.items/x", "--fields=a,b"}},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			_, err := runDeleteCmd(t, homeDir, getWd, readDef, newDB, logf,
@@ -186,7 +185,6 @@ func TestDelete_SingleRecord_RejectsSetModeFlags(t *testing.T) {
 		{name: "min-affected rejected", args: []string{"--id=test.items/beta", "--min-affected=1"}},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			_, err := runDeleteCmd(t, homeDir, getWd, readDef, newDB, logf,

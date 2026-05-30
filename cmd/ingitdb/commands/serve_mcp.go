@@ -156,7 +156,10 @@ func registerMCPTools(
 			data := map[string]any{}
 			record := dal.NewRecordWithData(key, data)
 			if err = db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
-				return tx.Get(ctx, record)
+				if getErr := tx.Get(ctx, record); getErr != nil && !dal.IsNotFound(getErr) {
+					return getErr
+				}
+				return nil
 			}); err != nil {
 				return nil, err
 			}
@@ -195,7 +198,7 @@ func registerMCPTools(
 			if err = db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
 				data := map[string]any{}
 				record := dal.NewRecordWithData(key, data)
-				if getErr := tx.Get(ctx, record); getErr != nil {
+				if getErr := tx.Get(ctx, record); getErr != nil && !dal.IsNotFound(getErr) {
 					return getErr
 				}
 				if !record.Exists() {

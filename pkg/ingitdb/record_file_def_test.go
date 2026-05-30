@@ -7,6 +7,187 @@ import (
 	"github.com/dal-go/dalgo/dal"
 )
 
+func TestRecordFileDefValidate_MissingBranches(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		def     RecordFileDef
+		wantErr string
+	}{
+		{
+			name: "markdown_requires_single_record",
+			def: RecordFileDef{
+				Name:       "{key}.md",
+				Format:     RecordFormatMarkdown,
+				RecordType: ListOfRecords,
+			},
+			wantErr: "format \"markdown\" requires record type",
+		},
+		{
+			name: "content_field_only_for_markdown",
+			def: RecordFileDef{
+				Name:         "{key}.yaml",
+				Format:       RecordFormatYAML,
+				RecordType:   SingleRecord,
+				ContentField: "body",
+			},
+			wantErr: "content_field is only valid for format",
+		},
+		{
+			name: "ingr_rejects_single_record",
+			def: RecordFileDef{
+				Name:       "records.ingr",
+				Format:     RecordFormatINGR,
+				RecordType: SingleRecord,
+			},
+			wantErr: "format \"ingr\" does not support record type",
+		},
+		{
+			name: "invalid_exclude_regex",
+			def: RecordFileDef{
+				Name:         "{key}.yaml",
+				Format:       RecordFormatYAML,
+				RecordType:   SingleRecord,
+				ExcludeRegex: "[invalid",
+			},
+			wantErr: "invalid exclude_regex",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := tt.def.Validate()
+			if err == nil {
+				t.Fatalf("expected error containing %q, got nil", tt.wantErr)
+			}
+			if !strings.Contains(err.Error(), tt.wantErr) {
+				t.Fatalf("expected error containing %q, got %q", tt.wantErr, err.Error())
+			}
+		})
+	}
+}
+
+func TestRecordFileDef_IsExcluded(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		excludeRegex string
+		filename     string
+		want         bool
+	}{
+		{
+			name:         "empty_regex_never_excludes",
+			excludeRegex: "",
+			filename:     "README.md",
+			want:         false,
+		},
+		{
+			name:         "matching_regex_excludes",
+			excludeRegex: `^README\.md$`,
+			filename:     "README.md",
+			want:         true,
+		},
+		{
+			name:         "non_matching_regex_does_not_exclude",
+			excludeRegex: `^README\.md$`,
+			filename:     "record-1.md",
+			want:         false,
+		},
+		{
+			name:         "invalid_regex_returns_false",
+			excludeRegex: "[invalid",
+			filename:     "README.md",
+			want:         false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			rfd := RecordFileDef{ExcludeRegex: tt.excludeRegex}
+			got := rfd.IsExcluded(tt.filename)
+			if got != tt.want {
+				t.Errorf("IsExcluded(%q) = %v, want %v", tt.filename, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRecordFileDef_ResolvedContentField(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		contentField string
+		want         string
+	}{
+		{
+			name:         "empty_returns_default",
+			contentField: "",
+			want:         DefaultMarkdownContentField,
+		},
+		{
+			name:         "custom_field_returned_as_is",
+			contentField: "body",
+			want:         "body",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			rfd := RecordFileDef{ContentField: tt.contentField}
+			got := rfd.ResolvedContentField()
+			if got != tt.want {
+				t.Errorf("ResolvedContentField() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRecordFileDef_RecordsBasePath(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		rfd  RecordFileDef
+		want string
+	}{
+		{
+			name: "name_with_key_placeholder_returns_records",
+			rfd:  RecordFileDef{Name: "{key}.yaml"},
+			want: "$records",
+		},
+		{
+			name: "name_without_key_placeholder_returns_empty",
+			rfd:  RecordFileDef{Name: "records.yaml"},
+			want: "",
+		},
+		{
+			name: "static_name_returns_empty",
+			rfd:  RecordFileDef{Name: "data.json"},
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := tt.rfd.RecordsBasePath()
+			if got != tt.want {
+				t.Errorf("RecordsBasePath() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestRecordFileDefValidate(t *testing.T) {
 	t.Parallel()
 
@@ -86,7 +267,6 @@ func TestRecordFileDefValidate(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -148,7 +328,6 @@ func TestRecordFileDefGetRecordFileName(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 

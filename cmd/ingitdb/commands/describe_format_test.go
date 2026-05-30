@@ -29,7 +29,6 @@ func TestResolveFormat(t *testing.T) {
 			errSubstr: "valid values: yaml, json, native, sql"},
 	}
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			got, err := resolveFormat(tc.raw, tc.engine)

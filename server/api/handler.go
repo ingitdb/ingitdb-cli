@@ -469,7 +469,10 @@ func (h *Handler) readRecord(w http.ResponseWriter, r *http.Request, _ httproute
 	data := map[string]any{}
 	record := dal.NewRecordWithData(dalKey, data)
 	if err = db.RunReadonlyTransaction(r.Context(), func(ctx context.Context, tx dal.ReadTransaction) error {
-		return tx.Get(ctx, record)
+		if getErr := tx.Get(ctx, record); getErr != nil && !dal.IsNotFound(getErr) {
+			return getErr
+		}
+		return nil
 	}); err != nil {
 		writeError(w, http.StatusInternalServerError, fmt.Sprintf("failed to read record: %v", err))
 		return
@@ -590,7 +593,7 @@ func (h *Handler) updateRecord(w http.ResponseWriter, r *http.Request, _ httprou
 	if err = db.RunReadwriteTransaction(r.Context(), func(ctx context.Context, tx dal.ReadwriteTransaction) error {
 		data := map[string]any{}
 		record := dal.NewRecordWithData(dalKey, data)
-		if getErr := tx.Get(ctx, record); getErr != nil {
+		if getErr := tx.Get(ctx, record); getErr != nil && !dal.IsNotFound(getErr) {
 			return getErr
 		}
 		if !record.Exists() {

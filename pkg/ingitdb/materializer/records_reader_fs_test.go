@@ -2,6 +2,7 @@ package materializer
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
 
@@ -109,6 +110,26 @@ func TestRecordPatternForKey(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestRecordPatternForKey_RelError covers the filepath.Rel error branch in the
+// key extractor returned by recordPatternForKey (records_reader_fs.go line
+// 151-153) via the filepathRel seam. In production filepath.Rel on the absolute
+// paths passed never fails; the seam forces the error so the extractor falls
+// back to filepath.Base. Intentionally NOT parallel: it mutates a seam.
+func TestRecordPatternForKey_RelError(t *testing.T) {
+	orig := filepathRel
+	filepathRel = func(string, string) (string, error) { return "", errors.New("seam failure") }
+	defer func() { filepathRel = orig }()
+
+	_, extractKey, err := recordPatternForKey("{key}.json", "/data/tags")
+	if err != nil {
+		t.Fatalf("recordPatternForKey: %v", err)
+	}
+	got := extractKey("/data/tags/tag1.json")
+	if got != "tag1.json" {
+		t.Errorf("extractKey on rel-error = %q, want the base name %q", got, "tag1.json")
 	}
 }
 
