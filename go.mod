@@ -7,6 +7,7 @@ require (
 	charm.land/fang/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.3
 	github.com/charmbracelet/x/term v0.2.2
+	github.com/dal-go/dalgo-end2end-tests v0.0.88
 	github.com/gofrs/flock v0.13.0
 	github.com/google/go-github/v88 v88.0.0
 	github.com/ingr-io/ingr-go v0.0.2
@@ -28,7 +29,6 @@ require (
 	github.com/charmbracelet/x/windows v0.2.2 // indirect
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
-	github.com/dal-go/dalgo-end2end-tests v0.0.88 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -69,9 +69,7 @@ require (
 require (
 	github.com/RoaringBitmap/roaring/v2 v2.18.2 // indirect
 	github.com/bits-and-blooms/bitset v1.24.4 // indirect
-	github.com/dal-go/dalgo v0.43.3
+	github.com/dal-go/dalgo v0.44.0
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/strongo/random v0.0.1 // indirect
 )
-
-replace github.com/dal-go/dalgo => ../../dal-go/dalgo
