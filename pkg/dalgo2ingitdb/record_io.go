@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/dal-go/dalgo/dal"
-
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
@@ -132,22 +130,22 @@ func writeMapOfRecordsFile(path string, colDef *ingitdb.CollectionDef, data map[
 }
 
 // deleteSingleRecordFile removes a record file under an exclusive lock.
-// Returns dal.ErrRecordNotFound if the file does not exist.
+// Deleting a record that does not exist is a no-op (returns nil), matching the
+// idempotent Delete contract shared by dalgo adapters (e.g. dalgo2firestore).
 //
 // The pre-lock stat is required because gofrs/flock opens the lock target
-// with O_CREATE; without this check we'd recreate the file just to delete
-// it again and never report the miss.
+// with O_CREATE; without this check we'd recreate the file just to delete it.
 func deleteSingleRecordFile(path string) error {
 	if _, statErr := os.Stat(path); statErr != nil {
 		if errors.Is(statErr, fs.ErrNotExist) {
-			return dal.ErrRecordNotFound
+			return nil
 		}
 		return fmt.Errorf("stat %s: %w", path, statErr)
 	}
 	return withExclusiveLock(path, func() error {
 		err := osRemove(path)
 		if errors.Is(err, fs.ErrNotExist) {
-			return dal.ErrRecordNotFound
+			return nil
 		}
 		if err != nil {
 			return fmt.Errorf("remove %s: %w", path, err)

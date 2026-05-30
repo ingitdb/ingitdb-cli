@@ -683,9 +683,9 @@ func TestReadwriteTx_Delete_MapOfRecords(t *testing.T) {
 	if err := tx.Delete(context.Background(), dal.NewKeyWithID("scores", "eve")); err != nil {
 		t.Fatalf("Delete present key: %v", err)
 	}
-	// Delete absent key — file still exists but key gone.
-	if err := tx.Delete(context.Background(), dal.NewKeyWithID("scores", "eve")); err == nil {
-		t.Fatal("delete absent key: want error")
+	// Delete absent key — file still exists but key gone: idempotent no-op.
+	if err := tx.Delete(context.Background(), dal.NewKeyWithID("scores", "eve")); err != nil {
+		t.Fatalf("delete absent key: want nil (idempotent), got %v", err)
 	}
 }
 
@@ -695,10 +695,10 @@ func TestReadwriteTx_Delete_MapOfRecords_FileMissing(t *testing.T) {
 	if err := os.MkdirAll(colDef.DirPath, 0o755); err != nil {
 		t.Fatalf("mkdir: %v", err)
 	}
-	// No file → ErrRecordNotFound.
+	// No file → idempotent no-op (nil).
 	err := tx.Delete(context.Background(), dal.NewKeyWithID("scores", "ghost"))
-	if err == nil {
-		t.Fatal("want ErrRecordNotFound when file missing")
+	if err != nil {
+		t.Fatalf("want nil (idempotent) when file missing, got %v", err)
 	}
 }
 
@@ -845,10 +845,10 @@ func TestDeleteSingleRecordFile_MissingAndPresent(t *testing.T) {
 	dir := t.TempDir()
 	p := filepath.Join(dir, "rec.yaml")
 
-	// File missing before stat → ErrRecordNotFound.
+	// File missing before stat → idempotent no-op (nil).
 	err := deleteSingleRecordFile(p)
-	if err == nil {
-		t.Fatal("want error for missing file")
+	if err != nil {
+		t.Fatalf("want nil (idempotent) for missing file, got %v", err)
 	}
 
 	// File exists → deleted successfully.
@@ -2799,13 +2799,20 @@ func TestExists_UnknownCollection(t *testing.T) {
 
 func TestGetMulti_PropagatesGetError(t *testing.T) {
 	t.Parallel()
+	// A record in an unknown collection is treated as not-found and must NOT
+	// abort the batch; a genuine error (here: an unsupported record type) must.
 	tx := readonlyTx{
-		db:  &Database{},
-		def: &ingitdb.Definition{Collections: map[string]*ingitdb.CollectionDef{}},
+		db: &Database{},
+		def: &ingitdb.Definition{Collections: map[string]*ingitdb.CollectionDef{
+			"c": {ID: "c", RecordFile: &ingitdb.RecordFileDef{RecordType: "bogus-record-type"}},
+		}},
 	}
-	rec := dal.NewRecordWithData(dal.NewKeyWithID("no_such_col", "k"), map[string]any{})
+	rec := dal.NewRecordWithData(dal.NewKeyWithID("c", "k"), map[string]any{})
 	err := tx.GetMulti(context.Background(), []dal.Record{rec})
 	if err == nil {
-		t.Fatal("GetMulti: want error propagated from Get")
+		t.Fatal("GetMulti: want genuine (non-not-found) error propagated from Get")
+	}
+	if dal.IsNotFound(err) {
+		t.Errorf("GetMulti: not-found must not abort the batch, got %v", err)
 	}
 }

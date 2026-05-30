@@ -2333,8 +2333,8 @@ func TestDeleteSingleRecordFile_RemoveErrNotExist(t *testing.T) {
 	defer func() { osRemove = orig }()
 
 	err := deleteSingleRecordFile(p)
-	if !errors.Is(err, dal.ErrRecordNotFound) {
-		t.Errorf("error = %v, want dal.ErrRecordNotFound", err)
+	if err != nil {
+		t.Errorf("error = %v, want nil (delete is idempotent when the file vanishes)", err)
 	}
 }
 

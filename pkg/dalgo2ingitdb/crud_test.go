@@ -220,12 +220,12 @@ func TestDB_RunReadwriteTransaction_InsertSetDelete(t *testing.T) {
 		t.Errorf("after Delete: file should be gone, stat err = %v", err)
 	}
 
-	// Delete again must return ErrRecordNotFound.
+	// Delete again is an idempotent no-op (returns nil).
 	missErr := db.RunReadwriteTransaction(ctx, func(_ context.Context, tx dal.ReadwriteTransaction) error {
 		return tx.Delete(ctx, dal.NewKeyWithID("countries", "france"))
 	})
-	if !errors.Is(missErr, dal.ErrRecordNotFound) {
-		t.Errorf("second Delete: got %v, want ErrRecordNotFound", missErr)
+	if missErr != nil {
+		t.Errorf("second Delete: got %v, want nil (idempotent)", missErr)
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/dal-go/dalgo/dal"
+	dalrecord "github.com/dal-go/dalgo/record"
 	"github.com/dal-go/dalgo/update"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
@@ -33,7 +34,10 @@ func (r readwriteTx) Set(_ context.Context, record dal.Record) error {
 		return err
 	}
 	record.SetError(nil)
-	data := record.Data().(map[string]any)
+	data, err := dalrecord.DataToMap(record.Data())
+	if err != nil {
+		return err
+	}
 	path := resolveRecordPath(colDef, recordKey)
 	switch colDef.RecordFile.RecordType {
 	case ingitdb.SingleRecord:
@@ -77,7 +81,10 @@ func (r readwriteTx) Insert(_ context.Context, record dal.Record, _ ...dal.Inser
 		return err
 	}
 	record.SetError(nil)
-	data := record.Data().(map[string]any)
+	data, err := dalrecord.DataToMap(record.Data())
+	if err != nil {
+		return err
+	}
 	path := resolveRecordPath(colDef, recordKey)
 	switch colDef.RecordFile.RecordType {
 	case ingitdb.SingleRecord:
@@ -121,8 +128,8 @@ func (r readwriteTx) InsertMulti(ctx context.Context, records []dal.Record, opts
 	return nil
 }
 
-// Delete removes a record. Returns dal.ErrRecordNotFound when the record
-// does not exist.
+// Delete removes a record. Deleting a record that does not exist is a no-op
+// (returns nil), per the idempotent Delete contract shared by dalgo adapters.
 func (r readwriteTx) Delete(_ context.Context, key *dal.Key) error {
 	colDef, recordKey, err := r.resolveCollection(key)
 	if err != nil {
@@ -138,7 +145,7 @@ func (r readwriteTx) Delete(_ context.Context, key *dal.Key) error {
 			return readErr
 		}
 		if _, exists := allRecords[recordKey]; !exists {
-			return dal.ErrRecordNotFound
+			return nil // idempotent: deleting a missing record is a no-op
 		}
 		delete(allRecords, recordKey)
 		return writeMapOfRecordsFile(path, colDef, allRecords)
@@ -183,7 +190,10 @@ func (r readwriteTx) UpdateRecord(ctx context.Context, record dal.Record, update
 	if len(preconditions) > 0 {
 		return fmt.Errorf("dalgo2ingitdb: UpdateRecord preconditions are not supported")
 	}
-	data := record.Data().(map[string]any)
+	data, err := dalrecord.DataToMap(record.Data())
+	if err != nil {
+		return err
+	}
 	if err := applyUpdates(data, updates); err != nil {
 		return err
 	}
