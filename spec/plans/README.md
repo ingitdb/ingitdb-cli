@@ -10,6 +10,7 @@ verifiable tasks with clear acceptance criteria and dependency ordering.
 | [cobra-migration](cobra-migration.md) | — | Done |
 | [query-command-prd](query-command-prd.md) | cli/query | Done |
 | [2026-05-12-create-record-stdin-edit](2026-05-12-create-record-stdin-edit.md) | cli/create-record | Ready |
+| [dalgo2ingitdb-referential-integrity](dalgo2ingitdb-referential-integrity.md) | dalgo2ingitdb-referential-integrity | Approved |
 
 ## Open Questions
 
