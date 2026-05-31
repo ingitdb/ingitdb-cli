@@ -3,13 +3,13 @@ package dalgo2ingitdb
 import (
 	"testing"
 
-	e2e "github.com/dal-go/dalgo-end2end-tests"
-	"github.com/dal-go/dalgo-end2end-tests/models"
+	e2e "github.com/dal-go/dalgo/end2end"
+	"github.com/dal-go/dalgo/end2end/models"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/config"
 )
 
-// TestDalgoEndToEnd runs the shared dalgo-end2end-tests suite against this
+// TestDalgoEndToEnd runs the shared dalgo end-to-end suite against this
 // driver. It sets up the two collections the suite uses (DalgoE2E_E2ETest1/2)
 // as single-record JSON collections, then delegates to end2end.TestDalgoDB.
 //
