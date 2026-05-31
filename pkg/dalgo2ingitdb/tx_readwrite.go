@@ -76,13 +76,18 @@ func (r readwriteTx) SetMulti(ctx context.Context, records []dal.Record) error {
 // Insert stores a record if it does not already exist. Returns an error
 // when the key is already taken.
 func (r readwriteTx) Insert(_ context.Context, record dal.Record, _ ...dal.InsertOption) error {
-	colDef, recordKey, err := r.resolveCollection(record.Key())
+	key := record.Key()
+	colDef, recordKey, err := r.resolveCollection(key)
 	if err != nil {
 		return err
 	}
 	record.SetError(nil)
 	data, err := dalrecord.DataToMap(record.Data())
 	if err != nil {
+		return err
+	}
+	collectionID := key.Collection()
+	if err := r.validateInsertForeignKeys(collectionID, colDef, data); err != nil {
 		return err
 	}
 	path := resolveRecordPath(colDef, recordKey)
