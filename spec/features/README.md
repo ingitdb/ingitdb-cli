@@ -40,6 +40,7 @@ This directory tracks the SpecScore feature specifications for the **ingitdb-cli
 | [shared-cli-flags](shared-cli-flags/README.md) | Single source of truth for the CLI flag grammar shared across select, insert, update, delete, and drop verbs: --from, --into, --where, --set, --id, --all, --order-by, --fields. Defines parsing rules, operator semantics (==, ===, !=, !==, >=, <=, >, <), value-type model, and flag mutual-exclusion rules. |
 | [cli](cli/README.md) | Unknown | TODO: Add description. |
 | [dalgo2ingitdb-dbschema-ddl-coverage](dalgo2ingitdb-dbschema-ddl-coverage/README.md) | Draft | TODO: Add description. |
+| [dalgo2ingitdb-referential-integrity](dalgo2ingitdb-referential-integrity/README.md) | Approved | DALgo write transactions enforce existing `foreign_key` metadata on Set, Insert, Update, and Delete. |
 | [record-key](record-key/README.md) | Draft | Umbrella for canonical record identity behavior across schema validation, storage paths, writes, and CLI key surfaces. |
 
 ## Feature Summaries
@@ -102,7 +103,12 @@ Defines the `--format=yaml|json` flag, the YAML default, and the contract that r
 Defines the `--path` flag, its default of the current working directory, and its mutual exclusivity with `--remote`.
 
 ### remote-repo-access
+
 Defines the `--remote=<URL>` flag for direct access to remote Git hosting services (GitHub, GitLab, Bitbucket, and self-hosted instances), with built-in provider inference, `--provider` override for unknown hosts, host-derived token environment variables, and the one-commit-per-write rule.
+
+### dalgo2ingitdb-referential-integrity
+
+Enforces existing `foreign_key` metadata in DALgo write transactions. Child writes fail when non-empty FK values point at missing parent records, and parent deletes fail while child records still reference them.
 
 ## Open Questions
 

@@ -13,6 +13,7 @@ Use `specscore idea new <slug>` to scaffold a new idea.
 | [batch-insert](batch-insert.md) | Approved | 2026-05-13 | alexander.trakhimenok@gmail.com | — |
 | [cli-describe](cli-describe.md) | Draft | 2026-05-14 | alexandertrakhimenok | — |
 | [cli-sql-verbs](cli-sql-verbs.md) | Approved | 2026-05-12 | alexander.trakhimenok@gmail.com | — |
+| [dalgo2ingitdb-referential-integrity](dalgo2ingitdb-referential-integrity.md) | Approved | 2026-05-30 | @trakhimenok | — |
 | [default-record-format](default-record-format.md) | Approved | 2026-05-12 | alexander.trakhimenok@gmail.com | — |
 | [derived-record-keys](derived-record-keys.md) | Approved | 2026-05-30 | alexander.trakhimenok@gmail.com | — |
 | [list-of-records-files](list-of-records-files.md) | Approved | 2026-05-29 | alexander.trakhimenok@gmail.com | — |
