@@ -29,13 +29,18 @@ func (r readwriteTx) ID() string { return "" }
 // the surrounding file is read, the record is inserted/updated in place,
 // and the whole file is re-written.
 func (r readwriteTx) Set(_ context.Context, record dal.Record) error {
-	colDef, recordKey, err := r.resolveCollection(record.Key())
+	key := record.Key()
+	colDef, recordKey, err := r.resolveCollection(key)
 	if err != nil {
 		return err
 	}
 	record.SetError(nil)
 	data, err := dalrecord.DataToMap(record.Data())
 	if err != nil {
+		return err
+	}
+	collectionID := key.Collection()
+	if err := r.validateWriteForeignKeys("Set", collectionID, colDef, data); err != nil {
 		return err
 	}
 	path := resolveRecordPath(colDef, recordKey)
@@ -87,7 +92,7 @@ func (r readwriteTx) Insert(_ context.Context, record dal.Record, _ ...dal.Inser
 		return err
 	}
 	collectionID := key.Collection()
-	if err := r.validateInsertForeignKeys(collectionID, colDef, data); err != nil {
+	if err := r.validateWriteForeignKeys("Insert", collectionID, colDef, data); err != nil {
 		return err
 	}
 	path := resolveRecordPath(colDef, recordKey)
@@ -140,6 +145,16 @@ func (r readwriteTx) Delete(_ context.Context, key *dal.Key) error {
 	if err != nil {
 		return err
 	}
+	parentExists, err := foreignKeyTargetExists(colDef, recordKey)
+	if err != nil {
+		return fmt.Errorf("dalgo2ingitdb: Delete foreign key lookup failed for parent collection %q key %q: %w", colDef.ID, recordKey, err)
+	}
+	if parentExists {
+		collectionID := key.Collection()
+		if err := r.validateDeleteForeignKeys(collectionID, recordKey); err != nil {
+			return err
+		}
+	}
 	path := resolveRecordPath(colDef, recordKey)
 	switch colDef.RecordFile.RecordType {
 	case ingitdb.SingleRecord:
@@ -186,6 +201,14 @@ func (r readwriteTx) Update(ctx context.Context, key *dal.Key, updates []update.
 	if err := applyUpdates(data, updates); err != nil {
 		return err
 	}
+	colDef, _, err := r.resolveCollection(key)
+	if err != nil {
+		return err
+	}
+	collectionID := key.Collection()
+	if err := r.validateWriteForeignKeys("Update", collectionID, colDef, data); err != nil {
+		return err
+	}
 	return r.Set(ctx, dal.NewRecordWithData(key, data))
 }
 
@@ -200,6 +223,15 @@ func (r readwriteTx) UpdateRecord(ctx context.Context, record dal.Record, update
 		return err
 	}
 	if err := applyUpdates(data, updates); err != nil {
+		return err
+	}
+	key := record.Key()
+	colDef, _, err := r.resolveCollection(key)
+	if err != nil {
+		return err
+	}
+	collectionID := key.Collection()
+	if err := r.validateWriteForeignKeys("UpdateRecord", collectionID, colDef, data); err != nil {
 		return err
 	}
 	return r.Set(ctx, record)
