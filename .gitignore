@@ -50,3 +50,6 @@ dist/
 # Local Claude Code settings
 .claude/settings.local.json
 coverage*.html
+
+# Local SpecScore event log
+.specscore/events.jsonl
