@@ -98,12 +98,13 @@ func (db *Database) loadDefinition() (*ingitdb.Definition, error) {
 // worker with a readonly transaction. The Definition is captured at the
 // start of the transaction; subsequent on-disk schema changes are not
 // observed within the transaction.
-func (db *Database) RunReadonlyTransaction(ctx context.Context, f dal.ROTxWorker, _ ...dal.TransactionOption) error {
+func (db *Database) RunReadonlyTransaction(ctx context.Context, f dal.ROTxWorker, options ...dal.TransactionOption) error {
 	def, err := db.loadDefinition()
 	if err != nil {
 		return err
 	}
-	return f(ctx, readonlyTx{db: db, def: def})
+	opts := dal.NewTransactionOptions(options...)
+	return f(ctx, readonlyTx{db: db, def: def, opts: opts})
 }
 
 // RunReadwriteTransaction loads the project Definition and invokes the
@@ -111,12 +112,31 @@ func (db *Database) RunReadonlyTransaction(ctx context.Context, f dal.ROTxWorker
 // atomicity across multiple file writes within a transaction; each
 // individual file write is locked exclusively, but a worker that fails
 // after writing some files leaves those writes in place.
-func (db *Database) RunReadwriteTransaction(ctx context.Context, f dal.RWTxWorker, _ ...dal.TransactionOption) error {
+func (db *Database) RunReadwriteTransaction(ctx context.Context, f dal.RWTxWorker, options ...dal.TransactionOption) error {
 	def, err := db.loadDefinition()
 	if err != nil {
 		return err
 	}
-	return f(ctx, readwriteTx{readonlyTx: readonlyTx{db: db, def: def}})
+	opts := dal.NewTransactionOptions(options...)
+	written := &[]string{}
+	tx := readwriteTx{
+		readonlyTx: readonlyTx{db: db, def: def, opts: opts},
+		written:    written,
+	}
+	if err = f(ctx, tx); err != nil {
+		return err
+	}
+	// Opt-in git commit: when the worker provided a transaction message (via
+	// dal.TxWithMessage at start or tx.Options().SetMessage during execution)
+	// and at least one record file was written, stage exactly those files and
+	// commit them with the message. With no message, behaviour is unchanged
+	// (files are left in the working tree, uncommitted).
+	if msg := opts.Message(); msg != "" && len(*written) > 0 {
+		if err = gitCommitPaths(ctx, db.projectPath, *written, msg); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Get loads a single record. See readonlyTx.Get for semantics.

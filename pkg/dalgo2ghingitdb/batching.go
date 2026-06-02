@@ -68,9 +68,10 @@ func newBatchingGitHubDB(cfg Config, def *ingitdb.Definition, commitMessage stri
 // returns nil, all buffered changes are flushed to GitHub as one commit. If
 // f returns an error, no changes are committed (the remote is untouched).
 func (db *BatchingGitHubDB) RunReadwriteTransaction(ctx context.Context, f dal.RWTxWorker, options ...dal.TransactionOption) error {
-	_ = options
+	opts := dal.NewTransactionOptions(options...)
 	tx := &batchingTx{
 		readonlyTx:    readonlyTx{db: db.githubDB},
+		opts:          opts,
 		bufferedFiles: make(map[string]TreeChange),
 		workingMaps:   make(map[string]map[string]map[string]any),
 		mapColDefs:    make(map[string]*ingitdb.CollectionDef),
@@ -86,7 +87,14 @@ func (db *BatchingGitHubDB) RunReadwriteTransaction(ctx context.Context, f dal.R
 	if len(changes) == 0 {
 		return nil // nothing was buffered; no commit needed
 	}
-	_, err = db.writer.CommitChanges(ctx, db.commitMessage, changes)
+	// A transaction message (set via dal.TxWithMessage at start or
+	// tx.Options().SetMessage during execution) overrides the construction-time
+	// default commit message.
+	commitMessage := db.commitMessage
+	if msg := opts.Message(); msg != "" {
+		commitMessage = msg
+	}
+	_, err = db.writer.CommitChanges(ctx, commitMessage, changes)
 	return err
 }
 
@@ -108,6 +116,7 @@ var _ dal.DB = (*BatchingGitHubDB)(nil)
 // TreeChange.
 type batchingTx struct {
 	readonlyTx
+	opts          dal.TransactionOptions
 	bufferedFiles map[string]TreeChange
 	workingMaps   map[string]map[string]map[string]any
 	mapColDefs    map[string]*ingitdb.CollectionDef
@@ -115,6 +124,10 @@ type batchingTx struct {
 }
 
 var _ dal.ReadwriteTransaction = (*batchingTx)(nil)
+
+// Options returns the transaction options, so a worker can read or update the
+// commit message via tx.Options().Message() / SetMessage during execution.
+func (t *batchingTx) Options() dal.TransactionOptions { return t.opts }
 
 func (t *batchingTx) Set(ctx context.Context, record dal.Record) error {
 	colDef, recordKey, err := t.resolveCollection(record.Key())
