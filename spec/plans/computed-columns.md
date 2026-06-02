@@ -49,7 +49,7 @@ rejected as a stored-fields-only violation.
 
 ### Task 2: Sandboxed deterministic evaluator and builtin helpers
 
-**Status:** pending
+**Status:** done
 **Verifies:** computed-columns#ac:deterministic-evaluation, computed-columns#ac:builtin-string-helper-available, computed-columns#ac:builtin-math-helper-available
 
 Build the formula evaluation function: evaluate a parsed Starlark expression with the
