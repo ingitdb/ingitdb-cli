@@ -166,6 +166,9 @@ func (r readwriteTx) Delete(_ context.Context, key *dal.Key) error {
 		if err := r.validateDeleteForeignKeys(collectionID, recordKey); err != nil {
 			return err
 		}
+		if err := r.validateDeleteComputedForeignKeys(collectionID, recordKey); err != nil {
+			return err
+		}
 	}
 	path := resolveRecordPath(colDef, recordKey)
 	switch colDef.RecordFile.RecordType {
@@ -213,12 +216,22 @@ func (r readwriteTx) Update(ctx context.Context, key *dal.Key, updates []update.
 	if err := applyUpdates(data, updates); err != nil {
 		return err
 	}
-	colDef, _, err := r.resolveCollection(key)
+	colDef, recordKey, err := r.resolveCollection(key)
 	if err != nil {
 		return err
 	}
+	// Get injects computed-column values into data; they must never be written
+	// back. Strip them so the subsequent Set does not reject the record. The
+	// computed foreign key is re-derived from its input fields by
+	// validateComputedWriteForeignKeys below regardless of this removal.
+	for _, field := range orderedComputedColumns(colDef) {
+		delete(data, field)
+	}
 	collectionID := key.Collection()
 	if err := r.validateWriteForeignKeys("Update", collectionID, colDef, data); err != nil {
+		return err
+	}
+	if err := r.validateComputedWriteForeignKeys("Update", collectionID, colDef, recordKey, data); err != nil {
 		return err
 	}
 	return r.Set(ctx, dal.NewRecordWithData(key, data))
@@ -238,12 +251,15 @@ func (r readwriteTx) UpdateRecord(ctx context.Context, record dal.Record, update
 		return err
 	}
 	key := record.Key()
-	colDef, _, err := r.resolveCollection(key)
+	colDef, recordKey, err := r.resolveCollection(key)
 	if err != nil {
 		return err
 	}
 	collectionID := key.Collection()
 	if err := r.validateWriteForeignKeys("UpdateRecord", collectionID, colDef, data); err != nil {
+		return err
+	}
+	if err := r.validateComputedWriteForeignKeys("UpdateRecord", collectionID, colDef, recordKey, data); err != nil {
 		return err
 	}
 	return r.Set(ctx, record)

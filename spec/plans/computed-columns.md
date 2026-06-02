@@ -101,7 +101,7 @@ computed foreign-key column is never written directly.
 
 ### Task 7: Parent-side foreign-key enforcement (delete and rename)
 
-**Status:** pending
+**Status:** done
 **Verifies:** computed-columns#ac:foreign-key-parent-delete-detected, computed-columns#ac:foreign-key-parent-rename-detected
 
 When a referenced record is deleted or its key renamed, scan the referencing

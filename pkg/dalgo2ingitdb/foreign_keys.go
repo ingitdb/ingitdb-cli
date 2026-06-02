@@ -21,11 +21,6 @@ func (r readwriteTx) validateWriteForeignKeys(operation, childCollection string,
 		if parentCollection == "" {
 			continue
 		}
-		// Computed foreign keys are never stored; they are validated separately
-		// by validateComputedWriteForeignKeys from the evaluated formula.
-		if column.Formula != "" {
-			continue
-		}
 		value, ok := data[field]
 		empty := !ok
 		if ok {
@@ -153,6 +148,59 @@ func (r readwriteTx) validateDeleteForeignKeys(parentCollection, parentKey strin
 	return nil
 }
 
+// validateDeleteComputedForeignKeys mirrors validateDeleteForeignKeys for
+// computed foreign keys. Computed FK values are never stored, so each child
+// collection that declares a COMPUTED foreign key referencing parentCollection is
+// scanned in full (no index): readAllRecordsFromDisk recomputes every child
+// record's formula on read, populating the computed column, and if a recomputed
+// key equals parentKey the delete (or rename, which manifests as a delete of the
+// old key) is blocked with a reference-error-shape error naming the referencing
+// collection, the referencing record key, the computed column, and the referenced
+// collection.
+func (r readwriteTx) validateDeleteComputedForeignKeys(parentCollection, parentKey string) error {
+	// r.def is guaranteed non-nil here: Delete runs validateDeleteForeignKeys
+	// first, which guards r.def == nil before this function is ever reached.
+	childCollections := orderedCollectionIDs(r.def.Collections)
+	for _, childCollection := range childCollections {
+		childDef := r.def.Collections[childCollection]
+		fields := computedForeignKeyFieldsReferencing(childDef, parentCollection)
+		if len(fields) == 0 {
+			continue
+		}
+
+		records, err := readAllRecordsFromDisk(childDef)
+		if err != nil {
+			return fmt.Errorf("dalgo2ingitdb: Delete computed foreign key scan failed for parent collection %q key %q child collection %q: %w", parentCollection, parentKey, childCollection, err)
+		}
+
+		sort.SliceStable(records, func(i, j int) bool {
+			left := fmt.Sprintf("%v", records[i].Key().ID)
+			right := fmt.Sprintf("%v", records[j].Key().ID)
+			return left < right
+		})
+
+		for _, record := range records {
+			childKey := fmt.Sprintf("%v", record.Key().ID)
+			// readAllRecordsFromDisk always builds records via
+			// dal.NewRecordWithData with a map[string]any, so Data() is always a map.
+			data, _ := record.Data().(map[string]any)
+
+			for _, field := range fields {
+				value, ok := data[field]
+				if !ok || isEmptyForeignKeyValue(value) {
+					continue
+				}
+				derivedKey := computedForeignKeyString(value)
+				if derivedKey == parentKey {
+					return fmt.Errorf("dalgo2ingitdb: Delete computed foreign key violation: parent collection %q key %q is referenced by child collection %q record %q column %q", parentCollection, parentKey, childCollection, childKey, field)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 func orderedForeignKeyFields(colDef *ingitdb.CollectionDef) []string {
 	if colDef == nil || len(colDef.Columns) == 0 {
 		return nil
@@ -161,7 +209,9 @@ func orderedForeignKeyFields(colDef *ingitdb.CollectionDef) []string {
 	seen := make(map[string]bool, len(colDef.Columns))
 	for _, field := range colDef.ColumnsOrder {
 		column, ok := colDef.Columns[field]
-		if !ok || column == nil || column.ForeignKey == "" {
+		// Computed foreign keys (Formula set) are never stored; they are handled
+		// separately by the computed-FK validators, so exclude them here.
+		if !ok || column == nil || column.ForeignKey == "" || column.Formula != "" {
 			continue
 		}
 		fields = append(fields, field)
@@ -169,7 +219,7 @@ func orderedForeignKeyFields(colDef *ingitdb.CollectionDef) []string {
 	}
 	var remaining []string
 	for field, column := range colDef.Columns {
-		if seen[field] || column == nil || column.ForeignKey == "" {
+		if seen[field] || column == nil || column.ForeignKey == "" || column.Formula != "" {
 			continue
 		}
 		remaining = append(remaining, field)
@@ -194,6 +244,21 @@ func orderedCollectionIDs(collections map[string]*ingitdb.CollectionDef) []strin
 
 func foreignKeyFieldsReferencing(colDef *ingitdb.CollectionDef, parentCollection string) []string {
 	fields := orderedForeignKeyFields(colDef)
+	matchingFields := make([]string, 0, len(fields))
+	for _, field := range fields {
+		column := colDef.Columns[field]
+		if column.ForeignKey == parentCollection {
+			matchingFields = append(matchingFields, field)
+		}
+	}
+	return matchingFields
+}
+
+// computedForeignKeyFieldsReferencing returns the computed foreign-key columns
+// (both Formula and ForeignKey set) of colDef that reference parentCollection, in
+// the deterministic order produced by orderedComputedColumns.
+func computedForeignKeyFieldsReferencing(colDef *ingitdb.CollectionDef, parentCollection string) []string {
+	fields := orderedComputedColumns(colDef)
 	matchingFields := make([]string, 0, len(fields))
 	for _, field := range fields {
 		column := colDef.Columns[field]
