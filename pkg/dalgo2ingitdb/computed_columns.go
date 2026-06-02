@@ -21,9 +21,15 @@ func (r readwriteTx) validateNoStoredComputedValues(collectionID string, colDef 
 }
 
 // orderedComputedColumns returns the names of computed columns (Formula != "")
-// in a deterministic order: columns named in ColumnsOrder first, then any
-// remaining computed columns sorted lexicographically.
+// in deterministic order.
 func orderedComputedColumns(colDef *ingitdb.CollectionDef) []string {
+	return orderedColumns(colDef, func(c *ingitdb.ColumnDef) bool { return c.Formula != "" })
+}
+
+// orderedColumns returns the names of the columns matching pred, in a
+// deterministic order: columns named in ColumnsOrder first, then any remaining
+// matching columns sorted lexicographically.
+func orderedColumns(colDef *ingitdb.CollectionDef, pred func(*ingitdb.ColumnDef) bool) []string {
 	if colDef == nil || len(colDef.Columns) == 0 {
 		return nil
 	}
@@ -31,7 +37,7 @@ func orderedComputedColumns(colDef *ingitdb.CollectionDef) []string {
 	seen := make(map[string]bool, len(colDef.Columns))
 	for _, field := range colDef.ColumnsOrder {
 		column, ok := colDef.Columns[field]
-		if !ok || column == nil || column.Formula == "" {
+		if !ok || column == nil || !pred(column) {
 			continue
 		}
 		fields = append(fields, field)
@@ -39,7 +45,7 @@ func orderedComputedColumns(colDef *ingitdb.CollectionDef) []string {
 	}
 	var remaining []string
 	for field, column := range colDef.Columns {
-		if seen[field] || column == nil || column.Formula == "" {
+		if seen[field] || column == nil || !pred(column) {
 			continue
 		}
 		remaining = append(remaining, field)

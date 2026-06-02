@@ -201,32 +201,14 @@ func (r readwriteTx) validateDeleteComputedForeignKeys(parentCollection, parentK
 	return nil
 }
 
+// orderedForeignKeyFields returns the names of stored foreign-key columns
+// (ForeignKey set, Formula empty) in deterministic order. Computed foreign keys
+// are never stored and are handled separately by the computed-FK validators, so
+// they are excluded here.
 func orderedForeignKeyFields(colDef *ingitdb.CollectionDef) []string {
-	if colDef == nil || len(colDef.Columns) == 0 {
-		return nil
-	}
-	fields := make([]string, 0, len(colDef.Columns))
-	seen := make(map[string]bool, len(colDef.Columns))
-	for _, field := range colDef.ColumnsOrder {
-		column, ok := colDef.Columns[field]
-		// Computed foreign keys (Formula set) are never stored; they are handled
-		// separately by the computed-FK validators, so exclude them here.
-		if !ok || column == nil || column.ForeignKey == "" || column.Formula != "" {
-			continue
-		}
-		fields = append(fields, field)
-		seen[field] = true
-	}
-	var remaining []string
-	for field, column := range colDef.Columns {
-		if seen[field] || column == nil || column.ForeignKey == "" || column.Formula != "" {
-			continue
-		}
-		remaining = append(remaining, field)
-	}
-	sort.Strings(remaining)
-	fields = append(fields, remaining...)
-	return fields
+	return orderedColumns(colDef, func(c *ingitdb.ColumnDef) bool {
+		return c.ForeignKey != "" && c.Formula == ""
+	})
 }
 
 func orderedCollectionIDs(collections map[string]*ingitdb.CollectionDef) []string {

@@ -3,6 +3,7 @@ package dalgo2ingitdb
 import (
 	"fmt"
 	"maps"
+	"sort"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
@@ -10,20 +11,32 @@ import (
 // ApplyFormulasToRead computes the value of every computed column (one with a
 // non-empty Formula) and adds it to the returned map, coerced to the column's
 // declared type. The stored fields in data are used as the formula's variable
-// bindings. The input map is not mutated; a clone is returned.
+// bindings.
+//
+// When the collection has no computed columns the input map is returned
+// unchanged (not cloned); otherwise a clone is returned with the computed
+// values added, so the input is never mutated. Computed columns are evaluated
+// in deterministic (sorted) order so that, when more than one formula errors,
+// the surfaced error is reproducible.
 //
 // A runtime evaluation error, or a result that cannot be coerced to the
 // declared type, aborts with an error naming the collection, record key, and
 // column. No partial result is returned in that case.
 func ApplyFormulasToRead(data map[string]any, cols map[string]*ingitdb.ColumnDef, collectionID, recordKey string) (map[string]any, error) {
-	if len(cols) == 0 {
+	computedNames := make([]string, 0, len(cols))
+	for colName, colDef := range cols {
+		if colDef.Formula != "" {
+			computedNames = append(computedNames, colName)
+		}
+	}
+	if len(computedNames) == 0 {
 		return data, nil
 	}
+	sort.Strings(computedNames)
+
 	result := maps.Clone(data)
-	for colName, colDef := range cols {
-		if colDef.Formula == "" {
-			continue
-		}
+	for _, colName := range computedNames {
+		colDef := cols[colName]
 		raw, err := ingitdb.EvaluateFormula(colDef.Formula, data)
 		if err != nil {
 			return nil, fmt.Errorf("collection %q record %q column %q: %w", collectionID, recordKey, colName, err)

@@ -27,6 +27,10 @@ type ColumnDef struct {
 	// it must be a single Starlark expression that references only stored
 	// (non-computed) sibling fields. Computed columns support only the
 	// string, int, float, bool, and any declared types.
+	//
+	// Note: Starlark's `/` operator is float division, so for an int column
+	// use integer division `//` (e.g. `total // count`) — `a / b` yields a
+	// float and fails coercion into an int column unless the result is whole.
 	Formula string `yaml:"formula,omitempty"`
 }
 
