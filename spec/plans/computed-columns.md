@@ -89,7 +89,7 @@ do; close any gap where filtering/sorting reads pre-evaluation record state.
 
 ### Task 6: Write-time foreign-key enforcement for computed columns (child side)
 
-**Status:** pending
+**Status:** done
 **Verifies:** computed-columns#ac:foreign-key-on-insert-violation, computed-columns#ac:foreign-key-revalidates-on-input-change
 
 Extend the existing write-time referential-integrity path: on `insert`/`update`,

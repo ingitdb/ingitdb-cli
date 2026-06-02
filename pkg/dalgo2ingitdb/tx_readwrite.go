@@ -46,6 +46,9 @@ func (r readwriteTx) Set(_ context.Context, record dal.Record) error {
 	if err := r.validateWriteForeignKeys("Set", collectionID, colDef, data); err != nil {
 		return err
 	}
+	if err := r.validateComputedWriteForeignKeys("Set", collectionID, colDef, recordKey, data); err != nil {
+		return err
+	}
 	path := resolveRecordPath(colDef, recordKey)
 	switch colDef.RecordFile.RecordType {
 	case ingitdb.SingleRecord:
@@ -99,6 +102,9 @@ func (r readwriteTx) Insert(_ context.Context, record dal.Record, _ ...dal.Inser
 		return err
 	}
 	if err := r.validateWriteForeignKeys("Insert", collectionID, colDef, data); err != nil {
+		return err
+	}
+	if err := r.validateComputedWriteForeignKeys("Insert", collectionID, colDef, recordKey, data); err != nil {
 		return err
 	}
 	path := resolveRecordPath(colDef, recordKey)

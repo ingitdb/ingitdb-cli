@@ -21,6 +21,11 @@ func (r readwriteTx) validateWriteForeignKeys(operation, childCollection string,
 		if parentCollection == "" {
 			continue
 		}
+		// Computed foreign keys are never stored; they are validated separately
+		// by validateComputedWriteForeignKeys from the evaluated formula.
+		if column.Formula != "" {
+			continue
+		}
 		value, ok := data[field]
 		empty := !ok
 		if ok {
@@ -46,6 +51,57 @@ func (r readwriteTx) validateWriteForeignKeys(operation, childCollection string,
 		}
 	}
 	return nil
+}
+
+// validateComputedWriteForeignKeys enforces referential integrity for computed
+// foreign-key columns (columns with both ForeignKey and Formula set). The
+// foreign-key value is never stored, so it is derived by evaluating the column's
+// formula from the payload's stored fields and validated against the referenced
+// collection exactly as a stored foreign key is. It runs on every write, so an
+// update that changes an input field of the formula is re-validated even though
+// the computed column itself was not written.
+func (r readwriteTx) validateComputedWriteForeignKeys(operation, childCollection string, childDef *ingitdb.CollectionDef, recordKey string, data map[string]any) error {
+	// r.def is guaranteed non-nil here: validateWriteForeignKeys runs first on
+	// every Set/Insert and returns a configuration error when r.def is nil and
+	// any foreign-key column (computed columns included) is present.
+	for _, field := range orderedComputedColumns(childDef) {
+		column := childDef.Columns[field]
+		parentCollection := column.ForeignKey
+		if parentCollection == "" {
+			continue
+		}
+		result, err := ingitdb.EvaluateFormula(column.Formula, data)
+		if err != nil {
+			return fmt.Errorf("dalgo2ingitdb: %s computed foreign key evaluation failed: collection %q record %q column %q references collection %q: %w", operation, childCollection, recordKey, field, parentCollection, err)
+		}
+		parentKey := computedForeignKeyString(result)
+		parentDef, ok := r.def.Collections[parentCollection]
+		if !ok {
+			return fmt.Errorf("dalgo2ingitdb: %s configuration error: collection %q record %q column %q references missing foreign_key collection %q", operation, childCollection, recordKey, field, parentCollection)
+		}
+		exists, err := foreignKeyTargetExists(parentDef, parentKey)
+		if err != nil {
+			return fmt.Errorf("dalgo2ingitdb: %s computed foreign key lookup failed: collection %q record %q column %q references collection %q key %q: %w", operation, childCollection, recordKey, field, parentCollection, parentKey, err)
+		}
+		if !exists {
+			return fmt.Errorf("dalgo2ingitdb: %s computed foreign key violation: collection %q record %q column %q references collection %q key %q: parent record not found", operation, childCollection, recordKey, field, parentCollection, parentKey)
+		}
+	}
+	return nil
+}
+
+// computedForeignKeyString coerces an evaluated formula result into the string
+// key form used to look up the referenced record. EvaluateFormula yields
+// string, int64, bool, float64, or nil; foreign keys are strings or integer
+// keys, so this matches the stored-FK key handling (fmt's default formatting).
+func computedForeignKeyString(result any) string {
+	if result == nil {
+		return ""
+	}
+	if s, ok := result.(string); ok {
+		return s
+	}
+	return fmt.Sprintf("%v", result)
 }
 
 func (r readwriteTx) validateDeleteForeignKeys(parentCollection, parentKey string) error {
