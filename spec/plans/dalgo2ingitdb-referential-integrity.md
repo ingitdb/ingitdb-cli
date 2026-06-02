@@ -49,7 +49,7 @@ Define the empty-value boundary for FK validation so missing, nil, and empty-str
 
 Before deleting a parent record, scan collections with FK columns that reference the parent collection. Fail deletes that have at least one matching child reference with an error that identifies the parent and blocking child record, and preserve existing delete behavior when no child reference matches.
 
-## Outstanding Questions
+## Open Questions
 
 - Should the implementation introduce exported sentinel errors for FK failures now, or keep them as deterministic wrapped errors until callers need type assertions?
 

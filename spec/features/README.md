@@ -42,6 +42,7 @@ This directory tracks the SpecScore feature specifications for the **ingitdb-cli
 | [dalgo2ingitdb-dbschema-ddl-coverage](dalgo2ingitdb-dbschema-ddl-coverage/README.md) | Draft | TODO: Add description. |
 | [dalgo2ingitdb-referential-integrity](dalgo2ingitdb-referential-integrity/README.md) | Approved | DALgo write transactions enforce existing `foreign_key` metadata on Set, Insert, Update, and Delete. |
 | [record-key](record-key/README.md) | Draft | Umbrella for canonical record identity behavior across schema validation, storage paths, writes, and CLI key surfaces. |
+| [computed-columns](computed-columns/README.md) | Approved | TODO: Add description. |
 
 ## Feature Summaries
 
