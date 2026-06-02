@@ -80,8 +80,8 @@ func TestValidationConformanceVectors(t *testing.T) {
 			case "schema":
 				err = def.Validate()
 			case "stored-value":
-				r := readwriteTx{}
-				err = r.validateNoStoredComputedValues(collectionID, def, "ada", v.Record)
+				wdef := &ingitdb.Definition{Collections: map[string]*ingitdb.CollectionDef{collectionID: def}}
+				err = ValidateWrite(wdef, "Insert", collectionID, def, "ada", v.Record)
 			default:
 				t.Fatalf("unknown vector kind %q", v.Kind)
 			}
