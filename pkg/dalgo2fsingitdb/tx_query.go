@@ -166,8 +166,14 @@ func readAllSingleRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
 		if !found {
 			continue
 		}
+		// Evaluate computed columns before WHERE/ORDER BY so they can be
+		// filtered and sorted exactly like stored columns.
+		computed, computeErr := dalgo2ingitdb.ApplyFormulasToRead(data, colDef.Columns, colDef.ID, recordKey)
+		if computeErr != nil {
+			return nil, computeErr
+		}
 		key := dal.NewKeyWithID(colDef.ID, recordKey)
-		rec := dal.NewRecordWithData(key, data)
+		rec := dal.NewRecordWithData(key, computed)
 		rec.SetError(nil)
 		records = append(records, rec)
 	}
@@ -187,8 +193,12 @@ func readAllMapOfRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
 	records := make([]dal.Record, 0, len(allData))
 	for id, fields := range allData {
 		normalized := dalgo2ingitdb.ApplyLocaleToRead(fields, colDef.Columns)
+		computed, computeErr := dalgo2ingitdb.ApplyFormulasToRead(normalized, colDef.Columns, colDef.ID, id)
+		if computeErr != nil {
+			return nil, computeErr
+		}
 		key := dal.NewKeyWithID(colDef.ID, id)
-		rec := dal.NewRecordWithData(key, normalized)
+		rec := dal.NewRecordWithData(key, computed)
 		rec.SetError(nil)
 		records = append(records, rec)
 	}

@@ -80,7 +80,7 @@ column. The computed value remains the sole source of truth.
 
 ### Task 5: Computed columns usable in `--where` and `order_by`
 
-**Status:** pending
+**Status:** done
 **Verifies:** computed-columns#ac:filter-on-computed-column, computed-columns#ac:order-by-computed-column
 
 Confirm and test that, because evaluation precedes query operations, computed columns
