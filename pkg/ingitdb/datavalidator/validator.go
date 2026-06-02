@@ -266,6 +266,14 @@ func validateRecordData(
 ) []ingitdb.ValidationError {
 	var errors []ingitdb.ValidationError
 	for fieldName, columnDef := range colDef.Columns {
+		if columnDef.Formula != "" {
+			if _, present := data[fieldName]; present {
+				message := fmt.Sprintf("computed column %q must not be stored", fieldName)
+				validationErr := newValidationError(collectionKey, filePath, recordKey, fieldName, message, nil)
+				errors = append(errors, validationErr)
+			}
+			continue
+		}
 		value, ok := data[fieldName]
 		if !ok || value == nil {
 			if columnDef.Required {

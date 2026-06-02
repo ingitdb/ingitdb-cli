@@ -71,7 +71,7 @@ collection, record key, column, and cause — no partial row, no silent null.
 
 ### Task 4: Reject stored values for computed columns
 
-**Status:** pending
+**Status:** done
 **Verifies:** computed-columns#ac:reject-stored-computed-value
 
 On `insert`/`update` and during file validation, reject any record that supplies a

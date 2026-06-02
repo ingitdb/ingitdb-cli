@@ -40,6 +40,9 @@ func (r readwriteTx) Set(_ context.Context, record dal.Record) error {
 		return err
 	}
 	collectionID := key.Collection()
+	if err := r.validateNoStoredComputedValues(collectionID, colDef, recordKey, data); err != nil {
+		return err
+	}
 	if err := r.validateWriteForeignKeys("Set", collectionID, colDef, data); err != nil {
 		return err
 	}
@@ -92,6 +95,9 @@ func (r readwriteTx) Insert(_ context.Context, record dal.Record, _ ...dal.Inser
 		return err
 	}
 	collectionID := key.Collection()
+	if err := r.validateNoStoredComputedValues(collectionID, colDef, recordKey, data); err != nil {
+		return err
+	}
 	if err := r.validateWriteForeignKeys("Insert", collectionID, colDef, data); err != nil {
 		return err
 	}

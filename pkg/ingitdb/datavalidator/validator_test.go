@@ -514,6 +514,111 @@ func TestValidate_RecordSchemaViolations(t *testing.T) {
 	}
 }
 
+func TestValidate_StoredComputedColumnRejected(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	colDir := filepath.Join(dir, "people")
+	recordsDir := filepath.Join(colDir, "$records")
+	if err := os.MkdirAll(recordsDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir: %v", err)
+	}
+	recordPath := filepath.Join(recordsDir, "ada.yaml")
+	if err := os.WriteFile(recordPath, []byte("first_name: Ada\nlast_name: Lovelace\nfull_name: Ada Lovelace\n"), 0o644); err != nil {
+		t.Fatalf("setup: write record: %v", err)
+	}
+
+	def := &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"people": {
+				ID:      "people",
+				DirPath: colDir,
+				RecordFile: &ingitdb.RecordFileDef{
+					Name:       "{key}.yaml",
+					Format:     ingitdb.RecordFormatYAML,
+					RecordType: ingitdb.SingleRecord,
+				},
+				Columns: map[string]*ingitdb.ColumnDef{
+					"first_name": {Type: ingitdb.ColumnTypeString},
+					"last_name":  {Type: ingitdb.ColumnTypeString},
+					"full_name":  {Type: ingitdb.ColumnTypeString, Formula: `first_name + " " + last_name`},
+				},
+			},
+		},
+	}
+
+	v := NewValidator()
+	result, err := v.Validate(context.Background(), dir, def)
+	if err != nil {
+		t.Fatalf("Validate() unexpected error: %v", err)
+	}
+	errors := result.Errors()
+	if len(errors) != 1 {
+		t.Fatalf("expected 1 validation error, got %d: %v", len(errors), errors)
+	}
+	validationErr := errors[0]
+	if validationErr.CollectionID != "people" {
+		t.Fatalf("expected collection people, got %q", validationErr.CollectionID)
+	}
+	if validationErr.FieldName != "full_name" {
+		t.Fatalf("expected field full_name, got %q", validationErr.FieldName)
+	}
+	if !strings.Contains(validationErr.Error(), "full_name") {
+		t.Fatalf("expected error to name full_name, got: %v", validationErr)
+	}
+	passed, total := result.GetRecordCounts("people")
+	if passed != 0 || total != 1 {
+		t.Fatalf("expected 0/1 record counts, got %d/%d", passed, total)
+	}
+}
+
+func TestValidate_CleanRecordWithoutComputedColumnPasses(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	colDir := filepath.Join(dir, "people")
+	recordsDir := filepath.Join(colDir, "$records")
+	if err := os.MkdirAll(recordsDir, 0o755); err != nil {
+		t.Fatalf("setup: mkdir: %v", err)
+	}
+	recordPath := filepath.Join(recordsDir, "ada.yaml")
+	if err := os.WriteFile(recordPath, []byte("first_name: Ada\nlast_name: Lovelace\n"), 0o644); err != nil {
+		t.Fatalf("setup: write record: %v", err)
+	}
+
+	def := &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"people": {
+				ID:      "people",
+				DirPath: colDir,
+				RecordFile: &ingitdb.RecordFileDef{
+					Name:       "{key}.yaml",
+					Format:     ingitdb.RecordFormatYAML,
+					RecordType: ingitdb.SingleRecord,
+				},
+				Columns: map[string]*ingitdb.ColumnDef{
+					"first_name": {Type: ingitdb.ColumnTypeString},
+					"last_name":  {Type: ingitdb.ColumnTypeString},
+					"full_name":  {Type: ingitdb.ColumnTypeString, Formula: `first_name + " " + last_name`},
+				},
+			},
+		},
+	}
+
+	v := NewValidator()
+	result, err := v.Validate(context.Background(), dir, def)
+	if err != nil {
+		t.Fatalf("Validate() unexpected error: %v", err)
+	}
+	if result.HasErrors() {
+		t.Fatalf("expected no validation errors, got: %v", result.Errors())
+	}
+	passed, total := result.GetRecordCounts("people")
+	if passed != 1 || total != 1 {
+		t.Fatalf("expected 1/1 record counts, got %d/%d", passed, total)
+	}
+}
+
 func TestExpectedRecordExtensions_NoRecordFile(t *testing.T) {
 	t.Parallel()
 
