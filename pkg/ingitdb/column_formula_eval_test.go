@@ -389,3 +389,15 @@ func TestEvaluateFormulaIntOverflowResult(t *testing.T) {
 		t.Fatal("expected error for int64 overflow result")
 	}
 }
+
+// TestEvaluateFormulaStepLimit ensures a pathological expression (a comprehension
+// over a large range) is bounded by the execution-step ceiling and fails rather
+// than hanging or exhausting memory while computing a column on read.
+func TestEvaluateFormulaStepLimit(t *testing.T) {
+	t.Parallel()
+
+	_, err := EvaluateFormula("len([0 for _ in range(5000000)])", map[string]any{})
+	if err == nil {
+		t.Fatal("expected error: a pathological comprehension must hit the step limit")
+	}
+}

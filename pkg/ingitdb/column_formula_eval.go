@@ -2,11 +2,31 @@ package ingitdb
 
 import (
 	"fmt"
+	"maps"
 	"math"
+	"sync"
 
 	"go.starlark.net/starlark"
 	"go.starlark.net/syntax"
 )
+
+// maxFormulaSteps caps the number of Starlark execution steps a single formula
+// evaluation may take. It is a safety ceiling against pathological expressions
+// (e.g. a comprehension over a large range) that could otherwise hang or
+// exhaust memory while computing a column on read. Legitimate single-record
+// formulas use a few dozen steps; this ceiling is far above any real formula
+// yet bounds abuse.
+const maxFormulaSteps = 1_000_000
+
+// formulaResultVar is the synthetic global the compiled program assigns the
+// formula's value to. The name is deliberately unlikely to collide with a
+// real stored field.
+const formulaResultVar = "__ingitdb_formula_result__"
+
+// formulaProgramCache memoises compiled Starlark programs keyed by formula
+// source, so a formula is parsed and compiled once rather than on every record
+// read. Programs are immutable and safe to Init concurrently.
+var formulaProgramCache sync.Map // map[string]*starlark.Program
 
 // EvaluateFormula evaluates a computed-column formula as a single Starlark
 // expression in a deterministic, side-effect-free sandbox.
@@ -20,29 +40,61 @@ import (
 // The sandbox exposes no network, filesystem, clock, or randomness, and
 // installs no load() loader, so evaluation has zero side effects and is
 // deterministic: identical formula and fields always yield identical output.
+// Evaluation is bounded by maxFormulaSteps. The compiled program is cached, so
+// repeated reads of the same formula do not re-parse it.
 func EvaluateFormula(formula string, fields map[string]any) (any, error) {
-	env := make(starlark.StringDict, len(fields)+formulaBuiltinCount)
-	for name, raw := range fields {
-		v, err := goToStarlark(raw)
-		if err != nil {
-			return nil, fmt.Errorf("field '%s': %w", name, err)
-		}
-		env[name] = v
+	prog, err := compileFormula(formula)
+	if err != nil {
+		return nil, err
 	}
-	addFormulaBuiltins(env)
+
+	// Start from a clone of Starlark's universe so the standard deterministic
+	// builtins (len, min, max, native string methods, ...) remain available,
+	// add the curated numeric helpers, then bind the record's fields last so a
+	// field shadows a same-named builtin.
+	predeclared := maps.Clone(starlark.Universe)
+	addFormulaBuiltins(predeclared)
+	for name, raw := range fields {
+		v, convErr := goToStarlark(raw)
+		if convErr != nil {
+			return nil, fmt.Errorf("field '%s': %w", name, convErr)
+		}
+		predeclared[name] = v
+	}
 
 	thread := &starlark.Thread{
 		Name: "formula",
 		// Route print to a no-op so a reachable print() has no side effect.
 		Print: func(_ *starlark.Thread, _ string) {},
 	}
+	thread.SetMaxExecutionSteps(maxFormulaSteps)
 
-	var opts syntax.FileOptions
-	result, err := starlark.EvalOptions(&opts, thread, "formula", formula, env)
+	globals, err := prog.Init(thread, predeclared)
 	if err != nil {
 		return nil, err
 	}
-	return starlarkToGo(result)
+	// The compiled program is a single assignment to formulaResultVar, so a
+	// successful Init always binds it.
+	return starlarkToGo(globals[formulaResultVar])
+}
+
+// compileFormula returns the cached compiled program for a formula, compiling
+// and memoising it on first use. The formula is wrapped as a single assignment
+// so its value is readable from the program's globals after Init. Every free
+// identifier is treated as predeclared, making the compiled program independent
+// of any particular record's fields and therefore safe to cache by source.
+func compileFormula(formula string) (*starlark.Program, error) {
+	if cached, ok := formulaProgramCache.Load(formula); ok {
+		return cached.(*starlark.Program), nil
+	}
+	src := formulaResultVar + " = (" + formula + ")\n"
+	var opts syntax.FileOptions
+	_, prog, err := starlark.SourceProgramOptions(&opts, "formula", src, func(string) bool { return true })
+	if err != nil {
+		return nil, err
+	}
+	actual, _ := formulaProgramCache.LoadOrStore(formula, prog)
+	return actual.(*starlark.Program), nil
 }
 
 // goToStarlark converts a supported Go value into its Starlark equivalent.
@@ -104,10 +156,6 @@ func starlarkToGo(v starlark.Value) (any, error) {
 		return nil, fmt.Errorf("unsupported result type %s", v.Type())
 	}
 }
-
-// formulaBuiltinCount is the number of bare builtins addFormulaBuiltins adds,
-// used only to pre-size the environment map.
-const formulaBuiltinCount = 4
 
 // addFormulaBuiltins installs the curated, deterministic numeric helpers as
 // bare top-level names: abs, round, floor, and ceil. Starlark's universe
