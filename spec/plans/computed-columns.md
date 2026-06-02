@@ -61,7 +61,7 @@ non-deterministic or I/O-capable builtin or module is reachable.
 
 ### Task 3: Compute-on-read integration, type coercion, and fail-loud errors
 
-**Status:** pending
+**Status:** done
 **Verifies:** computed-columns#ac:formula-declared-and-computed, computed-columns#ac:type-coercion-success, computed-columns#ac:runtime-error-fails-read
 
 Invoke the evaluator in the read path alongside `ApplyLocaleToRead` so every read
