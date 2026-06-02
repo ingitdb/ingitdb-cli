@@ -18,6 +18,7 @@ Use `specscore idea new <slug>` to scaffold a new idea.
 | [derived-record-keys](derived-record-keys.md) | Approved | 2026-05-30 | alexander.trakhimenok@gmail.com | — |
 | [list-of-records-files](list-of-records-files.md) | Approved | 2026-05-29 | alexander.trakhimenok@gmail.com | — |
 | [markdown-insert-ux](markdown-insert-ux.md) | Draft | 2026-05-12 | alexander.trakhimenok@gmail.com | — |
+| [scripted-formulas-and-views](scripted-formulas-and-views.md) | Implementing | 2026-06-02 | alexander.trakhimenok@gmail.com | computed-columns |
 | [where-like-regex](where-like-regex.md) | Draft | 2026-05-12 | alexander.trakhimenok@gmail.com | — |
 
 ## Open Questions

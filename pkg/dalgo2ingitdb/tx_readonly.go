@@ -60,7 +60,13 @@ func (r readonlyTx) Get(_ context.Context, record dal.Record) error {
 			return dal.ErrRecordNotFound
 		}
 		record.SetError(nil)
-		if err := dalrecord.MapToData(record.Data(), ApplyLocaleToRead(data, colDef.Columns)); err != nil {
+		normalized := ApplyLocaleToRead(data, colDef.Columns)
+		computed, computeErr := ApplyFormulasToRead(normalized, colDef.Columns, colDef.ID, recordKey)
+		if computeErr != nil {
+			record.SetError(computeErr)
+			return computeErr
+		}
+		if err := dalrecord.MapToData(record.Data(), computed); err != nil {
 			record.SetError(err)
 			return err
 		}
@@ -77,7 +83,13 @@ func (r readonlyTx) Get(_ context.Context, record dal.Record) error {
 			return dal.ErrRecordNotFound
 		}
 		record.SetError(nil)
-		if err := dalrecord.MapToData(record.Data(), ApplyLocaleToRead(recordData, colDef.Columns)); err != nil {
+		normalized := ApplyLocaleToRead(recordData, colDef.Columns)
+		computed, computeErr := ApplyFormulasToRead(normalized, colDef.Columns, colDef.ID, recordKey)
+		if computeErr != nil {
+			record.SetError(computeErr)
+			return computeErr
+		}
+		if err := dalrecord.MapToData(record.Data(), computed); err != nil {
 			record.SetError(err)
 			return err
 		}

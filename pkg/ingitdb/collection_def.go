@@ -67,6 +67,11 @@ func (v *CollectionDef) Validate() error {
 		if err := col.Validate(); err != nil {
 			return fmt.Errorf("invalid column '%s': %w", id, err)
 		}
+		if col.Formula != "" {
+			if err := validateComputedColumn(v.ID, id, col, v.Columns); err != nil {
+				return err
+			}
+		}
 	}
 	for i, colName := range v.ColumnsOrder {
 		if _, ok := v.Columns[colName]; !ok {
