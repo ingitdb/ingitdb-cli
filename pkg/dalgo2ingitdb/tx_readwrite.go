@@ -19,6 +19,19 @@ import (
 // implemented directly using exclusive locks on the affected record file.
 type readwriteTx struct {
 	readonlyTx
+	// written collects, by shared pointer, the absolute paths of record files
+	// mutated during the transaction. RunReadwriteTransaction uses it to stage
+	// exactly those files when committing with a transaction message. It is nil
+	// for transactions created outside RunReadwriteTransaction (e.g. DB-level
+	// helpers), in which case tracking is a no-op.
+	written *[]string
+}
+
+// track records a mutated record-file path for the opt-in commit step.
+func (r readwriteTx) track(path string) {
+	if r.written != nil {
+		*r.written = append(*r.written, path)
+	}
 }
 
 // ID returns the transaction identifier. inGitDB does not use a per-tx
@@ -70,6 +83,7 @@ func (r readwriteTx) Set(_ context.Context, record dal.Record) error {
 	default:
 		return fmt.Errorf("dalgo2ingitdb: Set not implemented for record type %q", colDef.RecordFile.RecordType)
 	}
+	r.track(path)
 	record.SetError(nil)
 	return nil
 }
@@ -136,6 +150,7 @@ func (r readwriteTx) Insert(_ context.Context, record dal.Record, _ ...dal.Inser
 	default:
 		return fmt.Errorf("dalgo2ingitdb: Insert not implemented for record type %q", colDef.RecordFile.RecordType)
 	}
+	r.track(path)
 	record.SetError(nil)
 	return nil
 }
@@ -173,7 +188,20 @@ func (r readwriteTx) Delete(_ context.Context, key *dal.Key) error {
 	path := resolveRecordPath(colDef, recordKey)
 	switch colDef.RecordFile.RecordType {
 	case ingitdb.SingleRecord:
-		return deleteSingleRecordFile(path)
+		_, statErr := os.Stat(path)
+		switch {
+		case statErr == nil:
+			// File exists; removing it is a real change to track for commit.
+		case errors.Is(statErr, fs.ErrNotExist):
+			return nil // idempotent: deleting a missing record is a no-op
+		default:
+			return fmt.Errorf("dalgo2ingitdb: stat %s: %w", path, statErr)
+		}
+		if err := deleteSingleRecordFile(path); err != nil {
+			return err
+		}
+		r.track(path)
+		return nil
 	case ingitdb.MapOfRecords:
 		allRecords, readErr := readMapOfRecordsFile(path, colDef.RecordFile.Format)
 		if readErr != nil {
@@ -183,7 +211,11 @@ func (r readwriteTx) Delete(_ context.Context, key *dal.Key) error {
 			return nil // idempotent: deleting a missing record is a no-op
 		}
 		delete(allRecords, recordKey)
-		return writeMapOfRecordsFile(path, colDef, allRecords)
+		if err := writeMapOfRecordsFile(path, colDef, allRecords); err != nil {
+			return err
+		}
+		r.track(path)
+		return nil
 	default:
 		return fmt.Errorf("dalgo2ingitdb: Delete not implemented for record type %q", colDef.RecordFile.RecordType)
 	}
