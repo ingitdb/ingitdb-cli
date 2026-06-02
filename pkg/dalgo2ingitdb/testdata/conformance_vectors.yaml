@@ -1,0 +1,107 @@
+# Vendored snapshot of the inGitDB standard's computed-columns conformance vectors.
+# Source of truth: github.com/ingitdb/ingitdb -> conformance/computed-columns/vectors.yaml
+# Do not edit here except to re-sync from the standard. See that repo's README.md for the
+# normative format and execution profile.
+version: 1
+vectors:
+  # --- Evaluation & typing -----------------------------------------------------
+  - name: full-name-computed
+    column_type: string
+    formula: 'first_name + " " + last_name'
+    fields:
+      first_name: Ada
+      last_name: Lovelace
+    expect: Ada Lovelace
+
+  - name: int-coercion
+    column_type: int
+    formula: qty * price
+    fields:
+      qty: 3
+      price: 4
+    expect: 12
+
+  - name: int-floor-division
+    column_type: int
+    formula: 7 // 2
+    fields: {}
+    expect: 3
+
+  - name: float-division
+    column_type: float
+    formula: 7 / 2
+    fields: {}
+    expect: 3.5
+
+  - name: bool-comparison
+    column_type: bool
+    formula: qty > 0
+    fields:
+      qty: 5
+    expect: true
+
+  # --- String model ------------------------------------------------------------
+  - name: string-output-deterministic
+    column_type: string
+    formula: str(qty)
+    fields:
+      qty: 3
+    expect: "3"
+
+  - name: string-from-float
+    column_type: string
+    formula: str(ratio)
+    fields:
+      ratio: 1.5
+    expect: "1.5"
+
+  - name: string-from-bool
+    column_type: string
+    formula: str(active)
+    fields:
+      active: true
+    expect: "True"
+
+  # --- Curated numeric helpers -------------------------------------------------
+  - name: abs-preserves-int
+    column_type: int
+    formula: abs(delta)
+    fields:
+      delta: -7
+    expect: 7
+
+  - name: round-returns-int
+    column_type: int
+    formula: round(ratio)
+    fields:
+      ratio: 2.5
+    expect: 3
+
+  # --- Deterministic sandbox (no I/O) ------------------------------------------
+  - name: no-io-access
+    column_type: string
+    formula: open("/etc/passwd")
+    fields: {}
+    expect_error: undefined-name
+
+  # --- Fail-loud errors --------------------------------------------------------
+  - name: non-integral-into-int-fails
+    column_type: int
+    formula: 7 / 2
+    fields: {}
+    expect_error: non-integral-coercion
+
+  - name: runtime-error-fails-read
+    column_type: int
+    formula: numerator // denominator
+    fields:
+      numerator: 10
+      denominator: 0
+    expect_error: runtime-error
+
+  - name: string-column-non-string-result-fails
+    column_type: string
+    formula: qty * 2
+    fields:
+      qty: 5
+    expect_error: unsupported-result-type
