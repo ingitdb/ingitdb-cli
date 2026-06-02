@@ -30,8 +30,11 @@ func (r readwriteTx) Set(ctx context.Context, record dal.Record) error {
 		return err
 	}
 	record.SetError(nil)
-	path := resolveRecordPath(colDef, recordKey)
 	data := record.Data().(map[string]any)
+	if err := dalgo2ingitdb.ValidateWrite(r.db.def, "Set", colDef.ID, colDef, recordKey, data); err != nil {
+		return err
+	}
+	path := resolveRecordPath(colDef, recordKey)
 	switch colDef.RecordFile.RecordType {
 	case ingitdb.MapOfRecords:
 		allRecords, _, err := readMapOfRecordsFile(path, colDef.RecordFile.Format)
@@ -60,6 +63,9 @@ func (r readwriteTx) Delete(ctx context.Context, key *dal.Key) error {
 	_ = ctx
 	colDef, recordKey, err := r.resolveCollection(key)
 	if err != nil {
+		return err
+	}
+	if err := dalgo2ingitdb.ValidateDelete(r.db.def, colDef.ID, recordKey); err != nil {
 		return err
 	}
 	path := resolveRecordPath(colDef, recordKey)
@@ -108,6 +114,11 @@ func (r readwriteTx) Insert(ctx context.Context, record dal.Record, opts ...dal.
 	if err != nil {
 		return err
 	}
+	record.SetError(nil)
+	data := record.Data().(map[string]any)
+	if err := dalgo2ingitdb.ValidateWrite(r.db.def, "Insert", colDef.ID, colDef, recordKey, data); err != nil {
+		return err
+	}
 	path := resolveRecordPath(colDef, recordKey)
 	switch colDef.RecordFile.RecordType {
 	case ingitdb.MapOfRecords:
@@ -121,8 +132,6 @@ func (r readwriteTx) Insert(ctx context.Context, record dal.Record, opts ...dal.
 		if _, exists := allRecords[recordKey]; exists {
 			return fmt.Errorf("record already exists: %s in %s", recordKey, path)
 		}
-		record.SetError(nil)
-		data := record.Data().(map[string]any)
 		allRecords[recordKey] = dalgo2ingitdb.ApplyLocaleToWrite(data, colDef.Columns)
 		return writeMapOfRecordsFile(path, colDef, allRecords)
 	default:
@@ -133,8 +142,6 @@ func (r readwriteTx) Insert(ctx context.Context, record dal.Record, opts ...dal.
 		if !errors.Is(statErr, os.ErrNotExist) {
 			return fmt.Errorf("failed to check file %s: %w", path, statErr)
 		}
-		record.SetError(nil)
-		data := record.Data().(map[string]any)
 		if colDef.RecordFile.Format == ingitdb.RecordFormatMarkdown {
 			return writeMarkdownRecord(path, colDef, data)
 		}
