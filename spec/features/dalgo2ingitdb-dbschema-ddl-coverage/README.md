@@ -1,7 +1,7 @@
 # Feature: dbschema + ddl + ConcurrencyAware Coverage for inGitDB
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/dalgo2ingitdb-dbschema-ddl-coverage?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/dalgo2ingitdb-dbschema-ddl-coverage?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/dalgo2ingitdb-dbschema-ddl-coverage?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/dalgo2ingitdb-dbschema-ddl-coverage?op=request-change) |
-**Status:** Implementing
+**Status:** Stable
 **Source Idea:** —
 **Date:** 2026-05-13
 **Owner:** alex
@@ -72,7 +72,14 @@ The package MUST export `dalgo2ingitdb.NewDatabase(projectPath string, reader in
 
 #### REQ: concurrency-aware-false
 
-`Database.SupportsConcurrentConnections() bool` MUST return `false`. inGitDB writes to a git working tree. Concurrent writers against the same working-tree directory produce data races on both the record files and the `.collection/definition.yaml` metadata. The DALgo `ConcurrencyAware` contract collapses to a single boolean; the MVP returns `false` unconditionally.
+`Database.SupportsConcurrentConnections() bool` MUST return `false`, unconditionally and on every platform.
+
+Rationale: an inGitDB database is a git working tree, and the honest cross-platform contract for it is single-writer. The driver does take `gofrs/flock` advisory locks per file (shared for reads, exclusive for writes) as defence-in-depth, but that is deliberately NOT treated as a basis to advertise safe concurrent connections, because:
+
+- **flock is advisory on Unix.** It only constrains processes that also call `flock`. A plain `git`, an editor, or `rm` ignores it entirely — and on Unix can even `unlink` a file out from under a held lock (deletion removes the directory entry, not the locked inode). It is mandatory only on Windows (`LockFileEx`), so the protection is not cross-platform.
+- **Locks are per file.** A change spanning multiple files (a collection's `definition.yaml` plus `root-collections.yaml`, or a subsequent `git commit`) is not atomic as a unit.
+
+Returning `false` is the truthful signal to DALgo consumers across Linux/macOS/Windows; advertising `true` (even justified by flock) would overpromise on the platforms where the lock is advisory and for multi-file operations. A platform-conditional answer (true on Windows, false elsewhere) was considered and rejected: a capability that flips by OS is unsafe to consume — the same code would behave differently in dev/CI/prod. flock remains valuable as best-effort in-process protection, not as a concurrency guarantee.
 
 ### TransactionalDDL
 
@@ -103,7 +110,7 @@ If the collection directory does not exist or its `definition.yaml` is absent, `
 
 #### REQ: list-constraints
 
-`Database.ListConstraints(ctx context.Context, ref *dal.CollectionRef) ([]dbschema.ConstraintDef, error)` MUST return a one-element slice containing a synthesized primary-key constraint, and a nil error. The element MUST have `Type == dbschema.PrimaryKeyConstraint`. The richer PK column information lives on `DescribeCollection.PrimaryKey`; `dbschema.ConstraintDef` is intentionally minimal (Name + Type only). inGitDB has no other declared constraints (NOT NULL, CHECK, FK are not stored in `definition.yaml`).
+`Database.ListConstraints(ctx context.Context, ref *dal.CollectionRef) ([]dbschema.ConstraintDef, error)` MUST return a one-element slice containing a synthesized primary-key constraint, and a nil error. The element MUST have `Name == "$key-pk"` and `Type == "primary-key"` (the engine-neutral string `dbschema` documents; there is no `dbschema.PrimaryKeyConstraint` constant). The richer PK column information lives on `DescribeCollection.PrimaryKey`; `dbschema.ConstraintDef` is intentionally minimal (Name + Type only — it has no `Fields`). inGitDB has no other declared constraints (NOT NULL, CHECK, FK are not stored in `definition.yaml`).
 
 #### REQ: list-referrers
 
@@ -329,7 +336,7 @@ Source files implementing this feature (annotated with
 
 **Given** any existing collection
 **When** the caller invokes `reader.ListConstraints(ctx, ref)`
-**Then** the result is a one-element `[]dbschema.ConstraintDef` with `Type == PrimaryKeyConstraint` and `Fields == ["$key"]`, and a nil error.
+**Then** the result is a one-element `[]dbschema.ConstraintDef` with `Name == "$key-pk"` and `Type == "primary-key"`, and a nil error. (`dbschema.ConstraintDef` carries only `Name` and `Type`; there is no `Fields` field, so the synthetic PK is identified by its `Type` string.)
 
 ### AC: list-referrers-not-supported
 
@@ -505,7 +512,7 @@ Source files implementing this feature (annotated with
 - **Collection-not-found error type.** The `dbschema` package exports `*NotSupportedError` but not a `NotFoundError`. `DescribeCollection`'s contract is currently content-based (`err.Error()` contains `"not found"` + collection name). Plan-time options: (a) add `dbschema.NotFoundError` to `dal-go/dalgo` first; (b) define `dalgo2ingitdb.ErrCollectionNotFound` locally. The AC pins only the message-content contract so both options pass.
 - **`$key` as a synthetic PK field name.** Using the literal string `"$key"` as the synthesized primary-key field name may conflict if inGitDB ever declares a column literally named `$key`. For MVP this is acceptable. A follow-up could use a named constant exported from `ingitdb`.
 - **`AlterCollection` with record backfill and large collections.** The current design rewrites all record files in-memory per op. For collections with thousands of records this may be slow. A streaming rewrite is a follow-up optimization.
-- **`dbschema.ConstraintDef` type constant.** The spec assumes `dbschema.PrimaryKeyConstraint` exists as a named variant. Plan-time: verify against `dbschema/constraint.go`; if the constant name differs, update REQ:list-constraints and AC:list-constraints-returns-pk.
+- **`dbschema.ConstraintDef` type constant.** RESOLVED: `dbschema.ConstraintDef` exposes only `Name` and `Type` (a free-form engine-neutral string), with no `PrimaryKeyConstraint` constant and no `Fields`. The driver returns `{Name: "$key-pk", Type: "primary-key"}`; REQ:list-constraints and AC:list-constraints-returns-pk now reflect this.
 - **Default `RecordFile` value in `CreateCollection`.** The spec picks `{name: "{key}.yaml", format: yaml, type: "map[string]any"}` as the default. Plan-time: decide whether to expose a `WithRecordFileDef` option on `CreateCollection` so callers can specify a different format.
 
 ---

@@ -5,7 +5,7 @@ captured_at: 2026-06-03T16:54:53Z
 captured_by: claude
 captured_during: null
 trigger: explicit
-status: queued
+status: done
 synchestra_task: null
 ---
 # Reconcile the dbschema-ddl concurrency contract: spec says single-writer (false), code returns true via flock

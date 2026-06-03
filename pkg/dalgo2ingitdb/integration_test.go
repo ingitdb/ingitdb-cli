@@ -112,8 +112,11 @@ func TestIntegration_ConcurrentReads(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewDatabase: %v", err)
 	}
-	if !db.SupportsConcurrentConnections() {
-		t.Fatal("SupportsConcurrentConnections: want true")
+	// The driver advertises single-writer (false) as its cross-platform
+	// contract; the per-file shared locks below still permit concurrent
+	// in-process reads as defence-in-depth, which this test exercises.
+	if db.SupportsConcurrentConnections() {
+		t.Fatal("SupportsConcurrentConnections: want false")
 	}
 	reader := db.(dbschema.SchemaReader)
 	modifier := db.(ddl.SchemaModifier)
