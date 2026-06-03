@@ -73,8 +73,13 @@ func Rebase(
 					return fmt.Errorf("failed to resolve docs:\n%w", resolveErr)
 				}
 				if len(unresolved) > 0 {
-					return fmt.Errorf("rebase failed with unresolved conflicts in files other than README.md:\n%s\nOutput:\n%s",
-						strings.Join(unresolved, "\n"), rebaseOut)
+					unresolvedList := strings.Join(unresolved, "\n")
+					if abortErr := gitRebaseAbort(ctx, wd); abortErr != nil {
+						return fmt.Errorf("rebase has conflicts in files outside the --resolve scope, and 'git rebase --abort' also failed:\n%s\nunresolved:\n%s",
+							abortErr, unresolvedList)
+					}
+					return fmt.Errorf("rebase aborted: conflicts in files outside the --resolve scope must be resolved manually:\n%s",
+						unresolvedList)
 				}
 				if len(result.Errors) > 0 {
 					return fmt.Errorf("failed to resolve docs:\n%v", result.Errors[0])
@@ -122,6 +127,18 @@ func gitCommitNoVerify(ctx context.Context, wd, message string) error {
 	out, err := cCmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to commit resolved files:\n%s\n%v", out, err)
+	}
+	return nil
+}
+
+// gitRebaseAbort runs git rebase --abort to return the working tree to its
+// pre-rebase state when conflicts fall outside the --resolve scope.
+func gitRebaseAbort(ctx context.Context, wd string) error {
+	abortCmd := exec.CommandContext(ctx, "git", "rebase", "--abort")
+	abortCmd.Dir = wd
+	out, err := abortCmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to abort rebase:\n%s", out)
 	}
 	return nil
 }
