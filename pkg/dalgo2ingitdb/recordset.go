@@ -3,6 +3,7 @@ package dalgo2ingitdb
 import (
 	"fmt"
 	"reflect"
+	"sort"
 
 	"github.com/dal-go/dalgo/dal"
 	"github.com/dal-go/dalgo/recordset"
@@ -10,13 +11,13 @@ import (
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
-// idColumnName is the reserved recordset column that carries each record's key.
+// IDColumn is the reserved recordset column that carries each record's key.
 // It is not a declared schema column; the Starlark evaluator strips it from the
 // stored field map so formula inputs match the eager ApplyFormulasToRead
 // pipeline exactly. The "$id" spelling mirrors the dal pseudo-field convention
 // and cannot collide with a real column (Starlark identifiers cannot contain
 // "$", so no formula can reference it).
-const idColumnName = "$id"
+const IDColumn = "$id"
 
 // formulaEvaluator is a recordset.Evaluator that computes a computed column's
 // value by delegating to ingitdb.EvaluateFormula. dalgo carries no scripting
@@ -29,14 +30,14 @@ type formulaEvaluator struct {
 var _ recordset.Evaluator = formulaEvaluator{}
 
 // Eval evaluates the formula against the row's stored sibling values. The
-// reserved idColumnName entry is removed first so the field set handed to
+// reserved IDColumn entry is removed first so the field set handed to
 // Starlark is identical to the eager pipeline's (which never carried "$id").
 func (e formulaEvaluator) Eval(stored map[string]any) (any, error) {
 	fields := stored
-	if _, ok := stored[idColumnName]; ok {
+	if _, ok := stored[IDColumn]; ok {
 		fields = make(map[string]any, len(stored))
 		for k, v := range stored {
-			if k == idColumnName {
+			if k == IDColumn {
 				continue
 			}
 			fields[k] = v
@@ -117,10 +118,37 @@ func buildRecordset(colDef *ingitdb.CollectionDef, records []KeyedStored, evalFo
 	storedNames := orderedColumns(colDef, func(c *ingitdb.ColumnDef) bool { return c.Formula == "" })
 	computedNames := orderedComputedColumns(colDef)
 
-	cols := make([]recordset.Column[any], 0, len(storedNames)+len(computedNames)+1)
-	cols = append(cols, &anyColumn{name: idColumnName})
-	storedSet := make(map[string]bool, len(storedNames))
+	known := make(map[string]bool, len(storedNames)+len(computedNames))
 	for _, name := range storedNames {
+		known[name] = true
+	}
+	for _, name := range computedNames {
+		known[name] = true
+	}
+	// Undeclared stored fields present in the data are preserved as stored
+	// columns so reads stay byte-identical with the eager pipeline, which
+	// surfaced any field present in the record (not only declared columns).
+	var extraNames []string
+	seenExtra := make(map[string]bool)
+	for _, rec := range records {
+		for name := range rec.Stored {
+			if known[name] || seenExtra[name] {
+				continue
+			}
+			seenExtra[name] = true
+			extraNames = append(extraNames, name)
+		}
+	}
+	sort.Strings(extraNames)
+
+	cols := make([]recordset.Column[any], 0, len(storedNames)+len(extraNames)+len(computedNames)+1)
+	cols = append(cols, &anyColumn{name: IDColumn})
+	storedSet := make(map[string]bool, len(storedNames)+len(extraNames))
+	for _, name := range storedNames {
+		cols = append(cols, &anyColumn{name: name})
+		storedSet[name] = true
+	}
+	for _, name := range extraNames {
 		cols = append(cols, &anyColumn{name: name})
 		storedSet[name] = true
 	}
@@ -134,7 +162,7 @@ func buildRecordset(colDef *ingitdb.CollectionDef, records []KeyedStored, evalFo
 		// SetValueByName on a stored column cannot fail here: every column was
 		// added above and the column value type is any, so the type assertion
 		// inside the recordset always succeeds.
-		_ = row.SetValueByName(idColumnName, rec.Key, rs)
+		_ = row.SetValueByName(IDColumn, rec.Key, rs)
 		for name, value := range rec.Stored {
 			if !storedSet[name] {
 				continue
@@ -153,6 +181,15 @@ type recordsetReader struct {
 }
 
 var _ dal.RecordsetReader = (*recordsetReader)(nil)
+
+// RowKey returns the record key carried by a row's reserved IDColumn. The
+// IDColumn is present in every recordset BuildRecordset produces, so the lookup
+// cannot fail; a missing or non-string value yields the empty string.
+func RowKey(row recordset.Row, rs recordset.Recordset) string {
+	v, _ := row.GetValueByName(IDColumn, rs)
+	key, _ := v.(string)
+	return key
+}
 
 // NewRecordsetReader returns a dal.RecordsetReader that walks the rows of rs.
 func NewRecordsetReader(rs recordset.Recordset) dal.RecordsetReader {

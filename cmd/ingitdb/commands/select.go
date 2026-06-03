@@ -10,9 +10,11 @@ import (
 	"strings"
 
 	"github.com/dal-go/dalgo/dal"
+	"github.com/dal-go/dalgo/recordset"
 	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/commands/sqlflags"
+	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
@@ -166,7 +168,7 @@ func runSelectFromSet(
 		if dbErr != nil {
 			return fmt.Errorf("failed to open remote database: %w", dbErr)
 		}
-		return runSelectFromSetWithDB(ctx, cmd, from, fields, format, db)
+		return runSelectFromSetWithDB(ctx, cmd, from, fields, format, db, def.Collections[from])
 	}
 
 	dirPath, err := resolveDBPath(cmd, homeDir, getWd)
@@ -184,7 +186,7 @@ func runSelectFromSet(
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
-	return runSelectFromSetWithDB(ctx, cmd, from, fields, format, db)
+	return runSelectFromSetWithDB(ctx, cmd, from, fields, format, db, def.Collections[from])
 }
 
 // runSelectFromSetWithDB executes the set-mode query against a pre-opened DB.
@@ -196,6 +198,7 @@ func runSelectFromSetWithDB(
 	fields []string,
 	format string,
 	db dal.DB,
+	colDef *ingitdb.CollectionDef,
 ) error {
 	whereExprs, _ := cmd.Flags().GetStringArray("where")
 	conds := make([]sqlflags.Condition, 0, len(whereExprs))
@@ -211,18 +214,25 @@ func runSelectFromSetWithDB(
 
 	var rows []map[string]any
 	err := db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
-		reader, qerr := tx.ExecuteQueryToRecordsReader(ctx, q)
+		reader, qerr := tx.ExecuteQueryToRecordsetReader(ctx, q)
 		if qerr != nil {
 			return qerr
 		}
 		defer func() { _ = reader.Close() }()
+		var names []string
 		for {
-			rec, nextErr := reader.Next()
+			row, rs, nextErr := reader.Next()
 			if nextErr != nil {
 				break
 			}
-			data := rec.Data().(map[string]any)
-			recKey := fmt.Sprintf("%v", rec.Key().ID)
+			if names == nil {
+				names = selectColumnsToRead(rs, fields, conds)
+			}
+			recKey := dalgo2ingitdb.RowKey(row, rs)
+			data, derr := rowData(row, rs, from, recKey, colDef, names)
+			if derr != nil {
+				return derr
+			}
 			if match, _ := evalAllWhere(data, recKey, conds); !match {
 				continue
 			}
@@ -276,6 +286,39 @@ func runSelectFromSetWithDB(
 		format = "csv"
 	}
 	return writeSetMode(cmd.OutOrStdout(), rows, format, fields)
+}
+
+// selectColumnsToRead returns the recordset columns select must read per row:
+// the projected columns (every column when --fields is empty) plus any column a
+// --where condition references. Only columns that exist in the recordset are
+// returned, so an unreferenced computed column is never evaluated and an unknown
+// field name is silently ignored (matching the pre-migration behavior, where an
+// absent field simply did not appear in the record map).
+func selectColumnsToRead(rs recordset.Recordset, fields []string, conds []sqlflags.Condition) []string {
+	want := make(map[string]bool)
+	for _, c := range conds {
+		if c.Field != "$id" {
+			want[c.Field] = true
+		}
+	}
+	if len(fields) == 0 {
+		for _, name := range allColumnNames(rs) {
+			want[name] = true
+		}
+	} else {
+		for _, f := range fields {
+			if f != "$id" {
+				want[f] = true
+			}
+		}
+	}
+	names := make([]string, 0, len(want))
+	for name := range want {
+		if rs.GetColumnByName(name) != nil {
+			names = append(names, name)
+		}
+	}
+	return names
 }
 
 // writeSetMode is the set-mode output dispatcher. Empty rows still

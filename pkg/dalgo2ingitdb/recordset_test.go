@@ -86,6 +86,19 @@ func TestBuildRecordset_EvaluatorInvokedOncePerRow(t *testing.T) {
 	}
 }
 
+func TestRowKey(t *testing.T) {
+	t.Parallel()
+	colDef := &ingitdb.CollectionDef{
+		ID:           "people",
+		Columns:      map[string]*ingitdb.ColumnDef{"first_name": {Type: ingitdb.ColumnTypeString}},
+		ColumnsOrder: []string{"first_name"},
+	}
+	rs := BuildRecordset(colDef, []KeyedStored{{Key: "ada", Stored: map[string]any{"first_name": "Ada"}}})
+	if got := RowKey(rs.GetRow(0), rs); got != "ada" {
+		t.Errorf("RowKey = %q, want ada", got)
+	}
+}
+
 func TestFormulaEvaluator_Eval(t *testing.T) {
 	t.Parallel()
 	e := formulaEvaluator{formula: "a + b"}
@@ -104,7 +117,7 @@ func TestFormulaEvaluator_StripsIDColumn(t *testing.T) {
 	// field; the formula sees exactly the stored siblings.
 	e := formulaEvaluator{formula: `first_name + " " + last_name`}
 	got, err := e.Eval(map[string]any{
-		idColumnName: "ada",
+		IDColumn:     "ada",
 		"first_name": "Ada",
 		"last_name":  "Lovelace",
 	})
@@ -149,7 +162,7 @@ func TestNewRecordsetReader(t *testing.T) {
 		if gotRS != rs {
 			t.Error("Next() returned a different recordset")
 		}
-		id, err := row.GetValueByName(idColumnName, rs)
+		id, err := row.GetValueByName(IDColumn, rs)
 		if err != nil {
 			t.Fatalf("GetValueByName($id): %v", err)
 		}
@@ -276,22 +289,48 @@ func TestAnyColumn(t *testing.T) {
 	}
 }
 
-// TestBuildRecordset_SkipsNonColumnStoredKeys covers the branch where a record
-// carries a stored key that is not a declared (non-formula) column: it must be
-// ignored, not set on the recordset.
-func TestBuildRecordset_SkipsNonColumnStoredKeys(t *testing.T) {
+// TestBuildRecordset_PreservesUndeclaredStoredKeys covers the union branch: a
+// stored key that is not a declared column is preserved as a stored column so
+// reads stay byte-identical with the eager pipeline.
+func TestBuildRecordset_PreservesUndeclaredStoredKeys(t *testing.T) {
 	t.Parallel()
 	records := []KeyedStored{{Key: "a", Stored: map[string]any{
 		"qty":     int64(3),
-		"unknown": "ignored",
+		"unknown": "kept",
 	}}}
 	rs := BuildRecordset(lazyTestColDef(), records)
-	if rs.GetColumnByName("unknown") != nil {
-		t.Error("undeclared stored key must not become a recordset column")
+	if rs.GetColumnByName("unknown") == nil {
+		t.Fatal("undeclared stored key must be preserved as a recordset column")
 	}
 	row := rs.GetRow(0)
+	if v, err := row.GetValueByName("unknown", rs); err != nil || v != "kept" {
+		t.Errorf("unknown = (%v, %v), want (kept, nil)", v, err)
+	}
 	if v, err := row.GetValueByName("qty", rs); err != nil || v != int64(3) {
 		t.Errorf("qty = (%v, %v), want (3, nil)", v, err)
+	}
+}
+
+// TestBuildRecordset_SkipsFormulaColumnStoredKeys covers the storedSet guard: a
+// stored key that collides with a computed (formula) column is not set on the
+// recordset (which would otherwise error), leaving the column to resolve lazily.
+func TestBuildRecordset_SkipsFormulaColumnStoredKeys(t *testing.T) {
+	t.Parallel()
+	calls := 0
+	records := []KeyedStored{{Key: "a", Stored: map[string]any{
+		"qty":   int64(3),
+		"ratio": int64(999), // collides with the computed "ratio" column
+	}}}
+	rs := buildRecordset(lazyTestColDef(), records, func(string) recordset.Evaluator {
+		return countingEvaluator{calls: &calls}
+	})
+	row := rs.GetRow(0)
+	got, err := row.GetValueByName("ratio", rs)
+	if err != nil {
+		t.Fatalf("GetValueByName(ratio): %v", err)
+	}
+	if got != int64(99) || calls != 1 {
+		t.Errorf("ratio = %v (calls=%d), want computed 99 (calls=1), not the stored 999", got, calls)
 	}
 }
 

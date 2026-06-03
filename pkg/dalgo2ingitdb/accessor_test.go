@@ -96,7 +96,7 @@ func TestAccessValue_NilColDefPassesThrough(t *testing.T) {
 	records := []KeyedStored{{Key: "o1", Stored: map[string]any{"qty": int64(3)}}}
 	rs := BuildRecordset(ordersColDef(), records)
 	row := rs.GetRow(0)
-	got, err := AccessValue(row, rs, "orders", "o1", idColumnName, nil)
+	got, err := AccessValue(row, rs, "orders", "o1", IDColumn, nil)
 	if err != nil {
 		t.Fatalf("AccessValue($id): %v", err)
 	}

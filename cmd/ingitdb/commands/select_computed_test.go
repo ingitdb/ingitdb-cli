@@ -137,6 +137,199 @@ func TestSelect_SetMode_OrderByComputedColumn(t *testing.T) {
 	}
 }
 
+// peopleHelpersDef returns a people definition exercising the Starlark string
+// and numeric helpers through computed columns: full_name (concat), display
+// (strip+upper) and rounded (round of a float score, declared int).
+func peopleHelpersDef(dirPath string) *ingitdb.Definition {
+	return &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"people": {
+				ID:      "people",
+				DirPath: dirPath,
+				RecordFile: &ingitdb.RecordFileDef{
+					Name:       "{key}.yaml",
+					Format:     "yaml",
+					RecordType: ingitdb.SingleRecord,
+				},
+				Columns: map[string]*ingitdb.ColumnDef{
+					"first_name": {Type: ingitdb.ColumnTypeString},
+					"last_name":  {Type: ingitdb.ColumnTypeString},
+					"score":      {Type: ingitdb.ColumnTypeFloat},
+					"full_name":  {Type: ingitdb.ColumnTypeString, Formula: `first_name + " " + last_name`},
+					"display":    {Type: ingitdb.ColumnTypeString, Formula: `first_name.strip().upper()`},
+					"rounded":    {Type: ingitdb.ColumnTypeInt, Formula: `round(score)`},
+				},
+				ColumnsOrder: []string{"first_name", "last_name", "score", "full_name", "display", "rounded"},
+			},
+		},
+	}
+}
+
+func helpersSelectDeps(t *testing.T, dir string) (
+	func() (string, error),
+	func() (string, error),
+	func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
+	func(string, *ingitdb.Definition) (dal.DB, error),
+	func(...any),
+) {
+	t.Helper()
+	def := peopleHelpersDef(dir)
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) { return def, nil }
+	newDB := func(root string, d *ingitdb.Definition) (dal.DB, error) {
+		return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
+	}
+	return homeDir, getWd, readDef, newDB, func(...any) {}
+}
+
+func seedPersonFields(t *testing.T, dir, key string, fields map[string]any) {
+	t.Helper()
+	colDir := filepath.Join(dir, "$records")
+	if err := os.MkdirAll(colDir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	out, err := yaml.Marshal(fields)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(colDir, key+".yaml"), out, 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+}
+
+// AC: select-renders-computed — select renders a computed string column.
+func TestSelect_RendersComputedColumn(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := helpersSelectDeps(t, dir)
+	seedPersonFields(t, dir, "ada", map[string]any{"first_name": "Ada", "last_name": "Lovelace"})
+
+	stdout, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=people", "--fields=$id,full_name", "--format=csv")
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if !strings.Contains(stdout, "Ada Lovelace") {
+		t.Errorf("expected computed full_name in output:\n%s", stdout)
+	}
+}
+
+// AC: string-helper-preserved — Starlark string helpers (strip/upper) work.
+func TestSelect_StringHelperPreserved(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := helpersSelectDeps(t, dir)
+	seedPersonFields(t, dir, "ada", map[string]any{"first_name": " ada "})
+
+	stdout, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=people", "--fields=$id,display", "--format=csv")
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if !strings.Contains(stdout, "ADA") {
+		t.Errorf("expected display 'ADA' (strip+upper) in output:\n%s", stdout)
+	}
+}
+
+// AC: math-helper-preserved — round() yields an int, rendered as 5 not 4.6/5.0.
+func TestSelect_MathHelperPreserved(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := helpersSelectDeps(t, dir)
+	seedPersonFields(t, dir, "ada", map[string]any{"score": 4.6})
+
+	stdout, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=people", "--fields=$id,rounded", "--format=csv")
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	lines := strings.Split(strings.TrimSpace(stdout), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("want header + 1 row, got:\n%s", stdout)
+	}
+	if !strings.Contains(lines[1], "5") || strings.Contains(lines[1], "4.6") || strings.Contains(lines[1], "5.0") {
+		t.Errorf("expected rounded integer 5, got row: %q", lines[1])
+	}
+}
+
+// peopleRatioDef returns a people definition with a stored qty and a computed
+// int ratio = qty / 0 that raises at runtime when evaluated.
+func peopleRatioDef(dirPath string) *ingitdb.Definition {
+	return &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"people": {
+				ID:      "people",
+				DirPath: dirPath,
+				RecordFile: &ingitdb.RecordFileDef{
+					Name:       "{key}.yaml",
+					Format:     "yaml",
+					RecordType: ingitdb.SingleRecord,
+				},
+				Columns: map[string]*ingitdb.ColumnDef{
+					"qty":   {Type: ingitdb.ColumnTypeInt},
+					"ratio": {Type: ingitdb.ColumnTypeInt, Formula: "qty / 0"},
+				},
+				ColumnsOrder: []string{"qty", "ratio"},
+			},
+		},
+	}
+}
+
+func ratioSelectDeps(t *testing.T, dir string) (
+	func() (string, error),
+	func() (string, error),
+	func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
+	func(string, *ingitdb.Definition) (dal.DB, error),
+	func(...any),
+) {
+	t.Helper()
+	def := peopleRatioDef(dir)
+	return func() (string, error) { return "/tmp/home", nil },
+		func() (string, error) { return dir, nil },
+		func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) { return def, nil },
+		func(root string, d *ingitdb.Definition) (dal.DB, error) {
+			return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
+		},
+		func(...any) {}
+}
+
+// AC: unreferenced-erroring-column-not-evaluated — projecting only the stored
+// column succeeds even though the computed ratio would raise, because ratio is
+// never referenced and therefore never evaluated (lazy).
+func TestSelect_UnreferencedErroringColumnNotEvaluated(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := ratioSelectDeps(t, dir)
+	seedPersonFields(t, dir, "a", map[string]any{"qty": 3})
+
+	stdout, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=people", "--fields=$id,qty", "--format=csv")
+	if err != nil {
+		t.Fatalf("projecting only qty must not evaluate ratio: %v", err)
+	}
+	if !strings.Contains(stdout, "3") {
+		t.Errorf("expected qty 3 in output:\n%s", stdout)
+	}
+}
+
+// Referencing the erroring computed column (projection) aborts the read.
+func TestSelect_ReferencedErroringColumnFailsLoud(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	homeDir, getWd, readDef, newDB, logf := ratioSelectDeps(t, dir)
+	seedPersonFields(t, dir, "a", map[string]any{"qty": 3})
+
+	_, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, logf,
+		"--path="+dir, "--from=people", "--fields=$id,ratio", "--format=csv")
+	if err == nil {
+		t.Fatal("projecting the erroring ratio column must fail loud")
+	}
+	if !strings.Contains(err.Error(), "ratio") {
+		t.Errorf("error should name the ratio column, got: %v", err)
+	}
+}
+
 // peopleBadFormulaDef returns a people definition whose computed column's
 // formula references a missing field, so formula evaluation fails on read.
 func peopleBadFormulaDef(dirPath string, recordType ingitdb.RecordType, name string) *ingitdb.Definition {
