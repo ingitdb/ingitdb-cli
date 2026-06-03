@@ -1306,7 +1306,7 @@ func TestDropViewRemote_ScopeColNotFound_Final(t *testing.T) {
 
 	homeDir, getWd, readDef, newDB, logf := emptyDropDeps(t)
 	cmd := Drop(homeDir, getWd, readDef, newDB, logf)
-	cmd.SetArgs([]string{"view", "my-view", "--in=ghosts", "--remote=github.com/owner/repo"})
+	cmd.SetArgs([]string{"view", "my-view", "--in=ghosts", "--remote=github.com/owner/repo", "--token=test-token"})
 	err := cmd.Execute()
 	if err == nil {
 		t.Fatal("expected error for unknown scopeCol")
@@ -1329,7 +1329,7 @@ func TestDropCollectionRemote_RootNotFound(t *testing.T) {
 
 	homeDir, getWd, readDef, newDB, logf := emptyDropDeps(t)
 	cmd := Drop(homeDir, getWd, readDef, newDB, logf)
-	cmd.SetArgs([]string{"collection", "items", "--remote=github.com/owner/repo"})
+	cmd.SetArgs([]string{"collection", "items", "--remote=github.com/owner/repo", "--token=test-token"})
 	err := cmd.Execute()
 	if err == nil {
 		t.Fatal("expected error when root-collections.yaml not found")
@@ -1550,7 +1550,7 @@ func TestDropViewRemote_FileReaderFactoryError(t *testing.T) {
 
 	homeDir, getWd, readDef, newDB, logf := emptyDropDeps(t)
 	cmd := Drop(homeDir, getWd, readDef, newDB, logf)
-	cmd.SetArgs([]string{"view", "my-view", "--remote=github.com/owner/repo"})
+	cmd.SetArgs([]string{"view", "my-view", "--remote=github.com/owner/repo", "--token=test-token"})
 	err := cmd.Execute()
 	if err == nil {
 		t.Fatal("expected error when file reader errors")
@@ -1574,7 +1574,7 @@ func TestDropViewRemote_NotFound_IfExists(t *testing.T) {
 
 	homeDir, getWd, readDef, newDB, logf := emptyDropDeps(t)
 	cmd := Drop(homeDir, getWd, readDef, newDB, logf)
-	cmd.SetArgs([]string{"view", "nonexistent", "--remote=github.com/owner/repo", "--if-exists"})
+	cmd.SetArgs([]string{"view", "nonexistent", "--remote=github.com/owner/repo", "--token=test-token", "--if-exists"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("expected no error with --if-exists for missing view, got: %v", err)
 	}

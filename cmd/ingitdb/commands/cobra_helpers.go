@@ -98,6 +98,29 @@ func remoteToken(cmd *cobra.Command, host string) string {
 	return resolveRemoteToken(host, tokenFlag, os.Getenv)
 }
 
+// requireRemoteWriteToken enforces REQ:token-required-for-writes: a write
+// command using --remote MUST have a resolvable token (from --token or a
+// host-derived *_TOKEN env var), even against a public repository. It is a
+// no-op for local (non-remote) operations and runs before any network I/O.
+func requireRemoteWriteToken(cmd *cobra.Command) error {
+	remoteValue, _ := cmd.Flags().GetString("remote")
+	if remoteValue == "" {
+		return nil
+	}
+	spec, err := resolveRemoteFromFlags(cmd, remoteValue)
+	if err != nil {
+		return err
+	}
+	if remoteToken(cmd, spec.Host) != "" {
+		return nil
+	}
+	envHint := hostTokenEnvName(spec.Host, true)
+	if envHint == "" {
+		envHint = hostTokenEnvName(spec.Host, false)
+	}
+	return fmt.Errorf("a token is required for remote writes (even for public repositories): provide --token or set %s", envHint)
+}
+
 // resolveRemoteFromFlags parses --remote and validates the provider override,
 // returning a canonical remoteSpec ready for the github (or future) adapter.
 // Errors from invalid grammar or unsupported provider fire before any I/O.

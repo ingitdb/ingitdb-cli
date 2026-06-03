@@ -75,6 +75,9 @@ func dropCollection(
 			if remoteVal != "" && pathVal != "" {
 				return fmt.Errorf("--path and --remote are mutually exclusive")
 			}
+			if err := requireRemoteWriteToken(cmd); err != nil {
+				return err
+			}
 			if remoteVal != "" {
 				return dropCollectionRemote(cmd.Context(), cmd, name, ifExists)
 			}
@@ -134,6 +137,9 @@ func dropView(
 			pathVal, _ := cmd.Flags().GetString("path")
 			if remoteVal != "" && pathVal != "" {
 				return fmt.Errorf("--path and --remote are mutually exclusive")
+			}
+			if err := requireRemoteWriteToken(cmd); err != nil {
+				return err
 			}
 			if remoteVal != "" {
 				return dropViewRemote(cmd.Context(), cmd, name, scopeCol, ifExists)

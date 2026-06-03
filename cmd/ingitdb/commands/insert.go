@@ -50,6 +50,10 @@ func Insert(
 			_ = logf
 			ctx := cmd.Context()
 
+			if err := requireRemoteWriteToken(cmd); err != nil {
+				return err
+			}
+
 			// Batch mode validation: --format must be one of the four supported
 			// stream formats. Empty means single-record mode.
 			format, _ := cmd.Flags().GetString("format")

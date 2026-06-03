@@ -36,7 +36,7 @@ This directory tracks the SpecScore feature specifications for the **ingitdb-cli
 | [id-flag-format](id-flag-format/README.md) | Stable | Cross-cutting `--id=<collection-id>/<record-key>` syntax. |
 | [output-formats](output-formats/README.md) | Stable | Cross-cutting `--format=yaml|json` flag and YAML default. |
 | [path-targeting](path-targeting/README.md) | Stable | Cross-cutting `--path` flag and its relation to `--remote`. |
-| [remote-repo-access](remote-repo-access/README.md) | Implementing | Cross-cutting `--remote=<URL>` flag, provider dispatch, and token resolution for remote Git hosting services. |
+| [remote-repo-access](remote-repo-access/README.md) | Stable | Cross-cutting `--remote=<URL>` flag, provider dispatch, and token resolution for remote Git hosting services. |
 | [shared-cli-flags](shared-cli-flags/README.md) | Single source of truth for the CLI flag grammar shared across select, insert, update, delete, and drop verbs: --from, --into, --where, --set, --id, --all, --order-by, --fields. Defines parsing rules, operator semantics (==, ===, !=, !==, >=, <=, >, <), value-type model, and flag mutual-exclusion rules. |
 | [cli](cli/README.md) | Unknown | TODO: Add description. |
 | [dalgo2ingitdb-dbschema-ddl-coverage](dalgo2ingitdb-dbschema-ddl-coverage/README.md) | Draft | TODO: Add description. |

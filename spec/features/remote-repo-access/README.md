@@ -1,7 +1,7 @@
 # Feature: Remote Repository Access
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/remote-repo-access?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/remote-repo-access?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/remote-repo-access?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/remote-repo-access?op=request-change) |
-**Status:** Implementing
+**Status:** Stable
 
 ## Summary
 
