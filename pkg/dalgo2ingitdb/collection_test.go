@@ -1,6 +1,7 @@
 package dalgo2ingitdb
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
@@ -118,5 +119,66 @@ func TestCollectionForKey_MissingRecordKey(t *testing.T) {
 	_, _, err := CollectionForKey(def, "countries/")
 	if err == nil {
 		t.Fatal("expected error when record key is empty")
+	}
+}
+
+func TestCollectionForKey_InvalidCharsetRejected(t *testing.T) {
+	t.Parallel()
+
+	def := collectionForKeyDef()
+	_, _, err := CollectionForKey(def, "bad!name/ie")
+	if err == nil {
+		t.Fatal("expected error for invalid collection charset")
+	}
+	if !strings.Contains(err.Error(), "invalid character") {
+		t.Errorf("error %q should diagnose the invalid collection character", err)
+	}
+}
+
+func TestCollectionForKey_MissingSeparatorRejected(t *testing.T) {
+	t.Parallel()
+
+	def := collectionForKeyDef()
+	_, _, err := CollectionForKey(def, "countries")
+	if err == nil {
+		t.Fatal("expected error when the collection/key separator is missing")
+	}
+	if !strings.Contains(err.Error(), "<collection>/<key>") {
+		t.Errorf("error %q should explain the required <collection>/<key> form", err)
+	}
+}
+
+func TestCollectionForKey_ValidButUndeclaredStillNotFound(t *testing.T) {
+	t.Parallel()
+
+	// A syntactically valid collection segment that is not declared must still
+	// report "collection not found", not a charset diagnostic.
+	def := collectionForKeyDef()
+	_, _, err := CollectionForKey(def, "missing/ie")
+	if err == nil {
+		t.Fatal("expected error for undeclared collection")
+	}
+	if !strings.Contains(err.Error(), "collection not found") {
+		t.Errorf("error %q should report collection not found", err)
+	}
+}
+
+func TestCollectionForKey_UnderscoreCollectionAllowed(t *testing.T) {
+	t.Parallel()
+
+	def := &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"exchange_rates": {ID: "exchange_rates"},
+		},
+	}
+	colDef, key, err := CollectionForKey(def, "exchange_rates/usd")
+	if err != nil {
+		t.Fatalf("unexpected error for underscore collection: %v", err)
+	}
+	if colDef.ID != "exchange_rates" {
+		t.Errorf("colDef.ID = %q, want %q", colDef.ID, "exchange_rates")
+	}
+	if key != "usd" {
+		t.Errorf("key = %q, want %q", key, "usd")
 	}
 }

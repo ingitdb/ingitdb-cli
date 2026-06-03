@@ -5,7 +5,7 @@ captured_at: 2026-06-03T14:25:20Z
 captured_by: claude
 captured_during: null
 trigger: explicit
-status: queued
+status: done
 synchestra_task: null
 ---
 # Wire ValidateCollectionID into the --id resolution path so invalid collection segments yield a syntax diagnostic, and reconcile the underscore charset discrepancy

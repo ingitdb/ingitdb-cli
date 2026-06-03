@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"bytes"
+	"strings"
 	"testing"
 )
 
@@ -36,5 +38,24 @@ func TestVersion_EmptyValues(t *testing.T) {
 	err := runCobraCommand(cmd)
 	if err != nil {
 		t.Fatalf("Version with empty values: %v", err)
+	}
+}
+
+func TestVersion_PrintsAllThreeFields(t *testing.T) {
+	t.Parallel()
+
+	cmd := Version("1.2.3", "abc123", "2024-01-01")
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+	cmd.SetArgs(nil)
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Version: %v", err)
+	}
+
+	out := buf.String()
+	for _, want := range []string{"1.2.3", "abc123", "2024-01-01"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("version output %q is missing field %q", out, want)
+		}
 	}
 }
