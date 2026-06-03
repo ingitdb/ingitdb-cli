@@ -73,7 +73,7 @@ drops `github.com/metoro-io/mcp-golang` and `github.com/julienschmidt/httprouter
 The full implementation is preserved in git history:
 
 - **Last present at commit `184a40e`** (the commit before removal).
-- **Removed in commit `REMOVAL_COMMIT_PENDING`.**
+- **Removed in commit `1bfecce`.**
 
 Restore a file with, e.g.:
 

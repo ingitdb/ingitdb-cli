@@ -88,7 +88,7 @@ func run(
 		// The `serve` command (MCP + HTTP API gateways for api/mcp.ingitdb.com)
 		// was removed as a still-born, datatug-overlapping surface — see
 		// docs/adr/0001-remove-serve-command.md. Preserved in git history:
-		// last present at 184a40e; removed in REMOVAL_COMMIT_PENDING.
+		// last present at 184a40e; removed in 1bfecce.
 		// Recover with: git show 184a40e:cmd/ingitdb/commands/serve.go
 		commands.List(homeDir, getWd, readDefinition),
 		commands.Describe(homeDir, getWd, readDefinition),
