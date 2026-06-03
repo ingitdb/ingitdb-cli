@@ -44,6 +44,7 @@ This directory tracks the SpecScore feature specifications for the **ingitdb-cli
 | [record-key](record-key/README.md) | Draft | Umbrella for canonical record identity behavior across schema validation, storage paths, writes, and CLI key surfaces. |
 | [computed-columns](computed-columns/README.md) | Approved | TODO: Add description. |
 | [computed-columns-via-dalgo](computed-columns-via-dalgo/README.md) | Approved | TODO: Add description. |
+| [tui-lazy-computed-cells](tui-lazy-computed-cells/README.md) | Approved | TODO: Add description. |
 
 ## Feature Summaries
 
