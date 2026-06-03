@@ -1,6 +1,6 @@
 # Plan: Computed Columns via dalgo (lazy delegation)
 
-**Status:** Approved
+**Status:** Implementing
 **Source Feature:** computed-columns-via-dalgo
 **Date:** 2026-06-03
 **Owner:** alex
@@ -29,6 +29,19 @@ set-mode WHERE and the TUI collection screen) and, once no consumer uses the old
 reader, removes the eager `ApplyFormulasToRead` read-time stage. The `select`
 migration is split (output vs filter/sort) to keep each task focused; the TUI has
 no dedicated AC and rides Task 5 under the all-consumers requirement.
+
+**Scope note (two packages).** The CLI consumers (`select`/`delete`/`update`/TUI)
+run through `pkg/dalgo2fsingitdb` (the filesystem driver wired in `main.go` via
+`NewLocalDBWithDef`), which delegates parsing/locale/formula/validation to
+`pkg/dalgo2ingitdb`. Both packages carry their own readonly-tx with a
+`ExecuteQueryToRecordsetReader` stub (`dalgo2ingitdb` returns `dal.ErrNotSupported`;
+`dalgo2fsingitdb` panics) and their own eager `ApplyFormulasToRead` call sites.
+To deliver the Feature's observable goal, the reusable pieces — the Starlark
+`recordset.Evaluator` adapter, the recordset builder, the recordset reader, and the
+shared coerce-on-access accessor — live in `pkg/dalgo2ingitdb`, and
+`pkg/dalgo2fsingitdb`'s recordset method plus the CLI consumers are wired to them;
+the eager bake is removed from both query paths. Task 1 implements both packages'
+`ExecuteQueryToRecordsetReader`; Task 5 removes the eager bake from both.
 
 ## Tasks
 

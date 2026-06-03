@@ -94,7 +94,19 @@ func (r readonlyTx) ExecuteQueryToRecordsReader(ctx context.Context, query dal.Q
 	return executeQueryToRecordsReader(ctx, r, query)
 }
 
-func (r readonlyTx) ExecuteQueryToRecordsetReader(ctx context.Context, query dal.Query, options ...recordset.Option) (dal.RecordsetReader, error) {
-	//TODO implement me
-	panic("implement me")
+// ExecuteQueryToRecordsetReader executes a structured query against a single
+// collection and returns a recordset-shaped reader. Stored columns carry each
+// record's value; computed (formula) columns are registered via
+// recordset.NewComputedColumn bound to a Starlark-backed evaluator, so computed
+// values resolve lazily when a consumer reads them rather than being baked in.
+func (r readonlyTx) ExecuteQueryToRecordsetReader(_ context.Context, query dal.Query, _ ...recordset.Option) (dal.RecordsetReader, error) {
+	colDef, err := collectionFromQuery(r.db.def, query)
+	if err != nil {
+		return nil, err
+	}
+	stored, err := readAllStoredRecords(colDef)
+	if err != nil {
+		return nil, err
+	}
+	return dalgo2ingitdb.NewRecordsetReader(dalgo2ingitdb.BuildRecordset(colDef, stored)), nil
 }

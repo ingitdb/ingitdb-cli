@@ -18,30 +18,12 @@ import (
 // and returns a slice-backed RecordsReader. Mirrors the algorithm in
 // dalgo2fsingitdb but uses this package's locked record I/O helpers.
 func executeQueryToRecordsReader(_ context.Context, r readonlyTx, query dal.Query) (dal.RecordsReader, error) {
-	if r.def == nil {
-		return nil, fmt.Errorf("dalgo2ingitdb: transaction has no loaded definition")
+	colDef, err := collectionFromQuery(r.def, query)
+	if err != nil {
+		return nil, err
 	}
-	sq, ok := query.(dal.StructuredQuery)
-	if !ok {
-		return nil, fmt.Errorf("dalgo2ingitdb: only StructuredQuery is supported, got %T", query)
-	}
-	fromSrc := sq.From()
-	if fromSrc == nil {
-		return nil, fmt.Errorf("dalgo2ingitdb: query has no FROM clause")
-	}
-	base := fromSrc.Base()
-	colRef, ok := base.(dal.CollectionRef)
-	if !ok {
-		return nil, fmt.Errorf("dalgo2ingitdb: FROM source must be a CollectionRef, got %T", base)
-	}
-	collectionID := colRef.Name()
-	colDef, exists := r.def.Collections[collectionID]
-	if !exists {
-		return nil, fmt.Errorf("dalgo2ingitdb: collection %q not found in definition", collectionID)
-	}
-	if colDef.RecordFile == nil {
-		return nil, fmt.Errorf("dalgo2ingitdb: collection %q has no record_file definition", collectionID)
-	}
+	// collectionFromQuery already validated that query is a StructuredQuery.
+	sq, _ := query.(dal.StructuredQuery)
 
 	records, err := readAllRecordsFromDisk(colDef)
 	if err != nil {
@@ -63,6 +45,37 @@ func executeQueryToRecordsReader(_ context.Context, r readonlyTx, query dal.Quer
 	return newSliceRecordsReader(records), nil
 }
 
+// collectionFromQuery resolves the single collection a structured query reads
+// from, validating the FROM clause and that the collection exists with a record
+// file. Shared by the records-reader and recordset-reader query paths.
+func collectionFromQuery(def *ingitdb.Definition, query dal.Query) (*ingitdb.CollectionDef, error) {
+	if def == nil {
+		return nil, fmt.Errorf("dalgo2ingitdb: transaction has no loaded definition")
+	}
+	sq, ok := query.(dal.StructuredQuery)
+	if !ok {
+		return nil, fmt.Errorf("dalgo2ingitdb: only StructuredQuery is supported, got %T", query)
+	}
+	fromSrc := sq.From()
+	if fromSrc == nil {
+		return nil, fmt.Errorf("dalgo2ingitdb: query has no FROM clause")
+	}
+	base := fromSrc.Base()
+	colRef, ok := base.(dal.CollectionRef)
+	if !ok {
+		return nil, fmt.Errorf("dalgo2ingitdb: FROM source must be a CollectionRef, got %T", base)
+	}
+	collectionID := colRef.Name()
+	colDef, exists := def.Collections[collectionID]
+	if !exists {
+		return nil, fmt.Errorf("dalgo2ingitdb: collection %q not found in definition", collectionID)
+	}
+	if colDef.RecordFile == nil {
+		return nil, fmt.Errorf("dalgo2ingitdb: collection %q has no record_file definition", collectionID)
+	}
+	return colDef, nil
+}
+
 func readAllRecordsFromDisk(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
 	switch colDef.RecordFile.RecordType {
 	case ingitdb.SingleRecord:
@@ -74,7 +87,60 @@ func readAllRecordsFromDisk(colDef *ingitdb.CollectionDef) ([]dal.Record, error)
 	}
 }
 
+// readAllSingleRecords reads every single-record file and eagerly bakes computed
+// columns into each returned dal.Record.
 func readAllSingleRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
+	stored, err := readAllSingleStored(colDef)
+	if err != nil {
+		return nil, err
+	}
+	return bakeStoredRecords(colDef, stored)
+}
+
+// readAllMapOfRecords reads a map-of-records file and eagerly bakes computed
+// columns into each returned dal.Record.
+func readAllMapOfRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
+	stored, err := readAllMapStored(colDef)
+	if err != nil {
+		return nil, err
+	}
+	return bakeStoredRecords(colDef, stored)
+}
+
+// bakeStoredRecords eagerly evaluates every computed column for each stored
+// record and returns dal.Records carrying the merged stored+computed map. This
+// is the legacy eager read path consumed by ExecuteQueryToRecordsReader; the
+// recordset path skips it and resolves computed columns lazily instead.
+func bakeStoredRecords(colDef *ingitdb.CollectionDef, stored []KeyedStored) ([]dal.Record, error) {
+	records := make([]dal.Record, 0, len(stored))
+	for _, s := range stored {
+		computed, computeErr := ApplyFormulasToRead(s.Stored, colDef.Columns, colDef.ID, s.Key)
+		if computeErr != nil {
+			return nil, computeErr
+		}
+		key := dal.NewKeyWithID(colDef.ID, s.Key)
+		rec := dal.NewRecordWithData(key, computed)
+		rec.SetError(nil)
+		records = append(records, rec)
+	}
+	return records, nil
+}
+
+// readAllStoredRecords reads every record in the collection from disk and
+// returns each one's locale-normalized stored fields, WITHOUT evaluating any
+// computed column.
+func readAllStoredRecords(colDef *ingitdb.CollectionDef) ([]KeyedStored, error) {
+	switch colDef.RecordFile.RecordType {
+	case ingitdb.SingleRecord:
+		return readAllSingleStored(colDef)
+	case ingitdb.MapOfRecords:
+		return readAllMapStored(colDef)
+	default:
+		return nil, fmt.Errorf("dalgo2ingitdb: query unsupported for record type %q", colDef.RecordFile.RecordType)
+	}
+}
+
+func readAllSingleStored(colDef *ingitdb.CollectionDef) ([]KeyedStored, error) {
 	nameTemplate := colDef.RecordFile.Name
 	globPattern := strings.ReplaceAll(nameTemplate, "{key}", "*")
 	basePath := filepath.Join(colDef.DirPath, colDef.RecordFile.RecordsBasePath())
@@ -86,7 +152,7 @@ func readAllSingleRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
 	if err != nil {
 		return nil, err
 	}
-	records := make([]dal.Record, 0, len(matches))
+	stored := make([]KeyedStored, 0, len(matches))
 	for _, match := range matches {
 		if colDef.RecordFile.IsExcluded(filepath.Base(match)) {
 			continue
@@ -107,37 +173,23 @@ func readAllSingleRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
 			continue
 		}
 		normalized := ApplyLocaleToRead(data, colDef.Columns)
-		computed, computeErr := ApplyFormulasToRead(normalized, colDef.Columns, colDef.ID, recordKey)
-		if computeErr != nil {
-			return nil, computeErr
-		}
-		key := dal.NewKeyWithID(colDef.ID, recordKey)
-		rec := dal.NewRecordWithData(key, computed)
-		rec.SetError(nil)
-		records = append(records, rec)
+		stored = append(stored, KeyedStored{Key: recordKey, Stored: normalized})
 	}
-	return records, nil
+	return stored, nil
 }
 
-func readAllMapOfRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
+func readAllMapStored(colDef *ingitdb.CollectionDef) ([]KeyedStored, error) {
 	path := resolveRecordPath(colDef, "")
 	allData, err := readMapOfRecordsFile(path, colDef.RecordFile.Format)
 	if err != nil {
 		return nil, err
 	}
-	records := make([]dal.Record, 0, len(allData))
+	stored := make([]KeyedStored, 0, len(allData))
 	for id, fields := range allData {
 		normalized := ApplyLocaleToRead(fields, colDef.Columns)
-		computed, computeErr := ApplyFormulasToRead(normalized, colDef.Columns, colDef.ID, id)
-		if computeErr != nil {
-			return nil, computeErr
-		}
-		key := dal.NewKeyWithID(colDef.ID, id)
-		rec := dal.NewRecordWithData(key, computed)
-		rec.SetError(nil)
-		records = append(records, rec)
+		stored = append(stored, KeyedStored{Key: id, Stored: normalized})
 	}
-	return records, nil
+	return stored, nil
 }
 
 // buildKeyExtractor returns a function that recovers the record key from
