@@ -15,6 +15,7 @@ var (
 	colorText      = lipgloss.Color("#F9FAFB")
 	colorAccent    = lipgloss.Color("#A78BFA")
 	colorGreen     = lipgloss.Color("#34D399")
+	colorError     = lipgloss.Color("#F87171")
 
 	// white is a plain color.Color used for the header text.
 	white color.Color = lipgloss.Color("#FFFFFF")
@@ -76,4 +77,7 @@ var (
 
 	helpStyle = lipgloss.NewStyle().
 			Foreground(colorMuted)
+
+	errorCellStyle = lipgloss.NewStyle().
+			Foreground(colorError)
 )

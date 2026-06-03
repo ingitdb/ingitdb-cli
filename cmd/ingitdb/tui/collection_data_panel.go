@@ -8,8 +8,14 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/rivo/uniseg"
 
+	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
+
+// computedCellError is the bounded indicator rendered in place of a painted
+// computed cell whose evaluation or coercion failed. It is a short, fixed string
+// so it is truncated to the column width like any other cell value.
+const computedCellError = "#ERR!"
 
 func (m collectionModel) renderRecords(width, height int) string {
 	if m.loading {
@@ -102,22 +108,17 @@ func (m collectionModel) renderRecords(width, height int) string {
 	if end > len(m.records) {
 		end = len(m.records)
 	}
-	numericCol := make([]bool, len(cols))
-	if len(m.records) > 0 {
-		for i, c := range cols {
-			if m.isL10NDisplayCol(c) {
-				numericCol[i] = false
-			} else {
-				numericCol[i] = isNumeric(m.records[0][c])
-			}
-		}
-	}
+	numericCol := m.numericColumns(cols)
 	for ri := m.recordOffset; ri < end; ri++ {
-		row := m.records[ri]
 		cells := make([]string, len(visIdx))
 		for vi, i := range visIdx {
 			c := cols[i]
-			raw := m.cellValue(row, c)
+			raw, cellErr := m.cellValueAt(ri, c)
+			if cellErr != nil {
+				// A painted computed cell that errors renders a bounded error
+				// indicator; the rest of the screen keeps rendering.
+				raw = computedCellError
+			}
 			v := replaceRegionalIndicators(raw)
 			if uniseg.StringWidth(v) > colWidths[i] {
 				v = truncateToWidth(v, colWidths[i]-1) + "…"
@@ -128,8 +129,11 @@ func (m collectionModel) renderRecords(width, height int) string {
 			} else {
 				cell = padRight(v, colWidths[i])
 			}
-			if ri == m.recordCursor && i == m.colCursor {
+			switch {
+			case ri == m.recordCursor && i == m.colCursor:
 				cell = selectedItemStyle.Render(cell)
+			case cellErr != nil:
+				cell = errorCellStyle.Render(cell)
 			}
 			cells[vi] = cell
 		}
@@ -255,19 +259,31 @@ func stripAnsi(s string) string {
 	return b.String()
 }
 
-// computeColWidths calculates the display width for each column, capped at 30,
-// considering both column names and all record values.
+// computeColWidths calculates the display width for each column, capped at 30.
+// A stored column is sized from its header and all record values, as before. A
+// computed (FORMULA) column is sized from its header and declared length only —
+// its values are never sampled, because sampling would force evaluation.
 func (m collectionModel) computeColWidths() []int {
 	cols := m.columns
 	if len(cols) == 0 {
 		return nil
 	}
 	widths := make([]int, len(cols))
+	computed := make([]bool, len(cols))
 	for i, c := range cols {
 		widths[i] = uniseg.StringWidth(c)
+		if col := m.displayColDef(c); col != nil && col.Formula != "" {
+			computed[i] = true
+			if col.Length > widths[i] {
+				widths[i] = col.Length
+			}
+		}
 	}
 	for _, row := range m.records {
 		for i, c := range cols {
+			if computed[i] {
+				continue // never sample a computed column's value
+			}
 			raw := m.cellValue(row, c)
 			v := replaceRegionalIndicators(raw)
 			if w := uniseg.StringWidth(v); w > widths[i] {
@@ -281,6 +297,44 @@ func (m collectionModel) computeColWidths() []int {
 		}
 	}
 	return widths
+}
+
+// numericColumns reports, per display column, whether it should be right-aligned
+// as numeric. A computed column's alignment comes from its declared ColumnType
+// (never from sampling a value, which would force evaluation); a stored column's
+// alignment is detected from the first record's stored value, as before; an L10N
+// display column is never numeric.
+func (m collectionModel) numericColumns(cols []string) []bool {
+	numeric := make([]bool, len(cols))
+	for i, c := range cols {
+		if m.isL10NDisplayCol(c) {
+			continue
+		}
+		if col := m.displayColDef(c); col != nil && col.Formula != "" {
+			numeric[i] = isNumericType(col.Type)
+			continue
+		}
+		if len(m.records) > 0 {
+			numeric[i] = isNumeric(m.records[0][c])
+		}
+	}
+	return numeric
+}
+
+// displayColDef returns the column definition backing a display column, resolving
+// the "field.locale" form of an L10N display column to its base field. It returns
+// nil when the (base) field is not a declared column.
+func (m collectionModel) displayColDef(displayCol string) *ingitdb.ColumnDef {
+	baseField := displayCol
+	if dotIdx := strings.Index(displayCol, "."); dotIdx > 0 {
+		baseField = displayCol[:dotIdx]
+	}
+	return m.colDef.Columns[baseField]
+}
+
+// isNumericType reports whether a declared column type is right-aligned numeric.
+func isNumericType(t ingitdb.ColumnType) bool {
+	return t == ingitdb.ColumnTypeInt || t == ingitdb.ColumnTypeFloat
 }
 
 // visibleColumns returns the slice of column indices that fit within width,
@@ -465,6 +519,27 @@ func (m collectionModel) cellValue(row map[string]any, displayCol string) string
 		}
 	}
 	return fmt.Sprintf("%v", row[displayCol])
+}
+
+// cellValueAt resolves the display value for the painted cell at record index
+// rowIdx and column displayCol. Stored and L10N columns are read from the
+// retained stored-value map (identical to cellValue). A computed (FORMULA)
+// column is evaluated lazily through dalgo2ingitdb.AccessValue on the retained
+// row handle, so only painted computed cells are ever evaluated and dalgo's
+// per-row memoization is preserved across re-renders and scroll-back.
+func (m collectionModel) cellValueAt(rowIdx int, displayCol string) (string, error) {
+	baseField := displayCol
+	if dotIdx := strings.Index(displayCol, "."); dotIdx > 0 {
+		baseField = displayCol[:dotIdx]
+	}
+	if col, ok := m.colDef.Columns[baseField]; ok && col.Formula != "" {
+		v, err := dalgo2ingitdb.AccessValue(m.rows[rowIdx], m.rs, m.colDef.ID, m.recordKeys[rowIdx], baseField, col)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%v", v), nil
+	}
+	return m.cellValue(m.records[rowIdx], displayCol), nil
 }
 
 // isL10NDisplayCol returns true if the display column name corresponds to an

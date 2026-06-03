@@ -6,13 +6,20 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/dal-go/dalgo/dal"
+	"github.com/dal-go/dalgo/recordset"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
-// recordsLoadedMsg carries all records loaded from disk for a collection.
+// recordsLoadedMsg carries the records loaded from disk for a collection. It
+// holds the query recordset and its retained per-record row handles (so computed
+// columns resolve lazily, at paint time) plus each record's stored (non-computed)
+// field values for layout and locale discovery — never pre-evaluated computed
+// values.
 type recordsLoadedMsg struct {
+	rs      recordset.Recordset
+	rows    []recordset.Row
 	records []map[string]any
 	keys    []string
 	err     error
@@ -32,7 +39,9 @@ type collectionModel struct {
 	schemaOffset int
 
 	// right panel: records + scroll
-	records      []map[string]any
+	rs           recordset.Recordset // query recordset; computed columns resolve lazily on access
+	rows         []recordset.Row     // retained row handles so dalgo's per-row memoization survives re-renders
+	records      []map[string]any    // each record's stored (non-computed) values; computed cells resolve via rs/rows
 	recordKeys   []string
 	recordCursor int
 	recordOffset int
@@ -80,6 +89,8 @@ func (m collectionModel) Update(msg tea.Msg) (collectionModel, tea.Cmd) {
 
 	case recordsLoadedMsg:
 		m.loading = false
+		m.rs = msg.rs
+		m.rows = msg.rows
 		m.records = msg.records
 		m.recordKeys = msg.keys
 		m.locales = discoverLocales(m.records, m.colDef)
@@ -214,6 +225,8 @@ func loadRecordsCmd(db dal.DB, colDef *ingitdb.CollectionDef) tea.Cmd {
 		})
 
 		var (
+			rs      recordset.Recordset
+			rows    []recordset.Row
 			records []map[string]any
 			keys    []string
 		)
@@ -223,25 +236,31 @@ func loadRecordsCmd(db dal.DB, colDef *ingitdb.CollectionDef) tea.Cmd {
 				return txErr
 			}
 			defer func() { _ = reader.Close() }()
-			var names []string
+			var storedNames []string
 			for {
-				row, rs, nextErr := reader.Next()
+				row, rsLocal, nextErr := reader.Next()
 				if nextErr != nil {
 					break
 				}
-				if names == nil {
-					names = dalgo2ingitdb.AllColumnNames(rs)
+				rs = rsLocal
+				if storedNames == nil {
+					// Read only stored (non-computed) columns: computed columns are
+					// resolved lazily at paint time, never eagerly at load.
+					storedNames = dalgo2ingitdb.StoredColumnNames(rs)
 				}
 				recKey := dalgo2ingitdb.RowKey(row, rs)
-				data, derr := dalgo2ingitdb.RowData(row, rs, colID, recKey, colDef, names)
+				stored, derr := dalgo2ingitdb.RowData(row, rs, colID, recKey, colDef, storedNames)
 				if derr != nil {
 					return derr
 				}
+				// Retain the row handle so dalgo's per-row memoization of computed
+				// values survives re-renders and scroll-back.
+				rows = append(rows, row)
 				keys = append(keys, recKey)
-				records = append(records, data)
+				records = append(records, stored)
 			}
 			return nil
 		})
-		return recordsLoadedMsg{records: records, keys: keys, err: err}
+		return recordsLoadedMsg{rs: rs, rows: rows, records: records, keys: keys, err: err}
 	}
 }

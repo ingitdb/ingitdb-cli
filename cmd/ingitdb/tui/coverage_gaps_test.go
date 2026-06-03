@@ -8,6 +8,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -90,6 +91,52 @@ func (mockDB) RunReadonlyTransaction(_ context.Context, f dal.ROTxWorker, _ ...d
 }
 func (mockDB) RunReadwriteTransaction(_ context.Context, _ dal.RWTxWorker, _ ...dal.TransactionOption) error {
 	return errors.New("not implemented")
+}
+
+// boomColumn is a stored recordset column whose value read always fails, used to
+// exercise loadRecordsCmd's per-row read-error path.
+type boomColumn struct{}
+
+func (boomColumn) Name() string              { return "boom" }
+func (boomColumn) DefaultValue() any         { return nil }
+func (boomColumn) GetValue(int) (any, error) { return nil, errors.New("boom") }
+func (boomColumn) SetValue(int, any) error   { return nil }
+func (boomColumn) DbType() string            { return "" }
+func (boomColumn) ValueType() reflect.Type   { return reflect.TypeOf((*any)(nil)).Elem() }
+func (boomColumn) IsBitmap() bool            { return false }
+func (boomColumn) Add(any) error             { return nil }
+func (boomColumn) Values() []any             { return nil }
+
+// boomRecordsetReader yields one row over a recordset whose only stored column
+// errors on read.
+type boomRecordsetReader struct {
+	rs   recordset.Recordset
+	done bool
+}
+
+func (r *boomRecordsetReader) Next() (recordset.Row, recordset.Recordset, error) {
+	if r.done {
+		return nil, r.rs, dal.ErrNoMoreRecords
+	}
+	r.done = true
+	return r.rs.GetRow(0), r.rs, nil
+}
+func (r *boomRecordsetReader) Recordset() recordset.Recordset { return r.rs }
+func (r *boomRecordsetReader) Cursor() (string, error)        { return "", nil }
+func (r *boomRecordsetReader) Close() error                   { return nil }
+
+type boomTx struct{ mockTx }
+
+func (boomTx) ExecuteQueryToRecordsetReader(_ context.Context, _ dal.Query, _ ...recordset.Option) (dal.RecordsetReader, error) {
+	rs := recordset.NewColumnarRecordset("people", boomColumn{})
+	rs.NewRow()
+	return &boomRecordsetReader{rs: rs}, nil
+}
+
+type boomDB struct{ mockDB }
+
+func (boomDB) RunReadonlyTransaction(_ context.Context, f dal.ROTxWorker, _ ...dal.TransactionOption) error {
+	return f(context.Background(), boomTx{})
 }
 
 // ---------------------------------------------------------------------------
@@ -178,10 +225,12 @@ func TestLoadRecordsCmd_Success(t *testing.T) {
 	}
 }
 
-// TestLoadRecordsCmd_ComputedError exercises the per-row RowData error path: a
-// computed column whose formula raises at runtime aborts the load (the cells the
-// TUI would render are read through the shared coerce-on-access accessor).
-func TestLoadRecordsCmd_ComputedError(t *testing.T) {
+// TestLoadRecordsCmd_ComputedColumnNotEvaluatedAtLoad proves the lazy load: a
+// computed column whose formula raises at runtime does NOT abort the load,
+// because loadRecordsCmd reads only stored columns. The erroring formula is
+// never evaluated at load time (it would surface only if its cell were painted),
+// and the load retains the recordset + row handles for lazy paint-time access.
+func TestLoadRecordsCmd_ComputedColumnNotEvaluatedAtLoad(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -217,8 +266,36 @@ func TestLoadRecordsCmd_ComputedError(t *testing.T) {
 	if !ok {
 		t.Fatalf("cmd() returned %T, want recordsLoadedMsg", msg)
 	}
+	if loaded.err != nil {
+		t.Fatalf("load must not abort on an erroring computed column: %v", loaded.err)
+	}
+	if len(loaded.records) != 1 {
+		t.Fatalf("loaded %d records, want 1", len(loaded.records))
+	}
+	if _, ok := loaded.records[0]["ratio"]; ok {
+		t.Error(`computed column "ratio" must not be evaluated or materialized at load time`)
+	}
+	if loaded.records[0]["qty"] == nil {
+		t.Error(`stored column "qty" should be loaded`)
+	}
+	if loaded.rs == nil || len(loaded.rows) != 1 {
+		t.Error("load should retain the recordset and row handles for lazy paint-time evaluation")
+	}
+}
+
+// TestLoadRecordsCmd_StoredReadError covers loadRecordsCmd's per-row read-error
+// path: a stored column whose value read fails surfaces as the load's error.
+func TestLoadRecordsCmd_StoredReadError(t *testing.T) {
+	t.Parallel()
+
+	colDef := simpleColDef("people", "boom")
+	msg := loadRecordsCmd(boomDB{}, colDef)()
+	loaded, ok := msg.(recordsLoadedMsg)
+	if !ok {
+		t.Fatalf("cmd() returned %T, want recordsLoadedMsg", msg)
+	}
 	if loaded.err == nil {
-		t.Fatal("expected error from erroring computed column")
+		t.Fatal("expected the load to surface the stored-column read error")
 	}
 }
 
