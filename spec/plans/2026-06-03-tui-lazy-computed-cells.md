@@ -44,7 +44,7 @@ columns evaluate and dalgo's per-row memoization survives re-renders and scroll-
 ### Task 2: Schema-based sizing and alignment for computed columns
 
 **Verifies:** tui-lazy-computed-cells#ac:width-sizing-does-not-evaluate, tui-lazy-computed-cells#ac:numeric-alignment-does-not-evaluate, tui-lazy-computed-cells#ac:stored-locale-discovery-unchanged
-**Status:** pending
+**Status:** done
 
 Derive a computed column's width from its header label and declared
 `ColumnType`/length and its numeric alignment from the declared type, so neither

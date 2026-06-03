@@ -103,16 +103,7 @@ func (m collectionModel) renderRecords(width, height int) string {
 	if end > len(m.records) {
 		end = len(m.records)
 	}
-	numericCol := make([]bool, len(cols))
-	if len(m.records) > 0 {
-		for i, c := range cols {
-			if m.isL10NDisplayCol(c) {
-				numericCol[i] = false
-			} else {
-				numericCol[i] = isNumeric(m.records[0][c])
-			}
-		}
-	}
+	numericCol := m.numericColumns(cols)
 	for ri := m.recordOffset; ri < end; ri++ {
 		cells := make([]string, len(visIdx))
 		for vi, i := range visIdx {
@@ -255,19 +246,31 @@ func stripAnsi(s string) string {
 	return b.String()
 }
 
-// computeColWidths calculates the display width for each column, capped at 30,
-// considering both column names and all record values.
+// computeColWidths calculates the display width for each column, capped at 30.
+// A stored column is sized from its header and all record values, as before. A
+// computed (FORMULA) column is sized from its header and declared length only —
+// its values are never sampled, because sampling would force evaluation.
 func (m collectionModel) computeColWidths() []int {
 	cols := m.columns
 	if len(cols) == 0 {
 		return nil
 	}
 	widths := make([]int, len(cols))
+	computed := make([]bool, len(cols))
 	for i, c := range cols {
 		widths[i] = uniseg.StringWidth(c)
+		if col := m.displayColDef(c); col != nil && col.Formula != "" {
+			computed[i] = true
+			if col.Length > widths[i] {
+				widths[i] = col.Length
+			}
+		}
 	}
 	for _, row := range m.records {
 		for i, c := range cols {
+			if computed[i] {
+				continue // never sample a computed column's value
+			}
 			raw := m.cellValue(row, c)
 			v := replaceRegionalIndicators(raw)
 			if w := uniseg.StringWidth(v); w > widths[i] {
@@ -281,6 +284,44 @@ func (m collectionModel) computeColWidths() []int {
 		}
 	}
 	return widths
+}
+
+// numericColumns reports, per display column, whether it should be right-aligned
+// as numeric. A computed column's alignment comes from its declared ColumnType
+// (never from sampling a value, which would force evaluation); a stored column's
+// alignment is detected from the first record's stored value, as before; an L10N
+// display column is never numeric.
+func (m collectionModel) numericColumns(cols []string) []bool {
+	numeric := make([]bool, len(cols))
+	for i, c := range cols {
+		if m.isL10NDisplayCol(c) {
+			continue
+		}
+		if col := m.displayColDef(c); col != nil && col.Formula != "" {
+			numeric[i] = isNumericType(col.Type)
+			continue
+		}
+		if len(m.records) > 0 {
+			numeric[i] = isNumeric(m.records[0][c])
+		}
+	}
+	return numeric
+}
+
+// displayColDef returns the column definition backing a display column, resolving
+// the "field.locale" form of an L10N display column to its base field. It returns
+// nil when the (base) field is not a declared column.
+func (m collectionModel) displayColDef(displayCol string) *ingitdb.ColumnDef {
+	baseField := displayCol
+	if dotIdx := strings.Index(displayCol, "."); dotIdx > 0 {
+		baseField = displayCol[:dotIdx]
+	}
+	return m.colDef.Columns[baseField]
+}
+
+// isNumericType reports whether a declared column type is right-aligned numeric.
+func isNumericType(t ingitdb.ColumnType) bool {
+	return t == ingitdb.ColumnTypeInt || t == ingitdb.ColumnTypeFloat
 }
 
 // visibleColumns returns the slice of column indices that fit within width,

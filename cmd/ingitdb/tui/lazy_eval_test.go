@@ -156,3 +156,129 @@ func TestCellValueAt_ComputedErrorPropagated(t *testing.T) {
 		t.Errorf("cellValueAt(qty) = (%q, %v), want (\"1\", nil)", v, err)
 	}
 }
+
+// AC: width-sizing-does-not-evaluate — computeColWidths never invokes the
+// evaluator, and a computed column's width derives from its header label.
+func TestLazy_WidthSizingDoesNotEvaluate(t *testing.T) {
+	t.Parallel()
+	calls := 0
+	m := newLazyModel(5, &calls)
+
+	widths := m.computeColWidths()
+
+	if calls != 0 {
+		t.Fatalf("computeColWidths invoked the evaluator %d times, want 0", calls)
+	}
+	// columns: [qty, ratio]; ratio has no declared length, so its width is its
+	// header label width.
+	if want := len("ratio"); widths[1] != want {
+		t.Errorf("computed column width = %d, want %d (header-derived, no value sampling)", widths[1], want)
+	}
+}
+
+// AC: width-sizing-does-not-evaluate (declared-length path) — a computed
+// column's width honors its declared length without sampling any value.
+func TestLazy_ComputedWidthFromDeclaredLength(t *testing.T) {
+	t.Parallel()
+	calls := 0
+	colDef := &ingitdb.CollectionDef{
+		ID: "items",
+		Columns: map[string]*ingitdb.ColumnDef{
+			"x":     {Type: ingitdb.ColumnTypeString},
+			"label": {Type: ingitdb.ColumnTypeString, Formula: "x", Length: 12},
+		},
+		ColumnsOrder: []string{"x", "label"},
+	}
+	rs := recordset.NewColumnarRecordset(colDef.ID,
+		recordset.NewColumn[string]("x", ""),
+		recordset.NewComputedColumn("label", countingTUIEvaluator{&calls}),
+	)
+	row := rs.NewRow()
+	_ = row.SetValueByName("x", "hi", rs)
+	m := collectionModel{
+		colDef:     colDef,
+		columns:    []string{"x", "label"},
+		rs:         rs,
+		rows:       []recordset.Row{row},
+		records:    []map[string]any{{"x": "hi"}},
+		recordKeys: []string{"r0"},
+	}
+
+	widths := m.computeColWidths()
+
+	if calls != 0 {
+		t.Fatalf("computeColWidths invoked the evaluator %d times, want 0", calls)
+	}
+	if widths[1] != 12 {
+		t.Errorf("computed column width = %d, want 12 (declared length)", widths[1])
+	}
+}
+
+// AC: numeric-alignment-does-not-evaluate — an int computed column is
+// right-aligned (numeric) from its declared type, with no evaluator call.
+func TestLazy_NumericAlignmentFromTypeDoesNotEvaluate(t *testing.T) {
+	t.Parallel()
+	calls := 0
+	m := newLazyModel(5, &calls)
+
+	numeric := m.numericColumns(m.columns)
+
+	if calls != 0 {
+		t.Fatalf("alignment determination invoked the evaluator %d times, want 0", calls)
+	}
+	// columns: [qty (stored int), ratio (computed int)] — both numeric.
+	if !numeric[1] {
+		t.Error("int computed column should be right-aligned (numeric) from its declared type")
+	}
+}
+
+// A non-numeric computed column is not right-aligned, decided from its declared
+// type without evaluation.
+func TestNumericColumns_ComputedStringNotNumeric(t *testing.T) {
+	t.Parallel()
+	colDef := &ingitdb.CollectionDef{
+		ID: "items",
+		Columns: map[string]*ingitdb.ColumnDef{
+			"x":    {Type: ingitdb.ColumnTypeString},
+			"name": {Type: ingitdb.ColumnTypeString, Formula: "x"},
+		},
+		ColumnsOrder: []string{"x", "name"},
+	}
+	m := collectionModel{
+		colDef:  colDef,
+		columns: []string{"x", "name"},
+		records: []map[string]any{{"x": "hi"}},
+	}
+
+	numeric := m.numericColumns(m.columns)
+
+	if numeric[1] {
+		t.Error("string computed column must not be right-aligned")
+	}
+}
+
+// AC: stored-locale-discovery-unchanged — locale keys present only on an
+// off-viewport record still appear; locale discovery scans every record's
+// stored values, exactly as before this Feature.
+func TestLazy_StoredLocaleDiscoveryScansAllRecords(t *testing.T) {
+	t.Parallel()
+	colDef := &ingitdb.CollectionDef{
+		ID: "things",
+		Columns: map[string]*ingitdb.ColumnDef{
+			"title": {Type: ingitdb.ColumnTypeL10N},
+		},
+		ColumnsOrder: []string{"title"},
+	}
+	// "fr" appears only on the second record — the one that would sit outside a
+	// short visible window.
+	records := []map[string]any{
+		{"title": map[string]any{"en": "Hello"}},
+		{"title": map[string]any{"en": "Hi", "fr": "Bonjour"}},
+	}
+
+	got := discoverLocales(records, colDef)
+
+	if len(got) != 2 || got[0] != "en" || got[1] != "fr" {
+		t.Errorf("discoverLocales = %v, want [en fr] (off-viewport locale must be discovered)", got)
+	}
+}
