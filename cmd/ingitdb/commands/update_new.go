@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/commands/sqlflags"
+	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
@@ -244,24 +245,54 @@ func runUpdateFromSet(
 	q := newQueryForCollection(from)
 	var matches []patchTarget
 	err = ictx.db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
-		reader, qerr := tx.ExecuteQueryToRecordsReader(ctx, q)
+		reader, qerr := tx.ExecuteQueryToRecordsetReader(ctx, q)
 		if qerr != nil {
 			return qerr
 		}
 		defer func() { _ = reader.Close() }()
+		var (
+			readNames []string
+			storedSet map[string]bool
+		)
 		for {
-			rec, nextErr := reader.Next()
+			row, rs, nextErr := reader.Next()
 			if nextErr != nil {
 				break
 			}
-			data := rec.Data().(map[string]any)
-			recKey := fmt.Sprintf("%v", rec.Key().ID)
+			if storedSet == nil {
+				storedNames := dalgo2ingitdb.StoredColumnNames(rs)
+				storedSet = make(map[string]bool, len(storedNames))
+				readNames = append(readNames, storedNames...)
+				for _, n := range storedNames {
+					storedSet[n] = true
+				}
+				// Computed columns referenced by --where are read for matching
+				// (and dropped before write-back).
+				for _, n := range whereColumnNames(rs, conds) {
+					if !storedSet[n] {
+						readNames = append(readNames, n)
+					}
+				}
+			}
+			recKey := dalgo2ingitdb.RowKey(row, rs)
+			data, derr := dalgo2ingitdb.RowData(row, rs, from, recKey, ictx.colDef, readNames)
+			if derr != nil {
+				return derr
+			}
 			if !allFlag {
 				if matched, _ := evalAllWhere(data, recKey, conds); !matched {
 					continue
 				}
 			}
-			matches = append(matches, patchTarget{key: recKey, data: data})
+			// Write-back persists stored fields only — computed columns are never
+			// stored (the write path rejects them).
+			storedData := make(map[string]any, len(data))
+			for k, v := range data {
+				if storedSet[k] {
+					storedData[k] = v
+				}
+			}
+			matches = append(matches, patchTarget{key: recKey, data: storedData})
 		}
 		return nil
 	})

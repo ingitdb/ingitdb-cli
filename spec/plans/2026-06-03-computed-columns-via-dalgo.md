@@ -1,6 +1,6 @@
 # Plan: Computed Columns via dalgo (lazy delegation)
 
-**Status:** Implementing
+**Status:** Completed
 **Source Feature:** computed-columns-via-dalgo
 **Date:** 2026-06-03
 **Owner:** alex
@@ -42,6 +42,24 @@ shared coerce-on-access accessor — live in `pkg/dalgo2ingitdb`, and
 `pkg/dalgo2fsingitdb`'s recordset method plus the CLI consumers are wired to them;
 the eager bake is removed from both query paths. Task 1 implements both packages'
 `ExecuteQueryToRecordsetReader`; Task 5 removes the eager bake from both.
+
+**Implementation note (eager-bake retained for write-time FK).** During Task 5
+the records-reader eager bake (`ApplyFormulasToRead` via `bakeStoredRecords`) was
+found to also back **write-time computed-foreign-key validation** (`Set`/`Delete`
+referential-integrity checks read child records and must see computed FK values).
+Write-time FK evaluation is explicitly out of scope and unchanged (Feature → Not
+Doing), so the bake is *not* deleted; instead all four read consumers were
+migrated off the records reader onto the lazy recordset reader, so the **read
+path** no longer eagerly evaluates formulas (`REQ:remove-eager-bake`). The
+records-reader bake now serves only the out-of-scope write-time FK path.
+
+**Implementation note (TUI laziness).** The TUI collection screen scans all
+records × columns for column-width sizing, locale discovery, and numeric
+detection, so strict per-visible-cell laziness conflicts with its current
+architecture. The TUI was migrated onto the recordset reader + shared accessor
+(byte-identical to prior behavior); true per-cell laziness is deferred as a
+follow-up. The data-layer `REQ:compute-only-on-reference` is satisfied and
+unit-verified via the recordset.
 
 ## Tasks
 

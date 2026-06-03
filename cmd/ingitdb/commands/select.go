@@ -229,7 +229,7 @@ func runSelectFromSetWithDB(
 				names = selectColumnsToRead(rs, fields, conds)
 			}
 			recKey := dalgo2ingitdb.RowKey(row, rs)
-			data, derr := rowData(row, rs, from, recKey, colDef, names)
+			data, derr := dalgo2ingitdb.RowData(row, rs, from, recKey, colDef, names)
 			if derr != nil {
 				return derr
 			}
@@ -296,27 +296,23 @@ func runSelectFromSetWithDB(
 // absent field simply did not appear in the record map).
 func selectColumnsToRead(rs recordset.Recordset, fields []string, conds []sqlflags.Condition) []string {
 	want := make(map[string]bool)
-	for _, c := range conds {
-		if c.Field != "$id" {
-			want[c.Field] = true
-		}
+	for _, name := range whereColumnNames(rs, conds) {
+		want[name] = true
 	}
 	if len(fields) == 0 {
-		for _, name := range allColumnNames(rs) {
+		for _, name := range dalgo2ingitdb.AllColumnNames(rs) {
 			want[name] = true
 		}
 	} else {
 		for _, f := range fields {
-			if f != "$id" {
+			if f != "$id" && rs.GetColumnByName(f) != nil {
 				want[f] = true
 			}
 		}
 	}
 	names := make([]string, 0, len(want))
 	for name := range want {
-		if rs.GetColumnByName(name) != nil {
-			names = append(names, name)
-		}
+		names = append(names, name)
 	}
 	return names
 }

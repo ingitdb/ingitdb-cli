@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/commands/sqlflags"
+	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
@@ -116,19 +117,26 @@ func runDeleteFromSet(
 	q := newQueryForCollection(from)
 	var matchedKeys []string
 	err = ictx.db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
-		reader, qerr := tx.ExecuteQueryToRecordsReader(ctx, q)
+		reader, qerr := tx.ExecuteQueryToRecordsetReader(ctx, q)
 		if qerr != nil {
 			return qerr
 		}
 		defer func() { _ = reader.Close() }()
+		var whereNames []string
 		for {
-			rec, nextErr := reader.Next()
+			row, rs, nextErr := reader.Next()
 			if nextErr != nil {
 				break
 			}
-			recKey := fmt.Sprintf("%v", rec.Key().ID)
+			recKey := dalgo2ingitdb.RowKey(row, rs)
 			if !allFlag {
-				data := rec.Data().(map[string]any)
+				if whereNames == nil {
+					whereNames = whereColumnNames(rs, conds)
+				}
+				data, derr := dalgo2ingitdb.RowData(row, rs, from, recKey, ictx.colDef, whereNames)
+				if derr != nil {
+					return derr
+				}
 				if match, _ := evalAllWhere(data, recKey, conds); !match {
 					continue
 				}

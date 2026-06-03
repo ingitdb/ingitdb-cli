@@ -35,3 +35,54 @@ func AccessValue(row recordset.Row, rs recordset.Recordset, collectionID, record
 	}
 	return coerced, nil
 }
+
+// RowData reads the named columns of a recordset row through AccessValue and
+// returns them as a map, omitting nil values so the result matches the ragged
+// record map the eager pipeline produced (absent fields were never keys). Only
+// the requested columns are read, so an unreferenced computed column is never
+// evaluated; a referenced computed column that errors surfaces fail-loud.
+func RowData(row recordset.Row, rs recordset.Recordset, collectionID, recordKey string, colDef *ingitdb.CollectionDef, names []string) (map[string]any, error) {
+	data := make(map[string]any, len(names))
+	for _, name := range names {
+		v, err := AccessValue(row, rs, collectionID, recordKey, name, colDef.Columns[name])
+		if err != nil {
+			return nil, err
+		}
+		if v == nil {
+			continue
+		}
+		data[name] = v
+	}
+	return data, nil
+}
+
+// AllColumnNames returns every column name of rs except the reserved IDColumn.
+func AllColumnNames(rs recordset.Recordset) []string {
+	cols := rs.Columns()
+	names := make([]string, 0, len(cols))
+	for _, col := range cols {
+		if col.Name() == IDColumn {
+			continue
+		}
+		names = append(names, col.Name())
+	}
+	return names
+}
+
+// StoredColumnNames returns the stored (non-computed) column names of rs except
+// the reserved IDColumn. Used by write consumers that must persist stored fields
+// only, never computed values.
+func StoredColumnNames(rs recordset.Recordset) []string {
+	cols := rs.Columns()
+	names := make([]string, 0, len(cols))
+	for _, col := range cols {
+		if col.Name() == IDColumn {
+			continue
+		}
+		if _, computed := col.(recordset.ComputedColumn); computed {
+			continue
+		}
+		names = append(names, col.Name())
+	}
+	return names
+}

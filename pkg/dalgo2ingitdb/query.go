@@ -87,7 +87,7 @@ func readAllRecordsFromDisk(colDef *ingitdb.CollectionDef) ([]dal.Record, error)
 	}
 }
 
-// readAllSingleRecords reads every single-record file and eagerly bakes computed
+// readAllSingleRecords reads every single-record file and bakes computed
 // columns into each returned dal.Record.
 func readAllSingleRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
 	stored, err := readAllSingleStored(colDef)
@@ -97,8 +97,8 @@ func readAllSingleRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
 	return bakeStoredRecords(colDef, stored)
 }
 
-// readAllMapOfRecords reads a map-of-records file and eagerly bakes computed
-// columns into each returned dal.Record.
+// readAllMapOfRecords reads a map-of-records file and bakes computed columns
+// into each returned dal.Record.
 func readAllMapOfRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
 	stored, err := readAllMapStored(colDef)
 	if err != nil {
@@ -107,10 +107,14 @@ func readAllMapOfRecords(colDef *ingitdb.CollectionDef) ([]dal.Record, error) {
 	return bakeStoredRecords(colDef, stored)
 }
 
-// bakeStoredRecords eagerly evaluates every computed column for each stored
-// record and returns dal.Records carrying the merged stored+computed map. This
-// is the legacy eager read path consumed by ExecuteQueryToRecordsReader; the
-// recordset path skips it and resolves computed columns lazily instead.
+// bakeStoredRecords evaluates every computed column for each stored record and
+// returns dal.Records carrying the merged stored+computed map.
+//
+// This is NOT on the read path of the select/delete/update/TUI consumers — those
+// resolve computed values lazily via ExecuteQueryToRecordsetReader. It is
+// retained for the write-time computed-foreign-key validation (Set/Delete),
+// which is explicitly out of scope for the lazy migration and must keep
+// evaluating computed FK columns to enforce referential integrity.
 func bakeStoredRecords(colDef *ingitdb.CollectionDef, stored []KeyedStored) ([]dal.Record, error) {
 	records := make([]dal.Record, 0, len(stored))
 	for _, s := range stored {

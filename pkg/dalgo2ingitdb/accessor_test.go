@@ -105,6 +105,68 @@ func TestAccessValue_NilColDefPassesThrough(t *testing.T) {
 	}
 }
 
+func TestRowData(t *testing.T) {
+	t.Parallel()
+	records := []KeyedStored{{Key: "o1", Stored: map[string]any{"qty": int64(3), "price": int64(4)}}}
+	rs := BuildRecordset(ordersColDef(), records)
+	row := rs.GetRow(0)
+	// Read a stored column and a computed column.
+	data, err := RowData(row, rs, "orders", "o1", ordersColDef(), []string{"qty", "total"})
+	if err != nil {
+		t.Fatalf("RowData: %v", err)
+	}
+	if data["qty"] != int64(3) || data["total"] != int64(12) {
+		t.Errorf("data = %#v, want qty=3 total=12", data)
+	}
+
+	// An absent stored column resolves to nil and is omitted from the map.
+	sparse := BuildRecordset(ordersColDef(), []KeyedStored{{Key: "o2", Stored: map[string]any{"qty": int64(3)}}})
+	sparseData, err := RowData(sparse.GetRow(0), sparse, "orders", "o2", ordersColDef(), []string{"qty", "price"})
+	if err != nil {
+		t.Fatalf("RowData sparse: %v", err)
+	}
+	if _, ok := sparseData["price"]; ok {
+		t.Errorf("absent price must be omitted, got %#v", sparseData)
+	}
+	if sparseData["qty"] != int64(3) {
+		t.Errorf("qty = %#v, want 3", sparseData["qty"])
+	}
+
+	// An erroring computed column propagates.
+	if _, err := RowData(row, rs, "orders", "o1", ordersColDef(), []string{"ratio"}); err == nil {
+		t.Error("RowData should propagate the erroring computed column")
+	}
+}
+
+func TestColumnNameHelpers(t *testing.T) {
+	t.Parallel()
+	rs := BuildRecordset(ordersColDef(), []KeyedStored{{Key: "o1", Stored: map[string]any{"qty": int64(3)}}})
+	all := AllColumnNames(rs)
+	stored := StoredColumnNames(rs)
+	for _, name := range append(all, stored...) {
+		if name == IDColumn {
+			t.Errorf("%s must be excluded", IDColumn)
+		}
+	}
+	has := func(names []string, want string) bool {
+		for _, n := range names {
+			if n == want {
+				return true
+			}
+		}
+		return false
+	}
+	if !has(all, "total") {
+		t.Error("AllColumnNames should include the computed column total")
+	}
+	if has(stored, "total") {
+		t.Error("StoredColumnNames must exclude the computed column total")
+	}
+	if !has(stored, "qty") {
+		t.Error("StoredColumnNames should include the stored column qty")
+	}
+}
+
 // An unknown column name surfaces a wrapped, fail-loud error.
 func TestAccessValue_UnknownColumnFailsLoud(t *testing.T) {
 	t.Parallel()

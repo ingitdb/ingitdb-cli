@@ -2,12 +2,12 @@ package tui
 
 import (
 	"context"
-	"fmt"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/dal-go/dalgo/dal"
 
+	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
@@ -218,18 +218,26 @@ func loadRecordsCmd(db dal.DB, colDef *ingitdb.CollectionDef) tea.Cmd {
 			keys    []string
 		)
 		err := db.RunReadonlyTransaction(context.Background(), func(ctx context.Context, tx dal.ReadTransaction) error {
-			reader, txErr := tx.ExecuteQueryToRecordsReader(ctx, q)
+			reader, txErr := tx.ExecuteQueryToRecordsetReader(ctx, q)
 			if txErr != nil {
 				return txErr
 			}
 			defer func() { _ = reader.Close() }()
+			var names []string
 			for {
-				rec, nextErr := reader.Next()
+				row, rs, nextErr := reader.Next()
 				if nextErr != nil {
 					break
 				}
-				data := rec.Data().(map[string]any)
-				keys = append(keys, fmt.Sprintf("%v", rec.Key().ID))
+				if names == nil {
+					names = dalgo2ingitdb.AllColumnNames(rs)
+				}
+				recKey := dalgo2ingitdb.RowKey(row, rs)
+				data, derr := dalgo2ingitdb.RowData(row, rs, colID, recKey, colDef, names)
+				if derr != nil {
+					return derr
+				}
+				keys = append(keys, recKey)
 				records = append(records, data)
 			}
 			return nil
