@@ -14,14 +14,12 @@ import (
 	"strings"
 	"testing"
 
-	mcp "github.com/metoro-io/mcp-golang"
 	"go.uber.org/mock/gomock"
 	"gopkg.in/yaml.v3"
 
 	"github.com/dal-go/dalgo/dal"
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2fsingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
-	"github.com/spf13/cobra"
 )
 
 // ============================================================
@@ -556,113 +554,6 @@ func runGitNoFail(dir string, args ...string) error {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
 	return cmd.Run()
-}
-
-// ============================================================
-// serve.go – --http and --mcp branches
-// ============================================================
-
-func TestServe_HTTPBranch(t *testing.T) {
-	// Modifies newMCPServerFn and env — not parallel.
-	t.Setenv("INGITDB_GITHUB_OAUTH_CLIENT_ID", "")
-	t.Setenv("INGITDB_GITHUB_OAUTH_CLIENT_SECRET", "")
-	t.Setenv("INGITDB_GITHUB_OAUTH_CALLBACK_URL", "")
-	t.Setenv("INGITDB_AUTH_COOKIE_DOMAIN", "")
-	t.Setenv("INGITDB_AUTH_API_BASE_URL", "")
-
-	homeDir := func() (string, error) { return "/tmp/home", nil }
-	getWd := func() (string, error) { return "/tmp/db", nil }
-	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
-		return &ingitdb.Definition{}, nil
-	}
-	newDB := func(_ string, _ *ingitdb.Definition) (dal.DB, error) { return nil, nil }
-	logf := func(...any) {}
-
-	cmd := Serve(homeDir, getWd, readDef, newDB, logf)
-
-	// Use localhost domains (no auth required) and a pre-cancelled context
-	// so serveHTTP returns quickly.
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // cancel immediately
-
-	root := &cobra.Command{
-		Use:           "app",
-		SilenceUsage:  true,
-		SilenceErrors: true,
-	}
-	root.AddCommand(cmd)
-	root.SetArgs([]string{"serve", "--http", "--http-port=0",
-		"--api-domains=localhost", "--mcp-domains=localhost"})
-
-	err := root.ExecuteContext(ctx)
-	// serveHTTP returns nil when ctx is cancelled and localhost mode is used.
-	if err != nil {
-		t.Logf("serve --http returned: %v (acceptable)", err)
-	}
-}
-
-func TestServe_MCPBranch(t *testing.T) {
-	// Modifies newMCPServerFn — not parallel.
-	dir := t.TempDir()
-
-	originalFn := newMCPServerFn
-	newMCPServerFn = func() *mcp.Server {
-		tr := &testMCPTransport{}
-		return mcp.NewServer(tr, mcp.WithName("test"), mcp.WithVersion("1.0"))
-	}
-	defer func() { newMCPServerFn = originalFn }()
-
-	homeDir := func() (string, error) { return "/tmp/home", nil }
-	getWd := func() (string, error) { return dir, nil }
-	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
-		return &ingitdb.Definition{}, nil
-	}
-	newDB := func(root string, d *ingitdb.Definition) (dal.DB, error) {
-		return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
-	}
-	logf := func(...any) {}
-
-	cmd := Serve(homeDir, getWd, readDef, newDB, logf)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // cancel immediately so serveMCP returns nil via <-ctx.Done()
-
-	root := &cobra.Command{
-		Use:           "app",
-		SilenceUsage:  true,
-		SilenceErrors: true,
-	}
-	root.AddCommand(cmd)
-	root.SetArgs([]string{"serve", "--mcp", "--path=" + dir})
-
-	err := root.ExecuteContext(ctx)
-	if err != nil {
-		t.Fatalf("serve --mcp returned unexpected error: %v", err)
-	}
-}
-
-// ============================================================
-// serve_http.go – HTTP server start error branch
-// ============================================================
-
-func TestServeHTTP_InvalidPortError(t *testing.T) {
-	// NOTE: uses t.Setenv — cannot run in parallel.
-	t.Setenv("INGITDB_GITHUB_OAUTH_CLIENT_ID", "")
-	t.Setenv("INGITDB_GITHUB_OAUTH_CLIENT_SECRET", "")
-	t.Setenv("INGITDB_GITHUB_OAUTH_CALLBACK_URL", "")
-	t.Setenv("INGITDB_AUTH_COOKIE_DOMAIN", "")
-	t.Setenv("INGITDB_AUTH_API_BASE_URL", "")
-
-	// Use an invalid port to make ListenAndServe fail immediately.
-	// Port 99999 is out of range (0-65535) → net.Listen returns an error.
-	ctx := context.Background()
-	err := serveHTTP(ctx, "99999", []string{"localhost"}, []string{"localhost"}, func(...any) {})
-	if err == nil {
-		t.Fatal("expected error when port is invalid")
-	}
-	if !strings.Contains(err.Error(), "HTTP server error") {
-		t.Errorf("unexpected error: %v", err)
-	}
 }
 
 // ============================================================

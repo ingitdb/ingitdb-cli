@@ -65,9 +65,8 @@ Builds and publishes the Snapcraft package.
 
 **Secrets used:** `SNAPCRAFT_STORE_CREDENTIALS`
 
-#### 6. `deploy-server` and `deploy-website` (after `build-linux`)
+#### 6. `deploy-website` (after `build-linux`)
 
-- `deploy-server` — Deploys to Google Cloud Run
 - `deploy-website` — Deploys website to Firebase
 
 ### GoReleaser Configurations

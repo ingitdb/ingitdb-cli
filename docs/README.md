@@ -98,7 +98,6 @@ Spec-level docs live in [ingitdb-specs](https://github.com/ingitdb/ingitdb-specs
 | `materialize` | —                                      | planned                                   | Build materialized views into `$views/` and default collection views into `$ingitdb/`        |
 | `pull`        | —                                      | planned                                   | Pull remote changes, auto-resolve generated-file conflicts, rebuild views                    |
 | `watch`       | —                                      | planned                                   | Stream change events to stdout as records are added, updated, or deleted                     |
-| `serve`       | —                                      | planned                                   | Start MCP server, HTTP API server, or file watcher (flags: `--mcp`, `--http`, `--watcher`)   |
 | `resolve`     | —                                      | planned                                   | Interactive TUI for resolving merge conflicts in data files                                  |
 | `setup`       | —                                      | planned                                   | Initialise a new database directory with a starter `.ingitdb/` config                        |
 | `migrate`     | —                                      | planned                                   | Migrate records between schema versions                                                      |
@@ -124,9 +123,9 @@ flowchart LR
     H --> I[(Git repository\non disk)]
 ```
 
-The same Git repository is also exposed to AI agents via an MCP server (Phase 6), and to any
-Go program through the [DALgo](https://github.com/dal-go/dalgo) abstraction layer implemented
-in `pkg/dalgo2ingitdb`.
+The same Git repository is also accessible to any Go program through the
+[DALgo](https://github.com/dal-go/dalgo) abstraction layer implemented in
+`pkg/dalgo2ingitdb`.
 
 ---
 

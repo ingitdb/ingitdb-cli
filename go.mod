@@ -10,7 +10,6 @@ require (
 	github.com/gofrs/flock v0.13.0
 	github.com/google/go-github/v88 v88.0.0
 	github.com/ingr-io/ingr-go v0.0.2
-	github.com/julienschmidt/httprouter v1.3.0
 	github.com/pelletier/go-toml/v2 v2.3.1
 	github.com/rivo/uniseg v0.4.7
 	github.com/spf13/cobra v1.10.2
@@ -40,29 +39,14 @@ require (
 	github.com/muesli/mango-cobra v1.3.0 // indirect
 	github.com/muesli/mango-pflag v0.2.0 // indirect
 	github.com/muesli/roff v0.1.0 // indirect
-	github.com/pb33f/ordered-map/v2 v2.3.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/strongo/validation v0.0.8 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	go.yaml.in/yaml/v4 v4.0.0-rc.4 // indirect
-	golang.org/x/net v0.51.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
-)
-
-require (
-	github.com/bahlo/generic-list-go v0.2.0 // indirect
-	github.com/buger/jsonparser v1.1.2 // indirect
-	github.com/invopop/jsonschema v0.14.0 // indirect
-	github.com/metoro-io/mcp-golang v0.16.1
-	github.com/pkg/errors v0.9.1 // indirect
-	github.com/tidwall/gjson v1.18.0 // indirect
-	github.com/tidwall/match v1.2.0 // indirect
-	github.com/tidwall/pretty v1.2.1 // indirect
-	github.com/tidwall/sjson v1.2.5 // indirect
 )
 
 require (
