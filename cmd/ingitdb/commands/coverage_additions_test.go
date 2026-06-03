@@ -219,7 +219,7 @@ func TestListCollectionsRemote_ReadFileError(t *testing.T) {
 	defer func() { gitHubFileReaderFactory = originalFactory }()
 
 	ctx := context.Background()
-	err := listCollectionsRemoteWithSpec(ctx, sampleRemoteSpec(), "")
+	err := listCollectionsRemoteWithSpec(ctx, sampleRemoteSpec(), "", "", "")
 	if err == nil {
 		t.Fatal("expected error when ReadFile returns an error")
 	}

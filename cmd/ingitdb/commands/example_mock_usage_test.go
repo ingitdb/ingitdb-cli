@@ -79,7 +79,7 @@ func TestListCollections_GitHubFileReaderError(t *testing.T) {
 	// Test the function that uses gitHubFileReaderFactory
 	ctx := context.Background()
 	spec := remoteSpec{Host: "github.com", Path: []string{"owner", "repo"}}
-	err := listCollectionsRemoteWithSpec(ctx, spec, "fake-token")
+	err := listCollectionsRemoteWithSpec(ctx, spec, "fake-token", "", "")
 
 	if err == nil {
 		t.Fatal("expected error when file reader creation fails")
