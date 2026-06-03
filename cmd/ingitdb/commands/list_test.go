@@ -1,9 +1,11 @@
 package commands
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"go.uber.org/mock/gomock"
@@ -60,6 +62,92 @@ func TestListCollectionsLocal_Success(t *testing.T) {
 	err := runCobraCommand(cmd, "collections", "--path="+dir)
 	if err != nil {
 		t.Fatalf("ListCollections: %v", err)
+	}
+}
+
+func TestFilterCollectionIDs(t *testing.T) {
+	t.Parallel()
+
+	entries := []collectionEntry{
+		{name: "countries", path: "db/countries"},
+		{name: "geo.cities", path: "db/geo/cities"},
+		{name: "geo.regions", path: "db/geo/regions"},
+		{name: "todo.tasks", path: "db/todo/tasks"},
+	}
+
+	tests := []struct {
+		name     string
+		inExpr   string
+		nameGlob string
+		want     []string
+		wantErr  bool
+	}{
+		{name: "no filters returns all sorted", want: []string{"countries", "geo.cities", "geo.regions", "todo.tasks"}},
+		{name: "in regex on path", inExpr: "db/geo/", want: []string{"geo.cities", "geo.regions"}},
+		{name: "filter-name glob", nameGlob: "geo.*", want: []string{"geo.cities", "geo.regions"}},
+		{name: "in and filter-name combine with AND", inExpr: "db/geo/", nameGlob: "*cities", want: []string{"geo.cities"}},
+		{name: "no match yields empty", inExpr: "db/nope", want: []string{}},
+		{name: "invalid regex errors", inExpr: "[", wantErr: true},
+		{name: "invalid glob errors", nameGlob: "[", wantErr: true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := filterCollectionIDs(entries, tc.inExpr, tc.nameGlob)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("expected error for in=%q name=%q", tc.inExpr, tc.nameGlob)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if len(got) != len(tc.want) {
+				t.Fatalf("got %v, want %v", got, tc.want)
+			}
+			for i := range got {
+				if got[i] != tc.want[i] {
+					t.Errorf("got %v, want %v", got, tc.want)
+					break
+				}
+			}
+		})
+	}
+}
+
+func TestListCollectionsLocal_ScopingFlags(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	def := &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"countries":   {ID: "countries", DirPath: dir + "/countries"},
+			"geo.cities":  {ID: "geo.cities", DirPath: dir + "/geo/cities"},
+			"geo.regions": {ID: "geo.regions", DirPath: dir + "/geo/regions"},
+		},
+	}
+
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return def, nil
+	}
+
+	cmd := List(homeDir, getWd, readDef)
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+	cmd.SetArgs([]string{"collections", "--path=" + dir, "--in=/geo/", "--filter-name=*cities"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("list collections: %v", err)
+	}
+
+	got := strings.Fields(buf.String())
+	want := []string{"geo.cities"}
+	if len(got) != len(want) || got[0] != want[0] {
+		t.Errorf("scoped output = %v, want %v", got, want)
 	}
 }
 
@@ -164,7 +252,7 @@ func TestListCollectionsRemote_WithMock(t *testing.T) {
 	defer func() { gitHubFileReaderFactory = originalFactory }()
 
 	ctx := context.Background()
-	err := listCollectionsRemoteWithSpec(ctx, sampleRemoteSpec(), "")
+	err := listCollectionsRemoteWithSpec(ctx, sampleRemoteSpec(), "", "", "")
 	if err != nil {
 		t.Fatalf("listCollectionsRemoteWithSpec: %v", err)
 	}
@@ -182,7 +270,7 @@ func TestListCollectionsRemote_ReaderCreationError(t *testing.T) {
 	defer func() { gitHubFileReaderFactory = originalFactory }()
 
 	ctx := context.Background()
-	err := listCollectionsRemoteWithSpec(ctx, sampleRemoteSpec(), "")
+	err := listCollectionsRemoteWithSpec(ctx, sampleRemoteSpec(), "", "", "")
 	if err == nil {
 		t.Fatal("expected error when file reader creation fails")
 	}
@@ -201,7 +289,7 @@ func TestListCollectionsRemote_FileNotFound(t *testing.T) {
 	defer func() { gitHubFileReaderFactory = originalFactory }()
 
 	ctx := context.Background()
-	err := listCollectionsRemoteWithSpec(ctx, sampleRemoteSpec(), "")
+	err := listCollectionsRemoteWithSpec(ctx, sampleRemoteSpec(), "", "", "")
 	if err == nil {
 		t.Fatal("expected error when root config file not found")
 	}
@@ -224,7 +312,7 @@ func TestListCollectionsRemote_InvalidYAML(t *testing.T) {
 	defer func() { gitHubFileReaderFactory = originalFactory }()
 
 	ctx := context.Background()
-	err := listCollectionsRemoteWithSpec(ctx, sampleRemoteSpec(), "")
+	err := listCollectionsRemoteWithSpec(ctx, sampleRemoteSpec(), "", "", "")
 	if err == nil {
 		t.Fatal("expected error when root config has invalid YAML")
 	}
@@ -247,7 +335,7 @@ func TestListCollectionsRemote_InvalidConfig(t *testing.T) {
 	defer func() { gitHubFileReaderFactory = originalFactory }()
 
 	ctx := context.Background()
-	err := listCollectionsRemoteWithSpec(ctx, sampleRemoteSpec(), "")
+	err := listCollectionsRemoteWithSpec(ctx, sampleRemoteSpec(), "", "", "")
 	if err == nil {
 		t.Fatal("expected error when root config validation fails")
 	}

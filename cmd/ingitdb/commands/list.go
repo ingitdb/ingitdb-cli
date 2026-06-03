@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"regexp"
 	"sort"
 
 	"github.com/spf13/cobra"
@@ -15,6 +16,51 @@ import (
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/config"
 )
+
+// collectionEntry pairs a collection's listed name (its ID) with its
+// starting-point path, so the --in and --filter-name scoping flags can be
+// applied uniformly to local and remote sources.
+type collectionEntry struct {
+	name string
+	path string
+}
+
+// filterCollectionIDs applies the --in (regular expression on the
+// starting-point path) and --filter-name (glob on the collection name) scoping
+// flags and returns the matching names sorted ascending. An empty inExpr or
+// nameGlob disables that filter; both filters are combined with AND.
+func filterCollectionIDs(entries []collectionEntry, inExpr, nameGlob string) ([]string, error) {
+	var inRE *regexp.Regexp
+	if inExpr != "" {
+		re, err := regexp.Compile(inExpr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid --in regular expression %q: %w", inExpr, err)
+		}
+		inRE = re
+	}
+	if nameGlob != "" {
+		// path.Match only errors on a malformed pattern, independent of input,
+		// so validate it once up front and ignore the error at match time.
+		if _, err := path.Match(nameGlob, ""); err != nil {
+			return nil, fmt.Errorf("invalid --filter-name pattern %q: %w", nameGlob, err)
+		}
+	}
+	ids := make([]string, 0, len(entries))
+	for _, e := range entries {
+		if inRE != nil && !inRE.MatchString(e.path) {
+			continue
+		}
+		if nameGlob != "" {
+			matched, _ := path.Match(nameGlob, e.name)
+			if !matched {
+				continue
+			}
+		}
+		ids = append(ids, e.name)
+	}
+	sort.Strings(ids)
+	return ids, nil
+}
 
 // List returns the list command.
 func List(
@@ -68,13 +114,18 @@ func listCollectionsLocal(
 	if readErr != nil {
 		return fmt.Errorf("failed to read database definition: %w", readErr)
 	}
-	ids := make([]string, 0, len(def.Collections))
-	for id := range def.Collections {
-		ids = append(ids, id)
+	inExpr, _ := cmd.Flags().GetString("in")
+	nameGlob, _ := cmd.Flags().GetString("filter-name")
+	entries := make([]collectionEntry, 0, len(def.Collections))
+	for id, col := range def.Collections {
+		entries = append(entries, collectionEntry{name: id, path: col.DirPath})
 	}
-	sort.Strings(ids)
+	ids, filterErr := filterCollectionIDs(entries, inExpr, nameGlob)
+	if filterErr != nil {
+		return filterErr
+	}
 	for _, id := range ids {
-		_, _ = fmt.Fprintln(os.Stdout, id)
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), id)
 	}
 	return nil
 }
@@ -86,13 +137,15 @@ func listCollectionsRemote(ctx context.Context, cmd *cobra.Command, remoteValue 
 	if err != nil {
 		return err
 	}
-	return listCollectionsRemoteWithSpec(ctx, spec, remoteToken(cmd, spec.Host))
+	inExpr, _ := cmd.Flags().GetString("in")
+	nameGlob, _ := cmd.Flags().GetString("filter-name")
+	return listCollectionsRemoteWithSpec(ctx, spec, remoteToken(cmd, spec.Host), inExpr, nameGlob)
 }
 
 // listCollectionsRemoteWithSpec is the testable inner form: it takes a
 // pre-parsed remoteSpec and an explicit token so unit tests can exercise
 // the remote code path without constructing a cobra.Command.
-func listCollectionsRemoteWithSpec(ctx context.Context, spec remoteSpec, token string) error {
+func listCollectionsRemoteWithSpec(ctx context.Context, spec remoteSpec, token, inExpr, nameGlob string) error {
 	cfg := newGitHubConfig(spec, token)
 	fileReader, newReaderErr := gitHubFileReaderFactory.NewGitHubFileReader(cfg)
 	if newReaderErr != nil {
@@ -116,11 +169,14 @@ func listCollectionsRemoteWithSpec(ctx context.Context, spec remoteSpec, token s
 	if validateErr != nil {
 		return fmt.Errorf("invalid %s: %w", rootCollectionsPath, validateErr)
 	}
-	ids := make([]string, 0)
-	for rootID := range rootConfig.RootCollections {
-		ids = append(ids, rootID)
+	entries := make([]collectionEntry, 0, len(rootConfig.RootCollections))
+	for rootID, rootPath := range rootConfig.RootCollections {
+		entries = append(entries, collectionEntry{name: rootID, path: rootPath})
 	}
-	sort.Strings(ids)
+	ids, filterErr := filterCollectionIDs(entries, inExpr, nameGlob)
+	if filterErr != nil {
+		return filterErr
+	}
 	for _, id := range ids {
 		_, _ = fmt.Fprintln(os.Stdout, id)
 	}
