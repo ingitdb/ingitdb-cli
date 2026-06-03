@@ -39,7 +39,7 @@ This directory tracks the SpecScore feature specifications for the **ingitdb-cli
 | [remote-repo-access](remote-repo-access/README.md) | Stable | Cross-cutting `--remote=<URL>` flag, provider dispatch, and token resolution for remote Git hosting services. |
 | [shared-cli-flags](shared-cli-flags/README.md) | Single source of truth for the CLI flag grammar shared across select, insert, update, delete, and drop verbs: --from, --into, --where, --set, --id, --all, --order-by, --fields. Defines parsing rules, operator semantics (==, ===, !=, !==, >=, <=, >, <), value-type model, and flag mutual-exclusion rules. |
 | [cli](cli/README.md) | Unknown | TODO: Add description. |
-| [dalgo2ingitdb-dbschema-ddl-coverage](dalgo2ingitdb-dbschema-ddl-coverage/README.md) | Implementing | TODO: Add description. |
+| [dalgo2ingitdb-dbschema-ddl-coverage](dalgo2ingitdb-dbschema-ddl-coverage/README.md) | Stable | TODO: Add description. |
 | [dalgo2ingitdb-referential-integrity](dalgo2ingitdb-referential-integrity/README.md) | Stable | DALgo write transactions enforce existing `foreign_key` metadata on Set, Insert, Update, and Delete. |
 | [record-key](record-key/README.md) | Draft | Umbrella for canonical record identity behavior across schema validation, storage paths, writes, and CLI key surfaces. |
 | [computed-columns](computed-columns/README.md) | Stable | TODO: Add description. |

@@ -16,9 +16,8 @@ import (
 // Database is the dal.DB implementation for inGitDB projects on the local
 // filesystem. It implements the schema-management capability interfaces
 // (dbschema.SchemaReader, ddl.SchemaModifier, ddl.TransactionalDDL), the
-// dal.DB record-access methods, and reports dal.ConcurrencyAvailable via
-// the embedded helper struct — concurrent connections are safe because
-// every read and write path goes through gofrs/flock file locking.
+// dal.DB record-access methods, and reports dal.NoConcurrency — concurrent
+// connections are NOT advertised as safe (see the field comment for why).
 //
 // Record access loads the project Definition once per transaction via the
 // injected CollectionsReader; individual file operations take a shared
@@ -26,11 +25,23 @@ import (
 // ExecuteQueryToRecordsetReader is not yet implemented and returns
 // dal.ErrNotSupported.
 type Database struct {
-	// dal.ConcurrencyAvailable: gofrs/flock provides cross-platform file
-	// locking (syscall.Flock on Unix, LockFileEx on Windows), so two DB
-	// handles against the same project directory can operate concurrently
-	// without data races.
-	dal.ConcurrencyAvailable
+	// dal.NoConcurrency makes SupportsConcurrentConnections() report false.
+	//
+	// An inGitDB database is a git working tree. We do take gofrs/flock
+	// advisory locks per file (shared for reads, exclusive for writes) as
+	// defence-in-depth, but that is NOT a basis to advertise safe concurrent
+	// connections, because:
+	//   - flock is ADVISORY on Unix: it only binds processes that also call
+	//     flock. A plain `git`, an editor, or `rm` ignores it entirely — and
+	//     on Unix can even unlink a file out from under a held lock. It is
+	//     mandatory only on Windows (LockFileEx), so the protection is not
+	//     cross-platform.
+	//   - locks are PER FILE, so a change spanning multiple files (e.g. a
+	//     collection's definition.yaml plus root-collections.yaml, or a
+	//     subsequent git commit) is not atomic as a unit.
+	// The honest cross-platform contract is therefore single-writer: callers
+	// MUST NOT open concurrent writing connections against the same tree.
+	dal.NoConcurrency
 
 	projectPath string
 	reader      ingitdb.CollectionsReader

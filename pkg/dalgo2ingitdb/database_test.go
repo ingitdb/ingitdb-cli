@@ -77,8 +77,8 @@ func TestDatabase_SupportsConcurrentConnections(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewDatabase: %v", err)
 	}
-	if !db.SupportsConcurrentConnections() {
-		t.Error("SupportsConcurrentConnections: want true (file locking is implemented)")
+	if db.SupportsConcurrentConnections() {
+		t.Error("SupportsConcurrentConnections: want false (single-writer git working tree; flock is advisory defence-in-depth, not a cross-platform concurrency guarantee)")
 	}
 }
 
