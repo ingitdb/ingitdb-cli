@@ -46,6 +46,10 @@ func Update(
 				}
 			}
 
+			if err := requireRemoteWriteToken(cmd); err != nil {
+				return err
+			}
+
 			id, _ := cmd.Flags().GetString("id")
 			from, _ := cmd.Flags().GetString("from")
 			mode, err := sqlflags.ResolveMode(id, from)

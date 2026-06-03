@@ -129,7 +129,7 @@ func TestDropCollection_Remote_HappyPath(t *testing.T) {
 
 	homeDir, getWd, readDef, newDB, logf := emptyDropDeps(t)
 	cmd := Drop(homeDir, getWd, readDef, newDB, logf)
-	cmd.SetArgs([]string{"collection", "cities", "--remote=github.com/owner/repo"})
+	cmd.SetArgs([]string{"collection", "cities", "--remote=github.com/owner/repo", "--token=test-token"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute: %v", err)
 	}
@@ -184,7 +184,7 @@ func TestDropCollection_Remote_IfExistsMissing(t *testing.T) {
 
 	homeDir, getWd, readDef, newDB, logf := emptyDropDeps(t)
 	cmd := Drop(homeDir, getWd, readDef, newDB, logf)
-	cmd.SetArgs([]string{"collection", "missing", "--remote=github.com/owner/repo", "--if-exists"})
+	cmd.SetArgs([]string{"collection", "missing", "--remote=github.com/owner/repo", "--token=test-token", "--if-exists"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute: %v", err)
 	}
@@ -204,7 +204,7 @@ func TestDropCollection_Remote_MissingErrors(t *testing.T) {
 
 	homeDir, getWd, readDef, newDB, logf := emptyDropDeps(t)
 	cmd := Drop(homeDir, getWd, readDef, newDB, logf)
-	cmd.SetArgs([]string{"collection", "missing", "--remote=github.com/owner/repo"})
+	cmd.SetArgs([]string{"collection", "missing", "--remote=github.com/owner/repo", "--token=test-token"})
 	err := cmd.Execute()
 	if err == nil {
 		t.Fatal("expected error for missing collection without --if-exists")
@@ -223,7 +223,7 @@ func TestDrop_Remote_PathMutex(t *testing.T) {
 	t.Parallel()
 	homeDir, getWd, readDef, newDB, logf := emptyDropDeps(t)
 	cmd := Drop(homeDir, getWd, readDef, newDB, logf)
-	cmd.SetArgs([]string{"collection", "x", "--path=.", "--remote=github.com/owner/repo"})
+	cmd.SetArgs([]string{"collection", "x", "--path=.", "--remote=github.com/owner/repo", "--token=test-token"})
 	err := cmd.Execute()
 	if err == nil {
 		t.Fatal("expected error for --path with --remote")
@@ -276,7 +276,7 @@ func TestDropView_Remote_HappyPath(t *testing.T) {
 
 	homeDir, getWd, readDef, newDB, logf := emptyDropDeps(t)
 	cmd := Drop(homeDir, getWd, readDef, newDB, logf)
-	cmd.SetArgs([]string{"view", "by_country", "--remote=github.com/owner/repo"})
+	cmd.SetArgs([]string{"view", "by_country", "--remote=github.com/owner/repo", "--token=test-token"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute: %v", err)
 	}
