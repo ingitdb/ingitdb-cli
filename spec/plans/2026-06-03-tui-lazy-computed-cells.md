@@ -1,10 +1,11 @@
 # Plan: TUI lazy computed-cell evaluation
 
-**Status:** Approved
+**Status:** Implementing
 **Source Feature:** tui-lazy-computed-cells
 **Date:** 2026-06-03
 **Owner:** alex
 **Supersedes:** —
+**Mode:** full
 
 ## Summary
 
@@ -32,6 +33,7 @@ cell's evaluation error render a bounded indicator instead of aborting the scree
 ### Task 1: Lazy model, load, and render-time computed evaluation
 
 **Verifies:** tui-lazy-computed-cells#ac:off-viewport-rows-not-evaluated, tui-lazy-computed-cells#ac:scroll-evaluates-only-newly-visible
+**Status:** done
 
 Refactor `loadRecordsCmd` to return the query `recordset.Recordset` plus retained
 per-record row handles and keys (no eager computed evaluation), have the collection
@@ -42,6 +44,7 @@ columns evaluate and dalgo's per-row memoization survives re-renders and scroll-
 ### Task 2: Schema-based sizing and alignment for computed columns
 
 **Verifies:** tui-lazy-computed-cells#ac:width-sizing-does-not-evaluate, tui-lazy-computed-cells#ac:numeric-alignment-does-not-evaluate, tui-lazy-computed-cells#ac:stored-locale-discovery-unchanged
+**Status:** pending
 
 Derive a computed column's width from its header label and declared
 `ColumnType`/length and its numeric alignment from the declared type, so neither
@@ -52,6 +55,7 @@ values exactly as today.
 ### Task 3: Non-fatal rendering of erroring visible computed cells
 
 **Verifies:** tui-lazy-computed-cells#ac:visible-computed-error-non-fatal, tui-lazy-computed-cells#ac:off-viewport-error-never-evaluated
+**Status:** pending
 
 Render a bounded error indicator in a painted computed cell whose evaluation or
 coercion fails, keeping the rest of the screen rendering without aborting the load

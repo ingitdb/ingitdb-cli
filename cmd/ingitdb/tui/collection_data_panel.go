@@ -8,6 +8,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/rivo/uniseg"
 
+	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
@@ -113,11 +114,10 @@ func (m collectionModel) renderRecords(width, height int) string {
 		}
 	}
 	for ri := m.recordOffset; ri < end; ri++ {
-		row := m.records[ri]
 		cells := make([]string, len(visIdx))
 		for vi, i := range visIdx {
 			c := cols[i]
-			raw := m.cellValue(row, c)
+			raw, _ := m.cellValueAt(ri, c)
 			v := replaceRegionalIndicators(raw)
 			if uniseg.StringWidth(v) > colWidths[i] {
 				v = truncateToWidth(v, colWidths[i]-1) + "…"
@@ -465,6 +465,27 @@ func (m collectionModel) cellValue(row map[string]any, displayCol string) string
 		}
 	}
 	return fmt.Sprintf("%v", row[displayCol])
+}
+
+// cellValueAt resolves the display value for the painted cell at record index
+// rowIdx and column displayCol. Stored and L10N columns are read from the
+// retained stored-value map (identical to cellValue). A computed (FORMULA)
+// column is evaluated lazily through dalgo2ingitdb.AccessValue on the retained
+// row handle, so only painted computed cells are ever evaluated and dalgo's
+// per-row memoization is preserved across re-renders and scroll-back.
+func (m collectionModel) cellValueAt(rowIdx int, displayCol string) (string, error) {
+	baseField := displayCol
+	if dotIdx := strings.Index(displayCol, "."); dotIdx > 0 {
+		baseField = displayCol[:dotIdx]
+	}
+	if col, ok := m.colDef.Columns[baseField]; ok && col.Formula != "" {
+		v, err := dalgo2ingitdb.AccessValue(m.rows[rowIdx], m.rs, m.colDef.ID, m.recordKeys[rowIdx], baseField, col)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%v", v), nil
+	}
+	return m.cellValue(m.records[rowIdx], displayCol), nil
 }
 
 // isL10NDisplayCol returns true if the display column name corresponds to an

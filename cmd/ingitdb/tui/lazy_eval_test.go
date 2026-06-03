@@ -1,0 +1,158 @@
+package tui
+
+// lazy_eval_test.go drives the collection model with a counting recordset
+// evaluator (as in pkg/dalgo2ingitdb's recordset tests) to prove that computed
+// columns are evaluated only for painted cells — never for off-viewport rows —
+// and that per-row memoization survives re-renders and scroll-back.
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/dal-go/dalgo/recordset"
+
+	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+)
+
+// countingTUIEvaluator records how many times a computed column is evaluated.
+type countingTUIEvaluator struct{ calls *int }
+
+func (e countingTUIEvaluator) Eval(_ map[string]any) (any, error) {
+	*e.calls++
+	return int64(99), nil
+}
+
+// erroringTUIEvaluator always fails, so a painted computed cell surfaces an error.
+type erroringTUIEvaluator struct{}
+
+func (erroringTUIEvaluator) Eval(_ map[string]any) (any, error) {
+	return nil, fmt.Errorf("boom")
+}
+
+// lazyTestColDef is a collection with one stored column (qty) and one computed
+// column (ratio).
+func lazyModelColDef() *ingitdb.CollectionDef {
+	return &ingitdb.CollectionDef{
+		ID: "items",
+		Columns: map[string]*ingitdb.ColumnDef{
+			"qty":   {Type: ingitdb.ColumnTypeInt},
+			"ratio": {Type: ingitdb.ColumnTypeInt, Formula: "qty * 2"},
+		},
+		ColumnsOrder: []string{"qty", "ratio"},
+	}
+}
+
+// newLazyModel builds a collection model backed by a recordset whose computed
+// "ratio" column is bound to the counting evaluator. The row handles are
+// retained on the model exactly as loadRecordsCmd retains them, so the test
+// exercises real per-row memoization.
+func newLazyModel(total int, calls *int) collectionModel {
+	colDef := lazyModelColDef()
+	qtyCol := recordset.NewColumn[int64]("qty", 0)
+	ratioCol := recordset.NewComputedColumn("ratio", countingTUIEvaluator{calls})
+	rs := recordset.NewColumnarRecordset(colDef.ID, qtyCol, ratioCol)
+
+	rows := make([]recordset.Row, total)
+	records := make([]map[string]any, total)
+	keys := make([]string, total)
+	for i := 0; i < total; i++ {
+		row := rs.NewRow()
+		_ = row.SetValueByName("qty", int64(i+1), rs)
+		rows[i] = row
+		records[i] = map[string]any{"qty": int64(i + 1)}
+		keys[i] = fmt.Sprintf("r%d", i)
+	}
+
+	m := collectionModel{
+		colDef:     colDef,
+		columns:    []string{"qty", "ratio"},
+		rs:         rs,
+		rows:       rows,
+		records:    records,
+		recordKeys: keys,
+	}
+	m.colWidths = m.computeColWidths()
+	return m
+}
+
+// AC: off-viewport-rows-not-evaluated — rendering without scrolling evaluates
+// the computed column only for the V visible records, never for off-viewport
+// records; and load + width sizing evaluate nothing.
+func TestLazy_OffViewportRowsNotEvaluated(t *testing.T) {
+	t.Parallel()
+	calls := 0
+	const total, height = 10, 7 // renderRecords: visibleRows = height-4 = 3
+	const wantVisible = 3
+	m := newLazyModel(total, &calls)
+
+	if calls != 0 {
+		t.Fatalf("load and width sizing evaluated %d computed cells, want 0", calls)
+	}
+
+	_ = m.renderRecords(80, height)
+
+	if calls != wantVisible {
+		t.Errorf("evaluator invoked %d times, want %d (one per visible record, zero for the %d off-viewport records)",
+			calls, wantVisible, total-wantVisible)
+	}
+}
+
+// AC: scroll-evaluates-only-newly-visible — after scrolling so a previously
+// off-viewport record becomes visible, only that newly-visible record is
+// evaluated; repainted records are not evaluated a second time (retained row
+// handles preserve dalgo's per-row memoization).
+func TestLazy_ScrollEvaluatesOnlyNewlyVisible(t *testing.T) {
+	t.Parallel()
+	calls := 0
+	const total, height = 10, 7 // V = 3
+	m := newLazyModel(total, &calls)
+
+	_ = m.renderRecords(80, height) // paints records 0,1,2
+	if calls != 3 {
+		t.Fatalf("first render evaluated %d computed cells, want 3", calls)
+	}
+
+	// Scroll down by one row: records 1,2,3 are now visible. Record 3 is newly
+	// visible; records 1 and 2 are repainted from their retained, memoized row
+	// handles and must not be evaluated again.
+	m.recordOffset = 1
+	_ = m.renderRecords(80, height)
+
+	if calls != 4 {
+		t.Errorf("after scroll evaluator invoked %d times total, want 4 (only newly-visible record 3 evaluated; repainted records 1,2 memoized)", calls)
+	}
+}
+
+// cellValueAt resolves a computed cell through AccessValue and propagates an
+// evaluation error to its caller (the render path decides how to surface it).
+func TestCellValueAt_ComputedErrorPropagated(t *testing.T) {
+	t.Parallel()
+	colDef := lazyModelColDef()
+	rs := recordset.NewColumnarRecordset(colDef.ID,
+		recordset.NewColumn[int64]("qty", 0),
+		recordset.NewComputedColumn("ratio", erroringTUIEvaluator{}),
+	)
+	row := rs.NewRow()
+	_ = row.SetValueByName("qty", int64(1), rs)
+	m := collectionModel{
+		colDef:     colDef,
+		columns:    []string{"qty", "ratio"},
+		rs:         rs,
+		rows:       []recordset.Row{row},
+		records:    []map[string]any{{"qty": int64(1)}},
+		recordKeys: []string{"r0"},
+	}
+
+	got, err := m.cellValueAt(0, "ratio")
+	if err == nil {
+		t.Fatalf("cellValueAt(ratio) error = nil, want an error; value=%q", got)
+	}
+	if got != "" {
+		t.Errorf("cellValueAt(ratio) value = %q on error, want empty", got)
+	}
+
+	// A stored column on the same row resolves without error.
+	if v, err := m.cellValueAt(0, "qty"); err != nil || v != "1" {
+		t.Errorf("cellValueAt(qty) = (%q, %v), want (\"1\", nil)", v, err)
+	}
+}
