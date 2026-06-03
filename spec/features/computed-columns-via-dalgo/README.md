@@ -266,5 +266,9 @@ v0.46.0):
   `REQ:fail-loud` prose were amended to match REQ:fail-loud-on-access — the abort
   fires only when the computed column is referenced.
 
+## Sidekick Seeds Generated
+
+- [tui-collection-screen-should-evaluate-only-painted-visible](../../ideas/seeds/tui-collection-screen-should-evaluate-only-painted-visible.md) — captured 2026-06-03 by specstudio:implement
+
 ---
 *This document follows the https://specscore.md/feature-specification*
