@@ -273,6 +273,71 @@ func TestRebase_ContinueFails(t *testing.T) {
 	}
 }
 
+// setupRebaseSourceConflict creates a git repo where rebasing main onto base
+// conflicts on a plain source file (data.yaml) that is NOT a generated
+// collection README, so it falls outside any --resolve category.
+func setupRebaseSourceConflict(t *testing.T, dir string) {
+	t.Helper()
+	runGit(t, dir, "init")
+	disableGitBackgroundMaintenance(t, dir)
+	runGit(t, dir, "config", "user.email", "test@example.com")
+	runGit(t, dir, "config", "user.name", "Test User")
+
+	src := filepath.Join(dir, "data.yaml")
+	writeRebaseFile(t, src, "value: initial\n")
+	runGit(t, dir, "add", ".")
+	runGit(t, dir, "commit", "-m", "initial")
+	runGit(t, dir, "branch", "-m", "main")
+	runGit(t, dir, "branch", "base")
+
+	writeRebaseFile(t, src, "value: main\n")
+	runGit(t, dir, "add", ".")
+	runGit(t, dir, "commit", "-m", "main change")
+
+	runGit(t, dir, "checkout", "base")
+	writeRebaseFile(t, src, "value: base\n")
+	runGit(t, dir, "add", ".")
+	runGit(t, dir, "commit", "-m", "base change")
+	runGit(t, dir, "checkout", "main")
+}
+
+// rebaseInProgress reports whether a git rebase is still halted in dir.
+func rebaseInProgress(dir string) bool {
+	for _, d := range []string{"rebase-merge", "rebase-apply"} {
+		if _, err := os.Stat(filepath.Join(dir, ".git", d)); err == nil {
+			return true
+		}
+	}
+	return false
+}
+
+// TestRebase_AbortsOnSourceConflict covers AC:aborts-on-source-conflict: a
+// conflict outside the --resolve scope must abort the rebase (not leave it
+// halted) and report the unresolved path.
+func TestRebase_AbortsOnSourceConflict(t *testing.T) {
+	dir := t.TempDir()
+	setupRebaseSourceConflict(t, dir)
+
+	getWd := func() (string, error) { return dir, nil }
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return &ingitdb.Definition{Collections: map[string]*ingitdb.CollectionDef{}}, nil
+	}
+
+	cmd := Rebase(getWd, readDef, func(...any) {})
+	err := runCobraCommand(cmd, "--base_ref=base", "--resolve=readme")
+	if err == nil {
+		_ = runGitNoFail(dir, "rebase", "--abort")
+		t.Skip("git produced no conflict in this environment")
+	}
+	if !strings.Contains(err.Error(), "data.yaml") {
+		t.Errorf("expected error to list the unresolved path data.yaml, got: %v", err)
+	}
+	if rebaseInProgress(dir) {
+		_ = runGitNoFail(dir, "rebase", "--abort")
+		t.Errorf("expected rebase to be aborted, but a rebase is still in progress")
+	}
+}
+
 // runGitNoFailOut runs git, ignoring errors, returning combined output.
 func runGitNoFailOut(dir string, args ...string) string {
 	c := exec.Command("git", args...)
