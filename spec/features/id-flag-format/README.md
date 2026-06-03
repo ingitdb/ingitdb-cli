@@ -1,7 +1,7 @@
 # Feature: ID Flag Format
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/id-flag-format?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/id-flag-format?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/id-flag-format?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/id-flag-format?op=request-change) |
-**Status:** Implementing
+**Status:** Stable
 
 ## Summary
 
@@ -21,7 +21,7 @@ The `--id` value MUST be of the form `<collection-id>/<record-key>`, with a sing
 
 #### REQ: collection-id-charset
 
-A collection ID MUST contain only alphanumeric characters and the `.` character. It MUST start and end with an alphanumeric character. The `/` character MUST NOT appear inside a collection ID; its only role inside `--id` is to separate the collection from the key.
+A collection ID MUST contain only alphanumeric characters, the `.` character, and the `_` (underscore) character. It MUST start and end with an alphanumeric character. The `/` character MUST NOT appear inside a collection ID; its only role inside `--id` is to separate the collection from the key.
 
 #### REQ: longest-prefix-wins
 
@@ -45,6 +45,7 @@ Source files implementing this feature (annotated with
 `// specscore: feature/id-flag-format`):
 
 - [`pkg/ingitdb/collection_id.go`](../../pkg/ingitdb/collection_id.go)
+- [`pkg/dalgo2ingitdb/collection.go`](../../pkg/dalgo2ingitdb/collection.go)
 
 ## Acceptance Criteria
 

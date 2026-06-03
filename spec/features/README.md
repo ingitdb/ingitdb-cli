@@ -33,7 +33,7 @@ This directory tracks the SpecScore feature specifications for the **ingitdb-cli
 | [cli/find](cli/find/README.md) | Withdrawn — moved to DataTug CLI | `ingitdb find` (not implemented). |
 | [cli/truncate](cli/truncate/README.md) | Withdrawn — use `delete --all` | `ingitdb truncate` (not implemented). |
 | [cli/migrate](cli/migrate/README.md) | Withdrawn (deferred) | `ingitdb migrate` (not implemented). |
-| [id-flag-format](id-flag-format/README.md) | Implementing | Cross-cutting `--id=<collection-id>/<record-key>` syntax. |
+| [id-flag-format](id-flag-format/README.md) | Stable | Cross-cutting `--id=<collection-id>/<record-key>` syntax. |
 | [output-formats](output-formats/README.md) | Stable | Cross-cutting `--format=yaml|json` flag and YAML default. |
 | [path-targeting](path-targeting/README.md) | Stable | Cross-cutting `--path` flag and its relation to `--remote`. |
 | [remote-repo-access](remote-repo-access/README.md) | Implementing | Cross-cutting `--remote=<URL>` flag, provider dispatch, and token resolution for remote Git hosting services. |

@@ -1,5 +1,7 @@
 package dalgo2ingitdb
 
+// specscore: feature/id-flag-format
+
 import (
 	"fmt"
 	"strings"
@@ -13,6 +15,18 @@ import (
 // "/" is reserved for separating collection ID from record key path segments.
 // The longest matching collection prefix wins.
 func CollectionForKey(def *ingitdb.Definition, id string) (*ingitdb.CollectionDef, string, error) {
+	// The collection ID is everything before the first "/", which separates it
+	// from the record key. Validate that segment up front so a malformed ID
+	// (missing separator or an invalid collection charset) yields a clear
+	// diagnostic instead of a generic "collection not found".
+	collectionSegment, _, found := strings.Cut(id, "/")
+	if !found {
+		return nil, "", fmt.Errorf("invalid ID %q: must be in the form <collection>/<key>", id)
+	}
+	if err := ingitdb.ValidateCollectionID(collectionSegment); err != nil {
+		return nil, "", fmt.Errorf("invalid collection in ID %q: %w", id, err)
+	}
+
 	var bestColDef *ingitdb.CollectionDef
 	var bestKey string
 	var bestLen int
