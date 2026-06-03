@@ -90,6 +90,7 @@ func run(
 		// docs/adr/0001-remove-serve-command.md. Preserved in git history:
 		// last present at 184a40e; removed in 1bfecce.
 		// Recover with: git show 184a40e:cmd/ingitdb/commands/serve.go
+		commands.Diff(homeDir, getWd, readDefinition, logf, os.Exit),
 		commands.List(homeDir, getWd, readDefinition),
 		commands.Describe(homeDir, getWd, readDefinition),
 		commands.Select(homeDir, getWd, readDefinition, newDB, logf),

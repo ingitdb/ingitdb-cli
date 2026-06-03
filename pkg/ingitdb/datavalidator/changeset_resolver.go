@@ -29,7 +29,7 @@ func (changeSetResolver) Resolve(dbPath string, def *ingitdb.Definition, changed
 			continue
 		}
 		absPath := filepath.Clean(filepath.Join(dbPath, cf.Path))
-		colID, colDef := collectionForRecordFile(def, absPath)
+		colID, colDef := CollectionForRecordFile(def, absPath)
 		if colDef == nil {
 			continue
 		}
@@ -53,11 +53,12 @@ func (changeSetResolver) Resolve(dbPath string, def *ingitdb.Definition, changed
 	return affected, nil
 }
 
-// collectionForRecordFile returns the collection (and its ID) that owns absPath
+// CollectionForRecordFile returns the collection (and its ID) that owns absPath
 // as a record file, or ("", nil) when no collection's record-file layout
 // matches. It mirrors how the full validator enumerates record files, so the
-// incremental and full passes agree on which files are records.
-func collectionForRecordFile(def *ingitdb.Definition, absPath string) (string, *ingitdb.CollectionDef) {
+// incremental validator, change-set resolver, and `diff` all agree on which
+// files are records.
+func CollectionForRecordFile(def *ingitdb.Definition, absPath string) (string, *ingitdb.CollectionDef) {
 	for id, colDef := range def.Collections {
 		if shouldSkipRecordParsing(colDef) {
 			continue
