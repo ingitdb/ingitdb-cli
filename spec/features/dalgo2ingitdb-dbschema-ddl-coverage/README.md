@@ -1,7 +1,7 @@
 # Feature: dbschema + ddl + ConcurrencyAware Coverage for inGitDB
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/dalgo2ingitdb-dbschema-ddl-coverage?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/dalgo2ingitdb-dbschema-ddl-coverage?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/dalgo2ingitdb-dbschema-ddl-coverage?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/dalgo2ingitdb-dbschema-ddl-coverage?op=request-change) |
-**Status:** Draft
+**Status:** Implementing
 **Source Idea:** —
 **Date:** 2026-05-13
 **Owner:** alex

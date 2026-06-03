@@ -1,0 +1,13 @@
+---
+type: sidekick-seed
+slug: materialize-subcommands-and-collection-targeting
+captured_at: 2026-06-03T16:54:53Z
+captured_by: claude
+captured_during: null
+trigger: explicit
+status: queued
+synchestra_task: null
+---
+# Implement materialize subcommands (collection/views) and the --collection / --views targeting, or reconcile the spec to the flat command
+
+Gap found verifying cli/materialize (1/3 REQs). The spec mandates `ingitdb materialize collection` and `ingitdb materialize views` subcommands; the code is a single flat `materialize` command (`materialize.go`) that only rebuilds views. The `--views=LIST` flag is registered (`flags.go`) but never read (dead no-op), there is no `--collection` flag, and there is no CLI path to regenerate a single collection's README (README rendering exists in `materializer/view_builder.go` but isn't wired to a `materialize collection` subcommand). Either implement the subcommands + flags (with tests) or update the spec to match the flat command. Spec Implementation list also omits `ci.go`/`flags.go`. Blocks cli/materialize → Stable.
