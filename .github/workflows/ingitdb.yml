@@ -8,9 +8,21 @@ on:
     branches:
       - '**'
 
+# Avoid running the same job twice for same-repo branches, which trigger both
+# `push` and `pull_request`. The `push` run is the one that materializes views
+# and pushes them back, so we keep it and skip the duplicate `pull_request` run
+# for same-repo PRs. Fork PRs (whose pushes don't reach this repo) still run via
+# `pull_request`. A concurrency group also cancels superseded in-flight runs.
+concurrency:
+  group: ingitdb-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
 
   Validator:
+    # Run on push (covers same-repo branches + main) and on pull_request only
+    # when it comes from a fork; this de-duplicates same-repo push+PR runs.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     steps:
 
