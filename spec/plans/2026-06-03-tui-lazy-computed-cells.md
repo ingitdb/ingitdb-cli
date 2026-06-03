@@ -1,6 +1,6 @@
 # Plan: TUI lazy computed-cell evaluation
 
-**Status:** Implementing
+**Status:** Completed
 **Source Feature:** tui-lazy-computed-cells
 **Date:** 2026-06-03
 **Owner:** alex
@@ -55,7 +55,7 @@ values exactly as today.
 ### Task 3: Non-fatal rendering of erroring visible computed cells
 
 **Verifies:** tui-lazy-computed-cells#ac:visible-computed-error-non-fatal, tui-lazy-computed-cells#ac:off-viewport-error-never-evaluated
-**Status:** pending
+**Status:** done
 
 Render a bounded error indicator in a painted computed cell whose evaluation or
 coercion fails, keeping the rest of the screen rendering without aborting the load

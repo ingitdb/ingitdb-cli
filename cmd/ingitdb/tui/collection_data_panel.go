@@ -12,6 +12,11 @@ import (
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
 
+// computedCellError is the bounded indicator rendered in place of a painted
+// computed cell whose evaluation or coercion failed. It is a short, fixed string
+// so it is truncated to the column width like any other cell value.
+const computedCellError = "#ERR!"
+
 func (m collectionModel) renderRecords(width, height int) string {
 	if m.loading {
 		return mutedStyle.Render("Loading records…")
@@ -108,7 +113,12 @@ func (m collectionModel) renderRecords(width, height int) string {
 		cells := make([]string, len(visIdx))
 		for vi, i := range visIdx {
 			c := cols[i]
-			raw, _ := m.cellValueAt(ri, c)
+			raw, cellErr := m.cellValueAt(ri, c)
+			if cellErr != nil {
+				// A painted computed cell that errors renders a bounded error
+				// indicator; the rest of the screen keeps rendering.
+				raw = computedCellError
+			}
 			v := replaceRegionalIndicators(raw)
 			if uniseg.StringWidth(v) > colWidths[i] {
 				v = truncateToWidth(v, colWidths[i]-1) + "…"
@@ -119,8 +129,11 @@ func (m collectionModel) renderRecords(width, height int) string {
 			} else {
 				cell = padRight(v, colWidths[i])
 			}
-			if ri == m.recordCursor && i == m.colCursor {
+			switch {
+			case ri == m.recordCursor && i == m.colCursor:
 				cell = selectedItemStyle.Render(cell)
+			case cellErr != nil:
+				cell = errorCellStyle.Render(cell)
 			}
 			cells[vi] = cell
 		}

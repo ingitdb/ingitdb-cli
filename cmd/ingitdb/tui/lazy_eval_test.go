@@ -7,6 +7,7 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/dal-go/dalgo/recordset"
@@ -29,6 +30,19 @@ func (erroringTUIEvaluator) Eval(_ map[string]any) (any, error) {
 	return nil, fmt.Errorf("boom")
 }
 
+// qtyZeroErrorEvaluator counts calls and fails only when the row's stored qty is
+// zero — modelling a formula like "100 / qty" that raises on some rows but not
+// others, so the error is row-positioned.
+type qtyZeroErrorEvaluator struct{ calls *int }
+
+func (e qtyZeroErrorEvaluator) Eval(stored map[string]any) (any, error) {
+	*e.calls++
+	if stored["qty"] == int64(0) {
+		return nil, fmt.Errorf("division by zero")
+	}
+	return int64(99), nil
+}
+
 // lazyTestColDef is a collection with one stored column (qty) and one computed
 // column (ratio).
 func lazyModelColDef() *ingitdb.CollectionDef {
@@ -42,24 +56,25 @@ func lazyModelColDef() *ingitdb.CollectionDef {
 	}
 }
 
-// newLazyModel builds a collection model backed by a recordset whose computed
-// "ratio" column is bound to the counting evaluator. The row handles are
-// retained on the model exactly as loadRecordsCmd retains them, so the test
-// exercises real per-row memoization.
-func newLazyModel(total int, calls *int) collectionModel {
+// buildModelWithQtys builds a collection model over a recordset with one stored
+// "qty" column (one row per supplied value) and a computed "ratio" column bound
+// to eval. Row handles are retained on the model exactly as loadRecordsCmd
+// retains them, so the tests exercise real per-row memoization.
+func buildModelWithQtys(qtys []int64, eval recordset.Evaluator) collectionModel {
 	colDef := lazyModelColDef()
-	qtyCol := recordset.NewColumn[int64]("qty", 0)
-	ratioCol := recordset.NewComputedColumn("ratio", countingTUIEvaluator{calls})
-	rs := recordset.NewColumnarRecordset(colDef.ID, qtyCol, ratioCol)
+	rs := recordset.NewColumnarRecordset(colDef.ID,
+		recordset.NewColumn[int64]("qty", 0),
+		recordset.NewComputedColumn("ratio", eval),
+	)
 
-	rows := make([]recordset.Row, total)
-	records := make([]map[string]any, total)
-	keys := make([]string, total)
-	for i := 0; i < total; i++ {
+	rows := make([]recordset.Row, len(qtys))
+	records := make([]map[string]any, len(qtys))
+	keys := make([]string, len(qtys))
+	for i, q := range qtys {
 		row := rs.NewRow()
-		_ = row.SetValueByName("qty", int64(i+1), rs)
+		_ = row.SetValueByName("qty", q, rs)
 		rows[i] = row
-		records[i] = map[string]any{"qty": int64(i + 1)}
+		records[i] = map[string]any{"qty": q}
 		keys[i] = fmt.Sprintf("r%d", i)
 	}
 
@@ -73,6 +88,16 @@ func newLazyModel(total int, calls *int) collectionModel {
 	}
 	m.colWidths = m.computeColWidths()
 	return m
+}
+
+// newLazyModel builds a model of `total` records (qty = 1..total) whose computed
+// column is bound to the counting evaluator.
+func newLazyModel(total int, calls *int) collectionModel {
+	qtys := make([]int64, total)
+	for i := range qtys {
+		qtys[i] = int64(i + 1)
+	}
+	return buildModelWithQtys(qtys, countingTUIEvaluator{calls})
 }
 
 // AC: off-viewport-rows-not-evaluated — rendering without scrolling evaluates
@@ -280,5 +305,47 @@ func TestLazy_StoredLocaleDiscoveryScansAllRecords(t *testing.T) {
 
 	if len(got) != 2 || got[0] != "en" || got[1] != "fr" {
 		t.Errorf("discoverLocales = %v, want [en fr] (off-viewport locale must be discovered)", got)
+	}
+}
+
+// AC: visible-computed-error-non-fatal — a painted computed cell whose
+// evaluation fails renders a bounded error indicator, and the rest of the screen
+// keeps rendering (no crash, no aborted load).
+func TestLazy_VisibleComputedErrorNonFatal(t *testing.T) {
+	t.Parallel()
+	calls := 0
+	// Record 0's computed cell errors (qty=0); records 1 and 2 compute fine. All
+	// three are within the visible window (visibleRows = height-4 = 3).
+	m := buildModelWithQtys([]int64{0, 2, 3}, qtyZeroErrorEvaluator{&calls})
+
+	out := m.renderRecords(80, 7)
+
+	if !strings.Contains(out, computedCellError) {
+		t.Errorf("expected bounded error indicator %q in render output, got:\n%s", computedCellError, out)
+	}
+	// The screen keeps rendering its other cells — the non-erroring computed
+	// values (99) and the stored qty values are all present.
+	if !strings.Contains(out, "99") {
+		t.Error("screen should keep rendering the non-erroring rows around the erroring cell")
+	}
+}
+
+// AC: off-viewport-error-never-evaluated — an erroring computed column on
+// off-viewport records is never evaluated, so the screen renders normally and no
+// error surfaces.
+func TestLazy_OffViewportErrorNeverEvaluated(t *testing.T) {
+	t.Parallel()
+	calls := 0
+	// Visible window (3 rows) shows records 0..2 with qty 1,2,3 (compute fine).
+	// Records 3..5 have qty=0 and would error — but they are off-viewport.
+	m := buildModelWithQtys([]int64{1, 2, 3, 0, 0, 0}, qtyZeroErrorEvaluator{&calls})
+
+	out := m.renderRecords(80, 7)
+
+	if strings.Contains(out, computedCellError) {
+		t.Errorf("off-viewport erroring rows must not surface an error indicator; output:\n%s", out)
+	}
+	if calls != 3 {
+		t.Errorf("evaluator invoked %d times, want 3 (only the visible non-erroring rows; off-viewport erroring rows never evaluated)", calls)
 	}
 }
