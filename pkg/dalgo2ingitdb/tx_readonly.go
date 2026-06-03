@@ -149,10 +149,22 @@ func (r readonlyTx) ExecuteQueryToRecordsReader(ctx context.Context, query dal.Q
 	return executeQueryToRecordsReader(ctx, r, query)
 }
 
-// ExecuteQueryToRecordsetReader is not implemented yet. Callers that need
-// recordset-shaped output should fall back to ExecuteQueryToRecordsReader.
-func (r readonlyTx) ExecuteQueryToRecordsetReader(_ context.Context, _ dal.Query, _ ...recordset.Option) (dal.RecordsetReader, error) {
-	return nil, dal.ErrNotSupported
+// ExecuteQueryToRecordsetReader executes a structured query against a single
+// collection and returns a recordset-shaped reader. Every stored column carries
+// the record's locale-normalized value; every computed (formula) column is
+// registered via recordset.NewComputedColumn bound to a Starlark-backed
+// evaluator, so computed values resolve lazily — only when a consumer reads
+// them — never eagerly baked here.
+func (r readonlyTx) ExecuteQueryToRecordsetReader(_ context.Context, query dal.Query, _ ...recordset.Option) (dal.RecordsetReader, error) {
+	colDef, err := collectionFromQuery(r.def, query)
+	if err != nil {
+		return nil, err
+	}
+	stored, err := readAllStoredRecords(colDef)
+	if err != nil {
+		return nil, err
+	}
+	return NewRecordsetReader(BuildRecordset(colDef, stored)), nil
 }
 
 // resolveCollection looks up the collection definition for a key and

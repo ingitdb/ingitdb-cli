@@ -168,12 +168,12 @@ func TestReadonlyTx_Options(t *testing.T) {
 	_ = tx.Options() // just confirm it doesn't panic
 }
 
-func TestReadonlyTx_ExecuteQueryToRecordsetReader_NotSupported(t *testing.T) {
+func TestReadonlyTx_ExecuteQueryToRecordsetReader_NoDefinition(t *testing.T) {
 	t.Parallel()
 	tx := readonlyTx{}
 	_, err := tx.ExecuteQueryToRecordsetReader(context.Background(), nil)
 	if err == nil {
-		t.Fatal("want error")
+		t.Fatal("want error when the transaction has no loaded definition")
 	}
 }
 

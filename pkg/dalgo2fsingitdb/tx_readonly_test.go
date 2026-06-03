@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/dal-go/dalgo/dal"
-	"github.com/dal-go/dalgo/recordset"
 )
 
 func TestReadonlyTx_Panics(t *testing.T) {
@@ -14,9 +13,7 @@ func TestReadonlyTx_Panics(t *testing.T) {
 	tx := readonlyTx{db: localDB{rootDirPath: "/tmp/root"}}
 	ctx := context.Background()
 	var key *dal.Key
-	var query dal.Query
 	var records []dal.Record
-	var options []recordset.Option
 
 	tests := []struct {
 		name string
@@ -39,13 +36,6 @@ func TestReadonlyTx_Panics(t *testing.T) {
 			name: "get_multi",
 			fn: func() {
 				err := tx.GetMulti(ctx, records)
-				_ = err
-			},
-		},
-		{
-			name: "execute_query_recordset_reader",
-			fn: func() {
-				_, err := tx.ExecuteQueryToRecordsetReader(ctx, query, options...)
 				_ = err
 			},
 		},

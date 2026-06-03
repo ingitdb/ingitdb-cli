@@ -63,7 +63,10 @@ referencing another computed column — are deferred to a future Feature.)
 
 For every record read from a collection, each computed column's value MUST be
 produced by evaluating its `formula` before the record is returned to the caller,
-in the same read-time transformation stage as `ApplyLocaleToRead`.
+in the same read-time transformation stage as `ApplyLocaleToRead`. (Computation
+timing is superseded by `computed-columns-via-dalgo`: values are produced lazily
+on access via dalgo's `recordset.Row` rather than eagerly, so a computed column is
+evaluated only when a consumer references it.)
 
 #### REQ: sandboxed-deterministic
 
@@ -97,7 +100,10 @@ outside that set on a computed column MUST be rejected as a schema validation er
 If a formula raises a runtime error, or its result cannot be coerced to the declared
 type, the read/materialization MUST abort with an error identifying the collection,
 record key, column, and underlying cause. The system MUST NOT emit a partial row or
-silently null the offending cell.
+silently null the offending cell. Because computation is lazy (see
+`computed-columns-via-dalgo`), this abort fires when the computed column is
+*referenced* — projected, filtered, or sorted; a computed column that no consumer
+references in an operation is not evaluated and does not abort that operation.
 
 ### Query and reference integration
 
@@ -186,8 +192,8 @@ optimization, out of scope for this Feature.)
 ### AC: runtime-error-fails-read (verifies REQ:fail-loud)
 
 **Given** a computed `int` column whose formula divides by a field that is zero for some record
-**When** that record is read
-**Then** the read aborts with an error naming the collection, record key, and column, and no partial row is emitted
+**When** that record is read **and the computed column is referenced** (projected, filtered, or sorted)
+**Then** the read aborts with an error naming the collection, record key, and column, and no partial row is emitted; **a computed column that no consumer references is not evaluated and does not abort the read**
 
 ### AC: filter-on-computed-column (verifies REQ:usable-in-filter-and-sort)
 

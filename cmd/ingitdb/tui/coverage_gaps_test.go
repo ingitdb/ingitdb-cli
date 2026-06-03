@@ -39,16 +39,16 @@ func (mockTx) Exists(_ context.Context, _ *dal.Key) (bool, error) { return false
 
 func (mockTx) GetMulti(_ context.Context, _ []dal.Record) error { return nil }
 
-func (mockTx) ExecuteQueryToRecordsetReader(_ context.Context, _ dal.Query, _ ...recordset.Option) (dal.RecordsetReader, error) {
-	return nil, errors.New("not implemented")
-}
-
-func (mockTx) ExecuteQueryToRecordsReader(_ context.Context, q dal.Query) (dal.RecordsReader, error) {
+func (mockTx) ExecuteQueryToRecordsetReader(_ context.Context, q dal.Query, _ ...recordset.Option) (dal.RecordsetReader, error) {
 	sq, ok := q.(dal.StructuredQuery)
 	if ok {
 		// Call the factory — this is the line we need to cover.
 		_ = sq.IntoRecord()
 	}
+	return &emptyRecordsetReader{}, nil
+}
+
+func (mockTx) ExecuteQueryToRecordsReader(_ context.Context, _ dal.Query) (dal.RecordsReader, error) {
 	return &emptyRecordsReader{}, nil
 }
 
@@ -57,6 +57,15 @@ type emptyRecordsReader struct{}
 func (e *emptyRecordsReader) Next() (dal.Record, error) { return nil, dal.ErrNoMoreRecords }
 func (e *emptyRecordsReader) Cursor() (string, error)   { return "", nil }
 func (e *emptyRecordsReader) Close() error              { return nil }
+
+type emptyRecordsetReader struct{}
+
+func (e *emptyRecordsetReader) Next() (recordset.Row, recordset.Recordset, error) {
+	return nil, nil, dal.ErrNoMoreRecords
+}
+func (e *emptyRecordsetReader) Recordset() recordset.Recordset { return nil }
+func (e *emptyRecordsetReader) Cursor() (string, error)        { return "", nil }
+func (e *emptyRecordsetReader) Close() error                   { return nil }
 
 // mockDB wraps mockTx to satisfy the dal.DB interface.
 type mockDB struct{ dal.NoConcurrency }
@@ -166,6 +175,50 @@ func TestLoadRecordsCmd_Success(t *testing.T) {
 	}
 	if len(loaded.keys) != 2 {
 		t.Errorf("loaded %d keys, want 2", len(loaded.keys))
+	}
+}
+
+// TestLoadRecordsCmd_ComputedError exercises the per-row RowData error path: a
+// computed column whose formula raises at runtime aborts the load (the cells the
+// TUI would render are read through the shared coerce-on-access accessor).
+func TestLoadRecordsCmd_ComputedError(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	recordsDir := filepath.Join(dir, "$records")
+	if err := os.MkdirAll(recordsDir, 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	makeYAMLFile(t, filepath.Join(recordsDir, "a.yaml"), map[string]any{"qty": 3})
+
+	colDef := &ingitdb.CollectionDef{
+		ID:      "people",
+		DirPath: dir,
+		RecordFile: &ingitdb.RecordFileDef{
+			Name:       "{key}.yaml",
+			Format:     "yaml",
+			RecordType: ingitdb.SingleRecord,
+		},
+		Columns: map[string]*ingitdb.ColumnDef{
+			"qty":   {Type: ingitdb.ColumnTypeInt},
+			"ratio": {Type: ingitdb.ColumnTypeInt, Formula: "qty / 0"},
+		},
+		ColumnsOrder: []string{"qty", "ratio"},
+	}
+	def := &ingitdb.Definition{Collections: map[string]*ingitdb.CollectionDef{"people": colDef}}
+
+	db, err := dalgo2fsingitdb.NewLocalDBWithDef(dir, def)
+	if err != nil {
+		t.Fatalf("NewLocalDBWithDef: %v", err)
+	}
+
+	msg := loadRecordsCmd(db, colDef)()
+	loaded, ok := msg.(recordsLoadedMsg)
+	if !ok {
+		t.Fatalf("cmd() returned %T, want recordsLoadedMsg", msg)
+	}
+	if loaded.err == nil {
+		t.Fatal("expected error from erroring computed column")
 	}
 }
 
