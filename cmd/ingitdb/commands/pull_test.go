@@ -44,6 +44,7 @@ func TestPull_ReturnsCommand(t *testing.T) {
 	cmd := newPullCmd(&fakePullViewBuilder{}, nil, nil)
 	if cmd == nil {
 		t.Fatal("Pull() returned nil")
+		return
 	}
 	if cmd.Use != "pull" {
 		t.Errorf("expected name 'pull', got %q", cmd.Name())

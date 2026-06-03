@@ -202,6 +202,7 @@ records_var_name: items
 	v := views["readme"]
 	if v == nil {
 		t.Fatal("expected 'readme' view to exist")
+		return
 	}
 	if v.ID != "readme" {
 		t.Fatalf("expected ID 'readme', got %q", v.ID)
@@ -448,6 +449,7 @@ record_file:
 	recipes := def.Collections["recipes"]
 	if recipes == nil {
 		t.Fatal("expected 'recipes' collection")
+		return
 	}
 
 	// View loaded from $views/

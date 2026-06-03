@@ -39,6 +39,7 @@ func TestDocs_ReturnsCommand(t *testing.T) {
 	cmd := Docs(homeDir, getWd, readDef, logf)
 	if cmd == nil {
 		t.Fatal("Docs() returned nil")
+		return
 	}
 	if cmd.Use != "docs" {
 		t.Errorf("expected name 'docs', got %q", cmd.Name())

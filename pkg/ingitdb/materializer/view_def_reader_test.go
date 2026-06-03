@@ -37,6 +37,7 @@ func TestFileViewDefReader_ReadViewDefs(t *testing.T) {
 	readme := defs["README"]
 	if readme == nil {
 		t.Fatalf("README view def not found")
+		return
 	}
 	if readme.ID != "README" {
 		t.Fatalf("expected ID README, got %q", readme.ID)

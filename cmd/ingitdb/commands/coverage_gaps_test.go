@@ -514,6 +514,7 @@ columns:
 	}
 	if def == nil {
 		t.Fatal("expected non-nil definition")
+		return
 	}
 	if _, ok := def.Collections["test.items"]; !ok {
 		t.Errorf("expected collection 'test.items' in def, got: %v", def.Collections)
@@ -991,6 +992,7 @@ func TestSetup_CommandRegistered(t *testing.T) {
 	cmd := Setup()
 	if cmd == nil {
 		t.Fatal("Setup() returned nil")
+		return
 	}
 	if cmd.Use != "setup" {
 		t.Errorf("expected Use=setup, got %q", cmd.Use)

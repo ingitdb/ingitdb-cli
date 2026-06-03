@@ -12,6 +12,7 @@ func TestVersion_ReturnsCommand(t *testing.T) {
 	cmd := Version("1.0.0", "abc123", "2024-01-01")
 	if cmd == nil {
 		t.Fatal("Version() returned nil")
+		return
 	}
 	if cmd.Use != "version" {
 		t.Errorf("expected name 'version', got %q", cmd.Name())

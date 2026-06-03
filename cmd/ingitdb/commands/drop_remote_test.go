@@ -161,6 +161,7 @@ func TestDropCollection_Remote_HappyPath(t *testing.T) {
 	}
 	if rootChange == nil {
 		t.Fatal("expected change for .ingitdb/root-collections.yaml")
+		return
 	}
 	// Modified root-collections.yaml must include the surviving collection.
 	if !strings.Contains(string(rootChange.Content), "countries") {
