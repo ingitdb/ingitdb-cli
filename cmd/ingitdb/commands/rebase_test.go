@@ -17,6 +17,7 @@ func TestRebaseCommand(t *testing.T) {
 
 	// Initialize a git repo
 	runGit(t, tempDir, "init")
+	disableGitBackgroundMaintenance(t, tempDir)
 	runGit(t, tempDir, "config", "user.email", "test@example.com")
 	runGit(t, tempDir, "config", "user.name", "Test User")
 
@@ -120,6 +121,17 @@ func runGit(t *testing.T, dir string, args ...string) []byte {
 	return out
 }
 
+// disableGitBackgroundMaintenance turns off auto-gc and background maintenance
+// for a freshly-initialized test repo. Without this, `git commit` can spawn a
+// detached `git gc --auto` / `git maintenance` process that keeps writing to
+// .git/objects after the test returns, racing with t.TempDir()'s RemoveAll and
+// failing cleanup with "directory not empty".
+func disableGitBackgroundMaintenance(t *testing.T, dir string) {
+	t.Helper()
+	runGit(t, dir, "config", "gc.auto", "0")
+	runGit(t, dir, "config", "maintenance.auto", "false")
+}
+
 // setupRebaseCollectionReadmeConflict creates a git repo where rebasing main
 // onto base conflicts on a collection README.md. With secondConflict, main has
 // two README-changing commits so `git rebase --continue` hits a second
@@ -127,6 +139,7 @@ func runGit(t *testing.T, dir string, args ...string) []byte {
 func setupRebaseCollectionReadmeConflict(t *testing.T, dir string, secondConflict bool) string {
 	t.Helper()
 	runGit(t, dir, "init")
+	disableGitBackgroundMaintenance(t, dir)
 	runGit(t, dir, "config", "user.email", "test@example.com")
 	runGit(t, dir, "config", "user.name", "Test User")
 
