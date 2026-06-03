@@ -5,7 +5,7 @@ captured_at: 2026-06-03T14:25:20Z
 captured_by: claude
 captured_during: null
 trigger: explicit
-status: queued
+status: done
 synchestra_task: null
 ---
 # Re-validate auto-merged records against the collection schema and escalate invalid merges instead of staging them

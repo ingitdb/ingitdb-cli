@@ -257,6 +257,16 @@ func parseListRows(content []byte, colDef *ingitdb.CollectionDef) ([]map[string]
 	}
 }
 
+// ValidateRecordData validates a single in-memory record's field values against
+// the collection's schema: declared column types, required fields, and the
+// rule that computed-column values must not be stored. It returns the schema
+// violations found (empty when the record is valid). Use it to check records
+// that are not yet persisted to a file, e.g. an auto-merge result before it is
+// staged.
+func ValidateRecordData(colDef *ingitdb.CollectionDef, recordKey string, data map[string]any) []ingitdb.ValidationError {
+	return validateRecordData(colDef.ID, "", recordKey, colDef, data)
+}
+
 func validateRecordData(
 	collectionKey string,
 	filePath string,
