@@ -1,7 +1,7 @@
 # Feature: Diff Command
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/diff?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/diff?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/diff?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/diff?op=request-change) |
-**Status:** Draft
+**Status:** Implementing
 
 ## Summary
 
@@ -45,13 +45,65 @@ The command MUST exit `0` when no changes are found, `1` when changes are found,
 
 - path-targeting
 
+## Implementation
+
+Source files (annotated with `// specscore: feature/cli/diff`):
+
+- [`cmd/ingitdb/commands/diff.go`](../../../cmd/ingitdb/commands/diff.go)
+
+Reuses `pkg/ingitdb/gitdiff` (changed-file listing) and
+`pkg/ingitdb/datavalidator.CollectionForRecordFile` (file→collection mapping).
+
 ## Acceptance Criteria
 
-Not defined yet.
+### AC: refs-and-record-changes
+
+**Requirements:** cli/diff#req:subcommand-name, cli/diff#req:depth
+
+`ingitdb diff <a>..<b>` reports added/updated/deleted records grouped by
+collection. A bare `<ref>` compares that ref against HEAD; an omitted argument
+compares the working tree against HEAD. `--depth=summary` (default) prints
+per-collection counts; `record` lists one line per changed record; `fields`
+adds changed field names; `full` adds before/after values per field.
+
+### AC: format
+
+**Requirements:** cli/diff#req:format
+
+`--format=text|json|yaml|toml` (default `text`) renders the same depth-scoped
+result in the chosen format; the structured formats round-trip
+(e.g. JSON parses back into the record-change list).
+
+### AC: scoping
+
+**Requirements:** cli/diff#req:scoping-flags
+
+`--collection=KEY` limits the diff to one collection; `--path-filter=PATTERN`
+narrows by record-path prefix/glob.
+
+### AC: exit-codes
+
+**Requirements:** cli/diff#req:exit-codes
+
+The command exits `0` when no record changes are found and `1` when changes
+are found (suitable as a CI guard).
+
+## Scope (current implementation)
+
+Implemented: all three ref forms; `summary`/`record`/`fields`/`full` depth;
+`text`/`json`/`yaml`/`toml` format; `--collection` and `--path-filter`; exit
+`0`/`1`.
+
+Deferred / not yet implemented:
+- **`--view` / `--view-mode`** — diffing a view's generated output or source
+  records (`--view` currently returns a clear "not yet implemented" error).
+- **`record` depth commit metadata** — per-record commit count and short
+  hashes are not yet shown (only the change kind).
+- **Exit code `2`** — infrastructure errors currently exit `1` (non-zero), not
+  a distinct `2`; that granularity needs main-loop exit-code support.
 
 ## Open Questions
 
-- Acceptance criteria not yet defined for this feature.
 - Should `--depth=full` redact secrets the way some logging frameworks do?
 - Should the JSON output schema be versioned and documented as a stable contract?
 
