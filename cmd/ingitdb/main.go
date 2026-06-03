@@ -83,7 +83,9 @@ func run(
 		commands.Setup(),
 		commands.Resolve(homeDir, getWd, readDefinition, logf, defaultIsTerminal, launchConflictsTUI),
 		commands.Rebase(getWd, readDefinition, logf),
-		commands.Watch(),
+		// `watch` is parked — its feature is Withdrawn (deferred); the stub
+		// command and pkg/watcher were removed. See spec/features/cli/watch
+		// and recover from git history at d93c466 if revived.
 		commands.Docs(homeDir, getWd, readDefinition, logf),
 		// The `serve` command (MCP + HTTP API gateways for api/mcp.ingitdb.com)
 		// was removed as a still-born, datatug-overlapping surface — see

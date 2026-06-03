@@ -22,6 +22,5 @@
 - [pull](commands/pull.md) — pull latest changes, resolve conflicts, and rebuild views
 - [setup](commands/setup.md) — initialise a new database directory
 - [resolve](commands/resolve.md) — resolve merge conflicts in database files
-- [watch](commands/watch.md) — watch database for changes
 - [list](commands/list.md) — list database objects
 - [rebase](commands/rebase.md) — rebase on top of a base ref and auto-resolve specific documentation conflicts

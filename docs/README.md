@@ -97,7 +97,6 @@ Spec-level docs live in [ingitdb-specs](https://github.com/ingitdb/ingitdb-specs
 | `query`       | —                                      | planned                                   | Query and format records from a collection                                                   |
 | `materialize` | —                                      | planned                                   | Build materialized views into `$views/` and default collection views into `$ingitdb/`        |
 | `pull`        | —                                      | implemented                               | Pull remote changes, auto-resolve generated-file conflicts, rebuild views                    |
-| `watch`       | —                                      | planned                                   | Stream change events to stdout as records are added, updated, or deleted                     |
 | `resolve`     | —                                      | planned                                   | Interactive TUI for resolving merge conflicts in data files                                  |
 | `setup`       | —                                      | planned                                   | Initialise a new database directory with a starter `.ingitdb/` config                        |
 | `migrate`     | —                                      | planned                                   | Migrate records between schema versions                                                      |
