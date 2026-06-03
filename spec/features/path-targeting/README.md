@@ -1,7 +1,7 @@
 # Feature: Path Targeting
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/path-targeting?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/path-targeting?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/path-targeting?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/path-targeting?op=request-change) |
-**Status:** Implementing
+**Status:** Stable
 
 ## Summary
 

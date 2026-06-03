@@ -1,7 +1,7 @@
 # Feature: Auto-Resolve Generated Conflicts
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/resolve/auto-resolve?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/resolve/auto-resolve?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/resolve/auto-resolve?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/resolve/auto-resolve?op=request-change) |
-**Status:** Implementing
+**Status:** Stable
 **Parent Feature:** [`cli/resolve`](../README.md)
 
 ## Summary

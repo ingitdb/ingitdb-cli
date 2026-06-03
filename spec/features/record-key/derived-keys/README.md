@@ -1,7 +1,7 @@
 # Feature: Derived Record Keys
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-key/derived-keys?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-key/derived-keys?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-key/derived-keys?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-key/derived-keys?op=request-change) |
-**Status:** Approved
+**Status:** Stable
 **Date:** 2026-05-30
 **Owner:** alexander.trakhimenok@gmail.com
 **Source Idea:** [`derived-record-keys`](../../../ideas/derived-record-keys.md)

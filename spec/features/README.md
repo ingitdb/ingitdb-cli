@@ -34,17 +34,17 @@ This directory tracks the SpecScore feature specifications for the **ingitdb-cli
 | [cli/truncate](cli/truncate/README.md) | Withdrawn — use `delete --all` | `ingitdb truncate` (not implemented). |
 | [cli/migrate](cli/migrate/README.md) | Withdrawn (deferred) | `ingitdb migrate` (not implemented). |
 | [id-flag-format](id-flag-format/README.md) | Implementing | Cross-cutting `--id=<collection-id>/<record-key>` syntax. |
-| [output-formats](output-formats/README.md) | Implementing | Cross-cutting `--format=yaml|json` flag and YAML default. |
-| [path-targeting](path-targeting/README.md) | Implementing | Cross-cutting `--path` flag and its relation to `--remote`. |
+| [output-formats](output-formats/README.md) | Stable | Cross-cutting `--format=yaml|json` flag and YAML default. |
+| [path-targeting](path-targeting/README.md) | Stable | Cross-cutting `--path` flag and its relation to `--remote`. |
 | [remote-repo-access](remote-repo-access/README.md) | Implementing | Cross-cutting `--remote=<URL>` flag, provider dispatch, and token resolution for remote Git hosting services. |
 | [shared-cli-flags](shared-cli-flags/README.md) | Single source of truth for the CLI flag grammar shared across select, insert, update, delete, and drop verbs: --from, --into, --where, --set, --id, --all, --order-by, --fields. Defines parsing rules, operator semantics (==, ===, !=, !==, >=, <=, >, <), value-type model, and flag mutual-exclusion rules. |
 | [cli](cli/README.md) | Unknown | TODO: Add description. |
 | [dalgo2ingitdb-dbschema-ddl-coverage](dalgo2ingitdb-dbschema-ddl-coverage/README.md) | Draft | TODO: Add description. |
-| [dalgo2ingitdb-referential-integrity](dalgo2ingitdb-referential-integrity/README.md) | Approved | DALgo write transactions enforce existing `foreign_key` metadata on Set, Insert, Update, and Delete. |
+| [dalgo2ingitdb-referential-integrity](dalgo2ingitdb-referential-integrity/README.md) | Stable | DALgo write transactions enforce existing `foreign_key` metadata on Set, Insert, Update, and Delete. |
 | [record-key](record-key/README.md) | Draft | Umbrella for canonical record identity behavior across schema validation, storage paths, writes, and CLI key surfaces. |
-| [computed-columns](computed-columns/README.md) | Approved | TODO: Add description. |
-| [computed-columns-via-dalgo](computed-columns-via-dalgo/README.md) | Approved | TODO: Add description. |
-| [tui-lazy-computed-cells](tui-lazy-computed-cells/README.md) | Approved | TODO: Add description. |
+| [computed-columns](computed-columns/README.md) | Stable | TODO: Add description. |
+| [computed-columns-via-dalgo](computed-columns-via-dalgo/README.md) | Stable | TODO: Add description. |
+| [tui-lazy-computed-cells](tui-lazy-computed-cells/README.md) | Stable | TODO: Add description. |
 
 ## Feature Summaries
 

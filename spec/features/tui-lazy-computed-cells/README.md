@@ -1,7 +1,7 @@
 # Feature: TUI lazy computed-cell evaluation
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/tui-lazy-computed-cells?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/tui-lazy-computed-cells?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/tui-lazy-computed-cells?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/tui-lazy-computed-cells?op=request-change) |
-**Status:** Approved
+**Status:** Stable
 **Date:** 2026-06-03
 **Owner:** alex
 **Source Ideas:** —

@@ -1,6 +1,6 @@
 # Idea: Scripted Computed Fields & Materialized Views (Starlark)
 
-**Status:** Implementing
+**Status:** Specified
 **Date:** 2026-06-02
 **Owner:** alexander.trakhimenok@gmail.com
 **Promotes To:** computed-columns

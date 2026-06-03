@@ -1,7 +1,7 @@
 # Feature: Computed Columns via dalgo (lazy delegation)
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/computed-columns-via-dalgo?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/computed-columns-via-dalgo?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/computed-columns-via-dalgo?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/computed-columns-via-dalgo?op=request-change) |
-**Status:** Approved
+**Status:** Stable
 **Date:** 2026-06-03
 **Owner:** alex
 **Source Ideas:** —

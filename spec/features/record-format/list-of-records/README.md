@@ -1,7 +1,7 @@
 # Feature: List-of-Records Files (YAML/JSON Sequences + JSONL)
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/list-of-records?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/list-of-records?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/list-of-records?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/list-of-records?op=request-change) |
-**Status:** Implementing
+**Status:** Stable
 **Parent Feature:** [`record-format`](../README.md)
 **Source Idea:** [`list-of-records-files`](../../../ideas/list-of-records-files.md)
 

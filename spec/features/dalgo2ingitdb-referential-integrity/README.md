@@ -1,7 +1,7 @@
 # Feature: DALgo Referential Integrity
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/dalgo2ingitdb-referential-integrity?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/dalgo2ingitdb-referential-integrity?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/dalgo2ingitdb-referential-integrity?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/dalgo2ingitdb-referential-integrity?op=request-change) |
-**Status:** Approved
+**Status:** Stable
 **Date:** 2026-05-30
 **Owner:** @trakhimenok
 **Source Idea:** [`dalgo2ingitdb-referential-integrity`](../../ideas/dalgo2ingitdb-referential-integrity.md)
