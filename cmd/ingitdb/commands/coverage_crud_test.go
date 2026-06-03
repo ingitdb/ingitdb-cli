@@ -11,7 +11,6 @@ package commands
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -21,8 +20,6 @@ import (
 
 	"github.com/dal-go/dalgo/dal"
 	"go.uber.org/mock/gomock"
-
-	mcp "github.com/metoro-io/mcp-golang"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2fsingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
@@ -1009,164 +1006,6 @@ func TestRebase_SuccessPath(t *testing.T) {
 }
 
 // ============================================================
-// serve_mcp.go – serveMCP path error (L45 — dirPath/readDef error)
-// ============================================================
-
-// TestServeMCP_PathReadDefError exercises the serveMCP registerMCPTools path
-// where an error is injected via a failing readDefinition in a pre-running
-// server.
-func TestServeMCP_PathReadDefError(t *testing.T) {
-	// Modifies newMCPServerFn — not parallel.
-	dir := t.TempDir()
-
-	// We need to trigger registerMCPTools on a running server to cause an error.
-	// Use a transport that fails on Send so RegisterTool notification fails.
-	tr := &testMCPTransport{}
-	srv := mcp.NewServer(tr, mcp.WithName("test"), mcp.WithVersion("1.0"))
-	if err := srv.Serve(); err != nil {
-		t.Fatalf("srv.Serve: %v", err)
-	}
-	// Make Send fail to trigger the RegisterTool error.
-	tr.sendErr = errors.New("send error on registration")
-
-	originalFn := newMCPServerFn
-	newMCPServerFn = func() *mcp.Server { return srv }
-	defer func() { newMCPServerFn = originalFn }()
-
-	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
-		return &ingitdb.Definition{Collections: map[string]*ingitdb.CollectionDef{}}, nil
-	}
-	newDB := func(_ string, _ *ingitdb.Definition) (dal.DB, error) { return nil, nil }
-
-	err := serveMCP(context.Background(), dir, readDef, newDB, func(...any) {})
-	if err == nil {
-		t.Fatal("expected error when registerMCPTools fails due to send error")
-	}
-}
-
-// ============================================================
-// serve_mcp.go – registerMCPTools: listRecords tool handler (L138)
-// The MCP test already covers list_collections success. We cover the
-// readRecord handler variant — readDef error in read_record (already in
-// serve_mcp_test.go). Here we add the listCollections yaml.Marshal error
-// path (hard to trigger) and confirm the handler chain works.
-// ============================================================
-
-// TestRegisterMCPTools_ListCollections_MarshalError covers the yaml.Marshal
-// error path inside the list_collections handler (line ~99).
-// Since yaml.Marshal of []string cannot realistically fail, we instead verify
-// that a non-empty collection list is returned correctly — exercising L99.
-func TestRegisterMCPTools_ListCollections_NonEmpty(t *testing.T) {
-	t.Parallel()
-
-	dir := t.TempDir()
-	def := testMCPDef(dir)
-	server, tr := newTestMCPServer()
-	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
-		return def, nil
-	}
-	newDB := func(root string, d *ingitdb.Definition) (dal.DB, error) {
-		return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
-	}
-
-	if err := registerMCPTools(server, dir, readDef, newDB); err != nil {
-		t.Fatalf("registerMCPTools: %v", err)
-	}
-	if err := server.Serve(); err != nil {
-		t.Fatalf("server.Serve: %v", err)
-	}
-
-	resp, err := tr.callTool(context.Background(), 99, "list_collections", `{}`)
-	if err != nil {
-		t.Fatalf("callTool list_collections: %v", err)
-	}
-	if resp == nil {
-		t.Fatal("expected response")
-	}
-}
-
-// ============================================================
-// serve_mcp.go – createRecord, updateRecord, deleteRecord handlers (L163, L170, L176)
-// These are the tx error paths inside the handler closures. The existing
-// tests already cover most of these; we add a test for the delete success path
-// that goes through a record that does not exist (tx.Delete on missing is a no-op
-// for the local backend).
-// ============================================================
-
-// TestRegisterMCPTools_DeleteRecord_NonExistent exercises tx.Delete on a
-// non-existent record — the local backend should not error.
-func TestRegisterMCPTools_DeleteRecord_NonExistent(t *testing.T) {
-	t.Parallel()
-	dir := t.TempDir()
-	def := testMCPDef(dir)
-	server, tr := newTestMCPServer()
-	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) { return def, nil }
-	newDB := func(root string, d *ingitdb.Definition) (dal.DB, error) {
-		return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
-	}
-
-	if err := registerMCPTools(server, dir, readDef, newDB); err != nil {
-		t.Fatalf("registerMCPTools: %v", err)
-	}
-	if err := server.Serve(); err != nil {
-		t.Fatalf("server.Serve: %v", err)
-	}
-
-	resp, err := tr.callTool(context.Background(), 200, "delete_record", `{"id":"test.items/nope"}`)
-	if err != nil {
-		t.Fatalf("callTool: %v", err)
-	}
-	if resp == nil {
-		t.Fatal("expected response")
-	}
-}
-
-// TestRegisterMCPTools_ListCollections_ErrorPath_YamlMarshal verifies that
-// the yaml.Marshal error path in list_collections is handled. Since
-// yaml.Marshal([]string{}) always succeeds, this test uses a custom transport
-// to verify the full handler wiring including the happy path output marshal.
-func TestRegisterMCPTools_AllTools_Wired(t *testing.T) {
-	t.Parallel()
-	dir := t.TempDir()
-	def := testMCPDef(dir)
-	server, tr := newTestMCPServer()
-	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) { return def, nil }
-	newDB := func(root string, d *ingitdb.Definition) (dal.DB, error) {
-		return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
-	}
-
-	if err := registerMCPTools(server, dir, readDef, newDB); err != nil {
-		t.Fatalf("registerMCPTools: %v", err)
-	}
-	if err := server.Serve(); err != nil {
-		t.Fatalf("server.Serve: %v", err)
-	}
-
-	// Call each tool once to verify all 5 are wired.
-	tools := []struct {
-		name string
-		args string
-		id   int64
-	}{
-		{"list_collections", `{}`, 201},
-		{"create_record", `{"id":"test.items/wired1","data":"{name: test}"}`, 202},
-		{"read_record", `{"id":"test.items/wired1"}`, 203},
-		{"update_record", `{"id":"test.items/wired1","fields":"{name: updated}"}`, 204},
-		{"delete_record", `{"id":"test.items/wired1"}`, 205},
-	}
-	for _, tc := range tools {
-		resp, err := tr.callTool(context.Background(), tc.id, tc.name, tc.args)
-		if err != nil {
-			t.Errorf("callTool %s: %v", tc.name, err)
-			continue
-		}
-		if resp == nil {
-			t.Errorf("expected response for %s", tc.name)
-		}
-	}
-}
-
-// ============================================================
 // drop_schema.go – writeRootCollectionsWithout: yaml.Marshal error (L44)
 // yaml.Marshal on map[string]string cannot realistically fail, so we verify
 // the happy path delete-and-write instead, which exercises the Marshal call.
@@ -1441,46 +1280,6 @@ func TestDelete_FromSet_EvalWhereSuccess(t *testing.T) {
 	)
 	if err != nil {
 		t.Fatalf("delete --from --where: %v", err)
-	}
-}
-
-// TestRegisterMCPTools_ReadRecord_GetError exercises the tx.Get returning an
-// error in the read_record handler. We trigger this by writing an invalid YAML
-// record file.
-func TestRegisterMCPTools_ReadRecord_GetError(t *testing.T) {
-	t.Parallel()
-	dir := t.TempDir()
-	def := testMCPDef(dir)
-
-	// Write invalid YAML to the record file so tx.Get fails.
-	recordsDir := filepath.Join(dir, "$records")
-	if err := os.MkdirAll(recordsDir, 0o755); err != nil {
-		t.Fatalf("mkdir: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(recordsDir, "corrupt.yaml"),
-		[]byte("{: invalid: ["), 0o644); err != nil {
-		t.Fatalf("WriteFile: %v", err)
-	}
-
-	server, tr := newTestMCPServer()
-	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) { return def, nil }
-	newDB := func(root string, d *ingitdb.Definition) (dal.DB, error) {
-		return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
-	}
-
-	if err := registerMCPTools(server, dir, readDef, newDB); err != nil {
-		t.Fatalf("registerMCPTools: %v", err)
-	}
-	if err := server.Serve(); err != nil {
-		t.Fatalf("server.Serve: %v", err)
-	}
-
-	resp, err := tr.callTool(context.Background(), 300, "read_record", `{"id":"test.items/corrupt"}`)
-	if err != nil {
-		t.Fatalf("callTool: %v", err)
-	}
-	if resp == nil {
-		t.Fatal("expected response")
 	}
 }
 

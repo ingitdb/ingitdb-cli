@@ -4,25 +4,6 @@ This directory contains reusable composite GitHub Actions that encapsulate commo
 
 ## Available Actions
 
-### [Deploy to Cloud Run](./deploy-to-cloud-run/)
-
-Builds and deploys the inGitDB server to Google Cloud Run.
-
-**Use when**: You need to deploy the inGitDB server to Cloud Run after building a release.
-
-**Key features**:
-- Downloads the latest release binary
-- Builds and pushes Docker image to Artifact Registry
-- Deploys to Cloud Run with environment variable configuration
-- Caches Docker images to skip redundant builds
-- Secure authentication via Workload Identity Federation
-
-**Used by**:
-- `.github/workflows/release.yml` — Auto-deploys after successful release
-- `.github/workflows/deploy-server.yml` — Manual deployment trigger
-
-[Full documentation →](./deploy-to-cloud-run/README.md)
-
 ### [Deploy Website](./deploy-website/)
 
 Deploys the inGitDB website to Firebase Hosting.
@@ -130,16 +111,7 @@ Triggered on:
 Jobs:
 1. `bump_version` — Bumps version using semantic versioning
 2. `goreleaser` — Builds and publishes releases
-3. `deploy` — Deploys server to Cloud Run (depends on `goreleaser`)
-4. `deploy-website` — Deploys website to Firebase (depends on `goreleaser`)
-
-### Deploy Server Workflow (`.github/workflows/deploy-server.yml`)
-
-Triggered on:
-- Manual trigger (`workflow_dispatch`)
-
-Jobs:
-1. `deploy` — Deploys server to Cloud Run using the reusable action
+3. `deploy-website` — Deploys website to Firebase (depends on `goreleaser`)
 
 ### Deploy Website Workflow (`.github/workflows/deploy-website.yml`)
 

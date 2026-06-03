@@ -11,7 +11,6 @@ package commands
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -356,37 +355,6 @@ func TestRunDocsUpdate_WithMatchingCollection(t *testing.T) {
 	err := runDocsUpdate(context.Background(), dir, def, "*", "", logf)
 	// UpdateDocs may succeed or fail; we just need to exercise the path.
 	_ = err
-}
-
-// ============================================================
-// serve_mcp.go – registerMCPTools: list_collections readDef error handler
-// (Additional coverage beyond what's in serve_mcp_test.go)
-// ============================================================
-
-func TestRegisterMCPTools_ListCollections_ReadDefError_Final(t *testing.T) {
-	t.Parallel()
-
-	dir := t.TempDir()
-	server, tr := newTestMCPServer()
-	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
-		return nil, errors.New("def read error")
-	}
-	newDB := func(_ string, _ *ingitdb.Definition) (dal.DB, error) { return nil, nil }
-
-	if err := registerMCPTools(server, dir, readDef, newDB); err != nil {
-		t.Fatalf("registerMCPTools: %v", err)
-	}
-	if err := server.Serve(); err != nil {
-		t.Fatalf("server.Serve: %v", err)
-	}
-
-	resp, err := tr.callTool(context.Background(), 101, "list_collections", `{}`)
-	if err != nil {
-		t.Fatalf("callTool: %v", err)
-	}
-	if resp == nil {
-		t.Fatal("expected response even on handler error")
-	}
 }
 
 // ============================================================
@@ -735,41 +703,6 @@ func TestResolveInsertContextRemote_FactoryError(t *testing.T) {
 
 // TestResolveInsertContextRemote_DBFactoryError is in coverage_remote_test.go
 // TestResolveRemoteRecordContext_DBFactoryError is in coverage_remote_test.go
-
-// ============================================================
-// serve_mcp.go – delete_record handler: delete of non-existent record
-// ============================================================
-
-func TestRegisterMCPTools_DeleteRecord_TxDeleteNonExistent(t *testing.T) {
-	t.Parallel()
-
-	dir := t.TempDir()
-	def := testMCPDef(dir)
-
-	server, tr := newTestMCPServer()
-	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
-		return def, nil
-	}
-	newDB := func(root string, d *ingitdb.Definition) (dal.DB, error) {
-		return dalgo2fsingitdb.NewLocalDBWithDef(root, d)
-	}
-
-	if err := registerMCPTools(server, dir, readDef, newDB); err != nil {
-		t.Fatalf("registerMCPTools: %v", err)
-	}
-	if err := server.Serve(); err != nil {
-		t.Fatalf("server.Serve: %v", err)
-	}
-
-	// Delete a record that doesn't exist — local backend still succeeds on delete.
-	resp, err := tr.callTool(context.Background(), 200, "delete_record", `{"id":"test.items/nonexistent"}`)
-	if err != nil {
-		t.Fatalf("callTool: %v", err)
-	}
-	if resp == nil {
-		t.Fatal("expected response")
-	}
-}
 
 // ============================================================
 // view_builder_helper.go – viewBuilderForCollection: nil views path

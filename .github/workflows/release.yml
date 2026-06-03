@@ -141,32 +141,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-
-  deploy-server:
-    name: Deploy to Cloud Run
-    needs:
-      - build-linux
-    if: "!failure() && !cancelled()"
-    runs-on: ubuntu-latest
-    permissions:
-      contents: "read"
-      id-token: "write"
-      packages: "read"
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Deploy to Cloud Run
-        uses: ./.github/actions/deploy-to-cloud-run
-        with:
-          gcloud_project_id: ${{ vars.GCLOUD_PROJECT_ID || 'ingitdb' }}
-          gcloud_region: ${{ vars.GCLOUD_REGION || 'europe-west3' }}
-          service_name: ${{ vars.SERVICE_NAME || 'ingitdb-server' }}
-          ingitdb_github_oauth_client_id: ${{ vars.INGITDB_GITHUB_OAUTH_CLIENT_ID }}
-          ingitdb_github_oauth_callback_url: ${{ vars.INGITDB_GITHUB_OAUTH_CALLBACK_URL }}
-          ingitdb_auth_cookie_domain: ${{ vars.INGITDB_AUTH_COOKIE_DOMAIN }}
-          ingitdb_auth_api_base_url: ${{ vars.INGITDB_AUTH_API_BASE_URL }}
-          ingitdb_auth_cookie_name: ${{ vars.INGITDB_AUTH_COOKIE_NAME || 'ingitdb_session' }}
-          ingitdb_auth_cookie_secure: ${{ vars.INGITDB_AUTH_COOKIE_SECURE || 'true' }}
-          gcp_oauth_client_secret_name: ${{ vars.GCP_OAUTH_CLIENT_SECRET_NAME }}
-          workload_identity_provider: ${{ vars.WORKLOAD_IDENTITY_PROVIDER || 'projects/152447355531/locations/global/workloadIdentityPools/github/providers/ingitdb' }}

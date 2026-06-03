@@ -17,12 +17,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/dal-go/dalgo/dal"
-	mcp "github.com/metoro-io/mcp-golang"
-	"github.com/metoro-io/mcp-golang/transport"
 	"gopkg.in/yaml.v3"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2fsingitdb"
@@ -674,36 +671,6 @@ func TestWriteSingleRecord_JSONWriteError2(t *testing.T) {
 }
 
 // ============================================================
-// serve_mcp.go – newMCPServerFn var itself (L45-48)
-// Call the real default function — it creates a stdio transport.
-// We just check it returns a non-nil server without calling Serve.
-// ============================================================
-
-func TestNewMCPServerFn_Default(t *testing.T) {
-	// Modifies package-level newMCPServerFn — not parallel.
-
-	// Save and restore the original.
-	original := newMCPServerFn
-	defer func() { newMCPServerFn = original }()
-
-	// Call the real default fn (it creates a stdio transport).
-	server := original()
-	if server == nil {
-		t.Fatal("expected non-nil server from default newMCPServerFn")
-	}
-}
-
-// serve_mcp.go – registerMCPTools yaml.Marshal collections error (L99-101)
-// yaml.Marshal([]string{...}) never fails, so this branch is effectively
-// dead. We cover it by confirming list_collections succeeds.
-// (Already covered by TestRegisterMCPTools_ListCollections_Success)
-
-// serve_mcp.go – remaining uncovered branches within tool handlers.
-// The create_record handler has readDef error (L114-116), CollectionForKey
-// error (L118-120), data parse error (L122-124), newDB error (L126-128),
-// tx.Insert error (L130-134) — these are all tested in serve_mcp_test.go.
-
-// ============================================================
 // docs_update.go – runDocsUpdate resolveStr path with unresolved conflicts
 // (L101-103): git returns conflicted files but none are matched by
 // FindCollectionsForConflictingFiles → unresolved list is non-empty.
@@ -1001,137 +968,6 @@ type constantDBFactory struct {
 
 func (f *constantDBFactory) NewGitHubDBWithDef(_ dalgo2ghingitdb.Config, _ *ingitdb.Definition) (dal.DB, error) {
 	return f.db, f.err
-}
-
-// ============================================================
-// serve_mcp.go – registerMCPTools: 2nd-5th RegisterTool error (L135,170,212,241)
-// A countingFailTransport succeeds for the first N sends, then fails.
-// Each RegisterTool (when the server is running) sends one notification;
-// failing on the Nth send causes the Nth tool registration to return an error.
-// ============================================================
-
-type countingFailTransport struct {
-	testMCPTransport
-	mu         sync.Mutex
-	succeedFor int // succeed for this many Send calls, then fail
-	sendCount  int
-	failErr    error
-}
-
-func (t *countingFailTransport) Send(ctx context.Context, msg *transport.BaseJsonRpcMessage) error {
-	t.mu.Lock()
-	t.sendCount++
-	count := t.sendCount
-	t.mu.Unlock()
-	if count > t.succeedFor {
-		return t.failErr
-	}
-	return t.testMCPTransport.Send(ctx, msg)
-}
-
-func newCountingFailMCPServer(succeedFor int) (*mcp.Server, *countingFailTransport) {
-	tr := &countingFailTransport{
-		succeedFor: succeedFor,
-		failErr:    fmt.Errorf("send error after %d successes", succeedFor),
-	}
-	server := mcp.NewServer(tr, mcp.WithName("test"), mcp.WithVersion("1.0"))
-	return server, tr
-}
-
-// TestRegisterMCPTools_CreateRecord_RegisterError covers the error at L135
-// (second RegisterTool call fails).
-func TestRegisterMCPTools_CreateRecord_RegisterError(t *testing.T) {
-	// Modifies server state — not parallel.
-	dir := t.TempDir()
-	server, _ := newCountingFailMCPServer(1) // succeed 1st send, fail 2nd
-	if err := server.Serve(); err != nil {
-		t.Fatalf("server.Serve: %v", err)
-	}
-
-	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
-		return testMCPDef(dir), nil
-	}
-	newDB := func(_ string, _ *ingitdb.Definition) (dal.DB, error) { return nil, nil }
-
-	err := registerMCPTools(server, dir, readDef, newDB)
-	if err == nil {
-		t.Fatal("expected error when second RegisterTool fails")
-	}
-	if !strings.Contains(err.Error(), "create_record") {
-		t.Errorf("expected error to mention 'create_record', got: %v", err)
-	}
-}
-
-// TestRegisterMCPTools_ReadRecord_RegisterError covers the error at L170
-// (third RegisterTool call fails).
-func TestRegisterMCPTools_ReadRecord_RegisterError(t *testing.T) {
-	// Modifies server state — not parallel.
-	dir := t.TempDir()
-	server, _ := newCountingFailMCPServer(2) // succeed 1st+2nd sends, fail 3rd
-	if err := server.Serve(); err != nil {
-		t.Fatalf("server.Serve: %v", err)
-	}
-
-	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
-		return testMCPDef(dir), nil
-	}
-	newDB := func(_ string, _ *ingitdb.Definition) (dal.DB, error) { return nil, nil }
-
-	err := registerMCPTools(server, dir, readDef, newDB)
-	if err == nil {
-		t.Fatal("expected error when third RegisterTool fails")
-	}
-	if !strings.Contains(err.Error(), "read_record") {
-		t.Errorf("expected error to mention 'read_record', got: %v", err)
-	}
-}
-
-// TestRegisterMCPTools_UpdateRecord_RegisterError covers the error at L212
-// (fourth RegisterTool call fails).
-func TestRegisterMCPTools_UpdateRecord_RegisterError(t *testing.T) {
-	// Modifies server state — not parallel.
-	dir := t.TempDir()
-	server, _ := newCountingFailMCPServer(3) // succeed 1st+2nd+3rd sends, fail 4th
-	if err := server.Serve(); err != nil {
-		t.Fatalf("server.Serve: %v", err)
-	}
-
-	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
-		return testMCPDef(dir), nil
-	}
-	newDB := func(_ string, _ *ingitdb.Definition) (dal.DB, error) { return nil, nil }
-
-	err := registerMCPTools(server, dir, readDef, newDB)
-	if err == nil {
-		t.Fatal("expected error when fourth RegisterTool fails")
-	}
-	if !strings.Contains(err.Error(), "update_record") {
-		t.Errorf("expected error to mention 'update_record', got: %v", err)
-	}
-}
-
-// TestRegisterMCPTools_DeleteRecord_RegisterError covers the error at L241
-// (fifth RegisterTool call fails).
-func TestRegisterMCPTools_DeleteRecord_RegisterError(t *testing.T) {
-	// Modifies server state — not parallel.
-	dir := t.TempDir()
-	server, _ := newCountingFailMCPServer(4) // succeed 1st-4th sends, fail 5th
-	if err := server.Serve(); err != nil {
-		t.Fatalf("server.Serve: %v", err)
-	}
-
-	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
-		return testMCPDef(dir), nil
-	}
-	newDB := func(_ string, _ *ingitdb.Definition) (dal.DB, error) { return nil, nil }
-
-	err := registerMCPTools(server, dir, readDef, newDB)
-	if err == nil {
-		t.Fatal("expected error when fifth RegisterTool fails")
-	}
-	if !strings.Contains(err.Error(), "delete_record") {
-		t.Errorf("expected error to mention 'delete_record', got: %v", err)
-	}
 }
 
 // ============================================================

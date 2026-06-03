@@ -85,7 +85,11 @@ func run(
 		commands.Rebase(getWd, readDefinition, logf),
 		commands.Watch(),
 		commands.Docs(homeDir, getWd, readDefinition, logf),
-		commands.Serve(homeDir, getWd, readDefinition, newDB, logf),
+		// The `serve` command (MCP + HTTP API gateways for api/mcp.ingitdb.com)
+		// was removed as a still-born, datatug-overlapping surface — see
+		// docs/adr/0001-remove-serve-command.md. Preserved in git history:
+		// last present at 184a40e; removed in 1bfecce.
+		// Recover with: git show 184a40e:cmd/ingitdb/commands/serve.go
 		commands.List(homeDir, getWd, readDefinition),
 		commands.Describe(homeDir, getWd, readDefinition),
 		commands.Select(homeDir, getWd, readDefinition, newDB, logf),

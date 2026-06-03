@@ -27,8 +27,6 @@ all with zero server infrastructure for reads.
   file path, and field name.
 - **Zero server infrastructure for reads.** There is no daemon to run. Reading data is a
   file-system operation on a git clone.
-- **AI-native via MCP.** The planned MCP server (`ingitdb serve --mcp`) will expose CRUD operations
-  to AI agents through the Model Context Protocol — no custom integration required (Phase 6).
 - **Go library via DALgo.** `pkg/dalgo2ingitdb` implements the [DALgo](https://github.com/dal-go/dalgo)
   `dal.DB` interface, so any Go program can use inGitDB as a standard database abstraction.
 
@@ -41,7 +39,6 @@ flowchart LR
     C --> D[Views Builder\ngenerates $views/]
     D --> E([CLI output\ningitdb query])
     D --> F([Go programs\nDALgo API])
-    D --> G([AI agents\nMCP server — Phase 6])
 ```
 
 The `ingitdb validate` command reads `.ingitdb.yaml`, checks every record against its collection
@@ -240,7 +237,6 @@ languages:
 | [`diff`](docs/cli/commands/diff.md)               | 🟡 planned | Show record-level changes between two git refs           |
 | [`pull`](docs/cli/commands/pull.md)               | 🟡 planned | Pull remote changes and rebuild views                    |
 | [`watch`](docs/cli/commands/watch.md)             | 🟡 planned | Stream record change events to stdout                    |
-| [`serve`](docs/cli/commands/serve.md)             | 🟡 planned | Start MCP, HTTP API, or file-watcher server              |
 | [`resolve`](docs/cli/commands/resolve.md)         | 🟡 planned | Interactive TUI for resolving data-file merge conflicts  |
 | [`setup`](docs/cli/commands/setup.md)             | 🟡 planned | Initialise a new database directory                      |
 | [`rebase`](docs/cli/commands/rebase.md)           | ✅ done    | Rebase on top of a base ref and resolve README conflicts |
