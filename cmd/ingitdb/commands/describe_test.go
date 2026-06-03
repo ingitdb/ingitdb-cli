@@ -30,6 +30,7 @@ func TestDescribe_ReturnsCommand(t *testing.T) {
 	cmd := Describe(homeDir, getWd, readDef)
 	if cmd == nil {
 		t.Fatal("Describe() returned nil")
+		return
 	}
 	if cmd.Use != "describe <kind> <name>" {
 		t.Errorf("unexpected Use: %q", cmd.Use)

@@ -46,6 +46,7 @@ func TestValidate_ReturnsCommand(t *testing.T) {
 	cmd := Validate(homeDir, getWd, readDef, nil, nil, logf)
 	if cmd == nil {
 		t.Fatal("Validate() returned nil")
+		return
 	}
 	if cmd.Use != "validate" {
 		t.Errorf("expected name 'validate', got %q", cmd.Name())

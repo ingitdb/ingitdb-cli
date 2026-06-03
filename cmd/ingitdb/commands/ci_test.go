@@ -20,6 +20,7 @@ func TestCI_ReturnsCommand(t *testing.T) {
 	cmd := CI(homeDir, getWd, readDef, nil, logf)
 	if cmd == nil {
 		t.Fatal("CI() returned nil")
+		return
 	}
 	if cmd.Use != "ci" {
 		t.Errorf("expected name 'ci', got %q", cmd.Name())

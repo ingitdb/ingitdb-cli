@@ -39,6 +39,7 @@ func TestRegisterWhereFlag_IsRepeatable(t *testing.T) {
 	flag := cmd.Flags().Lookup("where")
 	if flag == nil {
 		t.Fatal("--where not registered")
+		return
 	}
 	if flag.Value.Type() != "stringArray" {
 		t.Errorf("--where should be stringArray (repeatable), got %q", flag.Value.Type())
@@ -54,6 +55,7 @@ func TestRegisterSetUnsetFlags_AreRepeatable(t *testing.T) {
 		f := cmd.Flags().Lookup(name)
 		if f == nil {
 			t.Fatalf("--%s not registered", name)
+			return
 		}
 		if f.Value.Type() != "stringArray" {
 			t.Errorf("--%s should be stringArray, got %q", name, f.Value.Type())

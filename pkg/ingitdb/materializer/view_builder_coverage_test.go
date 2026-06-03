@@ -359,6 +359,7 @@ func TestSimpleViewBuilder_BuildView_NonDefaultView(t *testing.T) {
 	}
 	if result == nil {
 		t.Fatal("BuildView() returned nil result")
+		return
 	}
 	if result.FilesCreated != 1 {
 		t.Errorf("expected 1 file created, got %d", result.FilesCreated)
@@ -510,6 +511,7 @@ func TestSimpleViewBuilder_BuildView_DefaultView(t *testing.T) {
 	}
 	if result == nil {
 		t.Fatal("BuildView() returned nil result")
+		return
 	}
 	// Default view writes directly to disk via buildDefaultView
 	if result.FilesCreated < 1 {

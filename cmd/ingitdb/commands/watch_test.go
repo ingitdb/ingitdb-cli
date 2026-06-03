@@ -10,6 +10,7 @@ func TestWatch_ReturnsCommand(t *testing.T) {
 	cmd := Watch()
 	if cmd == nil {
 		t.Fatal("Watch() returned nil")
+		return
 	}
 	if cmd.Use != "watch" {
 		t.Errorf("expected name 'watch', got %q", cmd.Name())

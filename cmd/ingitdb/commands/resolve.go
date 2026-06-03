@@ -56,38 +56,56 @@ func Resolve(
 				return fmt.Errorf("failed to read database definition: %w", err)
 			}
 
-			resolveItems := map[string]bool{"readme": true}
-			result, readmes, unresolved, err := resolveGeneratedConflicts(ctx, dirPath, def, resolveItems, conflictedFiles)
-			if err != nil {
-				return err
-			}
-			if len(unresolved) > 0 {
-				mergedFiles, stillUnresolved, mErr := resolveRecordMergeConflicts(ctx, dirPath, def, unresolved)
-				if mErr != nil {
-					return mErr
-				}
-				if len(mergedFiles) > 0 {
-					logf(fmt.Sprintf("auto-merged %d data file(s)", len(mergedFiles)))
-				}
-				if len(stillUnresolved) > 0 {
-					return reportSourceConflicts(ctx, stillUnresolved, isTerminal, runConflictsTUI, logf)
-				}
-				return nil
-			}
-			if len(result.Errors) > 0 {
-				for _, e := range result.Errors {
-					logf(fmt.Sprintf("error: %v", e))
-				}
-				return fmt.Errorf("finished with errors")
-			}
-
-			logf(fmt.Sprintf("auto-resolved %d generated file(s)", len(readmes)))
-			return nil
+			return resolveWorkingTreeConflicts(ctx, dirPath, def, conflictedFiles, isTerminal, runConflictsTUI, logf)
 		},
 	}
 	addPathFlag(cmd)
 	cmd.Flags().String("file", "", "specific file to resolve")
 	return cmd
+}
+
+// resolveWorkingTreeConflicts is the shared conflict-resolution pipeline used by
+// both `resolve` and `pull`. It auto-resolves generated-file conflicts
+// (collection README.md) by regenerating them, then attempts a record-aware
+// three-way merge of the remaining source-data files, and finally hands any
+// still-unresolved source conflicts to the interactive resolver. It returns a
+// non-nil error when conflicts remain unresolved or regeneration fails.
+func resolveWorkingTreeConflicts(
+	ctx context.Context,
+	dirPath string,
+	def *ingitdb.Definition,
+	conflictedFiles []string,
+	isTerminal func() bool,
+	runConflictsTUI func(context.Context, []string) error,
+	logf func(...any),
+) error {
+	resolveItems := map[string]bool{"readme": true}
+	result, readmes, unresolved, err := resolveGeneratedConflicts(ctx, dirPath, def, resolveItems, conflictedFiles)
+	if err != nil {
+		return err
+	}
+	if len(unresolved) > 0 {
+		mergedFiles, stillUnresolved, mErr := resolveRecordMergeConflicts(ctx, dirPath, def, unresolved)
+		if mErr != nil {
+			return mErr
+		}
+		if len(mergedFiles) > 0 {
+			logf(fmt.Sprintf("auto-merged %d data file(s)", len(mergedFiles)))
+		}
+		if len(stillUnresolved) > 0 {
+			return reportSourceConflicts(ctx, stillUnresolved, isTerminal, runConflictsTUI, logf)
+		}
+		return nil
+	}
+	if len(result.Errors) > 0 {
+		for _, e := range result.Errors {
+			logf(fmt.Sprintf("error: %v", e))
+		}
+		return fmt.Errorf("finished with errors")
+	}
+
+	logf(fmt.Sprintf("auto-resolved %d generated file(s)", len(readmes)))
+	return nil
 }
 
 // filterConflictedByFile keeps only the conflicted files matching onlyFile,

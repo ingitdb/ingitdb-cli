@@ -193,6 +193,7 @@ columns:
 			}
 			if def == nil {
 				t.Fatal("ReadDefinition() returned nil definition with no error")
+				return
 			}
 			if len(def.Collections) != tc.wantCollections {
 				t.Errorf("ReadDefinition() got %d collections, want %d", len(def.Collections), tc.wantCollections)
@@ -254,6 +255,7 @@ columns:
 	}
 	if def == nil {
 		t.Fatal("ReadDefinition() returned nil definition")
+		return
 	}
 	if len(def.Collections) != 1 {
 		t.Errorf("ReadDefinition() got %d collections, want 1", len(def.Collections))

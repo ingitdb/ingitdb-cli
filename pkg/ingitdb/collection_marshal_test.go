@@ -123,6 +123,7 @@ func TestOrderedColumnsNode_SkipsUnknownColumnsOrderKeys(t *testing.T) {
 	node := orderedColumnsNode(columns, columnsOrder)
 	if node == nil {
 		t.Fatal("expected non-nil node")
+		return
 	}
 	// The node should contain exactly 2 keys (id, name), not 3.
 	// Each key-value pair occupies 2 Content entries.
