@@ -1,7 +1,7 @@
 # Feature: CSV Format Support
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/csv-support?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/csv-support?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/csv-support?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/csv-support?op=request-change) |
-**Status:** Implemented
+**Status:** Stable
 **Source Idea:** [`default-record-format`](../../../ideas/default-record-format.md)
 **Parent Feature:** [`record-format`](../README.md)
 
