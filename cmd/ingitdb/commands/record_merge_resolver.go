@@ -11,6 +11,7 @@ import (
 
 	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/datavalidator"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/docsbuilder"
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/recordmerge"
 )
@@ -71,6 +72,15 @@ func mergeAndSerialize(base, ours, theirs []byte, col *ingitdb.CollectionDef, op
 	outcome := recordmerge.MergeFiles(base, ours, theirs, col, opts)
 	if outcome.Escalate {
 		return nil, false
+	}
+	// Re-validate the merged records against the collection schema (DM-17 /
+	// AC:invalid-merge-escalates): a merge that is textually disjoint can still
+	// produce a record that violates the schema, in which case it must escalate
+	// to manual-resolve rather than be staged.
+	for _, r := range outcome.Merged {
+		if errs := datavalidator.ValidateRecordData(col, r.Key, r.Fields); len(errs) > 0 {
+			return nil, false
+		}
 	}
 	merged, err := serializeMergedRecords(outcome.Merged, col)
 	if err != nil {

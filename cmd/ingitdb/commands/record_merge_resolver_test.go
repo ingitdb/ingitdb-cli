@@ -378,6 +378,37 @@ func TestMergeAndSerialize_SerializeFailureNotOK(t *testing.T) {
 	}
 }
 
+func TestMergeAndSerialize_InvalidSchemaEscalates(t *testing.T) {
+	t.Parallel()
+	// A map-of-records collection with a required "name" column. Each side adds
+	// a disjoint record (DM-1), so the merge does not textually escalate — but
+	// THEIRS' record omits the required "name", so the merged result fails
+	// schema validation and MUST escalate (AC:invalid-merge-escalates).
+	col := &ingitdb.CollectionDef{
+		ID:           "c",
+		ColumnsOrder: []string{"name", "note"},
+		RecordFile: &ingitdb.RecordFileDef{
+			Name: "data.yaml", Format: ingitdb.RecordFormatYAML, RecordType: ingitdb.MapOfRecords,
+		},
+		Columns: map[string]*ingitdb.ColumnDef{
+			"name": {Type: ingitdb.ColumnTypeString, Required: true},
+			"note": {Type: ingitdb.ColumnTypeString},
+		},
+	}
+	base := []byte("{}\n")
+	ours := []byte("a:\n  name: Alice\n")
+	theirsInvalid := []byte("b:\n  note: world\n") // missing required "name"
+	if _, ok := mergeAndSerialize(base, ours, theirsInvalid, col, recordmerge.Options{}); ok {
+		t.Fatal("expected escalation when the merged result fails schema validation")
+	}
+
+	// Control: a disjoint addition that satisfies the schema must still merge.
+	theirsValid := []byte("b:\n  name: Bob\n")
+	if _, ok := mergeAndSerialize(base, ours, theirsValid, col, recordmerge.Options{}); !ok {
+		t.Fatal("expected a schema-valid disjoint merge to succeed")
+	}
+}
+
 func TestSerializeMergedRecords(t *testing.T) {
 	t.Parallel()
 
