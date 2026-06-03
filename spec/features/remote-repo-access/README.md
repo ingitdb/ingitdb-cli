@@ -188,14 +188,14 @@ With only `GITHUB_TOKEN` set, `ingitdb update --remote=github.com/owner/repo --i
 
 **Requirements:** remote-repo-access#req:token-resolution, remote-repo-access#req:provider-override
 
-With `GIT_CORP_EXAMPLE_TOKEN` set and `--provider=github-enterprise`, `ingitdb select --remote=git.corp.example.com/owner/repo --id=x/y` MUST authenticate using that token without requiring `--token` on the command line.
+With `GIT_CORP_EXAMPLE_TOKEN` set and `--provider=github` (a self-hosted GitHub Enterprise instance reuses the registered `github` adapter against its own host), `ingitdb select --remote=git.corp.example.com/owner/repo --id=x/y` MUST authenticate using that token without requiring `--token` on the command line. The `--provider` value MUST be a registered provider id (`github`, `gitlab`, or `bitbucket`); there is no separate `github-enterprise` id.
 
 ## Open Questions
 
 - How should the command behave when the provider rate-limits the caller mid-operation? (carried over from `github-direct-access`)
 - Should the commit message format be configurable per command or fixed by convention? (carried over)
 - Is `--provider` a global flag or per-command? Proposed: global, registered alongside `--remote` and `--token` by `addRemoteFlags`.
-- Should `--provider` accept a versioned id (e.g. `github-enterprise@v3`) for hosts that expose multiple incompatible API generations, or is one id per provider sufficient?
+- Should `--provider` accept a versioned id (e.g. `github@v3`) for hosts that expose multiple incompatible API generations, or is one id per provider sufficient?
 
 ---
 *This document follows the https://specscore.md/feature-specification*
