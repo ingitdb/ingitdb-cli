@@ -1,7 +1,7 @@
 # Feature: Validate Command
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/validate?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/validate?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/validate?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/validate?op=request-change) |
-**Status:** Implementing
+**Status:** Stable
 
 ## Summary
 
@@ -31,7 +31,7 @@ The `--only=VALUE` flag MUST accept the values `definition` and `records`. When 
 
 #### REQ: commit-range
 
-The `--from-commit=SHA` and `--to-commit=SHA` flags MUST scope record validation to files changed between the two commits. They MAY be combined with `--only=records`. When neither flag is provided, all record files in the working tree are checked.
+The `--from-commit=SHA` and `--to-commit=SHA` flags MUST scope record validation to files changed between the two commits. They MAY be combined with `--only=records`. When neither flag is provided, all record files in the working tree are checked. When `--to-commit` is omitted, the range ends at the working tree (uncommitted changes are included). Because the change set is computed at file granularity, records whose files did not change in the range are not opened. If a definition file (`.ingitdb.yaml`, a collection `definition.yaml`, or `.ingitdb/`) changed within the range, the schema itself may have moved, so the command MUST fall back to a full validation pass.
 
 ### Output and exit code
 
@@ -59,6 +59,9 @@ Source files implementing this feature (annotated with
 - [`cmd/ingitdb/commands/validate.go`](../../../cmd/ingitdb/commands/validate.go)
 - [`pkg/ingitdb/validator/def_validator.go`](../../../pkg/ingitdb/validator/def_validator.go)
 - [`pkg/ingitdb/validator/subscribers_validator.go`](../../../pkg/ingitdb/validator/subscribers_validator.go)
+- [`pkg/ingitdb/datavalidator/incremental_validator.go`](../../../pkg/ingitdb/datavalidator/incremental_validator.go) — incremental (commit-range) validation
+- [`pkg/ingitdb/datavalidator/changeset_resolver.go`](../../../pkg/ingitdb/datavalidator/changeset_resolver.go) — maps changed files to affected collection records
+- [`pkg/ingitdb/gitdiff/gitdiff.go`](../../../pkg/ingitdb/gitdiff/gitdiff.go) — `git diff --name-status` change lister
 
 ## Acceptance Criteria
 

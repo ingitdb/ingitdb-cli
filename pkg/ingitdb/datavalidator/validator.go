@@ -85,41 +85,45 @@ func validateSingleRecordFiles(collectionKey string, colDef *ingitdb.CollectionD
 	total := 0
 	var errors []ingitdb.ValidationError
 	for _, filePath := range matches {
-		if skipRecordPath(filePath, colDef.RecordFile) {
-			continue
-		}
-		info, statErr := os.Stat(filePath)
-		if statErr != nil {
-			total++
-			validationErr := newValidationError(collectionKey, filePath, "", "", "failed to stat record file", statErr)
-			errors = append(errors, validationErr)
-			continue
-		}
-		if info.IsDir() {
-			continue
-		}
-		total++
-		content, readErr := os.ReadFile(filePath)
-		if readErr != nil {
-			validationErr := newValidationError(collectionKey, filePath, "", "", "failed to read record file", readErr)
-			errors = append(errors, validationErr)
-			continue
-		}
-		data, parseErr := dalgo2ingitdb.ParseRecordContentForCollection(content, colDef)
-		if parseErr != nil {
-			validationErr := newValidationError(collectionKey, filePath, "", "", "failed to parse record file", parseErr)
-			errors = append(errors, validationErr)
-			continue
-		}
-		recordKey := recordKeyFromFilePath(filePath)
-		recordErrors := validateRecordData(collectionKey, filePath, recordKey, colDef, data)
-		if len(recordErrors) > 0 {
-			errors = append(errors, recordErrors...)
-			continue
-		}
-		passed++
+		filePassed, fileTotal, fileErrors := validateSingleRecordFile(collectionKey, colDef, filePath)
+		passed += filePassed
+		total += fileTotal
+		errors = append(errors, fileErrors...)
 	}
 	return passed, total, errors
+}
+
+// validateSingleRecordFile validates one single-record file: it stats, reads,
+// parses, and schema-validates the record. It returns the per-file passed/total
+// counts (a skipped or directory path counts as 0/0) and any errors found.
+func validateSingleRecordFile(collectionKey string, colDef *ingitdb.CollectionDef, filePath string) (int, int, []ingitdb.ValidationError) {
+	if skipRecordPath(filePath, colDef.RecordFile) {
+		return 0, 0, nil
+	}
+	info, statErr := os.Stat(filePath)
+	if statErr != nil {
+		validationErr := newValidationError(collectionKey, filePath, "", "", "failed to stat record file", statErr)
+		return 0, 1, []ingitdb.ValidationError{validationErr}
+	}
+	if info.IsDir() {
+		return 0, 0, nil
+	}
+	content, readErr := os.ReadFile(filePath)
+	if readErr != nil {
+		validationErr := newValidationError(collectionKey, filePath, "", "", "failed to read record file", readErr)
+		return 0, 1, []ingitdb.ValidationError{validationErr}
+	}
+	data, parseErr := dalgo2ingitdb.ParseRecordContentForCollection(content, colDef)
+	if parseErr != nil {
+		validationErr := newValidationError(collectionKey, filePath, "", "", "failed to parse record file", parseErr)
+		return 0, 1, []ingitdb.ValidationError{validationErr}
+	}
+	recordKey := recordKeyFromFilePath(filePath)
+	recordErrors := validateRecordData(collectionKey, filePath, recordKey, colDef, data)
+	if len(recordErrors) > 0 {
+		return 0, 1, recordErrors
+	}
+	return 1, 1, nil
 }
 
 func singleRecordGlobPattern(colDef *ingitdb.CollectionDef) (string, error) {
