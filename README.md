@@ -236,7 +236,6 @@ languages:
 | [`materialize`](docs/cli/commands/materialize.md) | 🟡 planned | Build materialized views into `$views/`                  |
 | [`diff`](docs/cli/commands/diff.md)               | ✅ done    | Show record-level changes between two git refs           |
 | [`pull`](docs/cli/commands/pull.md)               | ✅ done    | Pull remote changes, resolve conflicts, and rebuild views |
-| [`watch`](docs/cli/commands/watch.md)             | 🟡 planned | Stream record change events to stdout                    |
 | [`resolve`](docs/cli/commands/resolve.md)         | 🟡 planned | Interactive TUI for resolving data-file merge conflicts  |
 | [`setup`](docs/cli/commands/setup.md)             | 🟡 planned | Initialise a new database directory                      |
 | [`rebase`](docs/cli/commands/rebase.md)           | ✅ done    | Rebase on top of a base ref and resolve README conflicts |
