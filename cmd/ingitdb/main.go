@@ -79,7 +79,7 @@ func run(
 			datavalidator.NewIncrementalValidator(gitdiff.NewGitDiffer(), datavalidator.NewChangeSetResolver(), datavalidator.NewValidator()), logf),
 		commands.Materialize(homeDir, getWd, readDefinition, vb, logf),
 		commands.CI(homeDir, getWd, readDefinition, vb, logf),
-		commands.Pull(),
+		commands.Pull(homeDir, getWd, readDefinition, vb, logf, defaultIsTerminal, launchConflictsTUI),
 		commands.Setup(),
 		commands.Resolve(homeDir, getWd, readDefinition, logf, defaultIsTerminal, launchConflictsTUI),
 		commands.Rebase(getWd, readDefinition, logf),

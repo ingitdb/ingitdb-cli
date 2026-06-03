@@ -1,7 +1,7 @@
 # Feature: Pull Command
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/pull?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/pull?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/pull?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/pull?op=request-change) |
-**Status:** Draft
+**Status:** Implementing
 
 ## Summary
 
@@ -53,15 +53,39 @@ The command MUST exit `0` when all conflicts are resolved and views rebuilt succ
 Source files implementing this feature (annotated with
 `// specscore: feature/cli/pull`):
 
-- [`cmd/ingitdb/commands/pull.go`](../../../cmd/ingitdb/commands/pull.go)
+- [`cmd/ingitdb/commands/pull.go`](../../../cmd/ingitdb/commands/pull.go) — the command, `git pull`, view rebuild, and change summary
+- [`cmd/ingitdb/commands/resolve.go`](../../../cmd/ingitdb/commands/resolve.go) — `resolveWorkingTreeConflicts`, the shared conflict engine `pull` and `resolve` both call
 
 ## Acceptance Criteria
 
-Not defined yet.
+### AC: syncs-and-rebuilds
+
+**Requirements:** cli/pull#req:subcommand-name, cli/pull#req:pull-pipeline
+
+Given a clone that is behind its upstream by a commit adding a new record, `ingitdb pull` fast-forwards/rebases the new commit in, rebuilds materialized views, exits `0`, and prints a summary reporting one added record file.
+
+### AC: strategy-flag
+
+**Requirements:** cli/pull#req:strategy-and-target
+
+`--strategy` defaults to `rebase` (`git pull --rebase`); `--strategy=merge` uses `git pull --no-rebase`; `--remote` defaults to `origin` and an omitted `--branch` uses the tracking branch. An invalid `--strategy` value is rejected before any git invocation.
+
+### AC: delegates-conflict-resolution
+
+**Requirements:** cli/pull#req:pull-pipeline
+
+When the pull leaves conflicts, `pull` runs the shared working-tree engine (`resolveWorkingTreeConflicts`): generated-file (`README.md`) conflicts are auto-resolved by regeneration, source-data files get a record-aware three-way merge, and any still-unresolved source conflicts are handed to the interactive resolver (or reported), yielding a non-zero exit.
+
+## Scope (current implementation)
+
+Implemented: the full pipeline (pull → resolve → rebuild views → summary), `--strategy/--remote/--branch`, and a change summary at **record-file granularity** (within-file row changes for map/list layouts count as one updated file).
+
+Deferred / inherited limitations:
+- **Exit codes** are `0` (success) / non-zero (failure); the spec's distinct `1` vs `2` granularity needs main-loop exit-code support and is not yet implemented.
+- **Interactive source-conflict resolution** inherits `resolve`'s current behavior — the interactive TUI is the separate, still-unbuilt [`manual-resolve`](../resolve/manual-resolve/README.md) feature, so unresolved source conflicts exit non-zero with a "not implemented yet" message.
 
 ## Open Questions
 
-- Acceptance criteria not yet defined for this feature.
 - Should the interactive TUI step be skippable via a `--no-interactive` flag for CI?
 - Should the summary output be machine-readable (JSON) under a flag?
 
