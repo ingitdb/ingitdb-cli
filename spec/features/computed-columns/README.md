@@ -1,7 +1,7 @@
 # Feature: Computed Columns (Inline Starlark Formulas)
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/computed-columns?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/computed-columns?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/computed-columns?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/computed-columns?op=request-change) |
-**Status:** Approved
+**Status:** Stable
 **Date:** 2026-06-02
 **Owner:** alexander.trakhimenok@gmail.com
 **Source Ideas:** scripted-formulas-and-views
