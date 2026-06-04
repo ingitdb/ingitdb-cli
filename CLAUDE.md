@@ -44,7 +44,8 @@ The codebase has two main packages:
   been removed; see `spec/features/cli/{select,insert,update,delete,drop}/`
   for the current specifications.
 
-Test data lives in `test-ingitdb/` and `.ingitdb.yaml` at the repo root points to it.
+Tests construct their database fixtures in temporary directories (`t.TempDir()`); there is
+no committed sample database. The repo dogfoods its own configuration under `.ingitdb/`.
 
 ## Code Conventions
 
