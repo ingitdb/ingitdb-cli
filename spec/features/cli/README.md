@@ -36,8 +36,8 @@ CLI surface; keep those skills in sync when a command's flags or behavior change
 | [materialize](materialize/README.md) | Draft | `ingitdb materialize` |
 | [diff](diff/README.md) | Draft | `ingitdb diff` |
 | [pull](pull/README.md) | Draft | `ingitdb pull` |
-| [watch](watch/README.md) | Draft | `ingitdb watch` |
-| [serve](serve/README.md) | Draft | `ingitdb serve` |
+| [watch](watch/README.md) | Withdrawn (deferred) | `ingitdb watch` (not implemented) |
+| [serve](serve/README.md) | Withdrawn — removed from CLI (ADR 0001) | `ingitdb serve` (removed) |
 | [resolve](resolve/README.md) | Draft | `ingitdb resolve` |
 | [setup](setup/README.md) | Draft | `ingitdb setup` |
 | [find](find/README.md) | Withdrawn — moved to DataTug CLI | `ingitdb find` (not implemented) |
