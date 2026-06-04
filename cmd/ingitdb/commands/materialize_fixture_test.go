@@ -25,6 +25,14 @@ func newMaterializeFixture(t *testing.T) *materializeFixture {
 	t.Helper()
 	dir := t.TempDir()
 
+	// Make the fixture a git repo so that gitrepo.FindRepoRoot resolves to dir,
+	// matching real usage where materialized view outputs live under
+	// <repoRoot>/$ingitdb/. Without this, the data-export view output path is
+	// relative and would be written outside the temp dir.
+	if err := os.MkdirAll(filepath.Join(dir, ".git"), 0o755); err != nil {
+		t.Fatalf("mkdir .git: %v", err)
+	}
+
 	citiesDir := filepath.Join(dir, "cities")
 	teamsDir := filepath.Join(dir, "teams")
 	agileDir := filepath.Join(dir, "agile")
@@ -37,8 +45,15 @@ func newMaterializeFixture(t *testing.T) *materializeFixture {
 		}
 	}
 
+	// Single-record collections whose record-file name contains {key} store
+	// their record files under a "$records/" subdirectory (see
+	// RecordFileDef.RecordsBasePath).
 	writeRecord := func(dir, key, body string) {
-		if err := os.WriteFile(filepath.Join(dir, key+".yaml"), []byte(body), 0o644); err != nil {
+		recordsDir := filepath.Join(dir, "$records")
+		if err := os.MkdirAll(recordsDir, 0o755); err != nil {
+			t.Fatalf("mkdir $records in %s: %v", dir, err)
+		}
+		if err := os.WriteFile(filepath.Join(recordsDir, key+".yaml"), []byte(body), 0o644); err != nil {
 			t.Fatalf("write record %s/%s: %v", dir, key, err)
 		}
 	}
@@ -56,17 +71,34 @@ func newMaterializeFixture(t *testing.T) *materializeFixture {
 		}
 	}
 
+	// Template used by the named views; rendered to a .md file in the
+	// collection directory.
+	if err := os.WriteFile(filepath.Join(citiesDir, "view.tmpl"),
+		[]byte("{{ range .records }}- {{ .name }}\n{{ end }}"), 0o644); err != nil {
+		t.Fatalf("write view template: %v", err)
+	}
+
+	// Default view: INGR data export under $ingitdb/ — the only path that emits
+	// the '#-' record delimiter, so the records-delimiter behaviour is tested
+	// here.
+	defaultView := &ingitdb.ViewDef{
+		ID:        ingitdb.DefaultViewID,
+		IsDefault: true,
+		Format:    "ingr",
+		FileName:  "cities",
+	}
+	// Named template views: used by the views-subset selection tests.
 	activeCities := &ingitdb.ViewDef{
 		ID:       "active_cities",
-		Format:   "ingr",
+		Template: "view.tmpl",
 		Columns:  []string{"name"},
-		FileName: "active_cities.ingr",
+		FileName: "active_cities.md",
 	}
 	largeCities := &ingitdb.ViewDef{
 		ID:       "large_cities",
-		Format:   "ingr",
+		Template: "view.tmpl",
 		Columns:  []string{"name"},
-		FileName: "large_cities.ingr",
+		FileName: "large_cities.md",
 	}
 
 	cities := &ingitdb.CollectionDef{
@@ -80,8 +112,9 @@ func newMaterializeFixture(t *testing.T) *materializeFixture {
 		},
 		ColumnsOrder: []string{"name", "population", "active"},
 		Views: map[string]*ingitdb.ViewDef{
-			"active_cities": activeCities,
-			"large_cities":  largeCities,
+			ingitdb.DefaultViewID: defaultView,
+			"active_cities":       activeCities,
+			"large_cities":        largeCities,
 		},
 	}
 	teams := &ingitdb.CollectionDef{
@@ -149,9 +182,16 @@ func (f *materializeFixture) readme(t *testing.T, collectionDir string) (string,
 	return string(b), true
 }
 
-// viewFile returns the on-disk path of a materialized view output under $ingitdb/.
+// viewFile returns the on-disk path of a default-view (data-export) output under
+// $ingitdb/.
 func (f *materializeFixture) viewFile(relCollectionDir, fileName string) string {
 	return filepath.Join(f.dir, ingitdb.IngitdbDir, relCollectionDir, fileName)
+}
+
+// templateViewFile returns the on-disk path of a template-view output, which
+// lives inside the collection directory.
+func (f *materializeFixture) templateViewFile(relCollectionDir, fileName string) string {
+	return filepath.Join(f.dir, relCollectionDir, fileName)
 }
 
 func (f *materializeFixture) exists(t *testing.T, path string) bool {
