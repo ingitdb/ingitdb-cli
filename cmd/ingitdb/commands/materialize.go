@@ -13,7 +13,7 @@ import (
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/materializer"
 )
 
-func materializeRunE(
+func materializeCommandRunE(
 	homeDir func() (string, error),
 	getWd func() (string, error),
 	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
@@ -24,19 +24,11 @@ func materializeRunE(
 		if viewBuilder == nil {
 			return fmt.Errorf("not yet implemented")
 		}
-		dirPath, _ := cmd.Flags().GetString("path")
-		if dirPath == "" {
-			wd, err := getWd()
-			if err != nil {
-				return fmt.Errorf("failed to get working directory: %w", err)
-			}
-			dirPath = wd
-		}
-		expanded, err := expandHome(dirPath, homeDir)
+
+		dirPath, err := resolveMaterializePath(cmd, homeDir, getWd)
 		if err != nil {
 			return err
 		}
-		dirPath, _ = filepath.Abs(expanded)
 		logf("inGitDB db path: ", dirPath)
 
 		ctx := cmd.Context()
@@ -50,28 +42,67 @@ func materializeRunE(
 		if err != nil {
 			return fmt.Errorf("failed to read database definition: %w", err)
 		}
+
 		var recordsDelimiter *int
 		if cmd.Flags().Changed("records-delimiter") {
 			v, _ := cmd.Flags().GetInt("records-delimiter")
 			recordsDelimiter = &v
 		}
 		def.RuntimeOverrides.RecordsDelimiter = recordsDelimiter
+
 		var totalResult ingitdb.MaterializeResult
 		for _, col := range def.Collections {
 			result, buildErr := viewBuilder.BuildViews(ctx, dirPath, repoRoot, col, def)
 			if buildErr != nil {
 				return fmt.Errorf("failed to materialize views for collection %s: %w", col.ID, buildErr)
 			}
-			totalResult.FilesCreated += result.FilesCreated
-			totalResult.FilesUpdated += result.FilesUpdated
-			totalResult.FilesUnchanged += result.FilesUnchanged
-			totalResult.FilesDeleted += result.FilesDeleted
-			totalResult.Errors = append(totalResult.Errors, result.Errors...)
+			mergeMaterializeResult(&totalResult, result)
 		}
-		logf(fmt.Sprintf("materialized views: %d created, %d updated, %d deleted, %d unchanged",
-			totalResult.FilesCreated, totalResult.FilesUpdated, totalResult.FilesDeleted, totalResult.FilesUnchanged))
+
+		logf(materializeSummary(&totalResult))
 		return nil
 	}
+}
+
+// resolveMaterializePath resolves the --path flag (or working directory) into an
+// absolute, home-expanded database directory path.
+func resolveMaterializePath(
+	cmd *cobra.Command,
+	homeDir func() (string, error),
+	getWd func() (string, error),
+) (string, error) {
+	dirPath, _ := cmd.Flags().GetString("path")
+	if dirPath == "" {
+		wd, err := getWd()
+		if err != nil {
+			return "", fmt.Errorf("failed to get working directory: %w", err)
+		}
+		dirPath = wd
+	}
+	expanded, err := expandHome(dirPath, homeDir)
+	if err != nil {
+		return "", err
+	}
+	abs, _ := filepath.Abs(expanded)
+	return abs, nil
+}
+
+// mergeMaterializeResult accumulates src into dst.
+func mergeMaterializeResult(dst *ingitdb.MaterializeResult, src *ingitdb.MaterializeResult) {
+	if src == nil {
+		return
+	}
+	dst.FilesCreated += src.FilesCreated
+	dst.FilesUpdated += src.FilesUpdated
+	dst.FilesUnchanged += src.FilesUnchanged
+	dst.FilesDeleted += src.FilesDeleted
+	dst.Errors = append(dst.Errors, src.Errors...)
+}
+
+// materializeSummary renders the created/updated/deleted/unchanged tally line.
+func materializeSummary(r *ingitdb.MaterializeResult) string {
+	return fmt.Sprintf("materialized: %d created, %d updated, %d deleted, %d unchanged",
+		r.FilesCreated, r.FilesUpdated, r.FilesDeleted, r.FilesUnchanged)
 }
 
 // Materialize returns the materialize command.
@@ -84,9 +115,9 @@ func Materialize(
 ) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "materialize",
-		Short: "Materialize views in the database",
-		RunE:  materializeRunE(homeDir, getWd, readDefinition, viewBuilder, logf),
+		Short: "Regenerate derived artifacts: collection READMEs and materialized views",
+		RunE:  materializeCommandRunE(homeDir, getWd, readDefinition, viewBuilder, logf),
 	}
-	addMaterializeFlags(cmd)
+	addMaterializeCommandFlags(cmd)
 	return cmd
 }

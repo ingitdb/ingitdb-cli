@@ -30,10 +30,32 @@ func addFormatFlag(cmd *cobra.Command, defaultValue string) {
 	cmd.Flags().String("format", defaultValue, "output format")
 }
 
-// addMaterializeFlags adds the flags shared by materialize and ci commands.
+// addMaterializeFlags adds the flags shared by the ci command.
 func addMaterializeFlags(cmd *cobra.Command) {
 	addPathFlag(cmd)
 	cmd.Flags().String("views", "", "comma-separated list of views to materialize")
 	cmd.Flags().Int("records-delimiter", 0,
 		"write a '#-' delimiter after each record in INGR output; 0=default (enabled), 1=enabled, -1=disabled")
+}
+
+// materializeAllSentinel is the value bound to --collections / --views when the
+// flag is supplied without a value (NoOptDefVal). It means "all artifacts of
+// that type". It is an unlikely literal so it never collides with a real glob.
+const materializeAllSentinel = "\x00all"
+
+// addMaterializeCommandFlags registers the flags for the `materialize` command.
+// Both selector flags are tri-state via NoOptDefVal: absent (no value), bare
+// (NoOptDefVal sentinel = "all"), or `=<glob-list>`. Because NoOptDefVal is set,
+// a list value MUST be attached with `=` (the space-separated form is treated as
+// a positional argument).
+func addMaterializeCommandFlags(cmd *cobra.Command) {
+	addPathFlag(cmd)
+	cmd.Flags().String("collections", "",
+		"regenerate collection READMEs; bare flag = all, or =GLOB[,GLOB] (use '=', not a space)")
+	cmd.Flags().String("views", "",
+		"regenerate materialized views; bare flag = all, or =GLOB[,GLOB] (use '=', not a space)")
+	cmd.Flags().Int("records-delimiter", 0,
+		"write a '#-' delimiter after each record in INGR view output; 0=default (enabled), 1=enabled, -1=disabled")
+	cmd.Flags().Lookup("collections").NoOptDefVal = materializeAllSentinel
+	cmd.Flags().Lookup("views").NoOptDefVal = materializeAllSentinel
 }

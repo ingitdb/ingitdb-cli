@@ -5,8 +5,106 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/spf13/cobra"
+
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
 )
+
+func TestMaterialize_Flags(t *testing.T) {
+	t.Parallel()
+
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return "/tmp/db", nil }
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return &ingitdb.Definition{}, nil
+	}
+	logf := func(...any) {}
+
+	cmd := Materialize(homeDir, getWd, readDef, nil, logf)
+
+	for _, name := range []string{"collections", "views", "path", "records-delimiter"} {
+		if cmd.Flags().Lookup(name) == nil {
+			t.Errorf("expected flag %q to be registered", name)
+		}
+	}
+
+	for _, name := range []string{"collections", "views"} {
+		f := cmd.Flags().Lookup(name)
+		if f == nil {
+			continue
+		}
+		if f.NoOptDefVal != materializeAllSentinel {
+			t.Errorf("flag %q: expected NoOptDefVal %q, got %q", name, materializeAllSentinel, f.NoOptDefVal)
+		}
+	}
+}
+
+func TestMaterialize_FlagTriState(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name        string
+		args        []string
+		wantValue   string
+		wantChanged bool
+		wantPosArgs []string
+	}{
+		{
+			name:        "equals list",
+			args:        []string{"--views=a,b"},
+			wantValue:   "a,b",
+			wantChanged: true,
+		},
+		{
+			name:        "bare flag is sentinel",
+			args:        []string{"--views"},
+			wantValue:   materializeAllSentinel,
+			wantChanged: true,
+		},
+		{
+			name:        "space form leaves positional",
+			args:        []string{"--views", "a,b"},
+			wantValue:   materializeAllSentinel,
+			wantChanged: true,
+			wantPosArgs: []string{"a,b"},
+		},
+		{
+			name:        "absent",
+			args:        nil,
+			wantValue:   "",
+			wantChanged: false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			cmd := &cobra.Command{Use: "materialize", RunE: func(*cobra.Command, []string) error { return nil }}
+			addMaterializeCommandFlags(cmd)
+			cmd.SetArgs(tc.args)
+			var gotPosArgs []string
+			cmd.RunE = func(c *cobra.Command, posArgs []string) error {
+				gotPosArgs = posArgs
+				return nil
+			}
+			if err := cmd.Execute(); err != nil {
+				t.Fatalf("execute: %v", err)
+			}
+			got, _ := cmd.Flags().GetString("views")
+			if got != tc.wantValue {
+				t.Errorf("views value: got %q, want %q", got, tc.wantValue)
+			}
+			if changed := cmd.Flags().Changed("views"); changed != tc.wantChanged {
+				t.Errorf("views changed: got %v, want %v", changed, tc.wantChanged)
+			}
+			if len(tc.wantPosArgs) > 0 {
+				if fmt.Sprintf("%v", gotPosArgs) != fmt.Sprintf("%v", tc.wantPosArgs) {
+					t.Errorf("positional args: got %v, want %v", gotPosArgs, tc.wantPosArgs)
+				}
+			}
+		})
+	}
+}
 
 type mockViewBuilder struct {
 	result   *ingitdb.MaterializeResult
