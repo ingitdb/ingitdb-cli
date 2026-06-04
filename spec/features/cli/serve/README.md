@@ -3,7 +3,7 @@
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/serve?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/serve?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/serve?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/serve?op=request-change) |
 **Status:** Withdrawn — the `serve` command and its HTTP API / MCP gateway were removed as a still-born, datatug-overlapping surface (see [docs/adr/0001-remove-serve-command.md](../../../../docs/adr/0001-remove-serve-command.md)). This document is preserved as a historical record of the original design.
 
-> **Deprecated & removed.** The `serve` command and its HTTP API / MCP gateway
+> **Withdrawn & removed.** The `serve` command and its HTTP API / MCP gateway
 > implementation were removed as a still-born, datatug-overlapping surface. For
 > programmatic access, import the `pkg/dalgo2ghingitdb` driver directly; cross-source
 > serving belongs to [DataTug](https://github.com/datatug/datatug-cli) (which already
