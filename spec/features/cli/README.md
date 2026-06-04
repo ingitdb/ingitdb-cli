@@ -5,6 +5,10 @@ This directory contains feature specifications for individual `ingitdb` CLI subc
 Each subdirectory corresponds to one command. Older verb-noun specs (e.g. `create-record`)
 are kept as historical records and are marked **Superseded** in the index below.
 
+Many of these commands are also exposed to AI agents as Claude Code skills in the
+[ingitdb-ai-skills](https://github.com/ingitdb/ingitdb-ai-skills) plugin, which wraps the
+CLI surface; keep those skills in sync when a command's flags or behavior change here.
+
 ## Contents
 
 | Child | Description |

@@ -233,7 +233,7 @@ languages:
 | [`drop`](docs/cli/commands/drop.md)               | ✅ done    | Drop a collection or view definition                     |
 | [`list collections`](docs/cli/commands/list.md)   | ✅ done    | List collection IDs (local or remote)                    |
 | `list views`                                      | 🟡 planned | List view definitions                                    |
-| [`materialize`](docs/cli/commands/materialize.md) | 🟡 planned | Build materialized views into `$views/`                  |
+| [`materialize`](docs/cli/commands/materialize.md) | ✅ done    | Regenerate collection READMEs and materialized views     |
 | [`diff`](docs/cli/commands/diff.md)               | ✅ done    | Show record-level changes between two git refs           |
 | [`pull`](docs/cli/commands/pull.md)               | ✅ done    | Pull remote changes, resolve conflicts, and rebuild views |
 | [`resolve`](docs/cli/commands/resolve.md)         | 🟡 planned | Interactive TUI for resolving data-file merge conflicts  |
@@ -265,6 +265,7 @@ See the [CLI reference](docs/cli/) for flags and examples.
 | [CLI reference](docs/cli/)                                    | Every subcommand, flag, and exit code                                |
 | [Architecture](docs/ARCHITECTURE.md)                          | CLI component architecture and package map                           |
 | [Contributing](docs/CONTRIBUTING.md)                          | How to open issues and submit pull requests                          |
+| [Claude Code AI plugin](https://github.com/ingitdb/ingitdb-ai-skills) | Agent skills that teach AI tools how to drive the `ingitdb` CLI |
 
 ## 📐 Specification
 
