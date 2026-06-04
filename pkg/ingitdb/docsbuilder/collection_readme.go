@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
@@ -67,7 +68,8 @@ func BuildCollectionReadme(ctx context.Context, col *ingitdb.CollectionDef, def 
 		sb.WriteString("\n## Subcollections\n\n")
 		sb.WriteString("| Name | Subcollections |\n")
 		sb.WriteString("|------|----------------|\n")
-		for subID, subCol := range col.SubCollections {
+		for _, subID := range sortedKeys(col.SubCollections) {
+			subCol := col.SubCollections[subID]
 			relPath := subID
 			if col.DirPath != "" && subCol.DirPath != "" {
 				if r, err := filepath.Rel(col.DirPath, subCol.DirPath); err == nil {
@@ -82,7 +84,8 @@ func BuildCollectionReadme(ctx context.Context, col *ingitdb.CollectionDef, def 
 		sb.WriteString("\n## Views\n\n")
 		sb.WriteString("| Name | Columns |\n")
 		sb.WriteString("|------|---------|\n")
-		for viewID, viewDef := range col.Views {
+		for _, viewID := range sortedKeys(col.Views) {
+			viewDef := col.Views[viewID]
 			fmt.Fprintf(&sb, "| %s | %d |\n", viewID, len(viewDef.Columns))
 		}
 	}
@@ -99,6 +102,18 @@ func BuildCollectionReadme(ctx context.Context, col *ingitdb.CollectionDef, def 
 	}
 
 	return sb.String(), nil
+}
+
+// sortedKeys returns the map keys in ascending order so README rendering is
+// deterministic (Go map iteration order is randomized, which would otherwise
+// produce spurious diffs and break write-only-on-change idempotency).
+func sortedKeys[V any](m map[string]V) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 func formatColumnRow(name string, col *ingitdb.ColumnDef) string {
