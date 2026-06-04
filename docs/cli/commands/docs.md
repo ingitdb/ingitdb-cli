@@ -2,7 +2,12 @@
 
 Manage documentation.
 
-## 🔸 docs update
+## 🔸 docs update _(deprecated)_
+
+> ⚠️ **Deprecated** — use [`ingitdb materialize --collections`](materialize.md) instead
+> (note the plural flag name). `docs update` still works but will be removed in a future
+> release; it now regenerates the same collection READMEs that `materialize --collections`
+> produces.
 
 ```shell
 ingitdb docs update [--path=PATH] [--collection=ID]
