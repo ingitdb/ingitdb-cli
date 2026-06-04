@@ -27,6 +27,63 @@ func runCobraSubcommand(cmd *cobra.Command, args ...string) error {
 	return root.ExecuteContext(context.Background())
 }
 
+func TestDocsUpdate_Deprecated(t *testing.T) {
+	t.Parallel()
+
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return "/tmp/db", nil }
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return &ingitdb.Definition{}, nil
+	}
+	logf := func(...any) {}
+
+	cmd := docsUpdate(homeDir, getWd, readDef, logf)
+	if cmd.Deprecated == "" {
+		t.Fatal("expected docs update to be marked Deprecated")
+	}
+	if !strings.Contains(cmd.Deprecated, "materialize --collections") {
+		t.Errorf("expected deprecation notice to mention 'materialize --collections', got %q", cmd.Deprecated)
+	}
+}
+
+// TestDocsUpdate_MaterializeParity asserts that materialize --collections=GLOB
+// produces the identical README bytes that docs update --collection=GLOB does,
+// since both route through the same docsbuilder engine.
+func TestDocsUpdate_MaterializeParity(t *testing.T) {
+	t.Parallel()
+
+	// docs update --collection=cities
+	fDocs := newMaterializeFixture(t)
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWdDocs := func() (string, error) { return fDocs.dir, nil }
+	readDefDocs := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return fDocs.def, nil
+	}
+	logf := func(...any) {}
+	docsCmd := docsUpdate(homeDir, getWdDocs, readDefDocs, logf)
+	if err := runCobraSubcommand(docsCmd, "update", "--path="+fDocs.dir, "--collection=cities"); err != nil {
+		t.Fatalf("docs update: %v", err)
+	}
+	docsReadme, ok := fDocs.readme(t, filepath.Join(fDocs.dir, "cities"))
+	if !ok {
+		t.Fatal("expected cities README from docs update")
+	}
+
+	// materialize --collections=cities
+	fMat := newMaterializeFixture(t)
+	if err := runMaterialize(t, fMat, "--collections=cities"); err != nil {
+		t.Fatalf("materialize --collections=cities: %v", err)
+	}
+	matReadme, ok := fMat.readme(t, filepath.Join(fMat.dir, "cities"))
+	if !ok {
+		t.Fatal("expected cities README from materialize")
+	}
+
+	if docsReadme != matReadme {
+		t.Errorf("README parity mismatch:\n--- docs update ---\n%s\n--- materialize ---\n%s", docsReadme, matReadme)
+	}
+}
+
 func TestDocsUpdate(t *testing.T) {
 	// Setup a temporary directory acting as our test DB
 	tempDir := t.TempDir()

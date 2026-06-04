@@ -21,6 +21,9 @@ func docsUpdate(
 	cmd := &cobra.Command{
 		Use:   "update",
 		Short: "Update documentation files based on metadata",
+		// Note the plural --collections on the replacement command, versus the
+		// singular --collection flag here.
+		Deprecated: "use `ingitdb materialize --collections` instead (note the plural flag name).",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			collectionGlob, _ := cmd.Flags().GetString("collection")
 			viewGlob, _ := cmd.Flags().GetString("view")
