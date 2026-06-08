@@ -1,7 +1,13 @@
+---
+format: https://specscore.md/feature-specification
+status: Withdrawn (deferred)
+---
+
 # Feature: Watch Command
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/watch?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/watch?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/watch?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/watch?op=request-change) |
 **Status:** Withdrawn (deferred)
+**Source Ideas:** —
 
 > **Parked.** This feature is deferred — not on the roadmap right now. The stub
 > `ingitdb watch` command and the `pkg/watcher` scaffolding (interfaces only,

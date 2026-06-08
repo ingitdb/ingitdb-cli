@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenarios-index-specification
+---
+
 # Rehearse Scenarios: Computed Columns
 
 **Status:** Draft

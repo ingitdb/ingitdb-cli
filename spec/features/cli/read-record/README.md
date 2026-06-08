@@ -1,7 +1,13 @@
+---
+format: https://specscore.md/feature-specification
+status: Superseded by [spec/features/cli/select/](../select/README.md). The `ingitdb read record` command has been removed; use `ingitdb select --id=...` instead. This document is preserved as a historical record.
+---
+
 # Feature: Read Record Command
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/read-record?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/read-record?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/read-record?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/read-record?op=request-change) |
 **Status:** Superseded by [spec/features/cli/select/](../select/README.md). The `ingitdb read record` command has been removed; use `ingitdb select --id=...` instead. This document is preserved as a historical record.
+**Source Ideas:** —
 
 ## Summary
 

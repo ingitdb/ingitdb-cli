@@ -1,7 +1,13 @@
+---
+format: https://specscore.md/feature-specification
+status: Superseded by [spec/features/cli/delete/](../delete/README.md). The `ingitdb delete records` command has been replaced by `ingitdb delete --from=... --where=...` (or `--all`). This document is preserved as a historical record.
+---
+
 # Feature: Delete Records Command
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/delete-records?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/delete-records?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/delete-records?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/delete-records?op=request-change) |
 **Status:** Superseded by [spec/features/cli/delete/](../delete/README.md). The `ingitdb delete records` command has been replaced by `ingitdb delete --from=... --where=...` (or `--all`). This document is preserved as a historical record.
+**Source Ideas:** —
 
 ## Summary
 

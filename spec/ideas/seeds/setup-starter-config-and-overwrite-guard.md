@@ -1,12 +1,7 @@
 ---
 type: sidekick-seed
-slug: setup-starter-config-and-overwrite-guard
-captured_at: 2026-06-03T16:54:53Z
 captured_by: claude
-captured_during: null
-trigger: explicit
 status: queued
-synchestra_task: null
 ---
 # Make `setup` write a real starter config and refuse to overwrite an initialised db; reconcile the stale spec layout
 

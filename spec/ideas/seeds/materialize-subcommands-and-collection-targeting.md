@@ -1,12 +1,7 @@
 ---
 type: sidekick-seed
-slug: materialize-subcommands-and-collection-targeting
-captured_at: 2026-06-03T16:54:53Z
 captured_by: claude
-captured_during: null
-trigger: explicit
 status: promoted
-synchestra_task: null
 ---
 # Implement materialize subcommands (collection/views) and the --collection / --views targeting, or reconcile the spec to the flat command
 

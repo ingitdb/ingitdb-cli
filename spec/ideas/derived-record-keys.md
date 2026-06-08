@@ -1,3 +1,8 @@
+---
+format: https://specscore.md/idea-specification
+status: Approved
+---
+
 # Idea: Derived Record Keys from Record Fields
 
 **Status:** Approved

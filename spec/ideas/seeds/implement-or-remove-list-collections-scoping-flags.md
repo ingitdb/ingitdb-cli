@@ -1,12 +1,7 @@
 ---
 type: sidekick-seed
-slug: implement-or-remove-list-collections-scoping-flags
-captured_at: 2026-06-03T14:25:20Z
 captured_by: claude
-captured_during: null
-trigger: explicit
 status: done
-synchestra_task: null
 ---
 # Implement --in and --filter-name scoped filtering for `list collections` (or remove the dead flags from the command and spec)
 

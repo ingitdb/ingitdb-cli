@@ -1,3 +1,8 @@
+---
+format: https://specscore.md/idea-specification
+status: Specified
+---
+
 # Idea: Unified materialize command for collections and views
 
 **Status:** Specified

@@ -1,12 +1,7 @@
 ---
 type: sidekick-seed
-slug: serve-combinable-services-and-watcher-wiring
-captured_at: 2026-06-03T16:54:53Z
 captured_by: claude
-captured_during: null
-trigger: explicit
 status: done
-synchestra_task: null
 ---
 # Make `serve` run combinable services and wire --watcher
 

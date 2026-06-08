@@ -1,7 +1,13 @@
+---
+format: https://specscore.md/feature-specification
+status: Withdrawn — superseded by `delete --from=COLLECTION --all`. A standalone `truncate` verb would duplicate `delete`'s set-mode semantics for no benefit, so the SQL `delete --all` path covers this use case. This document is preserved as a historical record of the original design.
+---
+
 # Feature: Truncate Command
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/truncate?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/truncate?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/truncate?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/truncate?op=request-change) |
 **Status:** Withdrawn — superseded by `delete --from=COLLECTION --all`. A standalone `truncate` verb would duplicate `delete`'s set-mode semantics for no benefit, so the SQL `delete --all` path covers this use case. This document is preserved as a historical record of the original design.
+**Source Ideas:** —
 
 ## Summary
 

@@ -1,12 +1,7 @@
 ---
 type: sidekick-seed
-slug: rebase-abort-on-unresolvable-source-conflicts
-captured_at: 2026-06-03T14:25:20Z
 captured_by: claude
-captured_during: null
-trigger: explicit
 status: done
-synchestra_task: null
 ---
 # Make `ingitdb rebase` run `git rebase --abort` and report unresolved paths on conflicts outside the --resolve scope, with a test
 

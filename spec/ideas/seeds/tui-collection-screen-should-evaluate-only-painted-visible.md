@@ -1,12 +1,7 @@
 ---
 type: sidekick-seed
-slug: tui-collection-screen-should-evaluate-only-painted-visible
-captured_at: 2026-06-03T12:03:29Z
 captured_by: specstudio:implement
-captured_during: spec/features/computed-columns-via-dalgo
-trigger: explicit
 status: queued
-synchestra_task: null
 ---
 # TUI collection screen should evaluate only painted visible computed-column cells, not all cells at load
 

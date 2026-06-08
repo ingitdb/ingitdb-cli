@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenario-specification
+---
+
 # Scenario: reject-stored-computed-value
 
 **Validates:** [computed-columns#req:reject-stored-value](../README.md#req-reject-stored-value)

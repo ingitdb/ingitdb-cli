@@ -1,7 +1,13 @@
+---
+format: https://specscore.md/feature-specification
+status: Superseded by [spec/features/cli/select/](../select/README.md). The `ingitdb query` command has been replaced by `ingitdb select --from=... --where=...`. This document is preserved as a historical record.
+---
+
 # Feature: Query Command
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/query?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/query?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/query?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/query?op=request-change) |
 **Status:** Superseded by [spec/features/cli/select/](../select/README.md). The `ingitdb query` command has been replaced by `ingitdb select --from=... --where=...`. This document is preserved as a historical record.
+**Source Ideas:** —
 
 ## Summary
 

@@ -1,3 +1,8 @@
+---
+format: https://specscore.md/idea-specification
+status: Implemented
+---
+
 # Idea: Scripted Computed Fields & Materialized Views (Starlark)
 
 **Status:** Implemented

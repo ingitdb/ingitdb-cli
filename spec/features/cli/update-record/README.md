@@ -1,7 +1,13 @@
+---
+format: https://specscore.md/feature-specification
+status: Superseded by [spec/features/cli/update/](../update/README.md). The `ingitdb update record` command has been renamed to `ingitdb update`. This document is preserved as a historical record.
+---
+
 # Feature: Update Record Command
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/update-record?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/update-record?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/update-record?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/update-record?op=request-change) |
 **Status:** Superseded by [spec/features/cli/update/](../update/README.md). The `ingitdb update record` command has been renamed to `ingitdb update`. This document is preserved as a historical record.
+**Source Ideas:** —
 
 ## Summary
 

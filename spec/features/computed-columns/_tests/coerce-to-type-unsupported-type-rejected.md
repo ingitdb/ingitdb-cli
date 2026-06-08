@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenario-specification
+---
+
 # Scenario: unsupported-type-rejected
 
 **Validates:** [computed-columns#req:coerce-to-type](../README.md#req-coerce-to-type)

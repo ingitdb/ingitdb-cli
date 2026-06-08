@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenario-specification
+---
+
 # Scenario: runtime-error-fails-read
 
 **Validates:** [computed-columns#req:fail-loud](../README.md#req-fail-loud)

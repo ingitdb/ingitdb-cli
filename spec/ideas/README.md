@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/ideas-index-specification
+---
+
 # Ideas
 
 Raw ideas explored before promotion to a SpecScore Feature. Each idea is a one-pager covering
