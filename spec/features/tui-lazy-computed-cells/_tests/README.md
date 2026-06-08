@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenarios-index-specification
+---
+
 # Rehearse Scenarios: TUI lazy computed-cell evaluation
 
 **Status:** Draft

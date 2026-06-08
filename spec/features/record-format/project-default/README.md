@@ -1,7 +1,13 @@
+---
+format: https://specscore.md/feature-specification
+status: Stable
+---
+
 # Feature: Project-Level Default Record Format
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/project-default?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/project-default?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/project-default?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/record-format/project-default?op=request-change) |
 **Status:** Stable
+**Source Ideas:** —
 **Source Idea:** [`default-record-format`](../../../ideas/default-record-format.md)
 **Parent Feature:** [`record-format`](../README.md)
 

@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenario-specification
+---
+
 # Scenario: stored-locale-discovery-unchanged
 
 **Validates:** [tui-lazy-computed-cells#req:stored-columns-unchanged](../README.md#req-stored-columns-unchanged)

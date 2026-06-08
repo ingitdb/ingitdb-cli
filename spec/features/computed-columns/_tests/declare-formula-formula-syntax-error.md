@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenario-specification
+---
+
 # Scenario: formula-syntax-error
 
 **Validates:** [computed-columns#req:declare-formula](../README.md#req-declare-formula)

@@ -1,3 +1,8 @@
+---
+format: https://specscore.md/idea-specification
+status: Approved
+---
+
 # Idea: List-of-Records Files: Top-Level YAML/JSON Sequences + JSONL
 
 **Status:** Approved

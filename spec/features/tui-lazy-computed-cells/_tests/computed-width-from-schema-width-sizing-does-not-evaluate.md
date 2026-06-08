@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenario-specification
+---
+
 # Scenario: width-sizing-does-not-evaluate
 
 **Validates:** [tui-lazy-computed-cells#req:computed-width-from-schema](../README.md#req-computed-width-from-schema)

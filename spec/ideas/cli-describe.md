@@ -1,3 +1,8 @@
+---
+format: https://specscore.md/idea-specification
+status: Draft
+---
+
 # Idea: CLI describe command
 
 **Status:** Draft

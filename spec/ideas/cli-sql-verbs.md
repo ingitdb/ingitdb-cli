@@ -1,3 +1,8 @@
+---
+format: https://specscore.md/idea-specification
+status: Approved
+---
+
 # Idea: SQL-Verb CLI Redesign
 
 **Status:** Approved

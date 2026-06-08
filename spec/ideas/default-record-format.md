@@ -1,3 +1,8 @@
+---
+format: https://specscore.md/idea-specification
+status: Approved
+---
+
 # Idea: Project-Level Default Record Format + CSV Format Support
 
 **Status:** Approved

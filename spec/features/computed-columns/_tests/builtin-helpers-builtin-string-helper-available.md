@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenario-specification
+---
+
 # Scenario: builtin-string-helper-available
 
 **Validates:** [computed-columns#req:builtin-helpers](../README.md#req-builtin-helpers)

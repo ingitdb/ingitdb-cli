@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenario-specification
+---
+
 # Scenario: reject-chained-computed-reference
 
 **Validates:** [computed-columns#req:stored-fields-only](../README.md#req-stored-fields-only)

@@ -1,7 +1,13 @@
+---
+format: https://specscore.md/feature-specification
+status: Superseded by [spec/features/cli/insert/](../insert/README.md). The `ingitdb create record` command has been removed; use `ingitdb insert --into=... --key=...` instead. This document is preserved as a historical record.
+---
+
 # Feature: Create Record Command
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/create-record?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/create-record?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/create-record?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/create-record?op=request-change) |
 **Status:** Superseded by [spec/features/cli/insert/](../insert/README.md). The `ingitdb create record` command has been removed; use `ingitdb insert --into=... --key=...` instead. This document is preserved as a historical record.
+**Source Ideas:** —
 
 ## Summary
 

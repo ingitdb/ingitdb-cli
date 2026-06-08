@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenario-specification
+---
+
 # Scenario: foreign-key-parent-delete-detected
 
 **Validates:** [computed-columns#req:foreign-key-parent-side](../README.md#req-foreign-key-parent-side)

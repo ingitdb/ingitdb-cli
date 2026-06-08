@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/features-index-specification
+---
+
 # Features
 
 This directory tracks the SpecScore feature specifications for the **ingitdb-cli** repository. Each feature describes the externally observable behavior of a single CLI command or a cross-cutting concern (flag conventions, output formats, ID syntax). Storage format and collection schema definitions live in the [ingitdb-specs](https://github.com/ingitdb/ingitdb-specs) repository and are referenced from here when needed.

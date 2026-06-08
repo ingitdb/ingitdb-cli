@@ -1,7 +1,13 @@
+---
+format: https://specscore.md/feature-specification
+status: Draft
+---
+
 # Feature: Manual (Interactive) Conflict Resolution
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/resolve/manual-resolve?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/resolve/manual-resolve?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/resolve/manual-resolve?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/resolve/manual-resolve?op=request-change) |
 **Status:** Draft
+**Source Ideas:** —
 **Parent Feature:** [`cli/resolve`](../README.md)
 
 ## Summary

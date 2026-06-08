@@ -1,12 +1,7 @@
 ---
 type: sidekick-seed
-slug: enforce-token-for-remote-writes-and-github-enterprise-provider
-captured_at: 2026-06-03T14:25:20Z
 captured_by: claude
-captured_during: null
-trigger: explicit
 status: done
-synchestra_task: null
 ---
 # Enforce a local token-required pre-flight for remote writes
 

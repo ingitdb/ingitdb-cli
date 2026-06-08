@@ -1,7 +1,13 @@
+---
+format: https://specscore.md/feature-specification
+status: Stable
+---
+
 # Feature: ID Flag Format
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/id-flag-format?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/id-flag-format?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/id-flag-format?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/id-flag-format?op=request-change) |
 **Status:** Stable
+**Source Ideas:** —
 
 ## Summary
 

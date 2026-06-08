@@ -1,3 +1,8 @@
+---
+format: https://specscore.md/idea-specification
+status: Approved
+---
+
 # Idea: DALgo referential integrity on writes
 
 **Status:** Approved

@@ -1,8 +1,14 @@
+---
+format: https://specscore.md/feature-specification
+status: Stable
+---
+
 # Feature: Insert
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/insert?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/insert?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/insert?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/insert?op=request-change) |
 
 **Status:** Stable
+**Source Ideas:** —
 
 ## Summary
 

@@ -1,3 +1,8 @@
+---
+format: https://specscore.md/idea-specification
+status: Approved
+---
+
 # Idea: Batch Insert from Stdin
 
 **Status:** Approved

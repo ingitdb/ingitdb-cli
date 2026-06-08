@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenario-specification
+---
+
 # Scenario: type-coercion-success
 
 **Validates:** [computed-columns#req:coerce-to-type](../README.md#req-coerce-to-type)

@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenario-specification
+---
+
 # Scenario: foreign-key-on-insert-violation
 
 **Validates:** [computed-columns#req:foreign-key-support](../README.md#req-foreign-key-support)

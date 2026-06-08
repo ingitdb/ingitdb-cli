@@ -1,7 +1,13 @@
+---
+format: https://specscore.md/feature-specification
+status: Stable
+---
+
 # Feature: Update
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/update?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/update?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/update?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/update?op=request-change) |
 **Status:** Stable
+**Source Ideas:** —
 
 ## Summary
 

@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenario-specification
+---
+
 # Scenario: deterministic-evaluation
 
 **Validates:** [computed-columns#req:sandboxed-deterministic](../README.md#req-sandboxed-deterministic)

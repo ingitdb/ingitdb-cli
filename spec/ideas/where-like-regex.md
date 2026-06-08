@@ -1,3 +1,8 @@
+---
+format: https://specscore.md/idea-specification
+status: Draft
+---
+
 # Idea: LIKE/Regex Predicates in --where
 
 **Status:** Draft

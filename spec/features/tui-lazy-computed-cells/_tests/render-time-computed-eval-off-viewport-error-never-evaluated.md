@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenario-specification
+---
+
 # Scenario: off-viewport-error-never-evaluated
 
 **Validates:** [tui-lazy-computed-cells#req:render-time-computed-eval](../README.md#req-render-time-computed-eval)

@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenario-specification
+---
+
 # Scenario: foreign-key-revalidates-on-input-change
 
 **Validates:** [computed-columns#req:foreign-key-revalidate-on-input-change](../README.md#req-foreign-key-revalidate-on-input-change)

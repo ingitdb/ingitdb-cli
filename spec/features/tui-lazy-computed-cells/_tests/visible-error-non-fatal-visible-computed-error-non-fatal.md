@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenario-specification
+---
+
 # Scenario: visible-computed-error-non-fatal
 
 **Validates:** [tui-lazy-computed-cells#req:visible-error-non-fatal](../README.md#req-visible-error-non-fatal)

@@ -1,12 +1,7 @@
 ---
 type: sidekick-seed
-slug: wire-write-time-validations-foreign-keys-and-reject-stored
-captured_at: 2026-06-02T08:46:12Z
 captured_by: specstudio:implement
-captured_during: null
-trigger: explicit
 status: queued
-synchestra_task: null
 ---
 # Wire write-time validations (foreign keys and reject-stored-computed-values) into the CLI dalgo2fsingitdb read-write path so inserts and updates enforce them, not just the dalgo2ingitdb DALgo layer
 

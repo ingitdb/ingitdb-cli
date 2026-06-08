@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenario-specification
+---
+
 # Scenario: numeric-alignment-does-not-evaluate
 
 **Validates:** [tui-lazy-computed-cells#req:numeric-alignment-from-type](../README.md#req-numeric-alignment-from-type)

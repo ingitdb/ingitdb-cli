@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenario-specification
+---
+
 # Scenario: scroll-evaluates-only-newly-visible
 
 **Validates:** [tui-lazy-computed-cells#req:per-row-memoization](../README.md#req-per-row-memoization)

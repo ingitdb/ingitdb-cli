@@ -1,3 +1,7 @@
+---
+format: https://specscore.md/scenario-specification
+---
+
 # Scenario: filter-on-computed-column
 
 **Validates:** [computed-columns#req:usable-in-filter-and-sort](../README.md#req-usable-in-filter-and-sort)

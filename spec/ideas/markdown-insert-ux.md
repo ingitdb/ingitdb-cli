@@ -1,3 +1,8 @@
+---
+format: https://specscore.md/idea-specification
+status: Draft
+---
+
 # Idea: Markdown Record Insert UX
 
 **Status:** Draft
