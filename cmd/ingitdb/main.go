@@ -75,6 +75,8 @@ func run(
 
 	rootCmd.AddCommand(
 		commands.Version(version, commit, date),
+		// No "update" alias: `ingitdb update` is the SQL UPDATE verb below.
+		commands.SelfUpdate(version, os.Exit),
 		commands.Validate(homeDir, getWd, readDefinition, datavalidator.NewValidator(),
 			datavalidator.NewIncrementalValidator(gitdiff.NewGitDiffer(), datavalidator.NewChangeSetResolver(), datavalidator.NewValidator()), logf),
 		commands.Materialize(homeDir, getWd, readDefinition, vb, logf),

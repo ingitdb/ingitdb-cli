@@ -29,6 +29,7 @@ CLI surface; keep those skills in sync when a command's flags or behavior change
 | Feature | Status | Command |
 |---------|--------|---------|
 | [version](version/README.md) | Implementing | `ingitdb version` |
+| [self-update](self-update/README.md) | Implementing | `ingitdb self-update` |
 | [validate](validate/README.md) | Implementing | `ingitdb validate` |
 | [select](select/README.md) | Implementing | `ingitdb select` |
 | [insert](insert/README.md) | Implementing | `ingitdb insert` |
