@@ -53,3 +53,4 @@ coverage*.html
 
 # Local SpecScore event log
 .specscore/events.jsonl
+.codegraph/
