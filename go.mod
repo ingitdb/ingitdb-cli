@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	charm.land/bubbletea/v2 v2.0.7
 	charm.land/fang/v2 v2.0.1
-	charm.land/lipgloss/v2 v2.0.3
+	charm.land/lipgloss/v2 v2.0.4
 	github.com/charmbracelet/x/term v0.2.2
 	github.com/gofrs/flock v0.13.0
 	github.com/google/go-github/v88 v88.0.0
@@ -14,7 +14,7 @@ require (
 	github.com/rivo/uniseg v0.4.7
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
-	go.starlark.net v0.0.0-20260522144826-ec58d4b459e2
+	go.starlark.net v0.0.0-20260613233743-8ba36ccb83fb
 	go.uber.org/mock v0.6.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -52,7 +52,7 @@ require (
 require (
 	github.com/RoaringBitmap/roaring/v2 v2.18.2 // indirect
 	github.com/bits-and-blooms/bitset v1.24.4 // indirect
-	github.com/dal-go/dalgo v0.46.1
+	github.com/dal-go/dalgo v0.62.2
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/strongo/random v0.0.1 // indirect
 )
