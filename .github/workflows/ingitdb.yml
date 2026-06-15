@@ -2,8 +2,8 @@ name: inGitDB
 
 on:
   push:
-    branches-ignore:
-      - renovate/**
+    branches:
+      - main
   pull_request:
     branches:
       - '**'
