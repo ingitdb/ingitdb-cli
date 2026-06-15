@@ -363,7 +363,7 @@ func TestEvaluateComparison_Operators(t *testing.T) {
 func TestEvaluateComparison_UnsupportedOperator(t *testing.T) {
 	t.Parallel()
 	c := dal.NewComparison(
-		dal.NewFieldRef("name"),
+		dal.NewFieldRef("", "name"),
 		"INVALID_OP",
 		dal.NewConstant("x"),
 	)
@@ -391,7 +391,7 @@ func TestEvaluateComparison_LeftExprError(t *testing.T) {
 func TestEvaluateComparison_RightExprError(t *testing.T) {
 	t.Parallel()
 	c := dal.NewComparison(
-		dal.NewFieldRef("name"),
+		dal.NewFieldRef("", "name"),
 		dal.Equal,
 		unsupportedExpr{},
 	)
@@ -1330,6 +1330,7 @@ type nilFromQuery struct {
 
 func (nilFromQuery) From() dal.FromSource           { return nil }
 func (nilFromQuery) Where() dal.Condition           { return nil }
+func (nilFromQuery) Having() dal.Condition          { return nil }
 func (nilFromQuery) GroupBy() []dal.Expression      { return nil }
 func (nilFromQuery) OrderBy() []dal.OrderExpression { return nil }
 func (nilFromQuery) Columns() []dal.Column          { return nil }
@@ -1487,6 +1488,7 @@ type nonCollectionRefFromQuery struct {
 
 func (nonCollectionRefFromQuery) From() dal.FromSource           { return wrappedFromSource{} }
 func (nonCollectionRefFromQuery) Where() dal.Condition           { return nil }
+func (nonCollectionRefFromQuery) Having() dal.Condition          { return nil }
 func (nonCollectionRefFromQuery) GroupBy() []dal.Expression      { return nil }
 func (nonCollectionRefFromQuery) OrderBy() []dal.OrderExpression { return nil }
 func (nonCollectionRefFromQuery) Columns() []dal.Column          { return nil }

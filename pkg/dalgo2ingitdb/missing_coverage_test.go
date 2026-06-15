@@ -504,7 +504,7 @@ func TestEvaluateComparison_LeftResolveError(t *testing.T) {
 func TestEvaluateComparison_RightResolveError(t *testing.T) {
 	t.Parallel()
 	cmp := dal.Comparison{
-		Left:     dal.NewFieldRef("v"),
+		Left:     dal.NewFieldRef("", "v"),
 		Operator: dal.Equal,
 		Right:    unsupportedExpr{},
 	}

@@ -160,6 +160,11 @@ func (r readonlyTx) ExecuteQueryToRecordsetReader(_ context.Context, query dal.Q
 	if err != nil {
 		return nil, err
 	}
+	// collectionFromQuery already validated that query is a StructuredQuery.
+	sq, _ := query.(dal.StructuredQuery)
+	if err = checkSupportedQueryShape(sq); err != nil {
+		return nil, err
+	}
 	stored, err := readAllStoredRecords(colDef)
 	if err != nil {
 		return nil, err
