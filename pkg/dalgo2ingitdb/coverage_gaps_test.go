@@ -1320,7 +1320,7 @@ func TestEvaluateComparison_AllOperators(t *testing.T) {
 	}
 	for _, tc := range tests {
 		cmp := dal.Comparison{
-			Left:     dal.NewFieldRef("v"),
+			Left:     dal.NewFieldRef("", "v"),
 			Operator: tc.op,
 			Right:    dal.Constant{Value: tc.rhs},
 		}
@@ -1339,7 +1339,7 @@ func TestEvaluateComparison_UnsupportedOperator(t *testing.T) {
 	t.Parallel()
 	data := map[string]any{"v": 1}
 	cmp := dal.Comparison{
-		Left:     dal.NewFieldRef("v"),
+		Left:     dal.NewFieldRef("", "v"),
 		Operator: dal.Operator("UNKNOWN"),
 		Right:    dal.Constant{Value: 1},
 	}
@@ -1351,7 +1351,7 @@ func TestEvaluateComparison_UnsupportedOperator(t *testing.T) {
 
 func TestResolveExpression_ID(t *testing.T) {
 	t.Parallel()
-	ref := dal.NewFieldRef("$id")
+	ref := dal.NewFieldRef("", "$id")
 	got, err := resolveExpression(ref, map[string]any{}, "my-key")
 	if err != nil {
 		t.Fatalf("resolveExpression $id: %v", err)

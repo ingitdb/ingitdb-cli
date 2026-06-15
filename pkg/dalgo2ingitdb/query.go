@@ -25,6 +25,10 @@ func executeQueryToRecordsReader(_ context.Context, r readonlyTx, query dal.Quer
 	// collectionFromQuery already validated that query is a StructuredQuery.
 	sq, _ := query.(dal.StructuredQuery)
 
+	if err = checkSupportedQueryShape(sq); err != nil {
+		return nil, err
+	}
+
 	records, err := readAllRecordsFromDisk(colDef)
 	if err != nil {
 		return nil, err
@@ -43,6 +47,23 @@ func executeQueryToRecordsReader(_ context.Context, r readonlyTx, query dal.Quer
 		records = records[:limit]
 	}
 	return newSliceRecordsReader(records), nil
+}
+
+// checkSupportedQueryShape reports dal.ErrNotSupported for query shapes this
+// driver does not implement: column projection (SelectColumns), GROUP BY
+// aggregation, and HAVING. The driver supports SELECT * / SELECT keys-only with
+// WHERE / ORDER BY / LIMIT; callers that need projection or aggregation are
+// expected to handle dal.ErrNotSupported (the dalgo end2end suite skips on it).
+func checkSupportedQueryShape(sq dal.StructuredQuery) error {
+	switch {
+	case len(sq.Columns()) > 0:
+		return fmt.Errorf("dalgo2ingitdb: column projection: %w", dal.ErrNotSupported)
+	case len(sq.GroupBy()) > 0:
+		return fmt.Errorf("dalgo2ingitdb: GROUP BY: %w", dal.ErrNotSupported)
+	case sq.Having() != nil:
+		return fmt.Errorf("dalgo2ingitdb: HAVING: %w", dal.ErrNotSupported)
+	}
+	return nil
 }
 
 // collectionFromQuery resolves the single collection a structured query reads
