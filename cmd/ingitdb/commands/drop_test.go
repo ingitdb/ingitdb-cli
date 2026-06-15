@@ -10,8 +10,8 @@ import (
 	"github.com/dal-go/dalgo/dal"
 	"gopkg.in/yaml.v3"
 
-	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2fsingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/dalgo2ingitdb4local"
+	"github.com/ingitdb/ingitdb-go"
 )
 
 func yamlUnmarshalForTest(data []byte, out any) error {

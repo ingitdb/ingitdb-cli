@@ -7,8 +7,8 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ghingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/dalgo2ingitdb4github"
+	"github.com/ingitdb/ingitdb-go"
 )
 
 // TestCreateRecord_GitHubDBError demonstrates testing error handling when GitHub DB factory fails.

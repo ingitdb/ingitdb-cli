@@ -11,9 +11,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ghingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/config"
+	"github.com/ingitdb/dalgo2ingitdb4github"
+	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/config"
 )
 
 // newGitHubConfig builds a dalgo2ghingitdb.Config from a parsed remote spec

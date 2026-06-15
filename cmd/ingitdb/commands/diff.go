@@ -19,10 +19,9 @@ import (
 
 	toml "github.com/pelletier/go-toml/v2"
 
-	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/datavalidator"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/gitdiff"
+	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/datavalidator"
+	"github.com/ingitdb/ingitdb-go/gitdiff"
 )
 
 // --- model ---
@@ -207,13 +206,13 @@ func parseKeyedRecords(content []byte, colDef *ingitdb.CollectionDef, relPath st
 	}
 	switch colDef.RecordFile.RecordType {
 	case ingitdb.SingleRecord:
-		data, err := dalgo2ingitdb.ParseRecordContentForCollection(content, colDef)
+		data, err := ingitdb.ParseRecordContentForCollection(content, colDef)
 		if err != nil {
 			return out
 		}
 		out[recordKeyFromPath(relPath)] = data
 	case ingitdb.MapOfRecords:
-		m, err := dalgo2ingitdb.ParseMapOfRecordsContent(content, colDef.RecordFile.Format)
+		m, err := ingitdb.ParseMapOfRecordsContent(content, colDef.RecordFile.Format)
 		if err != nil {
 			return out
 		}
@@ -221,12 +220,12 @@ func parseKeyedRecords(content []byte, colDef *ingitdb.CollectionDef, relPath st
 			out[k] = v
 		}
 	case ingitdb.ListOfRecords:
-		rows, err := dalgo2ingitdb.ParseListOfRecordsContent(content, colDef.RecordFile.Format)
+		rows, err := ingitdb.ParseListOfRecordsContent(content, colDef.RecordFile.Format)
 		if err != nil {
 			return out
 		}
 		for _, row := range rows {
-			if key, ok := dalgo2ingitdb.ResolveListRecordKey(row, colDef); ok {
+			if key, ok := ingitdb.ResolveListRecordKey(row, colDef); ok {
 				out[key] = row
 			}
 		}

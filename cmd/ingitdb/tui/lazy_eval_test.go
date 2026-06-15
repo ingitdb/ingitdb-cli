@@ -12,7 +12,7 @@ import (
 
 	"github.com/dal-go/dalgo/recordset"
 
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/ingitdb-go"
 )
 
 // countingTUIEvaluator records how many times a computed column is evaluated.

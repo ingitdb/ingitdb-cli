@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/recordmerge"
+	"github.com/ingitdb/dalgo2ingitdb"
+	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/recordmerge"
 )
 
 // setupDataConflict creates a git repo with a three-way conflict on relPath:

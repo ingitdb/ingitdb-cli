@@ -14,8 +14,8 @@ import (
 
 	"github.com/dal-go/dalgo/dal"
 
-	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/dalgo2ingitdb"
+	"github.com/ingitdb/ingitdb-go"
 )
 
 // runBatchInsert implements --format batch mode. It reads stdin per the

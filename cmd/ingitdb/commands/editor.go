@@ -8,8 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/ingitdb-go"
 )
 
 // isFdTTY reports whether f's file descriptor is a terminal.
@@ -55,7 +54,7 @@ func runWithEditor(colDef *ingitdb.CollectionDef, openEditor func(string) error)
 		return nil, true, nil
 	}
 
-	data, err := dalgo2ingitdb.ParseRecordContentForCollection(content, colDef)
+	data, err := ingitdb.ParseRecordContentForCollection(content, colDef)
 	return data, false, err
 }
 
