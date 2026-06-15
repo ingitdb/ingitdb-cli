@@ -16,6 +16,19 @@ workflow — branching, code review, pull requests — extends naturally to data
 simultaneously a database, a version-control system, an event bus, and a data layer for AI agents,
 all with zero server infrastructure for reads.
 
+<!-- dev-approach:v1 -->
+## Our approach to development
+
+We build with our own tooling:
+
+- **[SpecScore](https://specscore.md)** — specify requirements as `SpecScore.md` artifacts
+- **[SpecStudio](https://specscore.studio)** — author & manage specs across their lifecycle
+- **[inGitDB](https://ingitdb.com)** — store structured data in Git where applicable
+- **[DALgo](https://dalgo.io)** — data access layer for Go
+- **[cover100.dev](https://cover100.dev)** — drive toward 100% test coverage
+- **[DataTug](https://datatug.io)** — query & explore data
+<!-- /dev-approach -->
+
 ## 💡 Why inGitDB?
 
 - **Plain files, real Git.** Records are YAML or JSON files you can read in any editor, diff in any
