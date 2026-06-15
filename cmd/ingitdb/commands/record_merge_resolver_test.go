@@ -10,9 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ingitdb/dalgo2ingitdb"
-	"github.com/ingitdb/ingitdb-go"
-	"github.com/ingitdb/ingitdb-go/recordmerge"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
+	"github.com/ingitdb/ingitdb-go/ingitdb/recordmerge"
 )
 
 // setupDataConflict creates a git repo with a three-way conflict on relPath:
@@ -80,7 +79,7 @@ func readMap(t *testing.T, dir, relPath string) map[string]map[string]any {
 	if err != nil {
 		t.Fatalf("read merged file: %v", err)
 	}
-	m, err := dalgo2ingitdb.ParseMapOfRecordsContent(content, ingitdb.RecordFormatYAML)
+	m, err := ingitdb.ParseMapOfRecordsContent(content, ingitdb.RecordFormatYAML)
 	if err != nil {
 		t.Fatalf("parse merged file: %v", err)
 	}
@@ -352,7 +351,7 @@ func TestResolveRecordMergeConflicts_MarkdownDifferentFieldsMerge(t *testing.T) 
 	if readErr != nil {
 		t.Fatalf("read merged: %v", readErr)
 	}
-	merged, parseErr := dalgo2ingitdb.ParseRecordContentForCollection(content, def.Collections["c"])
+	merged, parseErr := ingitdb.ParseRecordContentForCollection(content, def.Collections["c"])
 	if parseErr != nil {
 		t.Fatalf("parse merged markdown: %v\n%s", parseErr, content)
 	}
@@ -545,7 +544,7 @@ func TestResolveRecordMergeConflicts_YAMLListEndToEnd(t *testing.T) {
 	if readErr != nil {
 		t.Fatalf("read merged: %v", readErr)
 	}
-	rows, parseErr := dalgo2ingitdb.ParseListOfRecordsContent(content, ingitdb.RecordFormatYAML)
+	rows, parseErr := ingitdb.ParseListOfRecordsContent(content, ingitdb.RecordFormatYAML)
 	if parseErr != nil {
 		t.Fatalf("parse merged: %v\n%s", parseErr, content)
 	}

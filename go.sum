@@ -50,6 +50,14 @@ github.com/google/go-querystring v1.2.0 h1:yhqkPbu2/OH+V9BfpCVPZkNmUXhb2gBxJArfh
 github.com/google/go-querystring v1.2.0/go.mod h1:8IFJqpSRITyJ8QhQ13bmbeMBDfmeEJZD5A0egEOmkqU=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
+github.com/ingitdb/dalgo2ingitdb v0.0.1 h1:eKNlCHyalaHs9fJs9/xEJPlJ3IuTv0gMjpqdRrIm59Q=
+github.com/ingitdb/dalgo2ingitdb v0.0.1/go.mod h1:bKKyzih189IHRfZLlBvcxl6fBHMsy98o4lJq2U4t5wo=
+github.com/ingitdb/dalgo2ingitdb4github v0.0.1 h1:dm7fMuhlJRAOt9ygmVW9Jdr82OKNuq9d4m8oTEEM07M=
+github.com/ingitdb/dalgo2ingitdb4github v0.0.1/go.mod h1:Fy7kI6g6JMs8JtFtRuGNbkkuADWsBDOSaXXcrG3pjRg=
+github.com/ingitdb/dalgo2ingitdb4local v0.0.1 h1:iBuujZUg5Xz8EsRItGivq/YHnkid3mHzLbuBgBVus/w=
+github.com/ingitdb/dalgo2ingitdb4local v0.0.1/go.mod h1:0UAMGfEEqaLVKkz32Ea76TmABiZ/gcGj0YamaMZJ71w=
+github.com/ingitdb/ingitdb-go/ingitdb v0.0.1 h1:ka6xS7h6zXUnJ5vapyg/3mz8VI3V/ExPGeVTctTyjaQ=
+github.com/ingitdb/ingitdb-go/ingitdb v0.0.1/go.mod h1:lPelTuuWeIZzQ9EO2ZhK7JjYz8u3WdkqwaQ3maBKwg0=
 github.com/ingr-io/ingr-go v0.0.2 h1:2AfFllqzCe2dCNtxIUo306oYzaZr//YzrVOHd0C73nI=
 github.com/ingr-io/ingr-go v0.0.2/go.mod h1:gb/dGW0qXziCq9iAIgk0yITyWY013w2bhdYiXO0RLuY=
 github.com/kr/pretty v0.3.1 h1:flRD4NNwYAUpkphVc1HcthR4KEIFJ65n8Mw5qdRn3LE=
