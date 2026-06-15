@@ -13,9 +13,9 @@ import (
 	reflect "reflect"
 
 	dal "github.com/dal-go/dalgo/dal"
-	dalgo2ghingitdb "github.com/ingitdb/ingitdb-cli/pkg/dalgo2ghingitdb"
-	ingitdb "github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
-	materializer "github.com/ingitdb/ingitdb-cli/pkg/ingitdb/materializer"
+	dalgo2ghingitdb "github.com/ingitdb/dalgo2ingitdb4github"
+	ingitdb "github.com/ingitdb/ingitdb-go"
+	materializer "github.com/ingitdb/ingitdb-go/materializer"
 	gomock "go.uber.org/mock/gomock"
 )
 

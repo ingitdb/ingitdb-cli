@@ -10,9 +10,9 @@ import (
 	"github.com/dal-go/dalgo/dal"
 	"github.com/spf13/cobra"
 
-	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ghingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/dalgo2ingitdb4github"
+	"github.com/ingitdb/dalgo2ingitdb"
+	"github.com/ingitdb/ingitdb-go"
 )
 
 // resolveDBPath returns the database directory from --path or the working directory.

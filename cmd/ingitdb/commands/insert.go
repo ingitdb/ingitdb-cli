@@ -13,8 +13,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/commands/sqlflags"
-	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/ingitdb-go"
 )
 
 // Insert returns the `ingitdb insert` command.
@@ -252,7 +251,7 @@ func readInsertData(
 
 	switch {
 	case dataStr != "":
-		data, err := dalgo2ingitdb.ParseRecordContentForCollection([]byte(dataStr), colDef)
+		data, err := ingitdb.ParseRecordContentForCollection([]byte(dataStr), colDef)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse --data: %w", err)
 		}
@@ -273,7 +272,7 @@ func readInsertData(
 		if err != nil {
 			return nil, fmt.Errorf("failed to read stdin: %w", err)
 		}
-		return dalgo2ingitdb.ParseRecordContentForCollection(content, colDef)
+		return ingitdb.ParseRecordContentForCollection(content, colDef)
 	default:
 		return nil, fmt.Errorf("no data source — use --data, pipe stdin, --edit, or --empty")
 	}

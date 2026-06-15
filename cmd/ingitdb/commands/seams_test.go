@@ -6,8 +6,8 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ghingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/dalgo2ingitdb4github"
+	"github.com/ingitdb/ingitdb-go"
 )
 
 // TestGitHubDBFactory_WithMock demonstrates how to use mocks with package-level variables.

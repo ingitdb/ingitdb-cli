@@ -13,12 +13,12 @@ import (
 
 	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/commands"
 	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/tui"
-	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2fsingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/datavalidator"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/gitdiff"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/materializer"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/validator"
+	"github.com/ingitdb/dalgo2ingitdb4local"
+	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/datavalidator"
+	"github.com/ingitdb/ingitdb-go/gitdiff"
+	"github.com/ingitdb/ingitdb-go/materializer"
+	"github.com/ingitdb/ingitdb-go/validator"
 )
 
 var (

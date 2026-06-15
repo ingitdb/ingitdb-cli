@@ -12,8 +12,8 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/validator"
+	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/validator"
 )
 
 var ingitdbValidatorReadDef = func(p string, opts ...ingitdb.ReadOption) (*ingitdb.Definition, error) {

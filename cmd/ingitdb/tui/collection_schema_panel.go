@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/ingitdb-go"
 )
 
 func (m collectionModel) renderSchema(width, height int) string {

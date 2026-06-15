@@ -10,7 +10,7 @@ import (
 
 	"github.com/dal-go/dalgo/dal"
 
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
+	"github.com/ingitdb/ingitdb-go"
 )
 
 // mockViewBuilder2 is a second independent mock view builder for record_context tests.

@@ -8,9 +8,9 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/docsbuilder"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/materializer"
+	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/docsbuilder"
+	"github.com/ingitdb/ingitdb-go/materializer"
 )
 
 // gitConflictedFiles returns the unmerged (conflicted) files in the working

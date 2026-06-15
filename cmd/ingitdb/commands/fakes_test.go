@@ -3,7 +3,7 @@ package commands
 import (
 	"context"
 
-	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ghingitdb"
+	"github.com/ingitdb/dalgo2ingitdb4github"
 )
 
 // fakeFileReader is an in-memory FileReader stub used by tests that

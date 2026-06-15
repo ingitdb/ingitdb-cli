@@ -13,8 +13,8 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/config"
+	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/config"
 )
 
 // collectionEntry pairs a collection's listed name (its ID) with its

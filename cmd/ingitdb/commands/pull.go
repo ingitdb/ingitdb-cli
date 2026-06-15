@@ -10,11 +10,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/datavalidator"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/gitdiff"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/gitrepo"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/materializer"
+	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/datavalidator"
+	"github.com/ingitdb/ingitdb-go/gitdiff"
+	"github.com/ingitdb/ingitdb-go/gitrepo"
+	"github.com/ingitdb/ingitdb-go/materializer"
 )
 
 // Pull returns the pull command. It runs `git pull` with the chosen strategy,

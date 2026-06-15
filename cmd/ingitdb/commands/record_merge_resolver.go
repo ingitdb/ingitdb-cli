@@ -9,11 +9,10 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/ingitdb/ingitdb-cli/pkg/dalgo2ingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/datavalidator"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/docsbuilder"
-	"github.com/ingitdb/ingitdb-cli/pkg/ingitdb/recordmerge"
+	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/datavalidator"
+	"github.com/ingitdb/ingitdb-go/docsbuilder"
+	"github.com/ingitdb/ingitdb-go/recordmerge"
 )
 
 // resolveRecordMergeConflicts attempts a record-aware three-way merge of each
@@ -120,9 +119,9 @@ func serializeMergedRecords(records []recordmerge.Record, col *ingitdb.Collectio
 		for _, r := range records {
 			data[r.Key] = r.Fields
 		}
-		return dalgo2ingitdb.EncodeMapOfRecordsContent(data, col.RecordFile.Format, col.RecordFile.Name, col.ColumnsOrder)
+		return ingitdb.EncodeMapOfRecordsContent(data, col.RecordFile.Format, col.RecordFile.Name, col.ColumnsOrder)
 	case ingitdb.SingleRecord:
-		return dalgo2ingitdb.EncodeRecordContentForCollection(records[0].Fields, col)
+		return ingitdb.EncodeRecordContentForCollection(records[0].Fields, col)
 	case ingitdb.ListOfRecords:
 		return serializeListRecords(records, col)
 	default:
@@ -139,20 +138,20 @@ func serializeListRecords(records []recordmerge.Record, col *ingitdb.CollectionD
 		for i, r := range records {
 			rows[i] = r.Fields
 		}
-		return dalgo2ingitdb.EncodeRecordContentForCollection(rows, col)
+		return ingitdb.EncodeRecordContentForCollection(rows, col)
 	case ingitdb.RecordFormatINGR:
 		data := make(map[string]map[string]any, len(records))
 		for _, r := range records {
 			data[r.Key] = r.Fields
 		}
-		return dalgo2ingitdb.EncodeMapOfRecordsContent(data, col.RecordFile.Format, col.RecordFile.Name, col.ColumnsOrder)
+		return ingitdb.EncodeMapOfRecordsContent(data, col.RecordFile.Format, col.RecordFile.Name, col.ColumnsOrder)
 	case ingitdb.RecordFormatYAML, ingitdb.RecordFormatYML,
 		ingitdb.RecordFormatJSON, ingitdb.RecordFormatJSONL:
 		rows := make([]map[string]any, len(records))
 		for i, r := range records {
 			rows[i] = r.Fields
 		}
-		return dalgo2ingitdb.EncodeListOfRecordsContent(rows, col.RecordFile.Format, col.ColumnsOrder)
+		return ingitdb.EncodeListOfRecordsContent(rows, col.RecordFile.Format, col.ColumnsOrder)
 	default:
 		return nil, fmt.Errorf("unsupported list format %q", col.RecordFile.Format)
 	}
