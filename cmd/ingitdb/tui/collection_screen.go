@@ -9,7 +9,7 @@ import (
 	"github.com/dal-go/dalgo/recordset"
 
 	"github.com/ingitdb/dalgo2ingitdb"
-	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 
 // recordsLoadedMsg carries the records loaded from disk for a collection. It

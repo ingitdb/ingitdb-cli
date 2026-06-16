@@ -7,8 +7,8 @@ import (
 	"github.com/dal-go/dalgo/dal"
 	"github.com/spf13/cobra"
 
-	"github.com/ingitdb/ingitdb-go"
-	"github.com/ingitdb/ingitdb-go/gitrepo"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
+	"github.com/ingitdb/ingitdb-go/ingitdb/gitrepo"
 )
 
 // recordContext holds the resolved state needed to operate on a single record.

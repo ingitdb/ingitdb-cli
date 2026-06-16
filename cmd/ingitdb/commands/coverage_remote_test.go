@@ -29,7 +29,7 @@ import (
 
 	"github.com/ingitdb/dalgo2ingitdb4local"
 	"github.com/ingitdb/dalgo2ingitdb4github"
-	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
 	"github.com/spf13/cobra"
 )
 

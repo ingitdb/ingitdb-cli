@@ -19,9 +19,9 @@ import (
 
 	toml "github.com/pelletier/go-toml/v2"
 
-	"github.com/ingitdb/ingitdb-go"
-	"github.com/ingitdb/ingitdb-go/datavalidator"
-	"github.com/ingitdb/ingitdb-go/gitdiff"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
+	"github.com/ingitdb/ingitdb-go/ingitdb/datavalidator"
+	"github.com/ingitdb/ingitdb-go/ingitdb/gitdiff"
 )
 
 // --- model ---

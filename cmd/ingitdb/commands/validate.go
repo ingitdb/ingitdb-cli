@@ -9,8 +9,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ingitdb/ingitdb-go"
-	"github.com/ingitdb/ingitdb-go/datavalidator"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
+	"github.com/ingitdb/ingitdb-go/ingitdb/datavalidator"
 )
 
 // Validate returns the validate command.

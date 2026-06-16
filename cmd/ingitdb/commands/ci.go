@@ -6,9 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ingitdb/ingitdb-go"
-	"github.com/ingitdb/ingitdb-go/gitrepo"
-	"github.com/ingitdb/ingitdb-go/materializer"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
+	"github.com/ingitdb/ingitdb-go/ingitdb/gitrepo"
+	"github.com/ingitdb/ingitdb-go/ingitdb/materializer"
 )
 
 // materializeRunE is the views-only materialize path retained for the `ci`

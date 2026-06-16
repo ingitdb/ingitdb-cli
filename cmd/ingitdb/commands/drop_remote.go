@@ -12,7 +12,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/ingitdb/dalgo2ingitdb4github"
-	"github.com/ingitdb/ingitdb-go/config"
+	"github.com/ingitdb/ingitdb-go/ingitdb/config"
 )
 
 // dropCollectionRemote drops a collection from a remote repository in a

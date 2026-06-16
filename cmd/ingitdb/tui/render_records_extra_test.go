@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 
 // TestRenderRecords_NoRecords covers the empty-records branch.

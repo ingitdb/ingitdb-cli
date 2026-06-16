@@ -22,7 +22,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/ingitdb/dalgo2ingitdb4local"
-	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 
 // ============================================================

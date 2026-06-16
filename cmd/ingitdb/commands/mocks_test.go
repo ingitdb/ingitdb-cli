@@ -14,8 +14,8 @@ import (
 
 	dal "github.com/dal-go/dalgo/dal"
 	dalgo2ghingitdb "github.com/ingitdb/dalgo2ingitdb4github"
-	ingitdb "github.com/ingitdb/ingitdb-go"
-	materializer "github.com/ingitdb/ingitdb-go/materializer"
+	ingitdb "github.com/ingitdb/ingitdb-go/ingitdb"
+	materializer "github.com/ingitdb/ingitdb-go/ingitdb/materializer"
 	gomock "go.uber.org/mock/gomock"
 )
 

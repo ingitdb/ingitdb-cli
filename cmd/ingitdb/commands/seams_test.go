@@ -7,7 +7,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/ingitdb/dalgo2ingitdb4github"
-	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 
 // TestGitHubDBFactory_WithMock demonstrates how to use mocks with package-level variables.

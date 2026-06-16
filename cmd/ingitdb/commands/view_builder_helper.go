@@ -3,8 +3,8 @@ package commands
 // specscore: feature/cli/materialize
 
 import (
-	"github.com/ingitdb/ingitdb-go"
-	"github.com/ingitdb/ingitdb-go/materializer"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
+	"github.com/ingitdb/ingitdb-go/ingitdb/materializer"
 )
 
 func viewBuilderForCollection(colDef *ingitdb.CollectionDef) (materializer.ViewBuilder, error) {

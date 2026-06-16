@@ -10,10 +10,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ingitdb/ingitdb-go"
-	"github.com/ingitdb/ingitdb-go/docsbuilder"
-	"github.com/ingitdb/ingitdb-go/gitrepo"
-	"github.com/ingitdb/ingitdb-go/materializer"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
+	"github.com/ingitdb/ingitdb-go/ingitdb/docsbuilder"
+	"github.com/ingitdb/ingitdb-go/ingitdb/gitrepo"
+	"github.com/ingitdb/ingitdb-go/ingitdb/materializer"
 )
 
 func materializeCommandRunE(

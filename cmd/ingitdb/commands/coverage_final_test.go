@@ -22,7 +22,7 @@ import (
 
 	"github.com/dal-go/dalgo/dal"
 	"github.com/ingitdb/dalgo2ingitdb4local"
-	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 
 // ============================================================

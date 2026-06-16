@@ -9,10 +9,10 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/ingitdb/ingitdb-go"
-	"github.com/ingitdb/ingitdb-go/datavalidator"
-	"github.com/ingitdb/ingitdb-go/docsbuilder"
-	"github.com/ingitdb/ingitdb-go/recordmerge"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
+	"github.com/ingitdb/ingitdb-go/ingitdb/datavalidator"
+	"github.com/ingitdb/ingitdb-go/ingitdb/docsbuilder"
+	"github.com/ingitdb/ingitdb-go/ingitdb/recordmerge"
 )
 
 // resolveRecordMergeConflicts attempts a record-aware three-way merge of each

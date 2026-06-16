@@ -12,7 +12,7 @@ import (
 
 	"github.com/ingitdb/dalgo2ingitdb4github"
 	"github.com/ingitdb/dalgo2ingitdb"
-	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 
 // resolveDBPath returns the database directory from --path or the working directory.

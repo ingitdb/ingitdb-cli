@@ -11,7 +11,7 @@ import (
 
 	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/commands/sqlflags"
 	"github.com/ingitdb/dalgo2ingitdb"
-	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 
 // patchTarget pairs a record key with its data map, used as the unit

@@ -6,8 +6,8 @@ import (
 	"github.com/dal-go/dalgo/dal"
 
 	"github.com/ingitdb/dalgo2ingitdb4github"
-	"github.com/ingitdb/ingitdb-go"
-	"github.com/ingitdb/ingitdb-go/materializer"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
+	"github.com/ingitdb/ingitdb-go/ingitdb/materializer"
 )
 
 // GitHubDBFactory creates a GitHub-backed DAL database.

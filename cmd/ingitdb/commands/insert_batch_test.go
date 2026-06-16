@@ -11,7 +11,7 @@ import (
 	"github.com/ingr-io/ingr-go/ingr"
 
 	"github.com/ingitdb/dalgo2ingitdb4local"
-	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 
 func TestInsertBatch_RejectsMapOfRecordsCollection(t *testing.T) {

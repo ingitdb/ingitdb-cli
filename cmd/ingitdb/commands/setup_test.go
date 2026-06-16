@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ingitdb/ingitdb-go"
-	"github.com/ingitdb/ingitdb-go/config"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
+	"github.com/ingitdb/ingitdb-go/ingitdb/config"
 )
 
 func TestSetup_WritesEmptySettingsYAML(t *testing.T) {

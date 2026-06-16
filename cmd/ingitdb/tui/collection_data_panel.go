@@ -9,7 +9,7 @@ import (
 	"github.com/rivo/uniseg"
 
 	"github.com/ingitdb/dalgo2ingitdb"
-	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 
 // computedCellError is the bounded indicator rendered in place of a painted

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ingitdb/ingitdb-go"
-	"github.com/ingitdb/ingitdb-go/datavalidator"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
+	"github.com/ingitdb/ingitdb-go/ingitdb/datavalidator"
 )
 
 type mockDataValidator struct {

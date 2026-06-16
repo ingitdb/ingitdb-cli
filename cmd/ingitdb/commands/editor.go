@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 
 // isFdTTY reports whether f's file descriptor is a terminal.

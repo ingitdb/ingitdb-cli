@@ -13,7 +13,7 @@ import (
 
 	"github.com/ingitdb/dalgo2ingitdb4local"
 	"github.com/ingitdb/dalgo2ingitdb4github"
-	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 
 // seedRecord writes a YAML file at <collection.DirPath>/$records/<key>.yaml.

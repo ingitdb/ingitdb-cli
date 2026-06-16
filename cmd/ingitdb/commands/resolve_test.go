@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 
 var errReadDef = errors.New("readDefinition failed")

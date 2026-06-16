@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ingitdb/ingitdb-go"
+	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 
 // colDefWithOrder builds a CollectionDef whose Columns map contains exactly
