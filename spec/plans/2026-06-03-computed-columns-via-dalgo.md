@@ -1,6 +1,6 @@
 # Plan: Computed Columns via dalgo (lazy delegation)
 
-**Status:** Completed
+**Status:** Implemented
 **Source Feature:** computed-columns-via-dalgo
 **Date:** 2026-06-03
 **Owner:** alex
