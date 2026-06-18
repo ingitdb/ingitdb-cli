@@ -1,6 +1,6 @@
 # Plan: TUI lazy computed-cell evaluation
 
-**Status:** Completed
+**Status:** Implemented
 **Source Feature:** tui-lazy-computed-cells
 **Date:** 2026-06-03
 **Owner:** alex

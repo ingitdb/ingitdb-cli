@@ -1,6 +1,6 @@
 # Plan: Computed Columns (Inline Starlark Formulas)
 
-**Status:** Completed
+**Status:** Implemented
 **Source Feature:** computed-columns
 **Date:** 2026-06-02
 **Owner:** alexander.trakhimenok@gmail.com
