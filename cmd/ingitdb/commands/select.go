@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/datatug/cliformat"
 	"github.com/dal-go/dalgo/dal"
 	"github.com/dal-go/dalgo/recordset"
 	"github.com/spf13/cobra"
@@ -49,7 +50,7 @@ func Select(
 			if parseErr != nil {
 				return parseErr
 			}
-			format, _ := cmd.Flags().GetString("format")
+			format := cliformat.GetFormat(cmd)
 			format = strings.ToLower(format)
 
 			switch mode {
@@ -69,7 +70,7 @@ func Select(
 	sqlflags.RegisterFieldsFlag(cmd)
 	sqlflags.RegisterMinAffectedFlag(cmd)
 	cmd.Flags().Int("limit", 0, "maximum number of records to return (0 = no limit; set mode only)")
-	addFormatFlag(cmd, "")
+	cliformat.AddFlag(cmd, "")
 	return cmd
 }
 

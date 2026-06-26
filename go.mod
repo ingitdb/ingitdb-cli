@@ -1,12 +1,13 @@
 module github.com/ingitdb/ingitdb-cli
 
-go 1.26.0
+go 1.26.4
 
 require (
 	charm.land/bubbletea/v2 v2.0.7
 	charm.land/fang/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.4
 	github.com/charmbracelet/x/term v0.2.2
+	github.com/datatug/cliformat v0.0.1
 	github.com/ingr-io/ingr-go v0.0.2
 	github.com/pelletier/go-toml/v2 v2.4.2
 	github.com/rivo/uniseg v0.4.7
