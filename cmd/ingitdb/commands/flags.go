@@ -24,12 +24,6 @@ func addRemoteFlags(cmd *cobra.Command) {
 		"explicit provider id (github, gitlab, bitbucket) — required for unknown hosts")
 }
 
-// addFormatFlag adds --format flag with a caller-specified default.
-// Used by: query (default "csv"), read record (default "yaml"), watch, migrate.
-func addFormatFlag(cmd *cobra.Command, defaultValue string) {
-	cmd.Flags().String("format", defaultValue, "output format")
-}
-
 // addMaterializeFlags adds the flags shared by the ci command.
 func addMaterializeFlags(cmd *cobra.Command) {
 	addPathFlag(cmd)
