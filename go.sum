@@ -33,6 +33,8 @@ github.com/clipperhouse/uax29/v2 v2.7.0/go.mod h1:EFJ2TJMRUaplDxHKj1qAEhCtQPW2tJ
 github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6NIQQ7OS05n1F4g=
 github.com/dal-go/dalgo v0.62.7 h1:JF6v9I1VRq1DgkK+aElHk7gZkcMSSMRHv6M/DIyv26c=
 github.com/dal-go/dalgo v0.62.7/go.mod h1:NV0VJ+TQ6MXkz7uDPl5N3i7o/DWQBTftN5+HxGa3xQg=
+github.com/dal-go/dalgo v0.62.8 h1:Lo/4iULNQ/ttvyszkAhX4TWWTlGDvGNJkPuXUKcoSb4=
+github.com/dal-go/dalgo v0.62.8/go.mod h1:NV0VJ+TQ6MXkz7uDPl5N3i7o/DWQBTftN5+HxGa3xQg=
 github.com/datatug/cliformat v0.0.1 h1:bsMjxOnU4y7JKiP7FSkBieuLx8Au9VMA1oz3Vpbgoi4=
 github.com/datatug/cliformat v0.0.1/go.mod h1:v5dCd13RU1PE9IQSEoeOHIfQ4130PQTmQ4zgk7bfYgw=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
