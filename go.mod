@@ -47,7 +47,7 @@ require (
 require (
 	github.com/RoaringBitmap/roaring/v2 v2.19.0 // indirect
 	github.com/bits-and-blooms/bitset v1.24.4 // indirect
-	github.com/dal-go/dalgo v0.62.10
+	github.com/dal-go/dalgo v0.62.12
 	github.com/ingitdb/dalgo2ingitdb v0.2.1
 	github.com/ingitdb/dalgo2ingitdb4github v0.2.1
 	github.com/ingitdb/dalgo2ingitdb4local v0.0.3
