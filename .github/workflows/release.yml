@@ -109,10 +109,47 @@ jobs:
           CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
           INGITDB_GORELEASER_GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
 
+  # Publishes unsigned macOS binaries as release assets. Separate from
+  # publish-homebrew on purpose: that job failing (as it did for v0.40.1) must
+  # no longer mean macOS ships nothing. Pure-Go + CGO_ENABLED=0 cross-compiles
+  # darwin on the Linux runner, so no macOS runner or Apple secrets are needed.
+  build-macos:
+    name: Build macOS binaries
+    needs:
+      - build-linux
+    if: "!failure() && !cancelled()"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all tags
+        run: git fetch --tags --force
+
+      - name: Check out release tag
+        shell: bash
+        run: git checkout --quiet "${{ needs.build-linux.outputs.tag }}"
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.5"
+
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          version: v2
+          args: release --clean --config .github/goreleaser-macos.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.INGITDB_GORELEASER_GITHUB_TOKEN }}
+
   # See docs/release/homebrew.md for setup instructions
   publish-homebrew:
     name: Publish to Homebrew
     needs:
+      - build-macos
       - build-linux
     if: "!failure() && !cancelled()"
     runs-on: macos-latest

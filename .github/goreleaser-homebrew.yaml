@@ -48,7 +48,12 @@ release:
   github:
     owner: ingitdb
     name: ingitdb-cli
-  mode: keep-existing
+  # The build-macos job owns the darwin release assets now; this job only
+  # publishes the Homebrew cask, so it must not re-upload the same-named
+  # archives (goreleaser errors on a duplicate asset). Disabling the release
+  # step leaves the cask's download URL pointing at the assets build-macos
+  # uploaded.
+  disable: true
 
 homebrew_casks:
   - name: ingitdb
