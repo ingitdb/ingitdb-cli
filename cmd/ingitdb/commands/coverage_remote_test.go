@@ -27,8 +27,8 @@ import (
 	"github.com/dal-go/dalgo/dal"
 	"go.uber.org/mock/gomock"
 
-	"github.com/ingitdb/dalgo2ingitdb4local"
 	"github.com/ingitdb/dalgo2ingitdb4github"
+	"github.com/ingitdb/dalgo2ingitdb4local"
 	"github.com/ingitdb/ingitdb-go/ingitdb"
 	"github.com/spf13/cobra"
 )

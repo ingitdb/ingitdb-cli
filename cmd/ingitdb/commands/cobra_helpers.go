@@ -10,8 +10,8 @@ import (
 	"github.com/dal-go/dalgo/dal"
 	"github.com/spf13/cobra"
 
-	"github.com/ingitdb/dalgo2ingitdb4github"
 	"github.com/ingitdb/dalgo2ingitdb"
+	"github.com/ingitdb/dalgo2ingitdb4github"
 	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 

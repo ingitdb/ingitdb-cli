@@ -11,9 +11,9 @@ import (
 	"github.com/dal-go/dalgo/dal"
 	"github.com/spf13/cobra"
 
+	"github.com/ingitdb/dalgo2ingitdb4local"
 	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/commands"
 	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/tui"
-	"github.com/ingitdb/dalgo2ingitdb4local"
 	"github.com/ingitdb/ingitdb-go/ingitdb"
 	"github.com/ingitdb/ingitdb-go/ingitdb/datavalidator"
 	"github.com/ingitdb/ingitdb-go/ingitdb/gitdiff"

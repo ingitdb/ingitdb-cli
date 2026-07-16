@@ -11,8 +11,8 @@ import (
 	"github.com/dal-go/dalgo/dal"
 	"gopkg.in/yaml.v3"
 
-	"github.com/ingitdb/dalgo2ingitdb4local"
 	"github.com/ingitdb/dalgo2ingitdb4github"
+	"github.com/ingitdb/dalgo2ingitdb4local"
 	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 

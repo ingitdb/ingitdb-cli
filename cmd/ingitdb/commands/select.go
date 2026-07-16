@@ -9,13 +9,13 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/datatug/cliformat"
 	"github.com/dal-go/dalgo/dal"
 	"github.com/dal-go/dalgo/recordset"
+	"github.com/datatug/cliformat"
 	"github.com/spf13/cobra"
 
-	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/commands/sqlflags"
 	"github.com/ingitdb/dalgo2ingitdb"
+	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/commands/sqlflags"
 	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 
