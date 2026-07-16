@@ -210,7 +210,7 @@ func TestLazy_ComputedWidthFromDeclaredLength(t *testing.T) {
 		ID: "items",
 		Columns: map[string]*ingitdb.ColumnDef{
 			"x":     {Type: ingitdb.ColumnTypeString},
-			"label": {Type: ingitdb.ColumnTypeString, Formula: "x", Length: 12},
+			"label": {Type: ingitdb.ColumnTypeString, Formula: "x", Length: ptrInt(12)},
 		},
 		ColumnsOrder: []string{"x", "label"},
 	}
@@ -349,3 +349,7 @@ func TestLazy_OffViewportErrorNeverEvaluated(t *testing.T) {
 		t.Errorf("evaluator invoked %d times, want 3 (only the visible non-erroring rows; off-viewport erroring rows never evaluated)", calls)
 	}
 }
+
+// ptrInt returns a pointer to v. ColumnDef length fields are *int so a
+// declared zero is distinguishable from unset.
+func ptrInt(v int) *int { return &v }

@@ -274,8 +274,10 @@ func (m collectionModel) computeColWidths() []int {
 		widths[i] = uniseg.StringWidth(c)
 		if col := m.displayColDef(c); col != nil && col.Formula != "" {
 			computed[i] = true
-			if col.Length > widths[i] {
-				widths[i] = col.Length
+			// Length is *int since ingitdb-go made declared-zero distinguishable
+			// from unset; an undeclared length simply contributes no width hint.
+			if col.Length != nil && *col.Length > widths[i] {
+				widths[i] = *col.Length
 			}
 		}
 	}

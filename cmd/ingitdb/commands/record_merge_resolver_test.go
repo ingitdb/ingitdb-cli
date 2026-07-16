@@ -67,7 +67,15 @@ func mapColDef(dir, relPath string) *ingitdb.Definition {
 					Format:     ingitdb.RecordFormatYAML,
 					RecordType: ingitdb.MapOfRecords,
 				},
-				Columns: map[string]*ingitdb.ColumnDef{"v": {Type: ingitdb.ColumnTypeString}},
+				// name and email match the records these tests merge; declaring
+				// only "v" left every record with two undeclared fields, which is
+				// now a validation error (ingitdb-go reject-undeclared-record-fields)
+				// and gated the merge.
+				Columns: map[string]*ingitdb.ColumnDef{
+					"v":     {Type: ingitdb.ColumnTypeString},
+					"name":  {Type: ingitdb.ColumnTypeString},
+					"email": {Type: ingitdb.ColumnTypeString},
+				},
 			},
 		},
 	}
@@ -148,6 +156,10 @@ func TestResolveRecordMergeConflicts_CSVListEndToEnd(t *testing.T) {
 				ID:           "c",
 				DirPath:      colDir,
 				ColumnsOrder: []string{"$id", "v"},
+				// "v" must be declared or every record carries an undeclared
+				// field (ingitdb-go reject-undeclared-record-fields); $id is
+				// library-reserved and exempt.
+				Columns: map[string]*ingitdb.ColumnDef{"v": {Type: ingitdb.ColumnTypeString}},
 				RecordFile: &ingitdb.RecordFileDef{
 					Name: "data.csv", Format: ingitdb.RecordFormatCSV, RecordType: ingitdb.ListOfRecords,
 				},
@@ -526,6 +538,10 @@ func TestResolveRecordMergeConflicts_YAMLListEndToEnd(t *testing.T) {
 				ID:           "c",
 				DirPath:      colDir,
 				ColumnsOrder: []string{"$id", "v"},
+				// "v" must be declared or every record carries an undeclared
+				// field (ingitdb-go reject-undeclared-record-fields); $id is
+				// library-reserved and exempt.
+				Columns: map[string]*ingitdb.ColumnDef{"v": {Type: ingitdb.ColumnTypeString}},
 				RecordFile: &ingitdb.RecordFileDef{
 					Name: "data.yaml", Format: ingitdb.RecordFormatYAML, RecordType: ingitdb.ListOfRecords,
 				},
