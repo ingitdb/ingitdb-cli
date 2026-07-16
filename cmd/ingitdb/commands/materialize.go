@@ -83,6 +83,12 @@ func materializeCommandRunE(
 		}
 
 		logf(materializeSummary(&totalResult))
+		if len(totalResult.Errors) > 0 {
+			for _, e := range totalResult.Errors {
+				logf(fmt.Sprintf("error: %v", e))
+			}
+			return fmt.Errorf("%d view error(s)", len(totalResult.Errors))
+		}
 		return nil
 	}
 }

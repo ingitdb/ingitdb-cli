@@ -82,6 +82,8 @@ github.com/ingitdb/dalgo2ingitdb4local v0.0.3 h1:pnf+lzshNWoC1wd6bVGfeASiaaNIlaN
 github.com/ingitdb/dalgo2ingitdb4local v0.0.3/go.mod h1:CjXvDiWSBWdWZCc8D5XGJK9imTzKQGnxX3NMqbdy2l0=
 github.com/ingitdb/ingitdb-go/ingitdb v0.0.1 h1:ka6xS7h6zXUnJ5vapyg/3mz8VI3V/ExPGeVTctTyjaQ=
 github.com/ingitdb/ingitdb-go/ingitdb v0.0.1/go.mod h1:lPelTuuWeIZzQ9EO2ZhK7JjYz8u3WdkqwaQ3maBKwg0=
+github.com/ingitdb/ingitdb-go/ingitdb v0.0.2 h1:oKLk5ByAjdUGTwwjfnG+h4FnZclabk0Vz+QfBMa6/Q8=
+github.com/ingitdb/ingitdb-go/ingitdb v0.0.2/go.mod h1:Gs7q7s5Q961W2Xvd5szq6qLPpLul762gs+P6GslE+eU=
 github.com/ingr-io/ingr-go v0.0.2 h1:2AfFllqzCe2dCNtxIUo306oYzaZr//YzrVOHd0C73nI=
 github.com/ingr-io/ingr-go v0.0.2/go.mod h1:gb/dGW0qXziCq9iAIgk0yITyWY013w2bhdYiXO0RLuY=
 github.com/kr/pretty v0.3.1 h1:flRD4NNwYAUpkphVc1HcthR4KEIFJ65n8Mw5qdRn3LE=

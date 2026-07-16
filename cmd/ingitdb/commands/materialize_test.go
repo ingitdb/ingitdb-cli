@@ -396,3 +396,35 @@ func TestMaterialize_RecordsDelimiterFlagOverridesViewDef(t *testing.T) {
 		t.Error("expected def.RuntimeOverrides.RecordsDelimiter to be -1 when --records-delimiter=-1")
 	}
 }
+
+func TestMaterialize_ViewErrorsReported(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	def := &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"test.items": {
+				ID:      "test.items",
+				DirPath: dir,
+			},
+		},
+	}
+
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return def, nil
+	}
+	viewBuilder := &mockViewBuilder{
+		result: &ingitdb.MaterializeResult{
+			Errors: []error{fmt.Errorf("view failed")},
+		},
+	}
+	logf := func(...any) {}
+
+	cmd := Materialize(homeDir, getWd, readDef, viewBuilder, logf)
+	err := runCobraCommand(cmd, "--path="+dir)
+	if err == nil {
+		t.Fatal("expected non-nil error when MaterializeResult.Errors is non-empty")
+	}
+}
