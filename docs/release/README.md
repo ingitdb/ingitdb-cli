@@ -13,7 +13,7 @@ Each package manager has its own setup guide:
 
 ### macOS Package Managers
 
-- **[Homebrew](./homebrew.md)** - Published via the macOS build job (signed + notarized)
+- **[Homebrew](./homebrew.md)** - Cask published from the shared `core` job (currently unsigned; notarization is a deferred follow-up)
 
 ### Windows Package Managers
 
@@ -83,14 +83,17 @@ Each package manager has its own setup guide:
 Before making a real release, test the configs without uploading:
 
 ```bash
-# Test linux-releaser config
-goreleaser release --clean --config .github/goreleaser-linux.yaml --skip=upload
+# Validate every config's structure
+goreleaser check --config .goreleaser.yaml
+goreleaser check --config .github/goreleaser-chocolatey.yaml
+goreleaser check --config .github/goreleaser-snap.yaml
 
-# Test publish-homebrew config
-goreleaser release --clean --config .github/goreleaser-homebrew.yaml --skip=upload
+# Dry-run the main config: cross-compiles every OS, builds archives, and
+# renders the AUR/Homebrew/Scoop/WinGet outputs (publishing skipped)
+goreleaser release --snapshot --clean --skip=publish
 
-# Test Windows publishers (Chocolatey, WinGet, Scoop)
-goreleaser release --clean --config .github/goreleaser-windows.yaml --skip=upload
+# Dry-run the Chocolatey config (run on Windows, where `choco` exists)
+goreleaser release --snapshot --clean --config .github/goreleaser-chocolatey.yaml --skip=publish
 ```
 
 ### Real Release
@@ -106,7 +109,7 @@ Once everything is verified:
 
 2. Watch the release workflow:
    - Go to **Actions** → **Release**
-   - All jobs should run: `build-linux`, `build-windows`, `publish-homebrew`, `publish-aur`, `publish-snap`
+   - All jobs should run: `core` (build + release + AUR + Homebrew + Scoop + WinGet), `chocolatey`, `snap`
    - Check logs for successful package publishes
 
 3. Verify packages appear:
