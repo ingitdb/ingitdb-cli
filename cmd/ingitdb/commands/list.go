@@ -72,7 +72,7 @@ func List(
 		Use:   "list",
 		Short: "List database objects (collections or views)",
 	}
-	cmd.AddCommand(collections(homeDir, getWd, readDefinition), listViews())
+	cmd.AddCommand(collections(homeDir, getWd, readDefinition), listViews(homeDir, getWd, readDefinition))
 	return cmd
 }
 
@@ -185,16 +185,79 @@ func listCollectionsRemoteWithSpec(ctx context.Context, spec remoteSpec, token, 
 
 // listViews is named with the parent prefix because "view" also appears as a
 // subcommand of drop.
-func listViews() *cobra.Command {
+func listViews(
+	homeDir func() (string, error),
+	getWd func() (string, error),
+	readDefinition func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error),
+) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "views",
 		Short: "List views in the database",
-		RunE: func(_ *cobra.Command, _ []string) error {
-			return fmt.Errorf("not yet implemented")
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			dirPath, resolveErr := resolveDBPath(cmd, homeDir, getWd)
+			if resolveErr != nil {
+				return resolveErr
+			}
+			def, readErr := readDefinition(dirPath)
+			if readErr != nil {
+				return fmt.Errorf("failed to read database definition: %w", readErr)
+			}
+			inExpr, _ := cmd.Flags().GetString("in")
+			nameGlob, _ := cmd.Flags().GetString("filter-name")
+			ids, filterErr := filterViewIDs(def, inExpr, nameGlob)
+			if filterErr != nil {
+				return filterErr
+			}
+			for _, id := range ids {
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), id)
+			}
+			return nil
 		},
 	}
 	addPathFlag(cmd)
 	cmd.Flags().String("in", "", "regular expression for the starting-point path")
 	cmd.Flags().String("filter-name", "", "pattern to filter view names (e.g. *substr*)")
 	return cmd
+}
+
+// filterViewIDs walks every collection (top-level and nested subcollections),
+// collecting each declared view as a qualified "collectionID/viewName"
+// identifier. inExpr is a regular expression matched against the owning
+// collection's starting-point path (the --in flag); nameGlob is a glob matched
+// against the bare view name (the --filter-name flag). An empty inExpr or
+// nameGlob disables that filter; both combine with AND. The result is sorted
+// ascending.
+func filterViewIDs(def *ingitdb.Definition, inExpr, nameGlob string) ([]string, error) {
+	var inRE *regexp.Regexp
+	if inExpr != "" {
+		re, err := regexp.Compile(inExpr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid --in regular expression %q: %w", inExpr, err)
+		}
+		inRE = re
+	}
+	if nameGlob != "" {
+		// path.Match only errors on a malformed pattern, independent of input,
+		// so validate it once up front and ignore the error at match time.
+		if _, err := path.Match(nameGlob, ""); err != nil {
+			return nil, fmt.Errorf("invalid --filter-name pattern %q: %w", nameGlob, err)
+		}
+	}
+	var ids []string
+	for _, col := range eachCollection(def.Collections) {
+		if inRE != nil && !inRE.MatchString(col.DirPath) {
+			continue
+		}
+		for _, viewName := range sortedViewNames(col.Views) {
+			if nameGlob != "" {
+				matched, _ := path.Match(nameGlob, viewName)
+				if !matched {
+					continue
+				}
+			}
+			ids = append(ids, col.ID+"/"+viewName)
+		}
+	}
+	sort.Strings(ids)
+	return ids, nil
 }

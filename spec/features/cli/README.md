@@ -37,6 +37,7 @@ CLI surface; keep those skills in sync when a command's flags or behavior change
 | [delete](delete/README.md) | Implementing | `ingitdb delete` |
 | [drop](drop/README.md) | Implementing | `ingitdb drop` |
 | [list-collections](list-collections/README.md) | Implementing | `ingitdb list collections` |
+| [list-views](list-views/README.md) | Implementing | `ingitdb list views` |
 | [rebase](rebase/README.md) | Implementing | `ingitdb rebase` |
 | [materialize](materialize/README.md) | Draft | `ingitdb materialize` |
 | [diff](diff/README.md) | Draft | `ingitdb diff` |
