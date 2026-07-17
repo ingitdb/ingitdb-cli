@@ -1,10 +1,16 @@
 name: Release
 
-# Release is triggered by pushing a vX.Y.Z tag. The tag fixes the version
-# (ingitdb is past v1, so we never want an automatic major bump from a `feat!:`
-# commit) — pushing the tag IS the explicit, human-gated release action:
+# Continuous delivery: every merge to `main` runs the shared strongo/cicd
+# release workflow, which bumps the version from conventional commits and
+# releases it — all in one run (the release uses the tag it just cut, so there
+# is no GITHUB_TOKEN cross-workflow trigger problem). Pushing an explicit
+# `vX.Y.Z` tag also works and releases that exact version (the shared workflow
+# skips the bump on a tag ref). A docs/chore-only merge cuts no tag and
+# publishes nothing.
 #
-#   git tag v1.32.0 && git push origin v1.32.0
+# ingitdb is pre-1.0: allow_major_version_bump stays false, so a stray `feat!:`
+# is CAPPED to a minor bump (v0.64.2 -> v0.65.0) instead of jumping to v1 — the
+# guard added in strongo/cicd. Cut v1.0.0 deliberately by pushing that tag.
 #
 # Job graph:
 #   core       — strongo/cicd shared workflow: builds every OS + archives +
@@ -16,14 +22,19 @@ name: Release
 # The core job's GoReleaser uploads the release (all binaries, incl. the
 # unsigned macOS ones) BEFORE running its publishers, so a publisher failure
 # never blocks the binaries from shipping — which is why the old dedicated
-# build-macos job is no longer needed.
+# build-macos job is no longer needed. chocolatey/snap run only when core
+# actually cut a tag this run (needs.core.outputs.tag), so a no-op merge does
+# not try to publish an untagged commit.
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
+  workflow_dispatch:
 
-# One release at a time; a second tag push queues instead of racing the first.
+# One release at a time; a second push queues instead of racing the first.
 concurrency:
   group: release
   cancel-in-progress: false
@@ -40,6 +51,9 @@ jobs:
       contents: write
     with:
       go_version: '1.26.5'
+      # Pre-1.0: cap an accidental major (feat!:) to a minor bump. Cut v1.0.0
+      # only by pushing that tag explicitly.
+      allow_major_version_bump: false
     secrets:
       # Cross-repo PAT for the Homebrew tap + Scoop bucket (the default
       # GITHUB_TOKEN can't push to those repos).
@@ -55,7 +69,7 @@ jobs:
   chocolatey:
     name: Publish Chocolatey (Windows)
     needs: core
-    if: ${{ !failure() && !cancelled() }}
+    if: ${{ !failure() && !cancelled() && (needs.core.outputs.tag != '' || github.ref_type == 'tag') }}
     runs-on: windows-latest
     permissions:
       contents: read
@@ -87,7 +101,7 @@ jobs:
   snap:
     name: Publish Snapcraft
     needs: core
-    if: ${{ !failure() && !cancelled() }}
+    if: ${{ !failure() && !cancelled() && (needs.core.outputs.tag != '' || github.ref_type == 'tag') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
