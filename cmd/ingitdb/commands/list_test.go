@@ -184,19 +184,164 @@ func TestListCollectionsLocal_ResolvePathError(t *testing.T) {
 	}
 }
 
-func TestListViews_NotYetImplemented(t *testing.T) {
+// viewsFixtureDef builds a definition with views spread across two top-level
+// collections and one nested subcollection, so tests can exercise the qualified
+// "collectionID/viewName" output and the scoping flags.
+func viewsFixtureDef(dir string) *ingitdb.Definition {
+	return &ingitdb.Definition{
+		Collections: map[string]*ingitdb.CollectionDef{
+			"todo.tasks": {
+				ID:      "todo.tasks",
+				DirPath: dir + "/todo/tasks",
+				Views: map[string]*ingitdb.ViewDef{
+					"by_status": {ID: "by_status"},
+					"by_owner":  {ID: "by_owner"},
+				},
+				SubCollections: map[string]*ingitdb.CollectionDef{
+					"todo.tasks.comments": {
+						ID:      "todo.tasks.comments",
+						DirPath: dir + "/todo/tasks/comments",
+						Views: map[string]*ingitdb.ViewDef{
+							"recent": {ID: "recent"},
+						},
+					},
+				},
+			},
+			"countries": {
+				ID:      "countries",
+				DirPath: dir + "/countries",
+				Views: map[string]*ingitdb.ViewDef{
+					"by_region": {ID: "by_region"},
+				},
+			},
+		},
+	}
+}
+
+func runListViews(t *testing.T, dir string, args ...string) []string {
+	t.Helper()
+	def := viewsFixtureDef(dir)
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return def, nil
+	}
+	cmd := List(homeDir, getWd, readDef)
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+	cmd.SetArgs(append([]string{"views", "--path=" + dir}, args...))
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("list views %v: %v", args, err)
+	}
+	return strings.Fields(buf.String())
+}
+
+func TestListViews_Success(t *testing.T) {
 	t.Parallel()
 
-	homeDir := func() (string, error) { return "/tmp/home", nil }
-	getWd := func() (string, error) { return "/tmp/db", nil }
-	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
-		return &ingitdb.Definition{}, nil
+	dir := t.TempDir()
+	got := runListViews(t, dir)
+	// Sorted, qualified by owning collection, and recursing into subcollections.
+	want := []string{
+		"countries/by_region",
+		"todo.tasks.comments/recent",
+		"todo.tasks/by_owner",
+		"todo.tasks/by_status",
+	}
+	if len(got) != len(want) {
+		t.Fatalf("views output = %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("views output = %v, want %v", got, want)
+			break
+		}
+	}
+}
+
+func TestListViews_ScopingFlags(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+
+	// --filter-name globs the bare view name across all collections.
+	byName := runListViews(t, dir, "--filter-name=by_*")
+	wantByName := []string{"countries/by_region", "todo.tasks/by_owner", "todo.tasks/by_status"}
+	if strings.Join(byName, ",") != strings.Join(wantByName, ",") {
+		t.Errorf("--filter-name output = %v, want %v", byName, wantByName)
 	}
 
+	// --in is a regex on the owning collection's path.
+	byPath := runListViews(t, dir, "--in=/todo/tasks$")
+	wantByPath := []string{"todo.tasks/by_owner", "todo.tasks/by_status"}
+	if strings.Join(byPath, ",") != strings.Join(wantByPath, ",") {
+		t.Errorf("--in output = %v, want %v", byPath, wantByPath)
+	}
+}
+
+func TestListViews_ReadDefError(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return nil, fmt.Errorf("read error")
+	}
 	cmd := List(homeDir, getWd, readDef)
-	err := runCobraCommand(cmd, "views")
-	if err == nil {
-		t.Fatal("expected error for not-yet-implemented command")
+	if err := runCobraCommand(cmd, "views", "--path="+dir); err == nil {
+		t.Fatal("expected error when readDefinition fails")
+	}
+}
+
+func TestFilterViewIDs(t *testing.T) {
+	t.Parallel()
+
+	dir := "/db"
+	def := viewsFixtureDef(dir)
+
+	tests := []struct {
+		name     string
+		inExpr   string
+		nameGlob string
+		want     []string
+		wantErr  bool
+	}{
+		{name: "no filters returns all sorted", want: []string{
+			"countries/by_region", "todo.tasks.comments/recent", "todo.tasks/by_owner", "todo.tasks/by_status",
+		}},
+		{name: "filter-name glob on bare view name", nameGlob: "by_*", want: []string{
+			"countries/by_region", "todo.tasks/by_owner", "todo.tasks/by_status",
+		}},
+		{name: "in regex on owning path", inExpr: "/todo/tasks$", want: []string{
+			"todo.tasks/by_owner", "todo.tasks/by_status",
+		}},
+		{name: "in and filter-name combine with AND", inExpr: "/todo/", nameGlob: "recent", want: []string{
+			"todo.tasks.comments/recent",
+		}},
+		{name: "no match yields empty", nameGlob: "nope*", want: nil},
+		{name: "invalid regex errors", inExpr: "[", wantErr: true},
+		{name: "invalid glob errors", nameGlob: "[", wantErr: true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := filterViewIDs(def, tc.inExpr, tc.nameGlob)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("expected error for in=%q name=%q", tc.inExpr, tc.nameGlob)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if strings.Join(got, ",") != strings.Join(tc.want, ",") {
+				t.Errorf("got %v, want %v", got, tc.want)
+			}
+		})
 	}
 }
 

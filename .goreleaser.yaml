@@ -56,6 +56,39 @@ archives:
 checksum:
   name_template: checksums.txt
 
+# macOS signing + notarization — DORMANT BY DEFAULT, safe to ship as-is.
+#
+# `enabled` is gated on the MACOS_SIGN_P12 env var, which the shared
+# strongo/cicd release.yml does NOT currently forward. With the var unset the
+# whole block is skipped: GoReleaser ships the same unsigned darwin binaries it
+# ships today, so this can never break a release. GoReleaser's notarize is
+# implemented in pure Go (quill), so when enabled it runs on the existing Linux
+# `core` job — no macOS runner needed.
+#
+# To ENABLE signed + notarized macOS releases, two steps are required:
+#   1. Verify the Apple credentials are still valid. The PRIOR publish-homebrew
+#      job FAILED, so MACOS_SIGN_P12 / MACOS_SIGN_PASSWORD (an Apple Developer ID
+#      Application cert) and NOTARIZE_ISSUER_ID / NOTARIZE_KEY_ID / NOTARIZE_KEY
+#      (an App Store Connect API key) may be stale and must be re-checked before
+#      trusting a release to them.
+#   2. Forward those five secrets into the GoReleaser env of strongo/cicd's
+#      reusable release.yml `core` job (they are declared here but only take
+#      effect once the shared workflow passes them through). Once MACOS_SIGN_P12
+#      is set, this block activates automatically.
+notarize:
+  macos:
+    - enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'
+      ids: [ingitdb]
+      sign:
+        certificate: "{{ .Env.MACOS_SIGN_P12 }}"
+        password: "{{ .Env.MACOS_SIGN_PASSWORD }}"
+      notarize:
+        wait: true
+        issuer_id: "{{ .Env.NOTARIZE_ISSUER_ID }}"
+        key_id: "{{ .Env.NOTARIZE_KEY_ID }}"
+        key: "{{ .Env.NOTARIZE_KEY }}"
+        timeout: 20m
+
 release:
   github:
     owner: ingitdb
@@ -81,12 +114,11 @@ aurs:
 # release.yml as $GORELEASER_GITHUB_TOKEN (the default GITHUB_TOKEN can't push
 # to a different repo).
 #
-# NOTE: notarization is intentionally NOT wired here. The prior publish-homebrew
-# job notarized an archive that was then discarded (its release step was
-# disabled) while the shipped cask pointed at the *unsigned* build-macos assets —
-# so releases were already unsigned. This config ships the same unsigned darwin
-# binaries. Signed/notarized releases would need a dedicated follow-up (a
-# `notarize` block + forwarding MACOS_SIGN_*/NOTARIZE_* secrets).
+# NOTE: the cask currently points at UNSIGNED darwin binaries. A dormant
+# `notarize:` block (see above, gated on MACOS_SIGN_P12) is wired but skipped
+# until the Apple credentials are verified and the shared release.yml forwards
+# the signing secrets; once active it signs the same binaries this cask ships,
+# with no change needed here.
 homebrew_casks:
   - name: ingitdb
     ids: [archive]

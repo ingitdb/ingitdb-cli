@@ -19,6 +19,7 @@ This directory tracks the SpecScore feature specifications for the **ingitdb-cli
 | [cli/delete](cli/delete/README.md) | Implementing | `ingitdb delete` — delete records by ID or by `--from`/`--where`. |
 | [cli/drop](cli/drop/README.md) | Implementing | `ingitdb drop` — drop a collection or view. |
 | [cli/list-collections](cli/list-collections/README.md) | Implementing | `ingitdb list collections` — list collection IDs. |
+| [cli/list-views](cli/list-views/README.md) | Implementing | `ingitdb list views` — list views as `collectionID/viewName`. |
 | [cli/rebase](cli/rebase/README.md) | Implementing | `ingitdb rebase` — rebase with auto-resolution of generated-file conflicts. |
 | [cli/read-record](cli/read-record/README.md) | Superseded by [cli/select](cli/select/README.md) | `ingitdb read record` (removed). |
 | [cli/create-record](cli/create-record/README.md) | Superseded by [cli/insert](cli/insert/README.md) | `ingitdb create record` (removed). |
@@ -75,6 +76,9 @@ Drops schema objects: `drop collection <name>` and `drop view <name>`. Removes b
 
 ### cli/list-collections
 Lists collection IDs from a local DB or a GitHub repository, with optional `--in` regex scoping and `--filter-name` glob filtering.
+
+### cli/list-views
+Lists views across all collections (recursing into subcollections) as sorted `collectionID/viewName` identifiers, with optional `--in` regex scoping (on the owning collection path) and `--filter-name` glob filtering (on the bare view name).
 
 ### cli/rebase
 Runs `git rebase` on top of a base ref and auto-resolves conflicts in generated files (collection `README.md`, materialized views, indexes) when the user opts in via `--resolve`.
