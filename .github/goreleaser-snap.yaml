@@ -1,3 +1,13 @@
+# Snapcraft publisher — runs in its OWN ubuntu job (see release.yml).
+#
+# Kept separate from the shared core job on purpose:
+#   1. It needs `snapcraft` installed (`sudo snap install snapcraft --classic`),
+#      which the shared release.yml does not provide.
+#   2. Isolation: a Snap Store outage / review hold fails ONLY this job, never
+#      the GitHub release or the other publishers.
+#
+# Builds its own Linux binaries and uploads only to the Snap Store;
+# `release.skip_upload: true` keeps it off the GitHub release the core job owns.
 version: 2
 
 project_name: ingitdb
@@ -10,9 +20,9 @@ builds:
   - id: ingitdb-snap-linux
     main: ./cmd/ingitdb
     binary: ingitdb
-    env: [ CGO_ENABLED=0 ]
-    goos: [ linux ]
-    goarch: [ amd64, arm64 ]
+    env: [CGO_ENABLED=0]
+    goos: [linux]
+    goarch: [amd64, arm64]
     ldflags:
       - -s -w
       - -X main.version={{.Version}}

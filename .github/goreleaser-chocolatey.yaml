@@ -1,3 +1,14 @@
+# Chocolatey publisher — runs in its OWN Windows job (see release.yml).
+#
+# Chocolatey cannot converge into the shared ubuntu release job: GoReleaser's
+# chocolatey pipe shells out to the `choco` CLI, which exists only on Windows
+# runners ("GoReleaser will not install chocolatey/choco for you").
+#
+# The shared core job (.goreleaser.yaml) already builds + uploads the Windows
+# zip and owns the GitHub release; this config only builds the artifact locally
+# (so `choco pack` has something to package) and pushes the .nupkg to
+# chocolatey.org. `release.disable: true` keeps it from touching the GitHub
+# release the core job created.
 version: 2
 
 project_name: ingitdb
@@ -28,37 +39,16 @@ archives:
     ids: [ingitdb-windows]
 
 checksum:
-  name_template: checksums-windows.txt
+  name_template: checksums-chocolatey.txt
 
 release:
   github:
     owner: ingitdb
     name: ingitdb-cli
-
-winget:
-  - name: ingitdb
-    publisher: ingitdb
-    publisher_url: https://ingitdb.com
-    package_identifier: ingitdb.ingitdb
-    license: MIT
-    homepage: https://ingitdb.com
-    short_description: "A CLI for a schema-validated, AI-native database backed by a Git repository."
-    url_template: "https://github.com/ingitdb/ingitdb-cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-    description: |
-      ingitdb is a developer-grade, schema-validated, AI-native database
-      whose storage engine is a Git repository. Records are YAML/JSON files,
-      collections and schemas are defined declaratively.
-    repository:
-      owner: ingitdb
-      name: winget-pkgs
-      branch: "{{.ProjectName}}-{{.Version}}"
-      token: "{{ .Env.WINGET_GITHUB_TOKEN }}"
-      pull_request:
-        enabled: true
-        base:
-          owner: microsoft
-          name: winget-pkgs
-          branch: master
+  # The shared core job owns the GitHub release + assets. This job only pushes
+  # the Chocolatey package (whose install script downloads the core-uploaded zip
+  # via url_template), so it must not create or upload to the release.
+  disable: true
 
 chocolateys:
   - name: ingitdb
@@ -83,17 +73,3 @@ chocolateys:
       whose storage engine is a Git repository. Records are YAML/JSON files,
       collections and schemas are defined declaratively.
     api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
-
-scoops:
-  - name: ingitdb
-    ids:
-      - zip
-    description: "A CLI for a schema-validated, AI-native database backed by a Git repository."
-    url_template: "https://github.com/ingitdb/ingitdb-cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-    homepage: https://ingitdb.com
-    license: MIT
-    repository:
-      owner: ingitdb
-      name: scoop-bucket
-      branch: main
-      token: "{{ .Env.INGITDB_GORELEASER_GITHUB_TOKEN }}"

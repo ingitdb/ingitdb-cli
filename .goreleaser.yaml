@@ -1,0 +1,142 @@
+# Consolidated GoReleaser config — every OS + every publisher that runs safely
+# on a single ubuntu job. Driven by strongo/cicd's reusable release.yml
+# (see .github/workflows/release.yml).
+#
+# GoReleaser uploads the GitHub release (all binaries) BEFORE running the
+# Homebrew/Scoop/WinGet/AUR publishers, so a publisher failure never prevents
+# the binaries (incl. the unsigned macOS ones) from shipping.
+#
+# Two publishers CANNOT run in this ubuntu job and live in their own configs +
+# jobs (see .github/workflows/release.yml):
+#   - Chocolatey  → .github/goreleaser-chocolatey.yaml  (needs `choco`, Windows-only)
+#   - Snapcraft   → .github/goreleaser-snap.yaml        (needs `snapcraft`, isolated so a
+#                                                        store outage can't fail the release)
+version: 2
+
+project_name: ingitdb
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: ingitdb
+    main: ./cmd/ingitdb
+    binary: ingitdb
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ignore:
+      # Windows on arm64 was never published; keep parity with the prior
+      # per-OS windows config (amd64 only).
+      - goos: windows
+        goarch: arm64
+    flags:
+      - -trimpath
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+
+archives:
+  - id: archive
+    ids: [ingitdb]
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    # Stable, OS/arch-templated name so install scripts and the Scoop/WinGet/
+    # Chocolatey url_templates resolve every platform the same way.
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - README.md
+      - LICENSE*
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  github:
+    owner: ingitdb
+    name: ingitdb-cli
+
+# Arch Linux (AUR). Runs on Linux. The SSH key is forwarded by release.yml as
+# $AUR_SSH_PRIVATE_KEY; GoReleaser accepts the key contents directly.
+aurs:
+  - name: ingitdb-bin
+    ids: [archive]
+    homepage: https://ingitdb.com
+    description: "ingitdb – a CLI for a developer-grade, schema-validated, AI-native database whose storage engine is a Git repository."
+    license: MIT
+    maintainers:
+      - "ingitdb <hello@ingitdb.com>"
+    git_url: "ssh://aur@aur.archlinux.org/ingitdb-bin.git"
+    private_key: "{{ .Env.AUR_SSH_PRIVATE_KEY }}"
+    package: |
+      install -Dm755 "./ingitdb" "${pkgdir}/usr/bin/ingitdb"
+
+# Homebrew cask (unsigned darwin binaries). Cask publishing is a plain git push
+# to ingitdb/homebrew-cli, which runs fine on Linux. Token forwarded by
+# release.yml as $GORELEASER_GITHUB_TOKEN (the default GITHUB_TOKEN can't push
+# to a different repo).
+#
+# NOTE: notarization is intentionally NOT wired here. The prior publish-homebrew
+# job notarized an archive that was then discarded (its release step was
+# disabled) while the shipped cask pointed at the *unsigned* build-macos assets —
+# so releases were already unsigned. This config ships the same unsigned darwin
+# binaries. Signed/notarized releases would need a dedicated follow-up (a
+# `notarize` block + forwarding MACOS_SIGN_*/NOTARIZE_* secrets).
+homebrew_casks:
+  - name: ingitdb
+    ids: [archive]
+    description: "ingitdb – a CLI for a developer-grade, schema-validated, AI-native database whose storage engine is a Git repository."
+    homepage: https://ingitdb.com
+    license: MIT
+    repository:
+      owner: ingitdb
+      name: homebrew-cli
+      token: "{{ .Env.GORELEASER_GITHUB_TOKEN }}"
+
+# Scoop (Windows). Manifest push to ingitdb/scoop-bucket — git only, runs on
+# Linux. Token forwarded by release.yml as $GORELEASER_GITHUB_TOKEN.
+scoops:
+  - name: ingitdb
+    ids: [archive]
+    description: "A CLI for a schema-validated, AI-native database backed by a Git repository."
+    url_template: "https://github.com/ingitdb/ingitdb-cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    homepage: https://ingitdb.com
+    license: MIT
+    repository:
+      owner: ingitdb
+      name: scoop-bucket
+      branch: main
+      token: "{{ .Env.GORELEASER_GITHUB_TOKEN }}"
+
+# WinGet. Generates manifests + opens a cross-fork PR to microsoft/winget-pkgs —
+# git/API only, runs on Linux. Uses a separate PAT ($WINGET_GITHUB_TOKEN, a
+# classic PAT with public_repo) forwarded by release.yml.
+winget:
+  - name: ingitdb
+    publisher: ingitdb
+    publisher_url: https://ingitdb.com
+    package_identifier: ingitdb.ingitdb
+    license: MIT
+    homepage: https://ingitdb.com
+    short_description: "A CLI for a schema-validated, AI-native database backed by a Git repository."
+    description: |
+      ingitdb is a developer-grade, schema-validated, AI-native database
+      whose storage engine is a Git repository. Records are YAML/JSON files,
+      collections and schemas are defined declaratively.
+    url_template: "https://github.com/ingitdb/ingitdb-cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    repository:
+      owner: ingitdb
+      name: winget-pkgs
+      branch: "{{.ProjectName}}-{{.Version}}"
+      token: "{{ .Env.WINGET_GITHUB_TOKEN }}"
+      pull_request:
+        enabled: true
+        base:
+          owner: microsoft
+          name: winget-pkgs
+          branch: master
