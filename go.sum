@@ -6,6 +6,8 @@ charm.land/lipgloss/v2 v2.0.5 h1:kbNxgeeUOYv5J0YdpxFjfvf3dFvqH8Aci4zB6xqFtrY=
 charm.land/lipgloss/v2 v2.0.5/go.mod h1:9oqhxt4yxIMe6q5A4kHr44DremZk7J9UNh74GlWa5nc=
 github.com/RoaringBitmap/roaring/v2 v2.19.0 h1:zsWtVE+biht4eVl0YDLvykUqGkftR3Qc5UCbeKB4UQ4=
 github.com/RoaringBitmap/roaring/v2 v2.19.0/go.mod h1:SfT3of9nYh3vis1dIbCj4Yw6KQGujTN+f345nrN/0JA=
+github.com/RoaringBitmap/roaring/v2 v2.21.0 h1:RKVgkD+c9ouyCydF2PW/mztDyZTsb7ksas/IofnguDg=
+github.com/RoaringBitmap/roaring/v2 v2.21.0/go.mod h1:SfT3of9nYh3vis1dIbCj4Yw6KQGujTN+f345nrN/0JA=
 github.com/aymanbagabas/go-udiff v0.4.1 h1:OEIrQ8maEeDBXQDoGCbbTTXYJMYRCRO1fnodZ12Gv5o=
 github.com/aymanbagabas/go-udiff v0.4.1/go.mod h1:0L9PGwj20lrtmEMeyw4WKJ/TMyDtvAoK9bf2u/mNo3w=
 github.com/bits-and-blooms/bitset v1.24.4 h1:95H15Og1clikBrKr/DuzMXkQzECs1M6hhoGXLwLQOZE=
@@ -33,6 +35,8 @@ github.com/clipperhouse/uax29/v2 v2.7.0/go.mod h1:EFJ2TJMRUaplDxHKj1qAEhCtQPW2tJ
 github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6NIQQ7OS05n1F4g=
 github.com/dal-go/dalgo v0.62.12 h1:3rpX6G5UBv2BEE1orBNrxRqHhWXi6gdo9N7Nc/mjzgw=
 github.com/dal-go/dalgo v0.62.12/go.mod h1:afkKVmM5Nc7LyJXYKup+5lJwAK+qIT0PDbUcsHpF0AQ=
+github.com/dal-go/dalgo v0.63.0 h1:oBjfDH27y/CYQ/yeH+gfjBXeMnPQXT4CATnz7tXfIUg=
+github.com/dal-go/dalgo v0.63.0/go.mod h1:D24Vcd8SLqunLf27hXRkrC5uM8kTPBga6JVKbBuW9Tw=
 github.com/datatug/cliformat v0.0.1 h1:bsMjxOnU4y7JKiP7FSkBieuLx8Au9VMA1oz3Vpbgoi4=
 github.com/datatug/cliformat v0.0.1/go.mod h1:v5dCd13RU1PE9IQSEoeOHIfQ4130PQTmQ4zgk7bfYgw=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
@@ -50,6 +54,8 @@ github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/ingitdb/dalgo2ingitdb v0.2.1 h1:cEwuW3OxpHv9lD5PxZMGKBRhTSzRqfjCndS9pA1+XX0=
 github.com/ingitdb/dalgo2ingitdb v0.2.1/go.mod h1:h4SIlDMHz+jt8nSRmm83HHewbAj/knAiHjmPFIbqJIM=
+github.com/ingitdb/dalgo2ingitdb v0.2.2 h1:KOexXRbQfbIS3eNkLPnKqK6eEYTAUkEVchfKBjWDyQ0=
+github.com/ingitdb/dalgo2ingitdb v0.2.2/go.mod h1:h4SIlDMHz+jt8nSRmm83HHewbAj/knAiHjmPFIbqJIM=
 github.com/ingitdb/dalgo2ingitdb4github v0.2.1 h1:km/5NmRQpWVSjc/94dFe4f62qF2z4hb42MQw+QYLD5A=
 github.com/ingitdb/dalgo2ingitdb4github v0.2.1/go.mod h1:xWO8PjukHH9Y6KhitxFmprttmx8zIcil30IysRkt/50=
 github.com/ingitdb/dalgo2ingitdb4local v0.0.3 h1:pnf+lzshNWoC1wd6bVGfeASiaaNIlaNiMRFpkBXpS2c=
