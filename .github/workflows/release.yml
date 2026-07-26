@@ -46,7 +46,13 @@ jobs:
   # Build every OS + publish everything that runs safely on one ubuntu job.
   core:
     name: Build + release (AUR, Homebrew, Scoop, WinGet)
-    uses: strongo/cicd/.github/workflows/release.yml@v1
+    # Pinned to an immutable tag rather than the floating `v1` of strongo/cicd,
+    # so this notarization pilot tests ONE variable: whether the Apple
+    # credentials still work. `v1` currently lags main by many commits, and
+    # moving it would ship unrelated release-machinery changes alongside this —
+    # making a failure ambiguous. v1.11.0 is the tag containing strongo/cicd#43,
+    # which forwards the five signing secrets.
+    uses: strongo/cicd/.github/workflows/release.yml@v1.11.0
     permissions:
       contents: write
     with:
@@ -62,6 +68,17 @@ jobs:
       WINGET_GITHUB_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
       # AUR SSH deploy key (key contents; GoReleaser accepts them directly).
       AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+      # macOS signing + notarization. These activate the `notarize:` block in
+      # .goreleaser.yaml, which is gated on MACOS_SIGN_P12 being set and has been
+      # dormant purely because the shared workflow did not forward these through.
+      # Unsigned darwin binaries are blocked by Gatekeeper when installed via the
+      # Homebrew cask ("Apple could not verify ... is free of malware"), because
+      # they are ad-hoc signed with no Team Identifier.
+      MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
+      MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
+      NOTARIZE_ISSUER_ID: ${{ secrets.NOTARIZE_ISSUER_ID }}
+      NOTARIZE_KEY_ID: ${{ secrets.NOTARIZE_KEY_ID }}
+      NOTARIZE_KEY: ${{ secrets.NOTARIZE_KEY }}
 
   # Chocolatey needs the `choco` CLI, which exists only on Windows runners, so
   # it cannot converge into the shared ubuntu job. It packages the same Windows
