@@ -82,8 +82,8 @@ checksum:
 #      The first release after this lands is the test: if notarization fails,
 #      read the quill error — a stale certificate and a revoked API key fail
 #      differently, and only one of them means regenerating the API key.
-#   2. DONE: the five secrets are forwarded by the shared workflow (strongo/cicd#43)
-#      and passed through by this repo's release.yml.
+#   2. DONE: the five secrets are forwarded by the shared workflow (strongo/cicd#43,
+#      released as v1.11.0) and passed through by this repo's release.yml.
 notarize:
   macos:
     - enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'

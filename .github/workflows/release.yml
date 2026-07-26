@@ -46,7 +46,13 @@ jobs:
   # Build every OS + publish everything that runs safely on one ubuntu job.
   core:
     name: Build + release (AUR, Homebrew, Scoop, WinGet)
-    uses: strongo/cicd/.github/workflows/release.yml@v1
+    # Pinned to an immutable tag rather than the floating `v1` of strongo/cicd,
+    # so this notarization pilot tests ONE variable: whether the Apple
+    # credentials still work. `v1` currently lags main by many commits, and
+    # moving it would ship unrelated release-machinery changes alongside this —
+    # making a failure ambiguous. v1.11.0 is the tag containing strongo/cicd#43,
+    # which forwards the five signing secrets.
+    uses: strongo/cicd/.github/workflows/release.yml@v1.11.0
     permissions:
       contents: write
     with:
