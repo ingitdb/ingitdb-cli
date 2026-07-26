@@ -65,16 +65,25 @@ checksum:
 # implemented in pure Go (quill), so when enabled it runs on the existing Linux
 # `core` job — no macOS runner needed.
 #
-# To ENABLE signed + notarized macOS releases, two steps are required:
-#   1. Verify the Apple credentials are still valid. The PRIOR publish-homebrew
-#      job FAILED, so MACOS_SIGN_P12 / MACOS_SIGN_PASSWORD (an Apple Developer ID
-#      Application cert) and NOTARIZE_ISSUER_ID / NOTARIZE_KEY_ID / NOTARIZE_KEY
-#      (an App Store Connect API key) may be stale and must be re-checked before
-#      trusting a release to them.
-#   2. Forward those five secrets into the GoReleaser env of strongo/cicd's
-#      reusable release.yml `core` job (they are declared here but only take
-#      effect once the shared workflow passes them through). Once MACOS_SIGN_P12
-#      is set, this block activates automatically.
+# Step 2 below is now DONE — strongo/cicd#43 forwards the five secrets, and this
+# repo's release.yml passes them to the `core` job — so this block ACTIVATES on
+# the next release once `v1` of the shared workflow is retagged to include #43.
+#
+# ingitdb-cli is the deliberate pilot: it is the only repo that already holds
+# these secrets, so a stale-credential failure lands on one CLI rather than the
+# whole fleet. See specscore/specscore-cli#86 for why this matters — unsigned
+# darwin binaries are blocked by Gatekeeper on the Homebrew cask install path
+# with "Apple could not verify ... is free of malware".
+#
+#   1. STILL OUTSTANDING: verify the Apple credentials are still valid. The PRIOR
+#      publish-homebrew job FAILED, so MACOS_SIGN_P12 / MACOS_SIGN_PASSWORD (an
+#      Apple Developer ID Application cert) and NOTARIZE_ISSUER_ID /
+#      NOTARIZE_KEY_ID / NOTARIZE_KEY (an App Store Connect API key) may be stale.
+#      The first release after this lands is the test: if notarization fails,
+#      read the quill error — a stale certificate and a revoked API key fail
+#      differently, and only one of them means regenerating the API key.
+#   2. DONE: the five secrets are forwarded by the shared workflow (strongo/cicd#43)
+#      and passed through by this repo's release.yml.
 notarize:
   macos:
     - enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'
