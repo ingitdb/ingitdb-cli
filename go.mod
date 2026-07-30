@@ -25,6 +25,7 @@ require (
 	github.com/charmbracelet/x/windows v0.2.2 // indirect
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
+	github.com/dal-go/record v0.1.2 // indirect
 	github.com/gofrs/flock v0.13.0 // indirect
 	github.com/google/go-github/v88 v88.0.0 // indirect
 	github.com/google/go-querystring v1.2.0 // indirect
@@ -38,20 +39,20 @@ require (
 	github.com/muesli/roff v0.1.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	go.starlark.net v0.0.0-20260613233743-8ba36ccb83fb // indirect
+	go.starlark.net v0.0.0-20260708150628-5395d018f003 // indirect
 	golang.org/x/sync v0.21.0 // indirect
-	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
 )
 
 require (
-	github.com/RoaringBitmap/roaring/v2 v2.21.0 // indirect
-	github.com/bits-and-blooms/bitset v1.24.4 // indirect
-	github.com/dal-go/dalgo v0.63.0
-	github.com/ingitdb/dalgo2ingitdb v0.2.2
-	github.com/ingitdb/dalgo2ingitdb4github v0.2.1
-	github.com/ingitdb/dalgo2ingitdb4local v0.0.3
-	github.com/ingitdb/ingitdb-go/ingitdb v0.5.1
+	github.com/RoaringBitmap/roaring/v2 v2.24.0 // indirect
+	github.com/bits-and-blooms/bitset v1.24.6 // indirect
+	github.com/dal-go/dalgo v0.64.4
+	github.com/ingitdb/dalgo2ingitdb v0.2.4
+	github.com/ingitdb/dalgo2ingitdb4github v0.2.3
+	github.com/ingitdb/dalgo2ingitdb4local v0.0.4
+	github.com/ingitdb/ingitdb-go/ingitdb v0.5.2
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/strongo/random v0.0.1 // indirect
 )
