@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/dal-go/dalgo/dal"
+	"github.com/dal-go/record"
 	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/dalgo2ingitdb"
@@ -133,18 +134,18 @@ func runUpdateByID(
 		return err
 	}
 
-	key := dal.NewKeyWithID(rctx.colDef.ID, rctx.recordKey)
+	key := record.NewKeyWithID(rctx.colDef.ID, rctx.recordKey)
 	err = rctx.db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
 		data := map[string]any{}
-		record := dal.NewRecordWithData(key, data)
-		if getErr := tx.Get(ctx, record); getErr != nil && !dal.IsNotFound(getErr) {
+		rec := record.NewRecordWithData(key, data)
+		if getErr := tx.Get(ctx, rec); getErr != nil && !record.IsNotFound(getErr) {
 			return getErr
 		}
-		if !record.Exists() {
+		if !rec.Exists() {
 			return fmt.Errorf("record not found: %s", id)
 		}
 		applyPatch(data, sets, unsets)
-		return tx.Set(ctx, record)
+		return tx.Set(ctx, rec)
 	})
 	if err != nil {
 		return err
@@ -322,8 +323,8 @@ func runUpdateFromSet(
 	err = writeDB.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
 		for _, m := range matches {
 			applyPatch(m.data, sets, unsets)
-			key := dal.NewKeyWithID(from, m.key)
-			record := dal.NewRecordWithData(key, m.data)
+			key := record.NewKeyWithID(from, m.key)
+			record := record.NewRecordWithData(key, m.data)
 			if setErr := tx.Set(ctx, record); setErr != nil {
 				return setErr
 			}

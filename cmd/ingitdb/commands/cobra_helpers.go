@@ -8,10 +8,11 @@ import (
 	"os"
 
 	"github.com/dal-go/dalgo/dal"
+	"github.com/dal-go/record"
 	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/dalgo2ingitdb"
-	"github.com/ingitdb/dalgo2ingitdb4github"
+	dalgo2ghingitdb "github.com/ingitdb/dalgo2ingitdb4github"
 	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 
@@ -145,10 +146,10 @@ func newQueryForCollection(collectionID string) dal.StructuredQuery {
 
 // newEmptyRecordFactory returns a factory that creates empty records keyed
 // by collectionID. Extracted so the closure body is directly testable.
-func newEmptyRecordFactory(collectionID string) func() dal.Record {
-	key := dal.NewKeyWithID(collectionID, "")
-	return func() dal.Record {
-		return dal.NewRecordWithData(key, map[string]any{})
+func newEmptyRecordFactory(collectionID string) func() record.Record {
+	key := record.NewKeyWithID(collectionID, "")
+	return func() record.Record {
+		return record.NewRecordWithData(key, map[string]any{})
 	}
 }
 
@@ -171,5 +172,12 @@ func maybeWrapWithBatching(cmd *cobra.Command, db dal.DB, def *ingitdb.Definitio
 		return nil, err
 	}
 	cfg := newGitHubConfig(spec, remoteToken(cmd, spec.Host))
-	return dalgo2ghingitdb.NewBatchingGitHubDB(cfg, def, commitMessage)
+	batching, err := dalgo2ghingitdb.NewBatchingGitHubDB(cfg, def, commitMessage)
+	if err != nil {
+		return nil, err
+	}
+	// BatchingGitHubDB is a dal.Backend, not a sealed dal.DB: since dalgo
+	// v0.64 the caller wraps it so the writes go through the framework
+	// write pipeline, exactly as dalgo2ingitdb4github's own NewDB does.
+	return dal.NewDB(batching), nil
 }
