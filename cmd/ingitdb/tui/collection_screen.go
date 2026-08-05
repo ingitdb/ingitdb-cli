@@ -7,6 +7,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/dal-go/dalgo/dal"
 	"github.com/dal-go/dalgo/recordset"
+	"github.com/dal-go/record"
 
 	"github.com/ingitdb/dalgo2ingitdb"
 	"github.com/ingitdb/ingitdb-go/ingitdb"
@@ -219,9 +220,9 @@ func loadRecordsCmd(db dal.DB, colDef *ingitdb.CollectionDef) tea.Cmd {
 	return func() tea.Msg {
 		colID := colDef.ID
 		qb := dal.NewQueryBuilder(dal.From(dal.NewRootCollectionRef(colID, "")))
-		q := qb.SelectIntoRecord(func() dal.Record {
-			key := dal.NewKeyWithID(colID, "")
-			return dal.NewRecordWithData(key, map[string]any{})
+		q := qb.SelectIntoRecord(func() record.Record {
+			key := record.NewKeyWithID(colID, "")
+			return record.NewRecordWithData(key, map[string]any{})
 		})
 
 		var (

@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/dal-go/dalgo/dal"
+	"github.com/dal-go/record"
 	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/dalgo2ingitdb"
@@ -172,7 +173,7 @@ func runDeleteFromSet(
 	// Read-write pass: delete each matching key.
 	err = writeDB.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
 		for _, k := range matchedKeys {
-			key := dal.NewKeyWithID(from, k)
+			key := record.NewKeyWithID(from, k)
 			if delErr := tx.Delete(ctx, key); delErr != nil {
 				return delErr
 			}
@@ -223,13 +224,13 @@ func runDeleteByID(
 		return err
 	}
 
-	key := dal.NewKeyWithID(rctx.colDef.ID, rctx.recordKey)
+	key := record.NewKeyWithID(rctx.colDef.ID, rctx.recordKey)
 	err = rctx.db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
 		// Pre-flight existence check. tx.Delete may or may not error
 		// on missing keys depending on the backend; we want an
 		// explicit user-facing diagnostic.
-		probe := dal.NewRecordWithData(key, map[string]any{})
-		if getErr := tx.Get(ctx, probe); getErr != nil && !dal.IsNotFound(getErr) {
+		probe := record.NewRecordWithData(key, map[string]any{})
+		if getErr := tx.Get(ctx, probe); getErr != nil && !record.IsNotFound(getErr) {
 			return getErr
 		}
 		if !probe.Exists() {

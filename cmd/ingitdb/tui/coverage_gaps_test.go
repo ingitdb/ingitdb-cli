@@ -14,9 +14,10 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/dal-go/dalgo/dal"
 	"github.com/dal-go/dalgo/recordset"
+	"github.com/dal-go/record"
 	"gopkg.in/yaml.v3"
 
-	"github.com/ingitdb/dalgo2ingitdb4local"
+	dalgo2fsingitdb "github.com/ingitdb/dalgo2ingitdb4local"
 	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 
@@ -31,14 +32,14 @@ type mockTx struct{}
 
 func (mockTx) Options() dal.TransactionOptions { return nil }
 
-func (mockTx) Get(_ context.Context, r dal.Record) error {
+func (mockTx) Get(_ context.Context, r record.Record) error {
 	r.SetError(errors.New("not implemented"))
 	return nil
 }
 
-func (mockTx) Exists(_ context.Context, _ *dal.Key) (bool, error) { return false, nil }
+func (mockTx) Exists(_ context.Context, _ *record.Key) (bool, error) { return false, nil }
 
-func (mockTx) GetMulti(_ context.Context, _ []dal.Record) error { return nil }
+func (mockTx) GetMulti(_ context.Context, _ []record.Record) error { return nil }
 
 func (mockTx) ExecuteQueryToRecordsetReader(_ context.Context, q dal.Query, _ ...recordset.Option) (dal.RecordsetReader, error) {
 	sq, ok := q.(dal.StructuredQuery)
@@ -55,9 +56,9 @@ func (mockTx) ExecuteQueryToRecordsReader(_ context.Context, _ dal.Query) (dal.R
 
 type emptyRecordsReader struct{}
 
-func (e *emptyRecordsReader) Next() (dal.Record, error) { return nil, dal.ErrNoMoreRecords }
-func (e *emptyRecordsReader) Cursor() (string, error)   { return "", nil }
-func (e *emptyRecordsReader) Close() error              { return nil }
+func (e *emptyRecordsReader) Next() (record.Record, error) { return nil, dal.ErrNoMoreRecords }
+func (e *emptyRecordsReader) Cursor() (string, error)      { return "", nil }
+func (e *emptyRecordsReader) Close() error                 { return nil }
 
 type emptyRecordsetReader struct{}
 
@@ -69,17 +70,19 @@ func (e *emptyRecordsetReader) Cursor() (string, error)        { return "", nil 
 func (e *emptyRecordsetReader) Close() error                   { return nil }
 
 // mockDB wraps mockTx to satisfy the dal.DB interface.
+// mockDB is a dal.Backend, not a dal.DB: dalgo v0.64 seals dal.DB, so tests
+// hand it to dal.NewDB to get one.
 type mockDB struct{ dal.NoConcurrency }
 
 func (mockDB) ID() string           { return "mock" }
 func (mockDB) Adapter() dal.Adapter { return dal.NewAdapter("mock", "v0") }
 func (mockDB) Schema() dal.Schema   { return nil }
-func (mockDB) Get(_ context.Context, r dal.Record) error {
+func (mockDB) Get(_ context.Context, r record.Record) error {
 	r.SetError(errors.New("not implemented"))
 	return nil
 }
-func (mockDB) Exists(_ context.Context, _ *dal.Key) (bool, error) { return false, nil }
-func (mockDB) GetMulti(_ context.Context, _ []dal.Record) error   { return nil }
+func (mockDB) Exists(_ context.Context, _ *record.Key) (bool, error) { return false, nil }
+func (mockDB) GetMulti(_ context.Context, _ []record.Record) error   { return nil }
 func (mockDB) ExecuteQueryToRecordsetReader(_ context.Context, _ dal.Query, _ ...recordset.Option) (dal.RecordsetReader, error) {
 	return nil, errors.New("not implemented")
 }
@@ -289,7 +292,7 @@ func TestLoadRecordsCmd_StoredReadError(t *testing.T) {
 	t.Parallel()
 
 	colDef := simpleColDef("people", "boom")
-	msg := loadRecordsCmd(boomDB{}, colDef)()
+	msg := loadRecordsCmd(dal.NewDB(boomDB{}), colDef)()
 	loaded, ok := msg.(recordsLoadedMsg)
 	if !ok {
 		t.Fatalf("cmd() returned %T, want recordsLoadedMsg", msg)
@@ -352,7 +355,7 @@ func TestLoadRecordsCmd_FactoryClosure(t *testing.T) {
 	t.Parallel()
 
 	colDef := simpleColDef("things", "name")
-	cmd := loadRecordsCmd(mockDB{}, colDef)
+	cmd := loadRecordsCmd(dal.NewDB(mockDB{}), colDef)
 	if cmd == nil {
 		t.Fatal("loadRecordsCmd returned nil")
 	}

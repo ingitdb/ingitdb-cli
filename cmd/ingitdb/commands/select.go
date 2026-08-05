@@ -11,6 +11,7 @@ import (
 
 	"github.com/dal-go/dalgo/dal"
 	"github.com/dal-go/dalgo/recordset"
+	"github.com/dal-go/record"
 	"github.com/datatug/cliformat"
 	"github.com/spf13/cobra"
 
@@ -113,10 +114,10 @@ func runSelectByID(
 	}
 
 	data := map[string]any{}
-	key := dal.NewKeyWithID(rctx.colDef.ID, rctx.recordKey)
-	record := dal.NewRecordWithData(key, data)
+	key := record.NewKeyWithID(rctx.colDef.ID, rctx.recordKey)
+	rec := record.NewRecordWithData(key, data)
 	err = rctx.db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
-		if getErr := tx.Get(ctx, record); getErr != nil && !dal.IsNotFound(getErr) {
+		if getErr := tx.Get(ctx, rec); getErr != nil && !record.IsNotFound(getErr) {
 			return getErr
 		}
 		return nil
@@ -124,7 +125,7 @@ func runSelectByID(
 	if err != nil {
 		return err
 	}
-	if !record.Exists() {
+	if !rec.Exists() {
 		return fmt.Errorf("record not found: %s", id)
 	}
 	projected := projectRecord(data, rctx.recordKey, fields)

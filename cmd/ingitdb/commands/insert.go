@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/dal-go/dalgo/dal"
+	"github.com/dal-go/record"
 	"github.com/spf13/cobra"
 
 	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/commands/sqlflags"
@@ -134,8 +135,8 @@ func Insert(
 			}
 
 			// Insert the record (collision check added in Task 5).
-			key := dal.NewKeyWithID(ictx.colDef.ID, recordKey)
-			record := dal.NewRecordWithData(key, data)
+			key := record.NewKeyWithID(ictx.colDef.ID, recordKey)
+			record := record.NewRecordWithData(key, data)
 			err = ictx.db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
 				return tx.Insert(ctx, record)
 			})

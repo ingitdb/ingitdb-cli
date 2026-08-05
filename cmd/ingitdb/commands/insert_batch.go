@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/dal-go/dalgo/dal"
+	"github.com/dal-go/record"
 
 	"github.com/ingitdb/dalgo2ingitdb"
 	"github.com/ingitdb/ingitdb-go/ingitdb"
@@ -69,8 +70,8 @@ func runBatchInsert(
 	var writtenPaths []string
 	commitErr := ictx.db.RunReadwriteTransaction(ctx, func(ctx context.Context, tx dal.ReadwriteTransaction) error {
 		for _, rec := range records {
-			key := dal.NewKeyWithID(ictx.colDef.ID, rec.Key)
-			r := dal.NewRecordWithData(key, rec.Data)
+			key := record.NewKeyWithID(ictx.colDef.ID, rec.Key)
+			r := record.NewRecordWithData(key, rec.Data)
 			path := resolveBatchRecordPath(ictx.colDef, rec.Key)
 			insertErr := tx.Insert(ctx, r)
 			if insertErr != nil {
