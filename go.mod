@@ -5,7 +5,7 @@ go 1.26.4
 require (
 	charm.land/bubbletea/v2 v2.0.8
 	charm.land/fang/v2 v2.0.1
-	charm.land/lipgloss/v2 v2.0.5
+	charm.land/lipgloss/v2 v2.0.6
 	github.com/charmbracelet/x/term v0.2.2
 	github.com/dal-go/record v0.1.2
 	github.com/datatug/cliformat v0.0.1
@@ -19,8 +19,8 @@ require (
 
 require (
 	github.com/charmbracelet/colorprofile v0.4.3 // indirect
-	github.com/charmbracelet/ultraviolet v0.0.0-20260803092147-8b693049ce2a // indirect
-	github.com/charmbracelet/x/ansi v0.11.7 // indirect
+	github.com/charmbracelet/ultraviolet v0.0.0-20260811164956-006e29f97886 // indirect
+	github.com/charmbracelet/x/ansi v0.11.8 // indirect
 	github.com/charmbracelet/x/exp/charmtone v0.0.0-20260803091719-3755ebad01b1 // indirect
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
 	github.com/charmbracelet/x/windows v0.2.2 // indirect
@@ -49,7 +49,7 @@ require (
 	github.com/RoaringBitmap/roaring/v2 v2.24.0 // indirect
 	github.com/bits-and-blooms/bitset v1.24.6 // indirect
 	github.com/dal-go/dalgo v0.64.6
-	github.com/ingitdb/dalgo2ingitdb v0.2.4
+	github.com/ingitdb/dalgo2ingitdb v0.3.1
 	github.com/ingitdb/dalgo2ingitdb4github v0.2.3
 	github.com/ingitdb/dalgo2ingitdb4local v0.0.4
 	github.com/ingitdb/ingitdb-go/ingitdb v0.5.2
