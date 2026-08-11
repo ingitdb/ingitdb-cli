@@ -52,7 +52,7 @@ jobs:
     # moving it would ship unrelated release-machinery changes alongside this —
     # making a failure ambiguous. v1.11.0 is the tag containing strongo/cicd#43,
     # which forwards the five signing secrets.
-    uses: strongo/cicd/.github/workflows/release.yml@v1.12.0
+    uses: strongo/cicd/.github/workflows/release.yml@v1.13.2
     permissions:
       contents: write
     with:
