@@ -52,7 +52,7 @@ jobs:
     # moving it would ship unrelated release-machinery changes alongside this —
     # making a failure ambiguous. v1.11.0 is the tag containing strongo/cicd#43,
     # which forwards the five signing secrets.
-    uses: strongo/cicd/.github/workflows/release.yml@v1.13.2
+    uses: strongo/cicd/.github/workflows/release.yml@v1.14.4
     permissions:
       contents: write
     with:
@@ -103,7 +103,7 @@ jobs:
 
       - uses: actions/setup-go@v7
         with:
-          go-version: '1.26.6'
+          go-version: '1.27.0'
 
       - uses: goreleaser/goreleaser-action@v7
         with:
@@ -132,7 +132,7 @@ jobs:
 
       - uses: actions/setup-go@v7
         with:
-          go-version: '1.26.6'
+          go-version: '1.27.0'
 
       - name: Install snapcraft
         run: sudo snap install snapcraft --classic
