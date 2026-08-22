@@ -3,7 +3,7 @@ module github.com/ingitdb/ingitdb-cli
 go 1.26.4
 
 require (
-	charm.land/bubbletea/v2 v2.0.8
+	charm.land/bubbletea/v2 v2.0.9
 	charm.land/fang/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.6
 	github.com/charmbracelet/x/term v0.2.2
@@ -46,9 +46,9 @@ require (
 )
 
 require (
-	github.com/RoaringBitmap/roaring/v2 v2.24.0 // indirect
+	github.com/RoaringBitmap/roaring/v2 v2.25.0 // indirect
 	github.com/bits-and-blooms/bitset v1.24.6 // indirect
-	github.com/dal-go/dalgo v0.64.6
+	github.com/dal-go/dalgo v0.64.8
 	github.com/ingitdb/dalgo2ingitdb v0.3.1
 	github.com/ingitdb/dalgo2ingitdb4github v0.2.3
 	github.com/ingitdb/dalgo2ingitdb4local v0.0.4
