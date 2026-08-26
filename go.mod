@@ -1,6 +1,8 @@
 module github.com/ingitdb/ingitdb-cli
 
-go 1.27.0
+go 1.26.0
+
+toolchain go1.27.0
 
 require (
 	charm.land/bubbletea/v2 v2.0.9
