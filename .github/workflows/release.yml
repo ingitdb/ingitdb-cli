@@ -47,12 +47,12 @@ jobs:
   core:
     name: Build + release (AUR, Homebrew, Scoop, WinGet)
     # Pinned to an immutable tag rather than the floating `v1` of strongo/cicd,
-    # so this notarization pilot tests ONE variable: whether the Apple
-    # credentials still work. `v1` currently lags main by many commits, and
-    # moving it would ship unrelated release-machinery changes alongside this —
-    # making a failure ambiguous. v1.11.0 is the tag containing strongo/cicd#43,
-    # which forwards the five signing secrets.
-    uses: strongo/cicd/.github/workflows/release.yml@v1.14.5
+    # so this notarization pilot tests ONE variable at a time instead of
+    # silently picking up unrelated release-machinery changes. Bumped
+    # 2026-08-28 from v1.14.5 to v1.14.9 (same commit fd908b7c as v1 at time
+    # of bump) to pick up the fix that makes verification use
+    # `spctl -a -vv -t install` and assert `source=Notarized Developer ID`.
+    uses: strongo/cicd/.github/workflows/release.yml@v1.14.9
     permissions:
       contents: write
     with:

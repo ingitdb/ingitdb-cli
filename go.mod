@@ -1,6 +1,6 @@
 module github.com/ingitdb/ingitdb-cli
 
-go 1.26.0
+go 1.26.4
 
 toolchain go1.27.0
 
