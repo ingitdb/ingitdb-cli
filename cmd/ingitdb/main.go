@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 
 	bubbletea "charm.land/bubbletea/v2"
@@ -27,6 +28,10 @@ import (
 var exit = os.Exit
 
 func main() {
+	guardProcess(executeMain, os.Stderr, exit)
+}
+
+func executeMain() {
 	fatal := func(err error) {
 		_, _ = fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		exit(exitCodeForError(err))
@@ -35,6 +40,18 @@ func main() {
 		_, _ = fmt.Fprintln(os.Stderr, args...)
 	}
 	run(os.Args, os.UserHomeDir, os.Getwd, validator.ReadDefinition, fatal, logf)
+}
+
+func guardProcess(runCommand func(), errorWriter io.Writer, exitProcess func(int)) {
+	defer func() {
+		recovered := recover()
+		if recovered == nil {
+			return
+		}
+		_, _ = fmt.Fprintln(errorWriter, "error: command crashed")
+		exitProcess(1)
+	}()
+	runCommand()
 }
 
 func exitCodeForError(err error) int {

@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/dal-go/dalgo/dal"
@@ -131,6 +133,32 @@ func TestExitCodeForError(t *testing.T) {
 				t.Fatalf("exitCodeForError() = %d, want %d", got, test.want)
 			}
 		})
+	}
+}
+
+func TestGuardProcess_RecoversPanicAsRuntimeFailure(t *testing.T) {
+	t.Parallel()
+
+	secretValue := "record-secret-that-must-not-reach-stderr"
+	runCommand := func() {
+		panic(secretValue)
+	}
+	var stderr bytes.Buffer
+	exitCode := 0
+	exitProcess := func(code int) {
+		exitCode = code
+	}
+
+	guardProcess(runCommand, &stderr, exitProcess)
+
+	if exitCode != 1 {
+		t.Fatalf("exit code = %d, want 1", exitCode)
+	}
+	if strings.Contains(stderr.String(), secretValue) {
+		t.Fatalf("panic output leaked secret: %q", stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "command crashed") {
+		t.Fatalf("panic output = %q, want generic crash diagnostic", stderr.String())
 	}
 }
 

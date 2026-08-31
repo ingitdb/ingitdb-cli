@@ -54,7 +54,16 @@ The command MUST exit with status `0` when validation passes and a non-zero stat
 The command MUST exit with status `2` when repository definition or record
 validation completes with findings. Command configuration, validator startup,
 and other runtime failures MUST exit with status `1`; no non-validation
-failure MAY be reported as status `2`.
+failure MAY be reported as status `2`. The CLI process boundary MUST recover an
+unexpected panic as a generic status-`1` runtime failure without printing the
+panic payload or stack trace.
+
+#### REQ: safe-diagnostics
+
+The `--safe-diagnostics` flag MUST report repository-relative file identity,
+collection, record key, field, and a stable constraint class where available,
+while omitting rejected record values, full record bodies, absolute repository
+paths, and raw definition/parser errors that could contain repository data.
 
 #### REQ: record-file-parsing
 
@@ -103,6 +112,19 @@ Given a Markdown-backed collection, `ingitdb validate --only=records` MUST parse
 Given validation cannot complete because the validator returns an operational
 error, when the command terminates, then it exits `1` rather than reporting the
 repository as invalid with status `2`.
+
+Given command execution panics with a secret-bearing payload, when the process
+boundary recovers, then it exits `1` with a generic crash diagnostic that does
+not contain the panic payload or a stack trace.
+
+### AC: safe-diagnostics-redact-record-values
+
+**Requirements:** cli/validate#req:safe-diagnostics, cli/validate#req:stable-validation-failure-exit-code
+
+Given a record violates an enum constraint with a secret-bearing rejected
+value, when `ingitdb validate --safe-diagnostics` runs, then it exits `2` and
+names the collection, repository-relative file, record key, field, and enum
+constraint without printing the rejected value or absolute repository path.
 
 ## Open Questions
 
