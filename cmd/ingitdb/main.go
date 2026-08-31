@@ -10,6 +10,8 @@ import (
 	"github.com/charmbracelet/x/term"
 	"github.com/dal-go/dalgo/dal"
 	"github.com/spf13/cobra"
+	"github.com/strongo/buildinfo"
+	"github.com/strongo/buildinfo/cobracmd"
 
 	"github.com/ingitdb/dalgo2ingitdb4local"
 	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/commands"
@@ -21,12 +23,7 @@ import (
 	"github.com/ingitdb/ingitdb-go/ingitdb/validator"
 )
 
-var (
-	version = "dev"
-	commit  = "none"
-	date    = "unknown"
-	exit    = os.Exit
-)
+var exit = os.Exit
 
 func main() {
 	fatal := func(err error) {
@@ -73,10 +70,12 @@ func run(
 	rootCmd.Flags().String("path", "", "path to the database directory (default: current directory)")
 	rootCmd.SetErr(os.Stderr)
 
+	info := buildinfo.Get("ingitdb")
+	fangOpts := cobracmd.Wire(rootCmd, info)
+
 	rootCmd.AddCommand(
-		commands.Version(version, commit, date),
 		// No "update" alias: `ingitdb update` is the SQL UPDATE verb below.
-		commands.SelfUpdate(version, os.Exit),
+		commands.SelfUpdate(info.Version, os.Exit),
 		commands.Validate(homeDir, getWd, readDefinition, datavalidator.NewValidator(),
 			datavalidator.NewIncrementalValidator(gitdiff.NewGitDiffer(), datavalidator.NewChangeSetResolver(), datavalidator.NewValidator()), logf),
 		commands.Materialize(homeDir, getWd, readDefinition, vb, logf),
@@ -105,7 +104,7 @@ func run(
 	)
 
 	rootCmd.SetArgs(args[1:])
-	if err := fang.Execute(context.Background(), rootCmd); err != nil {
+	if err := fang.Execute(context.Background(), rootCmd, fangOpts...); err != nil {
 		fatal(err)
 	}
 }
