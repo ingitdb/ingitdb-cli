@@ -52,7 +52,7 @@ jobs:
     # 2026-08-28 from v1.14.5 to v1.14.9 (same commit fd908b7c as v1 at time
     # of bump) to pick up the fix that makes verification use
     # `spctl -a -vv -t install` and assert `source=Notarized Developer ID`.
-    uses: strongo/cicd/.github/workflows/release.yml@v1.14.14
+    uses: strongo/cicd/.github/workflows/release.yml@v1.14.17
     permissions:
       contents: write
     with:
