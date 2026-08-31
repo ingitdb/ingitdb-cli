@@ -120,6 +120,82 @@ func TestValidate_DataValidationErrors(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error when data validation has errors")
 	}
+	if !errors.Is(err, ErrValidationFailed) {
+		t.Fatalf("expected ErrValidationFailed, got: %v", err)
+	}
+}
+
+func TestValidate_SafeDiagnosticsRedactRecordValue(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	secretValue := "github_pat_secret_value"
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return &ingitdb.Definition{}, nil
+	}
+	dataVal := &mockDataValidator{
+		result: func() *ingitdb.ValidationResult {
+			result := &ingitdb.ValidationResult{}
+			validationErr := ingitdb.ValidationError{
+				CollectionID: "spaces",
+				FilePath:     filepath.Join(dir, "sneat", "spaces", "space-1", "space.yaml"),
+				RecordKey:    "space-1",
+				FieldName:    "token",
+				Message:      fmt.Sprintf("value %s for field %q is not one of the permitted values", secretValue, "token"),
+			}
+			result.Append(validationErr)
+			return result
+		}(),
+	}
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+	var logs []string
+	logf := func(args ...any) {
+		line := fmt.Sprint(args...)
+		logs = append(logs, line)
+	}
+	cmd := Validate(homeDir, getWd, readDef, dataVal, nil, logf)
+	err := runCobraCommand(cmd, "--path="+dir, "--safe-diagnostics")
+	if err == nil {
+		t.Fatal("expected validation failure")
+	}
+	message := err.Error()
+	for _, want := range []string{"collection \"spaces\"", "file \"sneat/spaces/space-1/space.yaml\"", "record \"space-1\"", "field \"token\"", "enum constraint failed"} {
+		if !strings.Contains(message, want) {
+			t.Fatalf("safe diagnostic %q does not contain %q", message, want)
+		}
+	}
+	for _, forbidden := range []string{secretValue, dir} {
+		if strings.Contains(message, forbidden) {
+			t.Fatalf("safe diagnostic %q contains forbidden value %q", message, forbidden)
+		}
+		for _, line := range logs {
+			if strings.Contains(line, forbidden) {
+				t.Fatalf("safe diagnostic log %q contains forbidden value %q", line, forbidden)
+			}
+		}
+	}
+}
+
+func TestValidate_SafeDiagnosticsRedactDefinitionError(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	secretValue := "definition-secret-value"
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return nil, errors.New(secretValue)
+	}
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+	logf := func(...any) {}
+	cmd := Validate(homeDir, getWd, readDef, nil, nil, logf)
+	err := runCobraCommand(cmd, "--path="+dir, "--safe-diagnostics")
+	if err == nil {
+		t.Fatal("expected validation failure")
+	}
+	if strings.Contains(err.Error(), secretValue) {
+		t.Fatalf("safe definition diagnostic contains secret: %v", err)
+	}
 }
 
 func TestValidate_DataValidationError(t *testing.T) {
@@ -206,6 +282,9 @@ func TestValidate_IncrementalErrors(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error when incremental validation has errors")
 	}
+	if !errors.Is(err, ErrValidationFailed) {
+		t.Fatalf("expected ErrValidationFailed, got: %v", err)
+	}
 }
 
 func TestValidate_IncrementalValidationError(t *testing.T) {
@@ -263,6 +342,9 @@ func TestValidate_ReadDefinitionError(t *testing.T) {
 	err := runCobraCommand(cmd, "--path="+dir)
 	if err == nil {
 		t.Fatal("expected error when readDefinition fails")
+	}
+	if !errors.Is(err, ErrValidationFailed) {
+		t.Fatalf("expected ErrValidationFailed, got: %v", err)
 	}
 }
 
