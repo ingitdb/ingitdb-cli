@@ -54,8 +54,8 @@ github.com/ingitdb/dalgo2ingitdb4github v0.2.8 h1:48qTUCWgcTU/BETflpxhMKWasBeNUN
 github.com/ingitdb/dalgo2ingitdb4github v0.2.8/go.mod h1:I0N3VE3FVCiJTJScc1kCSoKMYKMrfU/I0Pqf6EO0piU=
 github.com/ingitdb/dalgo2ingitdb4local v0.0.6 h1:ymqqzCjJO+wMiSSFIdBs23OpVuP7ywEJPtyUtpAfVPc=
 github.com/ingitdb/dalgo2ingitdb4local v0.0.6/go.mod h1:ymo04K8m3SCwdoKrowu0qd3KW0mouFU3krWWWJ3UEV4=
-github.com/ingitdb/ingitdb-go/ingitdb v0.5.4 h1:faa18iO+qcF1FO8ZdzgpQa+6j9VxIarNNMSGXc08MMo=
-github.com/ingitdb/ingitdb-go/ingitdb v0.5.4/go.mod h1:p0dD9yIhTKG86CedtvJCoasv4Nf4AKei9KQUy45agdI=
+github.com/ingitdb/ingitdb-go/ingitdb v0.6.0 h1:TzPGAMH2KM6ThgoZBV6dqnT02MVN5fd5et9aB5iI4SY=
+github.com/ingitdb/ingitdb-go/ingitdb v0.6.0/go.mod h1:p0dD9yIhTKG86CedtvJCoasv4Nf4AKei9KQUy45agdI=
 github.com/ingr-io/ingr-go v0.0.2 h1:2AfFllqzCe2dCNtxIUo306oYzaZr//YzrVOHd0C73nI=
 github.com/ingr-io/ingr-go v0.0.2/go.mod h1:gb/dGW0qXziCq9iAIgk0yITyWY013w2bhdYiXO0RLuY=
 github.com/kr/pretty v0.3.1 h1:flRD4NNwYAUpkphVc1HcthR4KEIFJ65n8Mw5qdRn3LE=
