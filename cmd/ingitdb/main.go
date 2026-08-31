@@ -11,7 +11,7 @@ import (
 	"github.com/dal-go/dalgo/dal"
 	"github.com/spf13/cobra"
 	"github.com/strongo/buildinfo"
-	"github.com/strongo/buildinfo/cobracmd"
+	"github.com/strongo/buildinfo/fangcmd"
 
 	"github.com/ingitdb/dalgo2ingitdb4local"
 	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/commands"
@@ -71,7 +71,7 @@ func run(
 	rootCmd.SetErr(os.Stderr)
 
 	info := buildinfo.Get("ingitdb")
-	fangOpts := cobracmd.Wire(rootCmd, info)
+	fangOpts := fangcmd.Wire(rootCmd, info)
 
 	rootCmd.AddCommand(
 		// No "update" alias: `ingitdb update` is the SQL UPDATE verb below.
