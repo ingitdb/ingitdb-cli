@@ -19,9 +19,12 @@ the collection definitions and every record against its schema. Use `--only` to 
 the definitions or just the records. With `--from-commit` / `--to-commit`, only files changed
 in that commit range are checked (see [Validator docs](components/validator/README.md)).
 
-Exit code is `0` on success, non-zero on any validation error. Validation messages report
-record counts per collection (e.g., "All 42 records are valid for collection: users" or 
-"38 out of 42 records are valid for collection: users").
+Exit code is `0` on success and `2` when validation completes with invalid
+repository definitions or records. Command configuration, startup, and other
+runtime failures exit `1`, so automation can distinguish invalid data
+from a validator that could not complete. Validation messages report record
+counts per collection (e.g., "All 42 records are valid for collection: users"
+or "38 out of 42 records are valid for collection: users").
 
 **Examples:**
 
@@ -46,4 +49,3 @@ ingitdb validate --only=records --from-commit=abc1234 --to-commit=def5678
 ```
 
 ---
-

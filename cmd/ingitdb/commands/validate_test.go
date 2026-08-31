@@ -120,6 +120,9 @@ func TestValidate_DataValidationErrors(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error when data validation has errors")
 	}
+	if !errors.Is(err, ErrValidationFailed) {
+		t.Fatalf("expected ErrValidationFailed, got: %v", err)
+	}
 }
 
 func TestValidate_DataValidationError(t *testing.T) {
@@ -206,6 +209,9 @@ func TestValidate_IncrementalErrors(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error when incremental validation has errors")
 	}
+	if !errors.Is(err, ErrValidationFailed) {
+		t.Fatalf("expected ErrValidationFailed, got: %v", err)
+	}
 }
 
 func TestValidate_IncrementalValidationError(t *testing.T) {
@@ -263,6 +269,9 @@ func TestValidate_ReadDefinitionError(t *testing.T) {
 	err := runCobraCommand(cmd, "--path="+dir)
 	if err == nil {
 		t.Fatal("expected error when readDefinition fails")
+	}
+	if !errors.Is(err, ErrValidationFailed) {
+		t.Fatalf("expected ErrValidationFailed, got: %v", err)
 	}
 }
 

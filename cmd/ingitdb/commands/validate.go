@@ -65,7 +65,8 @@ func Validate(
 				}
 				if result.HasErrors() {
 					message := formatValidationFailure("incremental validation", result)
-					return fmt.Errorf("%s", message)
+					findingErr := fmt.Errorf("%s", message)
+					return NewValidationFailedError(findingErr)
 				}
 				return nil
 			}
@@ -80,13 +81,15 @@ func Validate(
 				validateOpt := ingitdb.Validate()
 				defRes, defErr := readDefinition(dirPath, validateOpt)
 				if defErr != nil {
-					return fmt.Errorf("inGitDB database validation failed: %w", defErr)
+					validationErr := fmt.Errorf("inGitDB database validation failed: %w", defErr)
+					return NewValidationFailedError(validationErr)
 				}
 				def = defRes
 			} else {
 				defRes, defErr := readDefinition(dirPath)
 				if defErr != nil {
-					return fmt.Errorf("inGitDB database validation failed: %w", defErr)
+					validationErr := fmt.Errorf("inGitDB database validation failed: %w", defErr)
+					return NewValidationFailedError(validationErr)
 				}
 				def = defRes
 			}
@@ -99,7 +102,8 @@ func Validate(
 				}
 				if result.HasErrors() {
 					message := formatValidationFailure("data validation", result)
-					return fmt.Errorf("%s", message)
+					findingErr := fmt.Errorf("%s", message)
+					return NewValidationFailedError(findingErr)
 				}
 				// Log completion message for each collection
 				for collectionKey := range def.Collections {

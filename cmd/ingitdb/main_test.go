@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"testing"
 
 	"github.com/dal-go/dalgo/dal"
+	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/commands"
 	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 
@@ -103,6 +105,35 @@ func TestRun_ValidateError(t *testing.T) {
 	}
 }
 
+func TestExitCodeForError(t *testing.T) {
+	t.Parallel()
+
+	invalidRecordErr := errors.New("invalid record")
+	validationErr := commands.NewValidationFailedError(invalidRecordErr)
+	invalidDefinitionErr := errors.New("invalid definition")
+	wrappedValidationErr := commands.NewValidationFailedError(invalidDefinitionErr)
+	wrappedValidationErr = fmt.Errorf("outer: %w", wrappedValidationErr)
+	tests := []struct {
+		name string
+		err  error
+		want int
+	}{
+		{name: "validation failure", err: validationErr, want: commands.ValidationFailedExitCode},
+		{name: "wrapped validation failure", err: wrappedValidationErr, want: commands.ValidationFailedExitCode},
+		{name: "runtime failure", err: errors.New("disk unavailable"), want: 1},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			if got := exitCodeForError(test.err); got != test.want {
+				t.Fatalf("exitCodeForError() = %d, want %d", got, test.want)
+			}
+		})
+	}
+}
+
 func TestRun_ValidateDefaultPath(t *testing.T) {
 	t.Parallel()
 
@@ -179,8 +210,10 @@ func TestMain_ReadDefinitionError(t *testing.T) {
 
 	oldExit := exit
 	exitCalled := false
-	exit = func(int) {
+	exitCode := 0
+	exit = func(code int) {
 		exitCalled = true
+		exitCode = code
 	}
 	t.Cleanup(func() {
 		exit = oldExit
@@ -198,6 +231,9 @@ func TestMain_ReadDefinitionError(t *testing.T) {
 
 	if !exitCalled {
 		t.Fatal("expected exit to be called")
+	}
+	if exitCode != commands.ValidationFailedExitCode {
+		t.Fatalf("exit code = %d, want %d", exitCode, commands.ValidationFailedExitCode)
 	}
 }
 
@@ -462,8 +498,8 @@ func TestMain_Fatal(t *testing.T) {
 	if !exitCalled {
 		t.Fatal("exit should be called")
 	}
-	if exitCode != 1 {
-		t.Fatalf("exit code should be 1, got %d", exitCode)
+	if exitCode != commands.ValidationFailedExitCode {
+		t.Fatalf("exit code should be %d, got %d", commands.ValidationFailedExitCode, exitCode)
 	}
 	if len(output) == 0 {
 		t.Fatal("error message should be written to stderr")

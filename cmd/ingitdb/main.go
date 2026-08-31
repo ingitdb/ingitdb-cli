@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -28,12 +29,19 @@ var exit = os.Exit
 func main() {
 	fatal := func(err error) {
 		_, _ = fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		exit(1)
+		exit(exitCodeForError(err))
 	}
 	logf := func(args ...any) {
 		_, _ = fmt.Fprintln(os.Stderr, args...)
 	}
 	run(os.Args, os.UserHomeDir, os.Getwd, validator.ReadDefinition, fatal, logf)
+}
+
+func exitCodeForError(err error) int {
+	if errors.Is(err, commands.ErrValidationFailed) {
+		return commands.ValidationFailedExitCode
+	}
+	return 1
 }
 
 func defaultNewDB(rootDirPath string, def *ingitdb.Definition) (dal.DB, error) {

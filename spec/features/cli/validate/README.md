@@ -49,6 +49,13 @@ For each collection, the command MUST print a summary line reporting how many re
 
 The command MUST exit with status `0` when validation passes and a non-zero status when any validation error is detected.
 
+#### REQ: stable-validation-failure-exit-code
+
+The command MUST exit with status `2` when repository definition or record
+validation completes with findings. Command configuration, validator startup,
+and other runtime failures MUST exit with status `1`; no non-validation
+failure MAY be reported as status `2`.
+
 #### REQ: record-file-parsing
 
 Record validation MUST parse every candidate record file using the collection's declared `record_file.format` and `record_file.type` before counting it as valid. Unparsable files, including malformed Markdown frontmatter and invalid YAML, JSON, TOML, CSV, JSONL, or INGR content, MUST be reported as validation errors with the offending record path and a useful parse error.
@@ -75,7 +82,7 @@ Source files implementing this feature (annotated with
 
 **Requirements:** cli/validate#req:subcommand-name, cli/validate#req:only-flag, cli/validate#req:per-collection-summary, cli/validate#req:exit-code
 
-Running `ingitdb validate` with no flags from a directory containing a valid `.ingitdb.yaml` validates both definitions and records, prints a summary line per collection, and exits `0`. Introducing a single record that violates its schema causes the command to exit non-zero.
+Running `ingitdb validate` with no flags from a directory containing a valid `.ingitdb.yaml` validates both definitions and records, prints a summary line per collection, and exits `0`. Introducing a single record that violates its schema causes the command to exit `2`.
 
 ### AC: scoped-validation
 
@@ -87,7 +94,15 @@ Running `ingitdb validate` with no flags from a directory containing a valid `.i
 
 **Requirements:** cli/validate#req:only-flag, cli/validate#req:record-file-parsing, cli/validate#req:exit-code
 
-Given a Markdown-backed collection, `ingitdb validate --only=records` MUST parse each `*.md` record file. If a record contains malformed YAML frontmatter, the command exits non-zero and the error output includes the record path plus the Markdown/YAML parse error.
+Given a Markdown-backed collection, `ingitdb validate --only=records` MUST parse each `*.md` record file. If a record contains malformed YAML frontmatter, the command exits `2` and the error output includes the record path plus the Markdown/YAML parse error.
+
+### AC: runtime-failure-is-distinct
+
+**Requirements:** cli/validate#req:exit-code, cli/validate#req:stable-validation-failure-exit-code
+
+Given validation cannot complete because the validator returns an operational
+error, when the command terminates, then it exits `1` rather than reporting the
+repository as invalid with status `2`.
 
 ## Open Questions
 
