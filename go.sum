@@ -31,8 +31,6 @@ github.com/clipperhouse/displaywidth v0.11.0/go.mod h1:bkrFNkf81G8HyVqmKGxsPufD3
 github.com/clipperhouse/uax29/v2 v2.7.0 h1:+gs4oBZ2gPfVrKPthwbMzWZDaAFPGYK72F0NJv2v7Vk=
 github.com/clipperhouse/uax29/v2 v2.7.0/go.mod h1:EFJ2TJMRUaplDxHKj1qAEhCtQPW2tJSwu5BF98AuoVM=
 github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6NIQQ7OS05n1F4g=
-github.com/dal-go/dalgo v0.74.2 h1:i80DdaEG617Ki93hTrT6WSpmP/Pb3Siosxkkrtymi78=
-github.com/dal-go/dalgo v0.74.2/go.mod h1:ffWy4OC32BDoseIh+9KF/W9VUGk3FfkAtIvUzUf1zAY=
 github.com/dal-go/dalgo v0.79.3 h1:awEX08IaxK135rrftqutBbdi/fWwAMx756YWgF2+W44=
 github.com/dal-go/dalgo v0.79.3/go.mod h1:p0VdxLWu+Z/+kNYj7EdZHR+k3LzlpaUBo8atVeUiKBs=
 github.com/dal-go/record v0.1.3 h1:K85k/kSX08lTefMiMmPpC12nmCY2TVJk7+ZyC5PD9XU=
@@ -94,8 +92,6 @@ github.com/spf13/pflag v1.0.10 h1:4EBh2KAYBwaONj6b2Ye1GiHfwjqyROoF4RwYO+vPwFk=
 github.com/spf13/pflag v1.0.10/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
 github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
-github.com/strongo/buildinfo v0.2.0 h1:4lVoCUfUbwJN8EbqFNQ1oYdBnjKrKRx6FlLVrTPSleI=
-github.com/strongo/buildinfo v0.2.0/go.mod h1:JpxZ3Jku81LJC1RNIqCNYwguDzLk90eemxUXx4JnSlA=
 github.com/strongo/buildinfo v0.2.1 h1:z6H2UJYT8hAgzCUnNIjOCEAWmNnvj3KZdYXIw5dZngs=
 github.com/strongo/buildinfo v0.2.1/go.mod h1:JpxZ3Jku81LJC1RNIqCNYwguDzLk90eemxUXx4JnSlA=
 github.com/strongo/random v0.0.1 h1:OZHJBb/3uEa7OX8L2Dv2pLnSeewRmXMyTACoeto6O8I=
