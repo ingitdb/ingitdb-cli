@@ -6,24 +6,10 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'go.*'
-      - '**/*.go'
-      - 'src/**'
-      - '.github/workflows/*.yml'
-      - '.github/goreleaser*.yaml'
-      - '.golangci.yml'
 
   pull_request:
     branches:
       - '**'
-    paths:
-      - 'go.*'
-      - '**/*.go'
-      - 'src/**'
-      - '.golangci.yml'
-      - '.github/workflows/*.yml'
-      - '.github/goreleaser*.yaml'
 
 jobs:
   strongo_workflow:
