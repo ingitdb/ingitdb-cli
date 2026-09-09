@@ -52,10 +52,21 @@ jobs:
     # 2026-08-28 from v1.14.5 to v1.14.9 (same commit fd908b7c as v1 at time
     # of bump) to pick up the fix that makes verification use
     # `spctl -a -vv -t install` and assert `source=Notarized Developer ID`.
-    uses: strongo/cicd/.github/workflows/release.yml@v1.14.20
+    uses: strongo/cicd/.github/workflows/release.yml@v1.18.0
     permissions:
       contents: write
+      # Lets the require_workflow_success guard read the quality
+      # workflow's result for this commit. A reusable workflow cannot
+      # grant itself more than its caller allows, so it belongs here.
+      actions: read
     with:
+      # Refuse to tag or publish unless this repo's quality workflow
+      # passed for this exact commit. Release and that workflow are
+      # siblings started by the same push, with no cross-workflow
+      # `needs:` between them, so before this a red suite could not
+      # stop a release. datatug-cli shipped v0.13.2 that way. Names
+      # the workflow's `name:`, not its filename.
+      require_workflow_success: 'CI (build, lint, test, bump)'
       # Must be >= go.mod's `go` directive. The shared release job runs its
       # `go mod tidy` before-hook under this setup-go version with
       # GOTOOLCHAIN=local, so a lower value fails with
