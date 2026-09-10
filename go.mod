@@ -7,13 +7,13 @@ require (
 	charm.land/fang/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.6
 	github.com/charmbracelet/x/term v0.2.2
-	github.com/dal-go/dalgo v0.79.3
+	github.com/dal-go/dalgo v0.80.0
 	github.com/dal-go/record v0.1.3
 	github.com/datatug/cliformat v0.0.3
-	github.com/ingitdb/dalgo2ingitdb v0.3.5
+	github.com/ingitdb/dalgo2ingitdb v0.4.0
 	github.com/ingitdb/dalgo2ingitdb4github v0.2.8
 	github.com/ingitdb/dalgo2ingitdb4local v0.0.6
-	github.com/ingitdb/ingitdb-go/ingitdb v0.6.0
+	github.com/ingitdb/ingitdb-go/ingitdb v0.6.1
 	github.com/ingr-io/ingr-go v0.0.2
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/rivo/uniseg v0.4.7
@@ -24,7 +24,7 @@ require (
 )
 
 require (
-	github.com/RoaringBitmap/roaring/v2 v2.26.0 // indirect
+	github.com/RoaringBitmap/roaring/v2 v2.27.0 // indirect
 	github.com/bits-and-blooms/bitset v1.24.6 // indirect
 	github.com/charmbracelet/colorprofile v0.4.3 // indirect
 	github.com/charmbracelet/ultraviolet v0.0.0-20260811164956-006e29f97886 // indirect
@@ -47,7 +47,7 @@ require (
 	github.com/muesli/mango-pflag v0.2.0 // indirect
 	github.com/muesli/roff v0.1.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
-	github.com/strongo/random v0.0.1 // indirect
+	github.com/strongo/random v0.0.2 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	go.starlark.net v0.0.0-20260708150628-5395d018f003 // indirect
 	golang.org/x/sync v0.22.0 // indirect
