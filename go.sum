@@ -37,6 +37,8 @@ github.com/dal-go/dalgo v0.79.3 h1:awEX08IaxK135rrftqutBbdi/fWwAMx756YWgF2+W44=
 github.com/dal-go/dalgo v0.79.3/go.mod h1:p0VdxLWu+Z/+kNYj7EdZHR+k3LzlpaUBo8atVeUiKBs=
 github.com/dal-go/dalgo v0.80.0 h1:XiACeyr0mxQVRKF0b6ab0QVL/bUSoJAzwQgOE6KeKlA=
 github.com/dal-go/dalgo v0.80.0/go.mod h1:u7sD8jlXshi2qHrlPUm9GzR2uyPRaBI4Ro9ef5+WFzY=
+github.com/dal-go/dalgo v0.80.4 h1:qlbxd+k0vH1LlcKWIddkRVDXo2OwnBRiowUBytYw64c=
+github.com/dal-go/dalgo v0.80.4/go.mod h1:u7sD8jlXshi2qHrlPUm9GzR2uyPRaBI4Ro9ef5+WFzY=
 github.com/dal-go/record v0.1.3 h1:K85k/kSX08lTefMiMmPpC12nmCY2TVJk7+ZyC5PD9XU=
 github.com/dal-go/record v0.1.3/go.mod h1:quwsVJTT0f6y3Mhx+yHpTobY7luX1M6kyO6fdJ/AFYE=
 github.com/datatug/cliformat v0.0.3 h1:d9p5vo7r8BH6qSKyTHQ9Al2sT6QHsQTK9KRlihaJdIU=
@@ -56,6 +58,8 @@ github.com/ingitdb/dalgo2ingitdb v0.3.5 h1:aL+VWhbY3tct7FldgaIApe2gL2RiQXizbk4PY
 github.com/ingitdb/dalgo2ingitdb v0.3.5/go.mod h1:LLiFCCJiYbathvdL3aLVEIUgzJRpW374yK/g1725zyw=
 github.com/ingitdb/dalgo2ingitdb v0.4.0 h1:wJOtbEJBQap0EhWvZ2uNk5Qr4NOCjK2XJPjFrcR2kPU=
 github.com/ingitdb/dalgo2ingitdb v0.4.0/go.mod h1:FI/QbOLIGOzKyqryo1Pf5A7rhTJ0lcTnK7h6Hl1YhZ8=
+github.com/ingitdb/dalgo2ingitdb v0.6.0 h1:gLSnoCzmXdDrIm1djN7Kgx+Pcp3DuwNj9MWBmLCLXS0=
+github.com/ingitdb/dalgo2ingitdb v0.6.0/go.mod h1:l39kP1q/rbYxKroM9vAVvXDlD6BLYd+LJL+tv7nQoIY=
 github.com/ingitdb/dalgo2ingitdb4github v0.2.8 h1:48qTUCWgcTU/BETflpxhMKWasBeNUNtRMrkKnSMe+V0=
 github.com/ingitdb/dalgo2ingitdb4github v0.2.8/go.mod h1:I0N3VE3FVCiJTJScc1kCSoKMYKMrfU/I0Pqf6EO0piU=
 github.com/ingitdb/dalgo2ingitdb4local v0.0.6 h1:ymqqzCjJO+wMiSSFIdBs23OpVuP7ywEJPtyUtpAfVPc=

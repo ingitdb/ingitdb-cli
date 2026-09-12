@@ -7,10 +7,10 @@ require (
 	charm.land/fang/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.6
 	github.com/charmbracelet/x/term v0.2.2
-	github.com/dal-go/dalgo v0.80.0
+	github.com/dal-go/dalgo v0.80.4
 	github.com/dal-go/record v0.1.3
 	github.com/datatug/cliformat v0.0.3
-	github.com/ingitdb/dalgo2ingitdb v0.4.0
+	github.com/ingitdb/dalgo2ingitdb v0.6.0
 	github.com/ingitdb/dalgo2ingitdb4github v0.2.8
 	github.com/ingitdb/dalgo2ingitdb4local v0.0.6
 	github.com/ingitdb/ingitdb-go/ingitdb v0.6.1
