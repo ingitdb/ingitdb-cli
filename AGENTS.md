@@ -1,6 +1,6 @@
 # Guidelines for AI Agents
 
-Apply learned [skills](.github/copilot/skills/) when the context matches.
+Apply learned [skills](.agents/skills/) when the context matches.
 
 ## Commands
 
