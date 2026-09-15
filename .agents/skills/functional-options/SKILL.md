@@ -1,11 +1,9 @@
-# AI Skills
-
-Reusable patterns and conventions discovered or established during development.
-AI agents must apply these skills when the context matches.
-
+---
+name: functional-options
+description: Use Go's functional options pattern for optional configuration that flows through a call pipeline. Apply when adding, changing, or reviewing optional parameters and option structs in this repository's Go packages.
 ---
 
-## Functional Options Pattern
+# Functional Options Pattern
 
 Use Go's functional options pattern for optional configuration that flows through a call pipeline.
 
