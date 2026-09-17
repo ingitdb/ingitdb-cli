@@ -1,4 +1,4 @@
-name: CI (build, lint, test, bump)
+name: CI
 
 on:
   workflow_dispatch: # Allows manual run

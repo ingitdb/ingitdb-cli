@@ -66,7 +66,7 @@ jobs:
       # `needs:` between them, so before this a red suite could not
       # stop a release. datatug-cli shipped v0.13.2 that way. Names
       # the workflow's `name:`, not its filename.
-      require_workflow_success: 'CI (build, lint, test, bump)'
+      require_workflow_success: 'CI'
       # Must be >= go.mod's `go` directive. The shared release job runs its
       # `go mod tidy` before-hook under this setup-go version with
       # GOTOOLCHAIN=local, so a lower value fails with
