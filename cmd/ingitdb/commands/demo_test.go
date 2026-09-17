@@ -1461,3 +1461,27 @@ func TestDemoInstall_CommitRefusedHint(t *testing.T) {
 		})
 	}
 }
+
+// TestDemoInstall_JSONNextSteps checks each `next` entry names its numbered
+// step, so the two OpenVaultDB commands read as one step, as in the text.
+func TestDemoInstall_JSONNextSteps(t *testing.T) {
+	t.Parallel()
+	var b bytes.Buffer
+	if err := writeDemoResult(&b, newDemoResult("/x/todo-demo"), "json", "linux"); err != nil {
+		t.Fatal(err)
+	}
+	var doc struct {
+		Next []map[string]any `json:"next"`
+	}
+	if err := json.Unmarshal(b.Bytes(), &doc); err != nil {
+		t.Fatal(err)
+	}
+	var steps []float64
+	for _, n := range doc.Next {
+		step, _ := n["step"].(float64)
+		steps = append(steps, step)
+	}
+	if !reflect.DeepEqual(steps, []float64{1, 2, 3, 4, 4}) {
+		t.Errorf("steps = %v, want [1 2 3 4 4]\n%s", steps, b.String())
+	}
+}

@@ -31,9 +31,11 @@ type demoGitResult struct {
 	Commit     string `json:"commit" yaml:"commit"`
 }
 
-// demoNextStep is one command of the What next? list. Consecutive steps with
-// the same label belong to one numbered step.
+// demoNextStep is one command of the What next? list. Step is the 1-based
+// number of the step the command belongs to; a step with several commands,
+// such as the OpenVaultDB one, has one entry per command, in order.
 type demoNextStep struct {
+	Step    int    `json:"step" yaml:"step"`
 	Label   string `json:"label" yaml:"label"`
 	Command string `json:"command" yaml:"command"`
 	Note    string `json:"note,omitempty" yaml:"note,omitempty"`
@@ -60,11 +62,11 @@ func demoNextSteps(dir, goos string) []demoNextStep {
 	firstList := todo.Lists[0]
 	collection, _, _ := strings.Cut(firstList, "/")
 	return []demoNextStep{
-		{Label: "Browse the lists in the terminal UI", Command: "ingitdb " + pathArg},
-		{Label: "Query the lists", Command: "ingitdb select --from=" + collection + " " + pathArg},
-		{Label: "Query what to buy", Command: "ingitdb select --from=" + firstList + "/" + demoItemsCollection + " " + pathArg},
-		{Label: demoOVDBLabel, Command: "ovdb demo install --yes"},
-		{Label: demoOVDBLabel, Command: "ovdb demo open", Note: demoOVDBNote},
+		{Step: 1, Label: "Browse the lists in the terminal UI", Command: "ingitdb " + pathArg},
+		{Step: 2, Label: "Query the lists", Command: "ingitdb select --from=" + collection + " " + pathArg},
+		{Step: 3, Label: "Query what to buy", Command: "ingitdb select --from=" + firstList + "/" + demoItemsCollection + " " + pathArg},
+		{Step: 4, Label: demoOVDBLabel, Command: "ovdb demo install --yes"},
+		{Step: 4, Label: demoOVDBLabel, Command: "ovdb demo open", Note: demoOVDBNote},
 	}
 }
 
@@ -129,11 +131,9 @@ func demoText(result demoResult) string {
 		fmt.Fprintf(&b, "Git:       a Git repository, commit %s\n", result.Git.Commit[:min(7, len(result.Git.Commit))])
 	}
 	b.WriteString("\nWhat next?\n")
-	number := 0
 	for idx, step := range result.Next {
-		if idx == 0 || result.Next[idx-1].Label != step.Label {
-			number++
-			fmt.Fprintf(&b, "  %d. %s\n", number, step.Label)
+		if idx == 0 || result.Next[idx-1].Step != step.Step {
+			fmt.Fprintf(&b, "  %d. %s\n", step.Step, step.Label)
 		}
 		fmt.Fprintf(&b, "       %s\n", step.Command)
 		if step.Note != "" {

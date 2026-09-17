@@ -38,9 +38,12 @@ Go package `github.com/ingitdb/ingitdb-go/ingitdb/demos/todo`.
    configuration is not changed.
 
 If a step fails, everything that run wrote is removed (the folders it created, when they are
-empty; never another run's files). The install honours your commit hooks and commit signing; when they refuse the commit, the error
-says so and shows how to install once without your global Git configuration
-(`GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 ingitdb demo install`). Without `git`, the files are still installed and the output says to run `git init`.
+empty; never another run's files). Without `git`, the files are still installed and the output
+says to run `git init`.
+
+The install honours your commit hooks and commit signing. When they refuse the commit, the error
+says so and shows how to install once without your global and system Git configuration:
+`GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 ingitdb demo install`.
 
 Running it again on an installed demo writes nothing, keeps your edits and prints
 `The TODO demo is already installed in <folder>` with the same next steps. The command never
@@ -72,9 +75,23 @@ Paths with spaces or shell-special characters are quoted for your shell: single 
 Linux and macOS, double quotes on Windows (works in `cmd.exe` and PowerShell).
 
 With `--format=json` (or `yaml`) stdout is a single document with `app`, `installed`,
-`already_installed`, `path`, `git` (`repository`, `commit`), `lists` and `next` (a list of
-`label` and `command`, plus `note` on the OpenVaultDB step). Errors go to stderr with a
-non-zero exit code.
+`already_installed`, `path`, `git` (`repository`, `commit`), `lists` and `next`. Errors go to
+stderr with a non-zero exit code.
+
+`next` has one entry per command, in order. Each entry has `step` (the number of the step in the
+text output), `label` and `command`; a step with several commands has one entry per command with
+the same `step` and `label`, and a `note` belongs to its step. Today step 4 (OpenVaultDB) has two
+entries, `ovdb demo install --yes` and `ovdb demo open`, the second carrying the note.
+
+```json
+"next": [
+  {"step": 1, "label": "Browse the lists in the terminal UI", "command": "ingitdb --path=/home/ada/todo-demo"},
+  {"step": 2, "label": "Query the lists", "command": "ingitdb select --from=lists --path=/home/ada/todo-demo"},
+  {"step": 3, "label": "Query what to buy", "command": "ingitdb select --from=lists/to-buy/items --path=/home/ada/todo-demo"},
+  {"step": 4, "label": "Use the lists in a web TODO app (OpenVaultDB)", "command": "ovdb demo install --yes"},
+  {"step": 4, "label": "Use the lists in a web TODO app (OpenVaultDB)", "command": "ovdb demo open", "note": "OpenVaultDB keeps its own copy of the same lists. Install ovdb from https://github.com/openvaultdb/ovdb"}
+]
+```
 
 **Examples:**
 
