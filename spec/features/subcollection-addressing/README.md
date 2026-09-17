@@ -1,12 +1,12 @@
 ---
 format: https://specscore.md/feature-specification
-status: Draft
+status: Implementing
 ---
 
 # Feature: Subcollection Addressing
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/subcollection-addressing?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/subcollection-addressing?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/subcollection-addressing?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/subcollection-addressing?op=request-change) |
-**Status:** Draft
+**Status:** Implementing
 **Source Ideas:** —
 
 ## Summary
@@ -100,7 +100,17 @@ first.
 
 ## Implementation
 
-Not implemented yet. Plan: [2026-09-17-cli-demo](../../plans/2026-09-17-cli-demo.md), Task 3.
+Plan: [2026-09-17-cli-demo](../../plans/2026-09-17-cli-demo.md), Task 3. Source files
+annotated with `// specscore: feature/subcollection-addressing`:
+
+- [`cmd/ingitdb/commands/subcollection_path.go`](../../../cmd/ingitdb/commands/subcollection_path.go) — resolves a `--from` value to a collection reference carrying the parent record key.
+- [`cmd/ingitdb/commands/select.go`](../../../cmd/ingitdb/commands/select.go) — set mode reads through that reference.
+- [`cmd/ingitdb/tui/collection_screen.go`](../../../cmd/ingitdb/tui/collection_screen.go) and [`cmd/ingitdb/tui/model.go`](../../../cmd/ingitdb/tui/model.go) — drill-down, chooser and back navigation.
+- [`cmd/ingitdb/tui/collection_data_panel.go`](../../../cmd/ingitdb/tui/collection_data_panel.go) — the subcollection chooser.
+
+Tests: `cmd/ingitdb/commands/select_subcollection_test.go` and
+`cmd/ingitdb/tui/subcollection_test.go`, over a fixture shaped like the TODO demo
+(`internal/testutil/nested_lists.go`) whose records are written through the local driver.
 
 ## Acceptance Criteria
 

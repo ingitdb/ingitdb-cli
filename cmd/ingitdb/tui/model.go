@@ -5,6 +5,7 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -32,6 +33,9 @@ type Model struct {
 	currentScreen screen
 	home          homeModel
 	collection    *collectionModel
+	// parents holds the collection screens a subcollection screen was opened
+	// from, root first; esc returns to the last one.
+	parents []collectionModel
 }
 
 // New creates the root model. width/height are the initial terminal dimensions.
@@ -67,6 +71,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			updated, _ := m.collection.Update(msg)
 			m.collection = &updated
 		}
+		for i := range m.parents {
+			m.parents[i], _ = m.parents[i].Update(msg)
+		}
 		return m, nil
 
 	case tea.KeyPressMsg:
@@ -76,22 +83,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "backspace":
 			if m.currentScreen == screenCollection {
-				m.currentScreen = screenHome
-				m.collection = nil
+				m = m.back()
 			}
 			return m, nil
 
 		case "esc":
 			if m.currentScreen == screenCollection {
-				// If locale dropdown is open, close it instead of navigating back.
-				if m.collection != nil && m.collection.localeDropdownOpen {
+				// If a dropdown is open, close it instead of navigating back.
+				if m.collection != nil && (m.collection.localeDropdownOpen || m.collection.subDropdownOpen) {
 					updated, cmd := m.collection.Update(msg)
 					m.collection = &updated
 					return m, cmd
 				}
-				m.currentScreen = screenHome
-				m.collection = nil
-				return m, nil
+				return m.back(), nil
 			}
 			// On home screen, route esc to homeModel for dropdown handling.
 			updated, cmd := m.home.Update(msg)
@@ -112,6 +116,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
+
+	case openSubcollectionMsg:
+		if m.currentScreen == screenCollection && m.collection != nil {
+			return m.openSubcollection(msg)
+		}
+		return m, nil
 
 	case recordsLoadedMsg:
 		if m.currentScreen == screenHome {
@@ -141,6 +151,36 @@ func (m Model) openCollection(colDef *ingitdb.CollectionDef) (Model, tea.Cmd) {
 	m.collection = &col
 	m.currentScreen = screenCollection
 	return m, m.collection.Init()
+}
+
+// openSubcollection opens a collection screen for a declared subcollection of
+// the current screen's selected record, keeping the current screen to return to.
+//
+// specscore: feature/subcollection-addressing
+func (m Model) openSubcollection(msg openSubcollectionMsg) (Model, tea.Cmd) {
+	parents := make([]collectionModel, 0, len(m.parents)+1)
+	parents = append(parents, m.parents...)
+	parents = append(parents, *m.collection)
+	col := newCollectionModel(msg.colDef, m.collection.db, m.width, m.height)
+	col.parent = msg.parent
+	col.path = msg.path
+	m.parents = parents
+	m.collection = &col
+	return m, col.Init()
+}
+
+// back leaves the current collection screen: to the screen a subcollection was
+// opened from, or to the home screen from a root collection.
+func (m Model) back() Model {
+	if n := len(m.parents); n > 0 {
+		parent := m.parents[n-1]
+		m.parents = m.parents[:n-1]
+		m.collection = &parent
+		return m
+	}
+	m.currentScreen = screenHome
+	m.collection = nil
+	return m
 }
 
 func (m Model) delegateUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -182,11 +222,11 @@ func (m Model) renderHeader() string {
 	case screenHome:
 		title = "  inGitDB"
 	case screenCollection:
-		colID := ""
+		colPath := ""
 		if m.collection != nil {
-			colID = m.collection.colDef.ID
+			colPath = strings.Join(m.collection.path, " › ")
 		}
-		title = fmt.Sprintf("  inGitDB  ›  %s", colID)
+		title = fmt.Sprintf("  inGitDB  ›  %s", colPath)
 	}
 	return headerStyle.Width(m.width).Render(title)
 }

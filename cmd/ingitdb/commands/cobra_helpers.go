@@ -140,8 +140,14 @@ func resolveRemoteFromFlags(cmd *cobra.Command, value string) (remoteSpec, error
 // newQueryForCollection builds the SelectIntoRecord query used by the
 // set-mode CRUD commands (delete --from, update --from, select --from).
 func newQueryForCollection(collectionID string) dal.StructuredQuery {
-	qb := dal.NewQueryBuilder(dal.From(dal.NewRootCollectionRef(collectionID, "")))
-	return qb.SelectIntoRecord(newEmptyRecordFactory(collectionID))
+	return newQueryForCollectionRef(dal.NewRootCollectionRef(collectionID, ""))
+}
+
+// newQueryForCollectionRef builds the SelectIntoRecord query for a collection
+// reference, which may carry a parent record key for a subcollection.
+func newQueryForCollectionRef(ref dal.CollectionRef) dal.StructuredQuery {
+	qb := dal.NewQueryBuilder(dal.From(ref))
+	return qb.SelectIntoRecord(newEmptyRecordFactory(ref.Name()))
 }
 
 // newEmptyRecordFactory returns a factory that creates empty records keyed

@@ -156,6 +156,9 @@ func (m collectionModel) renderRecords(width, height int) string {
 	if m.localeDropdownOpen && len(m.locales) > 1 {
 		dropLines = m.buildLocaleDropdownLines()
 	}
+	if m.subDropdownOpen {
+		dropLines = m.buildSubcollectionDropdownLines()
+	}
 
 	// Merge: overlay the dropdown on the right side starting at line 1
 	// (just below the title row, aligned with the locale selector button).
@@ -230,6 +233,37 @@ func (m collectionModel) buildLocaleDropdownLines() []string {
 		}
 		row := "│" + content + "│"
 		if i == m.localeDropdownCursor {
+			row = selectedItemStyle.Render(row)
+		}
+		lines = append(lines, row)
+	}
+	lines = append(lines, "└"+strings.Repeat("─", innerW)+"┘")
+	return lines
+}
+
+// buildSubcollectionDropdownLines returns each line of the subcollection
+// chooser box: the declared subcollection IDs, sorted, with the cursor marked.
+//
+// specscore: feature/subcollection-addressing
+func (m collectionModel) buildSubcollectionDropdownLines() []string {
+	ids := m.subcollectionIDs()
+	innerW := 10
+	for _, id := range ids {
+		if w := uniseg.StringWidth("► " + id); w > innerW {
+			innerW = w
+		}
+	}
+	lines := make([]string, 0, len(ids)+2)
+	lines = append(lines, "┌"+strings.Repeat("─", innerW)+"┐")
+	for i, id := range ids {
+		prefix := "  "
+		if i == m.subDropdownCursor {
+			prefix = "► "
+		}
+		content := prefix + id
+		content += strings.Repeat(" ", innerW-uniseg.StringWidth(content))
+		row := "│" + content + "│"
+		if i == m.subDropdownCursor {
 			row = selectedItemStyle.Render(row)
 		}
 		lines = append(lines, row)
