@@ -328,3 +328,54 @@ func TestCollectionModel_HelpLineFitsIn80Columns(t *testing.T) {
 		t.Errorf("help line should end with q quit: %q", help)
 	}
 }
+
+func TestModel_HeaderPathTruncatedFromLeft(t *testing.T) {
+	t.Parallel()
+	const uuid = "0f8fad5b-d9cb-469f-a165-70867728950e"
+	for _, width := range []int{50, 80} {
+		m := newTestModel("lists")
+		m.width = width
+		col := newCollectionModel(simpleColDef("tags", "name"), nil, width, 24)
+		col.path = []string{"lists", uuid, "items", uuid, "tags"}
+		m.collection = &col
+		m.currentScreen = screenCollection
+		header := m.renderHeader()
+		if strings.Contains(header, "\n") {
+			t.Errorf("width %d: header wraps:\n%s", width, header)
+		}
+		if w := lipgloss.Width(header); w > width {
+			t.Errorf("width %d: header is %d columns", width, w)
+		}
+		plain := stripAnsi(header)
+		if !strings.Contains(plain, "inGitDB") || !strings.Contains(plain, "…") || !strings.HasSuffix(strings.TrimRight(plain, " "), "› tags") {
+			t.Errorf("width %d: header should keep inGitDB and the path tail after an ellipsis: %q", width, plain)
+		}
+	}
+	m := newTestModel("lists")
+	col := newCollectionModel(simpleColDef("items", "title"), nil, 120, 24)
+	col.path = []string{"lists", "to-buy", "items"}
+	m.collection = &col
+	m.currentScreen = screenCollection
+	if plain := stripAnsi(m.renderHeader()); !strings.Contains(plain, "inGitDB  ›  lists › to-buy › items") || strings.Contains(plain, "…") {
+		t.Errorf("a path that fits must not be truncated: %q", plain)
+	}
+}
+
+func TestTruncateLeft(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		in   string
+		max  int
+		want string
+	}{
+		{"lists › items", 20, "lists › items"},
+		{"lists › items", 7, "… items"},
+		{"lists › items", 1, "…"},
+		{"lists › items", 0, ""},
+		{"lists › items", -3, ""},
+	} {
+		if got := truncateLeft(tc.in, tc.max); got != tc.want {
+			t.Errorf("truncateLeft(%q, %d) = %q, want %q", tc.in, tc.max, got, tc.want)
+		}
+	}
+}

@@ -10,6 +10,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/dal-go/dalgo/dal"
+	"github.com/rivo/uniseg"
 
 	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
@@ -222,11 +223,44 @@ func (m Model) renderHeader() string {
 	case screenHome:
 		title = "  inGitDB"
 	case screenCollection:
+		const prefix = "  inGitDB  ›  "
 		colPath := ""
 		if m.collection != nil {
 			colPath = strings.Join(m.collection.path, " › ")
 		}
-		title = fmt.Sprintf("  inGitDB  ›  %s", colPath)
+		// headerStyle pads 2 columns on each side; the path gets what remains
+		// after the prefix and is cut from the left so the header never wraps.
+		avail := m.width - headerStyle.GetHorizontalFrameSize() - uniseg.StringWidth(prefix)
+		title = fmt.Sprintf("%s%s", prefix, truncateLeft(colPath, avail))
 	}
 	return headerStyle.Width(m.width).Render(title)
+}
+
+// truncateLeft keeps the end of s within maxWidth display columns, replacing
+// the dropped beginning with "…", so the deepest path segments stay visible.
+//
+// specscore: feature/subcollection-addressing
+func truncateLeft(s string, maxWidth int) string {
+	if uniseg.StringWidth(s) <= maxWidth {
+		return s
+	}
+	if maxWidth < 1 {
+		return ""
+	}
+	g := uniseg.NewGraphemes(s)
+	var clusters []string
+	for g.Next() {
+		clusters = append(clusters, g.Str())
+	}
+	width := 1 // the ellipsis
+	start := len(clusters)
+	for start > 0 {
+		w := uniseg.StringWidth(clusters[start-1])
+		if width+w > maxWidth {
+			break
+		}
+		width += w
+		start--
+	}
+	return "…" + strings.Join(clusters[start:], "")
 }

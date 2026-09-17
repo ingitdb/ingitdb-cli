@@ -79,7 +79,9 @@ subcollections MUST open a collection screen listing that record's records in th
 subcollection. With one declared subcollection it MUST open directly. With several, `enter`
 MUST first show the declared subcollection IDs in sorted order; `↑`/`↓` choose, `enter`
 opens the chosen one and `esc` closes the list without opening. The screen header MUST show
-the full path (for example `lists › to-buy › items`). A subcollection screen MUST support the
+the full path (for example `lists › to-buy › items`); when it does not fit the terminal width
+it MUST be cut from the left with an ellipsis (`…items › milk › tags`) so the header never
+wraps. A subcollection screen MUST support the
 same drill-down into its own declared subcollections. `enter` on a record of a collection
 without subcollections MUST do nothing.
 
