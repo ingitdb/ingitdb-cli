@@ -1,3 +1,8 @@
+---
+format: https://specscore.md/plan-specification
+status: Approved
+---
+
 # Plan: List-of-Records Files (YAML/JSON Sequences + JSONL)
 
 **Status:** Approved

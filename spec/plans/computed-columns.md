@@ -1,3 +1,8 @@
+---
+format: https://specscore.md/plan-specification
+status: Implemented
+---
+
 # Plan: Computed Columns (Inline Starlark Formulas)
 
 **Status:** Implemented
@@ -37,7 +42,7 @@ bar applies to all seven tasks.
 
 ### Task 1: Add `formula` attribute and load-time validation
 
-**Status:** done
+**Status:** complete
 **Verifies:** computed-columns#ac:formula-syntax-error, computed-columns#ac:unsupported-type-rejected, computed-columns#ac:reject-chained-computed-reference
 
 Add a `formula` string field to `ColumnDef` and extend schema validation: the formula
@@ -49,7 +54,7 @@ rejected as a stored-fields-only violation.
 
 ### Task 2: Sandboxed deterministic evaluator and builtin helpers
 
-**Status:** done
+**Status:** complete
 **Verifies:** computed-columns#ac:deterministic-evaluation, computed-columns#ac:builtin-string-helper-available, computed-columns#ac:builtin-math-helper-available
 
 Build the formula evaluation function: evaluate a parsed Starlark expression with the
@@ -61,7 +66,7 @@ non-deterministic or I/O-capable builtin or module is reachable.
 
 ### Task 3: Compute-on-read integration, type coercion, and fail-loud errors
 
-**Status:** done
+**Status:** complete
 **Verifies:** computed-columns#ac:formula-declared-and-computed, computed-columns#ac:type-coercion-success, computed-columns#ac:runtime-error-fails-read
 
 Invoke the evaluator in the read path alongside `ApplyLocaleToRead` so every read
@@ -71,7 +76,7 @@ collection, record key, column, and cause — no partial row, no silent null.
 
 ### Task 4: Reject stored values for computed columns
 
-**Status:** done
+**Status:** complete
 **Verifies:** computed-columns#ac:reject-stored-computed-value
 
 On `insert`/`update` and during file validation, reject any record that supplies a
@@ -80,7 +85,7 @@ column. The computed value remains the sole source of truth.
 
 ### Task 5: Computed columns usable in `--where` and `order_by`
 
-**Status:** done
+**Status:** complete
 **Verifies:** computed-columns#ac:filter-on-computed-column, computed-columns#ac:order-by-computed-column
 
 Confirm and test that, because evaluation precedes query operations, computed columns
@@ -89,7 +94,7 @@ do; close any gap where filtering/sorting reads pre-evaluation record state.
 
 ### Task 6: Write-time foreign-key enforcement for computed columns (child side)
 
-**Status:** done
+**Status:** complete
 **Verifies:** computed-columns#ac:foreign-key-on-insert-violation, computed-columns#ac:foreign-key-revalidates-on-input-change
 
 Extend the existing write-time referential-integrity path: on `insert`/`update`,
@@ -101,7 +106,7 @@ computed foreign-key column is never written directly.
 
 ### Task 7: Parent-side foreign-key enforcement (delete and rename)
 
-**Status:** done
+**Status:** complete
 **Verifies:** computed-columns#ac:foreign-key-parent-delete-detected, computed-columns#ac:foreign-key-parent-rename-detected
 
 When a referenced record is deleted or its key renamed, scan the referencing
