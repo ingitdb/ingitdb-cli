@@ -219,3 +219,30 @@ func TestSelect_Subcollection_RootFromUnchanged(t *testing.T) {
 	_, err = runNestedSelect(t, dir, "--from=missing")
 	testutil.MustErrContain(t, err, `collection "missing" not found in definition`)
 }
+
+// Swaps the package-level gitHubFileReaderFactory seam, so not parallel.
+func TestSelect_Subcollection_RemoteRejected(t *testing.T) {
+	reader := fakeFileReader{files: map[string][]byte{
+		".ingitdb/root-collections.yaml": []byte("lists: lists\n"),
+	}}
+	orig := gitHubFileReaderFactory
+	gitHubFileReaderFactory = &constantFileReaderFactory{reader: reader}
+	defer func() { gitHubFileReaderFactory = orig }()
+
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return "/tmp/db", nil }
+	readDef := func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		t.Fatal("local definition must not be read for --remote")
+		return nil, nil
+	}
+	newDB := func(string, *ingitdb.Definition) (dal.DB, error) {
+		t.Fatal("local database must not be opened for --remote")
+		return nil, nil
+	}
+	stdout, err := runSelectCmd(t, homeDir, getWd, readDef, newDB, func(...any) {},
+		"--remote=github.com/owner/repo", "--from=lists/to-buy/items")
+	testutil.MustErrContain(t, err, `failed to read remote definition: collection "lists/to-buy/items" not found in root config`)
+	if stdout != "" {
+		t.Errorf("stdout should be empty, got:\n%s", stdout)
+	}
+}

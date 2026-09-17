@@ -30,9 +30,18 @@ be queried or browsed.
 
 ### Select
 
+#### REQ: local-databases-only
+
+Subcollection paths apply to local databases only (`--path`, or the current directory per
+[path-targeting](../path-targeting/README.md)); the requirements below are about local
+databases. With `--remote`, a `--from` value containing `/` MUST keep today's behaviour: exit
+non-zero with `failed to read remote definition: collection "<value>" not found in root
+config` and write nothing to stdout, until remote subcollection paths are specified (see
+[Open Questions](#open-questions)).
+
 #### REQ: from-subcollection-path
 
-`select --from` MUST accept a subcollection path of the form
+For a local database, `select --from` MUST accept a subcollection path of the form
 `<collection>/<record-key>/<subcollection>`, repeatable to deeper levels
 (`<collection>/<record-key>/<subcollection>/<record-key>/<subcollection>`). The first segment
 MUST be a root collection ID. Segments at even positions (second, fourth, ...) are parent
@@ -149,6 +158,16 @@ and `--from=lists//items` run
 **Then** each exits non-zero with `collection "<value>" not found in definition` and writes
 nothing to stdout
 
+### AC: remote-subcollection-path-rejected
+
+**Requirements:** subcollection-addressing#req:local-databases-only
+
+**Given** a remote repository whose root collections include `lists`
+**When** `ingitdb select --remote=<repo> --from=lists/to-buy/items` runs
+**Then** it exits non-zero with `failed to read remote definition: collection
+"lists/to-buy/items" not found in root config`, reads no local definition and writes nothing
+to stdout
+
 ### AC: root-from-unchanged
 
 **Requirements:** subcollection-addressing#req:root-from-unchanged
@@ -183,7 +202,8 @@ record
 - Should `describe` and `list collections` show subcollections by path?
 - Should write verbs (`insert --into`, `update --from`, `delete --from`) accept subcollection
   paths?
-- Should `--remote` accept subcollection paths in `select --from`?
+- Should `--remote` accept subcollection paths in `select --from`? Until then they are
+  rejected per [REQ:local-databases-only](#req-local-databases-only).
 
 ---
 *This document follows the https://specscore.md/feature-specification*
