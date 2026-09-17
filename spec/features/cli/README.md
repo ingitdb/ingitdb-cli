@@ -24,6 +24,7 @@ CLI surface; keep those skills in sync when a command's flags or behavior change
 | [drop](drop/README.md) | The `drop` verb removes schema objects from the database. Two kinds today: `drop collection <name>` and `drop view <name>`. Removes both the schema entry in `.ingitdb.yaml` and any associated data directory in a single git commit. `--if-exists` makes the operation idempotent; `--cascade` also drops dependents. Replaces `delete-collection` and `delete-view`. |
 | [describe](describe/README.md) | The `describe` verb (alias `desc`) prints the full definition of a single collection or view. |
 | [demo](demo/README.md) | The `demo install` verb creates the TODO demo (To buy and To watch lists, shared with OpenVaultDB's demo) as a new Git-backed database and prints how to browse it in the TUI, query it with `select`, and points to OpenVaultDB's web TODO app, which keeps its own copy. |
+| [install](install/README.md) | The `install` verb lists the fleet CLIs relevant to ingitdb (datatug, ovdb, synchestra, specscore) with live status, and installs named targets the same way ingitdb itself was installed. Built entirely on `github.com/strongo/cli-helpers/cliinstall`. |
 | [create-record](create-record/README.md) | Historical: `ingitdb create record` (removed). Superseded by `insert`. |
 | [delete-collection](delete-collection/README.md) | Historical: `ingitdb delete collection` (removed). Superseded by `drop collection`. |
 | [delete-record](delete-record/README.md) | Historical: `ingitdb delete record` (removed). Superseded by `delete --id`. |
@@ -54,6 +55,7 @@ CLI surface; keep those skills in sync when a command's flags or behavior change
 |---------|--------|---------|
 | [version](version/README.md) | Implementing | `ingitdb version` |
 | [self-update](self-update/README.md) | Implementing | `ingitdb self-update` |
+| [install](install/README.md) | Implementing | `ingitdb install` |
 | [validate](validate/README.md) | Implementing | `ingitdb validate` |
 | [select](select/README.md) | Implementing | `ingitdb select` |
 | [insert](insert/README.md) | Implementing | `ingitdb insert` |

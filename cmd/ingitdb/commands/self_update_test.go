@@ -1,690 +1,312 @@
 package commands
 
 import (
-	"bytes"
-	"context"
+	"encoding/json"
 	"errors"
-	"fmt"
-	"io/fs"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/ingitdb/ingitdb-cli/internal/selfupdate"
+	"github.com/strongo/cli-helpers/cliinstall"
+	"github.com/strongo/cli-helpers/selfupdate"
+	"github.com/strongo/cli-helpers/selfupdate/cobracmd"
 )
 
-// exitRecorder captures calls to the command's exit-code seam.
-type exitRecorder struct{ codes []int }
+// --- command shape: name, no "update" alias, flag surface ---
 
-func (r *exitRecorder) fn(code int) { r.codes = append(r.codes, code) }
+// AC: cli/self-update#ac:canonical-name — the canonical command name stays
+// "self-update" with deliberately NO "update" alias: `ingitdb update` is the
+// SQL UPDATE verb command. The migration to cli-helpers/selfupdate/cobracmd
+// also adds --dry-run and --format (JSONFormat: true), per the rewritten
+// spec/features/cli/self-update/README.md.
+func TestSelfUpdate_CommandShapeUnchangedPlusNewFlags(t *testing.T) {
+	t.Parallel()
 
-// runSelfUpdate executes the self-update command with the given running
-// version and args, returning stdout, stderr, the recorded exit codes, and
-// the Execute error.
-func runSelfUpdate(t *testing.T, ver string, args ...string) (string, string, *exitRecorder, error) {
-	t.Helper()
-	rec := &exitRecorder{}
-	cmd := SelfUpdate(ver, rec.fn)
-	var out, errOut bytes.Buffer
-	cmd.SetOut(&out)
-	cmd.SetErr(&errOut)
-	cmd.SetArgs(args)
-	err := cmd.Execute()
-	return out.String(), errOut.String(), rec, err
-}
-
-// withDetection overrides the package-level detection seam for the duration
-// of the test and restores it afterward, so tests never depend on the real
-// os.Executable path. Tests using it must not run in parallel.
-func withDetection(t *testing.T, d selfupdate.Detection) {
-	t.Helper()
-	prev := detectInstall
-	detectInstall = func() (selfupdate.Detection, error) { return d, nil }
-	t.Cleanup(func() { detectInstall = prev })
-}
-
-// withLatest overrides the package-level release-resolution seam so tests
-// never hit the network. Tests using it must not run in parallel.
-func withLatest(t *testing.T, tag string, err error) {
-	t.Helper()
-	prev := resolveLatest
-	resolveLatest = func(context.Context) (string, error) { return tag, err }
-	t.Cleanup(func() { resolveLatest = prev })
-}
-
-// withInteractive overrides the package-level TTY-detection seam so
-// confirmation tests never depend on the test runner's stdin. Tests using it
-// must not run in parallel.
-func withInteractive(t *testing.T, interactive bool) {
-	t.Helper()
-	prev := isInteractive
-	isInteractive = func() bool { return interactive }
-	t.Cleanup(func() { isInteractive = prev })
-}
-
-// withSelfReplace overrides the package-level self-replace seam with a spy so
-// tests never download or replace anything. It returns a pointer to a bool
-// recording whether the seam was invoked. Tests using it must not run in
-// parallel.
-func withSelfReplace(t *testing.T, err error) *bool {
-	t.Helper()
-	called := false
-	prev := doSelfReplace
-	doSelfReplace = func(context.Context, string) error {
-		called = true
-		return err
-	}
-	t.Cleanup(func() { doSelfReplace = prev })
-	return &called
-}
-
-// withSelfReplaceTag overrides the self-replace seam with a spy that captures
-// the tag it was called with. Tests using it must not run in parallel.
-func withSelfReplaceTag(t *testing.T, err error) *string {
-	t.Helper()
-	var gotTag string
-	prev := doSelfReplace
-	doSelfReplace = func(_ context.Context, tag string) error {
-		gotTag = tag
-		return err
-	}
-	t.Cleanup(func() { doSelfReplace = prev })
-	return &gotTag
-}
-
-// AC: cli/self-update#ac:canonical-name — the canonical command name is
-// "self-update" and there is deliberately NO "update" alias: `ingitdb update`
-// is the SQL UPDATE verb command. --check output must be deterministic.
-func TestSelfUpdate_CanonicalNameNoUpdateAlias(t *testing.T) {
-	withDetection(t, selfupdate.Detection{Method: selfupdate.Managed, Manager: selfupdate.Homebrew})
-	withLatest(t, "v1.2.3", nil)
-
-	cmd := SelfUpdate("1.2.3", func(int) {})
+	cmd := SelfUpdate("1.2.3")
 	if cmd.Name() != "self-update" {
-		t.Errorf("canonical name = %q; want %q", cmd.Name(), "self-update")
+		t.Errorf("Name() = %q, want %q", cmd.Name(), "self-update")
 	}
 	if cmd.HasAlias("update") {
 		t.Error("self-update must not alias \"update\": it would collide with the SQL update verb command")
 	}
 
-	out, _, _, err := runSelfUpdate(t, "1.2.3", "--check")
-	if err != nil {
-		t.Fatalf("self-update --check returned error: %v", err)
+	for _, name := range []string{"check", "yes", "version", "allow-downgrade", "dry-run", "format"} {
+		if cmd.Flags().Lookup(name) == nil {
+			t.Errorf("missing --%s flag", name)
+		}
 	}
-	if out == "" {
-		t.Error("expected deterministic output on stdout, got empty")
+	if f := cmd.Flags().Lookup("yes"); f.Shorthand != "y" {
+		t.Errorf("--yes shorthand = %q, want y", f.Shorthand)
 	}
-
-	out2, _, _, err2 := runSelfUpdate(t, "1.2.3", "--check")
-	if err2 != nil {
-		t.Fatalf("second run returned error: %v", err2)
-	}
-	if out != out2 {
-		t.Errorf("output not deterministic: %q != %q", out, out2)
+	if f := cmd.Flags().Lookup("format"); f.DefValue != "text" {
+		t.Errorf("--format default = %q, want text", f.DefValue)
 	}
 }
 
-// AC: cli/self-update#ac:managed-is-redirected — when the executable lives in
-// a Homebrew-cask or Snap managed location, self-update MUST print the
-// detected manager and its exact upgrade command, exit 0, and leave the
-// executable unchanged (no filesystem writes).
-func TestSelfUpdate_ManagedIsRedirected(t *testing.T) {
+// The catalog lookup failing is a programming error the package's own tests
+// must catch (cli-install#req:host-identity-from-catalog), never a runtime
+// state; TestSelfUpdate_CommandShapeUnchangedPlusNewFlags above proves the
+// real "ingitdb" entry resolves. This test seam-swaps catalogByID to reach
+// the defensive panic. Must not run in parallel: it mutates a package var.
+func TestSelfUpdate_PanicsWhenCatalogEntryMissing(t *testing.T) {
+	prev := catalogByID
+	catalogByID = func(string) (cliinstall.Entry, bool) { return cliinstall.Entry{}, false }
+	t.Cleanup(func() { catalogByID = prev })
+
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Fatal("expected SelfUpdate to panic when its catalog entry is missing")
+		}
+		msg, ok := r.(string)
+		if !ok || !strings.Contains(msg, "ingitdb") {
+			t.Errorf("panic value = %v, want a message naming \"ingitdb\"", r)
+		}
+	}()
+	SelfUpdate("1.2.3")
+}
+
+// --- selfUpdateErrors: the exit-code-preserving ErrorMapper ---
+
+// selfUpdateErrors.Failure must never translate or wrap: every self-update
+// failure kind (ambiguous detection, release lookup, download, checksum,
+// permission, non-interactive refusal, a managed-command failure, or an
+// invalid --format usage error) keeps falling through to the CLI's generic
+// error exit 1 via main.go's default exitCodeForError branch, exactly as
+// the old internal self-update package's failures did before this migration.
+func TestSelfUpdateErrors_Failure_PassesThroughUnchanged(t *testing.T) {
+	t.Parallel()
+
+	cases := []error{
+		&selfupdate.Failure{Kind: selfupdate.KindAmbiguous, Err: errors.New("ambiguous")},
+		&selfupdate.Failure{Kind: selfupdate.KindReleaseLookup, Err: errors.New("lookup failed")},
+		&selfupdate.Failure{Kind: selfupdate.KindChecksum, Err: errors.New("checksum mismatch")},
+		&selfupdate.Failure{Kind: selfupdate.KindPermission, Path: "/usr/local/bin/ingitdb", Err: errors.New("permission denied")},
+		&selfupdate.Failure{Kind: selfupdate.KindNonInteractive, Err: errors.New("no tty")},
+		&selfupdate.Failure{Kind: selfupdate.KindManagedCommand, Err: errors.New("brew failed")},
+		&cobracmd.UsageError{Err: errors.New("invalid --format")},
+		errors.New("plain error"),
+	}
+	for _, err := range cases {
+		got := (selfUpdateErrors{}).Failure(err)
+		if got != err {
+			t.Errorf("Failure(%v) = %v, want the same error returned unchanged", err, got)
+		}
+	}
+}
+
+// selfUpdateErrors.UpdateAvailable always returns ErrSelfUpdateAvailable,
+// which main.go's exitCodeForError maps to SelfUpdateAvailableExitCode (10)
+// — preserving the exit-10-on-available-update contract regardless of the
+// CheckResult's own content.
+func TestSelfUpdateErrors_UpdateAvailable_ReturnsSentinel(t *testing.T) {
+	t.Parallel()
+
+	cases := []selfupdate.CheckResult{
+		{Current: "1.0.0", Latest: "1.1.0", Verdict: selfupdate.UpdateAvailable},
+		{Current: "dev", Latest: "1.1.0", Verdict: selfupdate.Undetermined},
+		{},
+	}
+	for _, res := range cases {
+		err := (selfUpdateErrors{}).UpdateAvailable(res)
+		if !errors.Is(err, ErrSelfUpdateAvailable) {
+			t.Errorf("UpdateAvailable(%+v) = %v, want ErrSelfUpdateAvailable", res, err)
+		}
+	}
+}
+
+// --- catalog identity: the flat checksums.txt fix and redirect-only managers ---
+
+// The known bug this migration fixes: the old internal self-update package
+// fetched "checksums-darwin.txt" and "checksums-windows.txt", which 404 because
+// ingitdb's release publishes one flat "checksums.txt" for every platform
+// (.goreleaser.yaml `checksum.name_template: checksums.txt`). The catalog
+// entry's ChecksumsName override must always resolve to that flat name.
+func TestIngitdbCatalogEntry_FlatChecksumsName(t *testing.T) {
+	t.Parallel()
+
+	entry, ok := cliinstall.ByID("ingitdb")
+	if !ok {
+		t.Fatal("no catalog entry for \"ingitdb\"")
+	}
+	if entry.ChecksumsName == nil {
+		t.Fatal("entry.ChecksumsName is nil; want the flat checksums.txt override")
+	}
+	for _, goos := range []string{"linux", "darwin", "windows"} {
+		if got := entry.ChecksumsName("ingitdb", "1.2.3"); got != "checksums.txt" {
+			t.Errorf("ChecksumsName(...) for %s = %q, want %q", goos, got, "checksums.txt")
+		}
+	}
+}
+
+// task-14 fixes a second bug: ingitdb's old internal Classify function
+// only recognized Homebrew and Snap, so a Scoop- or WinGet-managed install
+// (both published per .goreleaser.yaml) classified Manual and was eligible
+// for self-replace — overwriting a binary a package manager owns. Every
+// manager on the catalog entry must be present and redirect-only (print the
+// upgrade command, never execute it), matching ingitdb's pre-existing
+// print-and-exit self-update behavior for every managed channel.
+func TestIngitdbCatalogEntry_ManagersAreAllRedirectOnly(t *testing.T) {
+	t.Parallel()
+
+	entry, ok := cliinstall.ByID("ingitdb")
+	if !ok {
+		t.Fatal("no catalog entry for \"ingitdb\"")
+	}
+	wantNames := map[string]bool{"Homebrew": false, "Snap": false, "Scoop": false, "WinGet": false}
+	for _, m := range entry.Managers {
+		if _, known := wantNames[m.Name]; !known {
+			t.Errorf("unexpected manager %q on the ingitdb catalog entry", m.Name)
+			continue
+		}
+		wantNames[m.Name] = true
+		if m.CanExecuteUpgrade() {
+			t.Errorf("manager %q is executable; ingitdb's catalog entry must keep every manager redirect-only", m.Name)
+		}
+		if m.UpgradeCommand == "" {
+			t.Errorf("manager %q has no upgrade command to print", m.Name)
+		}
+	}
+	for name, found := range wantNames {
+		if !found {
+			t.Errorf("catalog entry is missing manager %q", name)
+		}
+	}
+}
+
+// --- end-to-end exit-code contract, against a fake GitHub releases server ---
+
+// selfUpdateConfigForTest builds exactly the selfupdate.Config SelfUpdate
+// itself builds (same catalog entry, same running version), with the
+// release endpoint redirected to a local httptest.Server so no test makes a
+// real network request (REQ: no-network-in-tests).
+func selfUpdateConfigForTest(t *testing.T, ver, apiURL string, client *http.Client) selfupdate.Config {
+	t.Helper()
+	entry, ok := cliinstall.ByID("ingitdb")
+	if !ok {
+		t.Fatal("no catalog entry for \"ingitdb\"")
+	}
+	cfg := entry.Config(ver)
+	cfg.ReleasesAPIURL = apiURL
+	cfg.HTTPClient = client
+	return cfg
+}
+
+func releasesServer(t *testing.T, body string, status int) *httptest.Server {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(status)
+		_, _ = w.Write([]byte(body))
+	}))
+	t.Cleanup(srv.Close)
+	return srv
+}
+
+// AC: cli/self-update#ac:check-exit-code-contract — --check exit codes must
+// stay 0 (up to date), 10 (update available or undetermined, via
+// ErrSelfUpdateAvailable), and a code distinct from both (the CLI's generic
+// error exit) for a release-lookup failure. This exercises the real
+// cobracmd.New wiring built from the same Config and selfUpdateErrors{}
+// mapper SelfUpdate uses, proving the migration preserves the contract.
+func TestSelfUpdate_CheckExitCodeContract_EndToEnd(t *testing.T) {
+	t.Parallel()
+
 	cases := []struct {
-		name        string
-		manager     selfupdate.Manager
-		wantName    string
-		wantCommand string
+		name          string
+		ver           string
+		body          string
+		status        int
+		wantAvailable bool
 	}{
-		{"homebrew cask", selfupdate.Homebrew, "Homebrew", "brew upgrade --cask ingitdb"},
-		{"snap", selfupdate.Snap, "Snap", "snap refresh ingitdb"},
+		{
+			name:          "up to date",
+			ver:           "1.0.0",
+			body:          `[{"tag_name":"v1.0.0","prerelease":false,"draft":false}]`,
+			status:        http.StatusOK,
+			wantAvailable: false,
+		},
+		{
+			name:          "update available",
+			ver:           "1.0.0",
+			body:          `[{"tag_name":"v1.1.0","prerelease":false,"draft":false}]`,
+			status:        http.StatusOK,
+			wantAvailable: true,
+		},
+		{
+			name:          "undetermined dev build",
+			ver:           "dev",
+			body:          `[{"tag_name":"v1.1.0","prerelease":false,"draft":false}]`,
+			status:        http.StatusOK,
+			wantAvailable: true,
+		},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			withDetection(t, selfupdate.Detection{Method: selfupdate.Managed, Manager: c.manager})
+			t.Parallel()
+			srv := releasesServer(t, c.body, c.status)
+			cfg := selfUpdateConfigForTest(t, c.ver, srv.URL, srv.Client())
+			cmd := cobracmd.New(cfg, cobracmd.CommandOptions{JSONFormat: true, Errors: selfUpdateErrors{}})
+			var out strings.Builder
+			cmd.SetOut(&out)
+			cmd.SetErr(&strings.Builder{})
+			cmd.SetArgs([]string{"--check"})
 
-			out, _, _, err := runSelfUpdate(t, "1.0.0")
+			err := cmd.Execute()
+			if c.wantAvailable {
+				if !errors.Is(err, ErrSelfUpdateAvailable) {
+					t.Fatalf("Execute() error = %v, want ErrSelfUpdateAvailable", err)
+				}
+				return
+			}
 			if err != nil {
-				t.Fatalf("managed redirect returned error (want nil/exit 0): %v", err)
-			}
-			if !strings.Contains(out, c.wantName) {
-				t.Errorf("stdout %q does not name detected manager %q", out, c.wantName)
-			}
-			if !strings.Contains(out, c.wantCommand) {
-				t.Errorf("stdout %q does not contain exact upgrade command %q", out, c.wantCommand)
+				t.Fatalf("Execute() error = %v, want nil (up to date)", err)
 			}
 		})
 	}
-}
 
-// AC: cli/self-update#ac:ambiguous-falls-back-safe — when the install method
-// cannot be confidently classified, self-update MUST NOT replace the binary:
-// it states the install method is ambiguous, prints manual-update guidance,
-// and exits non-zero.
-func TestSelfUpdate_AmbiguousFallsBackSafe(t *testing.T) {
-	withDetection(t, selfupdate.Detection{Method: selfupdate.Ambiguous, Manager: selfupdate.ManagerNone})
-	called := withSelfReplace(t, nil)
+	t.Run("release lookup failure is a distinct non-zero code", func(t *testing.T) {
+		t.Parallel()
+		srv := releasesServer(t, `not json`, http.StatusInternalServerError)
+		cfg := selfUpdateConfigForTest(t, "1.0.0", srv.URL, srv.Client())
+		cmd := cobracmd.New(cfg, cobracmd.CommandOptions{JSONFormat: true, Errors: selfUpdateErrors{}})
+		cmd.SetOut(&strings.Builder{})
+		cmd.SetErr(&strings.Builder{})
+		cmd.SetArgs([]string{"--check"})
 
-	out, errOut, rec, err := runSelfUpdate(t, "1.0.0")
-	if err == nil {
-		t.Fatal("expected non-nil error for ambiguous detection (must exit non-zero)")
-	}
-	if *called {
-		t.Error("doSelfReplace was called; ambiguity must never resolve to self-replace")
-	}
-	if len(rec.codes) != 0 {
-		t.Errorf("exitCode seam called with %v; the ambiguous path must not use the --check exit code", rec.codes)
-	}
-
-	combined := strings.ToLower(out + errOut + err.Error())
-	if !strings.Contains(combined, "ambiguous") {
-		t.Errorf("output/error %q does not state the install method is ambiguous", combined)
-	}
-	if !strings.Contains(combined, "github.com") {
-		t.Errorf("output/error %q does not contain manual-update guidance", combined)
-	}
-}
-
-// Extra positional args must be rejected to keep the call shape stable.
-func TestSelfUpdate_RejectsExtraArgs(t *testing.T) {
-	withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-	_, _, _, err := runSelfUpdate(t, "1.0.0", "extra-positional")
-	if err == nil {
-		t.Fatal("expected error for extra positional argument")
-	}
-}
-
-// AC: cli/self-update#ac:check-is-readonly — for any install method, running
-// self-update --check with a newer release available MUST print availability
-// and the appropriate next step, and MUST NOT download or replace the binary.
-func TestSelfUpdate_CheckIsReadonly(t *testing.T) {
-	withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-	withLatest(t, "v1.1.0", nil)
-	called := withSelfReplace(t, nil)
-
-	out, _, rec, err := runSelfUpdate(t, "1.0.0", "--check")
-	if err != nil {
-		t.Fatalf("--check returned error: %v", err)
-	}
-	if *called {
-		t.Error("doSelfReplace was called; --check must be read-only")
-	}
-	if len(rec.codes) != 1 || rec.codes[0] != 10 {
-		t.Errorf("exit codes = %v; want [10] when an update is available", rec.codes)
-	}
-
-	lower := strings.ToLower(out)
-	if !strings.Contains(lower, "1.0.0") || !strings.Contains(lower, "1.1.0") {
-		t.Errorf("stdout %q does not report availability (current → latest)", out)
-	}
-	if !strings.Contains(lower, "self-update") {
-		t.Errorf("stdout %q does not name the manual self-update next step", out)
-	}
-}
-
-// AC: cli/self-update#ac:check-exit-code-contract — --check exit codes MUST be
-// 0 (up to date), 10 (update available or undetermined), and a distinct
-// non-zero code for a release-lookup error (the generic error exit).
-func TestSelfUpdate_CheckExitCodeContract(t *testing.T) {
-	t.Run("up to date → exit 0", func(t *testing.T) {
-		withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-		withLatest(t, "v2.0.0", nil)
-
-		_, _, rec, err := runSelfUpdate(t, "2.0.0", "--check")
-		if err != nil {
-			t.Fatalf("up-to-date --check returned error (want nil/exit 0): %v", err)
-		}
-		if len(rec.codes) != 0 {
-			t.Errorf("exit codes = %v; want none (process exits 0)", rec.codes)
-		}
-	})
-
-	t.Run("update available → exit 10", func(t *testing.T) {
-		withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-		withLatest(t, "v2.1.0", nil)
-
-		_, _, rec, err := runSelfUpdate(t, "2.0.0", "--check")
-		if err != nil {
-			t.Fatalf("update-available --check returned error (want exit via seam): %v", err)
-		}
-		if len(rec.codes) != 1 || rec.codes[0] != 10 {
-			t.Errorf("exit codes = %v; want [10]", rec.codes)
-		}
-	})
-
-	t.Run("dev build → undetermined, exit 10", func(t *testing.T) {
-		withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-		withLatest(t, "v2.1.0", nil)
-
-		out, _, rec, err := runSelfUpdate(t, "dev", "--check")
-		if err != nil {
-			t.Fatalf("dev --check returned error: %v", err)
-		}
-		if len(rec.codes) != 1 || rec.codes[0] != 10 {
-			t.Errorf("exit codes = %v; want [10]", rec.codes)
-		}
-		if !strings.Contains(strings.ToLower(out), "undetermined") {
-			t.Errorf("stdout %q does not report the version as undetermined", out)
-		}
-	})
-
-	t.Run("release-lookup error → distinct non-zero", func(t *testing.T) {
-		withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-		withLatest(t, "", errors.New("github releases request failed"))
-
-		_, _, rec, err := runSelfUpdate(t, "2.0.0", "--check")
+		err := cmd.Execute()
 		if err == nil {
-			t.Fatal("release-lookup error --check returned nil (want non-nil error → exit 1)")
+			t.Fatal("expected a non-nil error for a release-lookup failure")
 		}
-		if len(rec.codes) != 0 {
-			t.Errorf("exit codes = %v; a lookup error must not exit 10", rec.codes)
+		if errors.Is(err, ErrSelfUpdateAvailable) {
+			t.Fatalf("Execute() error = %v, must NOT be ErrSelfUpdateAvailable (would collide with exit 10)", err)
 		}
 	})
 }
 
-// AC: cli/self-update#ac:already-current-noop — a manual install already on
-// the latest stable release MUST report it is up to date and exit 0 without
-// downloading or replacing anything.
-func TestSelfUpdate_AlreadyCurrentNoop(t *testing.T) {
-	withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-	withLatest(t, "v1.2.3", nil)
-	called := withSelfReplace(t, nil)
+// --format json is new (JSONFormat: true); stdout must stay exactly one
+// JSON document, matching REQ: machine-readable-output.
+func TestSelfUpdate_CheckJSONFormat(t *testing.T) {
+	t.Parallel()
 
-	out, _, _, err := runSelfUpdate(t, "1.2.3")
-	if err != nil {
-		t.Fatalf("already-current self-update returned error (want nil/exit 0): %v", err)
-	}
-	if *called {
-		t.Error("doSelfReplace was called; an up-to-date install must not be touched")
-	}
-	if !strings.Contains(strings.ToLower(out), "up to date") {
-		t.Errorf("stdout %q does not report the binary is up to date", out)
-	}
-}
-
-// AC: cli/self-update#ac:confirm-prompt-and-yes — with --yes the replacement
-// runs without prompting, after printing the current → latest transition.
-func TestSelfUpdate_ConfirmPromptAndYes_WithYes(t *testing.T) {
-	withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-	withLatest(t, "v1.1.0", nil)
-	withInteractive(t, false) // --yes must work regardless of TTY state
-	called := withSelfReplace(t, nil)
-
-	out, _, _, err := runSelfUpdate(t, "1.0.0", "--yes")
-	if err != nil {
-		t.Fatalf("self-update --yes returned error (want nil): %v", err)
-	}
-	if !*called {
-		t.Error("doSelfReplace was not called with --yes")
-	}
-	if !strings.Contains(out, "→") || !strings.Contains(out, "1.0.0") || !strings.Contains(out, "1.1.0") {
-		t.Errorf("stdout %q does not contain the current → latest transition", out)
-	}
-}
-
-// AC: cli/self-update#ac:confirm-prompt-and-yes — without --yes but attached
-// to an interactive terminal, the command prompts and (on "y") proceeds.
-func TestSelfUpdate_ConfirmPromptAndYes_InteractiveConfirms(t *testing.T) {
-	withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-	withLatest(t, "v1.1.0", nil)
-	withInteractive(t, true)
-	called := withSelfReplace(t, nil)
-
-	rec := &exitRecorder{}
-	cmd := SelfUpdate("1.0.0", rec.fn)
-	var out, errOut bytes.Buffer
+	srv := releasesServer(t, `[{"tag_name":"v1.0.0","prerelease":false,"draft":false}]`, http.StatusOK)
+	cfg := selfUpdateConfigForTest(t, "1.0.0", srv.URL, srv.Client())
+	cmd := cobracmd.New(cfg, cobracmd.CommandOptions{JSONFormat: true, Errors: selfUpdateErrors{}})
+	var out strings.Builder
 	cmd.SetOut(&out)
-	cmd.SetErr(&errOut)
-	cmd.SetIn(strings.NewReader("y\n"))
-	cmd.SetArgs(nil)
+	cmd.SetErr(&strings.Builder{})
+	cmd.SetArgs([]string{"--check", "--format", "json"})
+
 	if err := cmd.Execute(); err != nil {
-		t.Fatalf("interactive confirm returned error (want nil): %v", err)
+		t.Fatalf("Execute() error = %v, want nil", err)
 	}
-	if !*called {
-		t.Error("doSelfReplace was not called after interactive confirmation")
+	var got struct {
+		Current, Latest, Verdict string
 	}
-	lower := strings.ToLower(out.String())
-	if !strings.Contains(lower, "proceed") {
-		t.Errorf("stdout %q does not contain a confirmation prompt", out.String())
+	if err := json.Unmarshal([]byte(out.String()), &got); err != nil {
+		t.Fatalf("stdout is not valid JSON: %v\noutput: %s", err, out.String())
 	}
-	if !strings.Contains(out.String(), "→") {
-		t.Errorf("stdout %q does not contain the current → latest transition", out.String())
-	}
-}
-
-// Declining the interactive prompt aborts without replacing, exit 0.
-func TestSelfUpdate_InteractiveDeclineAborts(t *testing.T) {
-	withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-	withLatest(t, "v1.1.0", nil)
-	withInteractive(t, true)
-	called := withSelfReplace(t, nil)
-
-	cmd := SelfUpdate("1.0.0", func(int) {})
-	var out bytes.Buffer
-	cmd.SetOut(&out)
-	cmd.SetErr(&out)
-	cmd.SetIn(strings.NewReader("n\n"))
-	cmd.SetArgs(nil)
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("declined confirm returned error (want nil): %v", err)
-	}
-	if *called {
-		t.Error("doSelfReplace was called after the user declined")
-	}
-	if !strings.Contains(strings.ToLower(out.String()), "aborted") {
-		t.Errorf("stdout %q does not report the abort", out.String())
-	}
-}
-
-// AC: cli/self-update#ac:noninteractive-without-yes-refuses — without --yes
-// and without a terminal, the command refuses to replace and exits non-zero.
-func TestSelfUpdate_NonInteractiveWithoutYesRefuses(t *testing.T) {
-	withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-	withLatest(t, "v1.1.0", nil)
-	withInteractive(t, false)
-	called := withSelfReplace(t, nil)
-
-	out, errOut, _, err := runSelfUpdate(t, "1.0.0")
-	if err == nil {
-		t.Fatal("expected non-nil error for non-interactive run without --yes")
-	}
-	if *called {
-		t.Error("doSelfReplace was called; binary must be left unchanged")
-	}
-	combined := strings.ToLower(out + errOut + err.Error())
-	if !strings.Contains(combined, "--yes") {
-		t.Errorf("output/error %q does not mention that --yes is required", combined)
-	}
-	if !strings.Contains(combined, "non-interactive") && !strings.Contains(combined, "noninteractive") {
-		t.Errorf("output/error %q does not mention non-interactive use", combined)
-	}
-}
-
-// AC: cli/self-update#ac:network-failure-is-safe — an unreachable release
-// source MUST produce a clear error, a non-zero exit, and no modification.
-func TestSelfUpdate_NetworkFailureIsSafe(t *testing.T) {
-	t.Run("release lookup fails", func(t *testing.T) {
-		withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-		withLatest(t, "", errors.New("dial tcp: connection refused"))
-		called := withSelfReplace(t, nil)
-
-		out, errOut, _, err := runSelfUpdate(t, "1.0.0", "--yes")
-		if err == nil {
-			t.Fatal("expected non-nil error when the release source is unreachable")
-		}
-		if *called {
-			t.Error("doSelfReplace was called; the binary must be left unchanged on a lookup failure")
-		}
-		combined := strings.ToLower(out + errOut + err.Error())
-		if !strings.Contains(combined, "release") {
-			t.Errorf("output/error %q does not mention the release-lookup failure", combined)
-		}
-	})
-
-	t.Run("download fails", func(t *testing.T) {
-		withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-		withLatest(t, "v1.1.0", nil)
-		withInteractive(t, false)
-		// A network-ish, non-permission error from the download/verify step.
-		_ = withSelfReplace(t, errors.New("dial tcp: connection refused"))
-
-		out, errOut, _, err := runSelfUpdate(t, "1.0.0", "--yes")
-		if err == nil {
-			t.Fatal("expected non-nil error when the asset download fails")
-		}
-		combined := strings.ToLower(out + errOut + err.Error())
-		if !strings.Contains(combined, "download") && !strings.Contains(combined, "release") {
-			t.Errorf("output/error %q does not mention the download/release failure", combined)
-		}
-		// The happy-path "updated to" line must NOT appear: nothing was replaced.
-		if strings.Contains(strings.ToLower(out), "updated to") {
-			t.Errorf("stdout %q claims an update succeeded after a download failure", out)
-		}
-	})
-}
-
-// AC: cli/self-update#ac:permission-denied-is-safe — a non-writable install
-// location MUST be reported with the path and a suggested remedy, exit
-// non-zero, leaving the original binary intact.
-func TestSelfUpdate_PermissionDeniedIsSafe(t *testing.T) {
-	withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-	withLatest(t, "v1.1.0", nil)
-	withInteractive(t, false)
-	wrapped := fmt.Errorf("rename: %w", fs.ErrPermission)
-	_ = withSelfReplace(t, wrapped)
-
-	out, errOut, _, err := runSelfUpdate(t, "1.0.0", "--yes")
-	if err == nil {
-		t.Fatal("expected non-nil error on a permission-denied replacement")
-	}
-	combined := strings.ToLower(out + errOut + err.Error())
-	if !strings.Contains(combined, "permission") {
-		t.Errorf("output/error %q does not report a permission failure", combined)
-	}
-	// A remedy hint: elevated permissions (sudo) or the package manager.
-	if !strings.Contains(combined, "sudo") && !strings.Contains(combined, "package manager") {
-		t.Errorf("output/error %q does not suggest a remedy (sudo / package manager)", combined)
-	}
-	// The error must reference a path. os.Executable() should resolve in the
-	// test process; assert a path separator is present as a proxy.
-	if !strings.Contains(combined, "/") && !strings.Contains(combined, `\`) {
-		t.Errorf("output/error %q does not include the executable path", combined)
-	}
-	if strings.Contains(strings.ToLower(out), "updated to") {
-		t.Errorf("stdout %q claims an update succeeded after a permission failure", out)
-	}
-}
-
-// AC: cli/self-update#ac:version-flag-selects-tag — `--version 0.0.3 --yes`
-// MUST install exactly that release (tag accepted with or without the leading
-// v), bypassing the stable-only latest resolver for the target.
-func TestSelfUpdate_VersionFlagSelectsTag(t *testing.T) {
-	withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-	withLatest(t, "v9.9.9", nil) // sentinel: must NOT become the install target
-	withInteractive(t, false)    // --yes must work regardless of TTY
-	gotTag := withSelfReplaceTag(t, nil)
-
-	out, _, _, err := runSelfUpdate(t, "0.0.1", "--version", "0.0.3", "--yes")
-	if err != nil {
-		t.Fatalf("pinned self-update returned error (want nil): %v", err)
-	}
-	if *gotTag != "0.0.3" {
-		t.Errorf("doSelfReplace tag = %q; want pinned %q (not the sentinel latest)", *gotTag, "0.0.3")
-	}
-	if !strings.Contains(out, "→") || !strings.Contains(out, "0.0.1") || !strings.Contains(out, "0.0.3") {
-		t.Errorf("stdout %q does not contain the current → pinned transition", out)
-	}
-	if strings.Contains(out, "9.9.9") {
-		t.Errorf("stdout %q references the sentinel latest; pinned path must bypass resolveLatest", out)
-	}
-}
-
-// AC: cli/self-update#ac:pinned-tag-allows-prerelease — a pinned prerelease
-// installs exactly, even though the unpinned latest path would skip it.
-func TestSelfUpdate_PinnedTagAllowsPrerelease(t *testing.T) {
-	withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-	withLatest(t, "v0.0.2", nil) // sentinel stable latest; prerelease would be skipped here
-	withInteractive(t, false)
-	gotTag := withSelfReplaceTag(t, nil)
-
-	out, _, _, err := runSelfUpdate(t, "0.0.1", "--version", "v0.1.0-rc.1", "--yes")
-	if err != nil {
-		t.Fatalf("pinned prerelease self-update returned error (want nil): %v", err)
-	}
-	if *gotTag != "v0.1.0-rc.1" {
-		t.Errorf("doSelfReplace tag = %q; want pinned prerelease %q", *gotTag, "v0.1.0-rc.1")
-	}
-	if !strings.Contains(out, "→") || !strings.Contains(out, "v0.1.0-rc.1") {
-		t.Errorf("stdout %q does not contain the current → pinned-prerelease transition", out)
-	}
-}
-
-// AC: cli/self-update#ac:downgrade-requires-flag — a pinned target lower than
-// the running version is refused without --allow-downgrade; with the flag the
-// downgrade proceeds; a dev build cannot determine direction so the guard
-// does not trigger.
-func TestSelfUpdate_DowngradeRequiresFlag(t *testing.T) {
-	t.Run("refuses without flag", func(t *testing.T) {
-		withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-		withInteractive(t, false)
-		called := withSelfReplace(t, nil)
-
-		out, errOut, _, err := runSelfUpdate(t, "v0.5.0", "--version", "v0.3.0")
-		if err == nil {
-			t.Fatal("expected non-nil error refusing the downgrade")
-		}
-		if *called {
-			t.Error("doSelfReplace was called; binary must be left unchanged on a refused downgrade")
-		}
-		combined := out + errOut + err.Error()
-		if !strings.Contains(combined, "0.5.0") {
-			t.Errorf("output/error %q does not name the current version 0.5.0", combined)
-		}
-		if !strings.Contains(combined, "0.3.0") {
-			t.Errorf("output/error %q does not name the target version 0.3.0", combined)
-		}
-		if !strings.Contains(combined, "--allow-downgrade") {
-			t.Errorf("output/error %q does not mention the --allow-downgrade flag", combined)
-		}
-	})
-
-	t.Run("proceeds with --allow-downgrade --yes", func(t *testing.T) {
-		withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-		withInteractive(t, false)
-		gotTag := withSelfReplaceTag(t, nil)
-
-		out, _, _, err := runSelfUpdate(t, "v0.5.0", "--version", "v0.3.0", "--allow-downgrade", "--yes")
-		if err != nil {
-			t.Fatalf("downgrade with --allow-downgrade --yes returned error (want nil): %v", err)
-		}
-		if *gotTag != "v0.3.0" {
-			t.Errorf("doSelfReplace tag = %q; want downgrade target %q", *gotTag, "v0.3.0")
-		}
-		if !strings.Contains(strings.ToLower(out), "downgrade") {
-			t.Errorf("stdout %q does not indicate a downgrade transition", out)
-		}
-	})
-
-	t.Run("dev current does not trigger guard", func(t *testing.T) {
-		withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-		withInteractive(t, false)
-		called := withSelfReplace(t, nil)
-
-		_, _, _, err := runSelfUpdate(t, "dev", "--version", "v0.3.0", "--yes")
-		if err != nil {
-			t.Fatalf("dev current pinned install returned error (want nil): %v", err)
-		}
-		if !*called {
-			t.Error("doSelfReplace was not called; the guard must not trigger for a dev build")
-		}
-	})
-}
-
-// AC: cli/self-update#ac:pinned-unknown-tag-errors — a pinned tag with no
-// matching published release or asset (e.g. a release missing the darwin
-// assets) MUST print a clear error, exit non-zero, and leave the existing
-// binary untouched.
-func TestSelfUpdate_PinnedUnknownTagErrors(t *testing.T) {
-	withDetection(t, selfupdate.Detection{Method: selfupdate.Manual, Manager: selfupdate.ManagerNone})
-	withInteractive(t, false) // --yes must work regardless of TTY
-	// Simulate the download/verify step failing because the pinned release/
-	// asset does not exist. The error deliberately omits the tag so the
-	// assertion proves the CLI layer itself surfaces the pinned tag.
-	_ = withSelfReplace(t, errors.New("no matching release or asset"))
-
-	out, errOut, _, err := runSelfUpdate(t, "1.0.0", "--version", "v9.9.9", "--yes")
-	if err == nil {
-		t.Fatal("expected non-nil error for an unknown pinned tag")
-	}
-	combined := strings.ToLower(out + errOut + err.Error())
-	if !strings.Contains(combined, "v9.9.9") && !strings.Contains(combined, "not found") {
-		t.Errorf("output/error %q does not clearly reference the unknown tag or 'not found'", combined)
-	}
-	// Nothing was replaced: the happy-path "updated to" line must not appear.
-	if strings.Contains(strings.ToLower(out), "updated to") {
-		t.Errorf("stdout %q claims an update succeeded for an unknown tag", out)
-	}
-}
-
-// AC: cli/self-update#ac:pinned-managed-still-redirects — a managed install
-// run with --version still follows the redirect path: it prints the manager
-// and its upgrade command, exits 0, and never self-replaces.
-func TestSelfUpdate_PinnedManagedStillRedirects(t *testing.T) {
-	cases := []struct {
-		name        string
-		manager     selfupdate.Manager
-		wantName    string
-		wantCommand string
-	}{
-		{"homebrew cask", selfupdate.Homebrew, "Homebrew", "brew upgrade --cask ingitdb"},
-		{"snap", selfupdate.Snap, "Snap", "snap refresh ingitdb"},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			withDetection(t, selfupdate.Detection{Method: selfupdate.Managed, Manager: c.manager})
-			called := withSelfReplace(t, nil)
-
-			out, _, _, err := runSelfUpdate(t, "1.0.0", "--version", "v0.0.3")
-			if err != nil {
-				t.Fatalf("pinned managed redirect returned error (want nil/exit 0): %v", err)
-			}
-			if *called {
-				t.Error("doSelfReplace was called; a managed install must redirect, never self-replace")
-			}
-			if !strings.Contains(out, c.wantName) {
-				t.Errorf("stdout %q does not name detected manager %q", out, c.wantName)
-			}
-			if !strings.Contains(out, c.wantCommand) {
-				t.Errorf("stdout %q does not contain exact upgrade command %q", out, c.wantCommand)
-			}
-		})
-	}
-}
-
-// The --allow-downgrade flag exists and defaults to false.
-func TestSelfUpdate_AllowDowngradeFlag(t *testing.T) {
-	t.Parallel()
-	cmd := SelfUpdate("dev", func(int) {})
-	f := cmd.Flags().Lookup("allow-downgrade")
-	if f == nil {
-		t.Fatal("missing --allow-downgrade flag")
-	}
-	if f.DefValue != "false" {
-		t.Errorf("--allow-downgrade default = %q; want false", f.DefValue)
-	}
-}
-
-// The --version flag exists as a self-update-local string flag and defaults
-// to empty (distinct from the `ingitdb version` command).
-func TestSelfUpdate_VersionFlag(t *testing.T) {
-	t.Parallel()
-	cmd := SelfUpdate("dev", func(int) {})
-	v := cmd.Flags().Lookup("version")
-	if v == nil {
-		t.Fatal("missing --version flag")
-	}
-	if v.DefValue != "" {
-		t.Errorf("--version default = %q; want empty", v.DefValue)
-	}
-}
-
-// The --yes flag has a -y shorthand and both --check and --yes default false.
-func TestSelfUpdate_Flags(t *testing.T) {
-	t.Parallel()
-	cmd := SelfUpdate("dev", func(int) {})
-	check := cmd.Flags().Lookup("check")
-	if check == nil {
-		t.Fatal("missing --check flag")
-	}
-	if check.DefValue != "false" {
-		t.Errorf("--check default = %q; want false", check.DefValue)
-	}
-	yes := cmd.Flags().Lookup("yes")
-	if yes == nil {
-		t.Fatal("missing --yes flag")
-	}
-	if yes.Shorthand != "y" {
-		t.Errorf("--yes shorthand = %q; want y", yes.Shorthand)
-	}
-	if yes.DefValue != "false" {
-		t.Errorf("--yes default = %q; want false", yes.DefValue)
+	if got.Verdict != "up_to_date" {
+		t.Errorf("verdict = %q, want up_to_date", got.Verdict)
 	}
 }
