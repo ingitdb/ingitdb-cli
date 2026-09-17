@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/dal-go/dalgo/dal"
 	"github.com/dal-go/record"
 	"github.com/ingitdb/dalgo2ingitdb4local"
@@ -312,5 +313,18 @@ func TestBuildSubcollectionDropdownLines_WidensForLongIDs(t *testing.T) {
 	}
 	if lines[0] != "┌"+strings.Repeat("─", 13)+"┐" {
 		t.Errorf("top border %q should fit the widest entry", lines[0])
+	}
+}
+
+func TestCollectionModel_HelpLineFitsIn80Columns(t *testing.T) {
+	t.Parallel()
+	m := newCollectionModel(simpleColDef("lists", "title"), nil, 80, 24)
+	lines := strings.Split(m.View(), "\n")
+	help := lines[len(lines)-1]
+	if w := lipgloss.Width(help); w > 80 {
+		t.Errorf("help line is %d columns, want <= 80: %q", w, help)
+	}
+	if !strings.Contains(help, "q quit") {
+		t.Errorf("help line should end with q quit: %q", help)
 	}
 }
