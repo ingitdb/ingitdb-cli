@@ -38,7 +38,9 @@ Go package `github.com/ingitdb/ingitdb-go/ingitdb/demos/todo`.
    configuration is not changed.
 
 If a step fails, everything that run wrote is removed (the folders it created, when they are
-empty; never another run's files). Without `git`, the files are still installed and the output says to run `git init`.
+empty; never another run's files). The install honours your commit hooks and commit signing; when they refuse the commit, the error
+says so and shows how to install once without your global Git configuration
+(`GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 ingitdb demo install`). Without `git`, the files are still installed and the output says to run `git init`.
 
 Running it again on an installed demo writes nothing, keeps your edits and prints
 `The TODO demo is already installed in <folder>` with the same next steps. The command never

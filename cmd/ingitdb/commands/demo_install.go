@@ -23,6 +23,14 @@ import (
 	"github.com/ingitdb/ingitdb-go/ingitdb/demos/todo"
 )
 
+// demoCommitRefusedHint follows a failed install commit. The install honours
+// the user's hooks and signing policy rather than bypassing them.
+const demoCommitRefusedHint = "Git refused the install commit. A commit hook (core.hooksPath) or commit signing " +
+	"(commit.gpgsign) in your Git configuration may have blocked it. Fix that and install again, " +
+	"or install once without your global and system Git configuration: " +
+	"GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 ingitdb demo install " +
+	"(PowerShell: $env:GIT_CONFIG_GLOBAL='NUL'; $env:GIT_CONFIG_NOSYSTEM='1'; ingitdb demo install)"
+
 const (
 	demoDefaultGitName  = "inGitDB"
 	demoDefaultGitEmail = "ingitdb@localhost"
@@ -406,7 +414,7 @@ func (i demoInstaller) commit(ctx context.Context, git, dir string) (string, err
 		return "", err
 	}
 	if _, err := i.runGit(ctx, git, dir, env, "commit", "-q", "-m", demoCommitMessage); err != nil {
-		return "", err
+		return "", fmt.Errorf("%w\n%s", err, demoCommitRefusedHint)
 	}
 	return i.runGit(ctx, git, dir, env, "rev-parse", "HEAD")
 }

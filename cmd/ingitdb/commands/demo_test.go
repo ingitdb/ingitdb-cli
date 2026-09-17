@@ -1420,3 +1420,44 @@ func TestDemoInstall_DanglingSymlinkRefused(t *testing.T) {
 		t.Errorf("wd holds %v", got)
 	}
 }
+
+// TestDemoInstall_CommitRefusedHint makes the user's Git configuration refuse
+// the install commit, with a failing commit hook and with commit signing
+// that cannot sign: the error says why and how to install anyway, and the
+// hooks are not bypassed.
+func TestDemoInstall_CommitRefusedHint(t *testing.T) {
+	t.Parallel()
+	requireGit(t)
+	hooks := t.TempDir()
+	hook := "#!/bin/sh\necho blocked by corp hook >&2\nexit 1\n"
+	if err := os.WriteFile(filepath.Join(hooks, "pre-commit"), []byte(hook), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	cases := map[string]string{
+		"hook":    "[core]\n\thooksPath = " + filepath.ToSlash(hooks) + "\n",
+		"signing": "[commit]\n\tgpgsign = true\n[gpg]\n\tprogram = " + filepath.ToSlash(filepath.Join(hooks, "no-such-gpg")) + "\n",
+	}
+	for name, config := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			wd := t.TempDir()
+			i := testDemoInstaller(t)
+			i.env = isolatedGitEnv(t, config)
+			_, err := runDemoInstall(t, i, wd)
+			if err == nil {
+				t.Fatal("expected the commit to be refused")
+			}
+			for _, want := range []string{"commit hook", "commit.gpgsign", "GIT_CONFIG_GLOBAL"} {
+				if !strings.Contains(err.Error(), want) {
+					t.Errorf("error lacks %q: %v", want, err)
+				}
+			}
+			if name == "hook" && !strings.Contains(err.Error(), "blocked by corp hook") {
+				t.Errorf("the hook did not run: %v", err)
+			}
+			if got := listTree(t, wd); len(got) != 0 {
+				t.Errorf("leftovers: %v", got)
+			}
+		})
+	}
+}
