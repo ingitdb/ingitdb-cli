@@ -70,7 +70,7 @@ CLI surface; keep those skills in sync when a command's flags or behavior change
 | [serve](serve/README.md) | Withdrawn — removed from CLI (ADR 0001) | `ingitdb serve` (removed) |
 | [resolve](resolve/README.md) | Draft | `ingitdb resolve` |
 | [setup](setup/README.md) | Draft | `ingitdb setup` |
-| [demo](demo/README.md) | Draft | `ingitdb demo install` |
+| [demo](demo/README.md) | Implementing | `ingitdb demo install` |
 | [find](find/README.md) | Withdrawn — moved to DataTug CLI | `ingitdb find` (not implemented) |
 | [truncate](truncate/README.md) | Withdrawn — use `delete --all` | `ingitdb truncate` (not implemented) |
 | [migrate](migrate/README.md) | Withdrawn (deferred) | `ingitdb migrate` (not implemented) |

@@ -21,6 +21,7 @@
 - [ci](commands/ci.md) — run CI checks for the database (currently: materialize views)
 - [pull](commands/pull.md) — pull latest changes, resolve conflicts, and rebuild views
 - [setup](commands/setup.md) — initialise a new database directory
+- [demo](commands/demo.md) — create the TODO demo database (`demo install`)
 - [resolve](commands/resolve.md) — resolve merge conflicts in database files
 - [list](commands/list.md) — list database objects
 - [rebase](commands/rebase.md) — rebase on top of a base ref and auto-resolve specific documentation conflicts

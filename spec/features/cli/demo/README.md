@@ -1,12 +1,12 @@
 ---
 format: https://specscore.md/feature-specification
-status: Draft
+status: Implementing
 ---
 
 # Feature: Demo Command
 
 > [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/demo?op=explore) | [Edit](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/demo?op=edit) | [Ask question](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/demo?op=ask) | [Request change](https://specscore.studio/app/github.com/ingitdb/ingitdb-cli/spec/features/cli/demo?op=request-change) |
-**Status:** Draft
+**Status:** Implementing
 **Source Ideas:** —
 
 ## Summary
@@ -259,7 +259,35 @@ the install, reinstall, refusal and `select` acceptance criteria below passing o
 
 ## Implementation
 
-Not implemented yet. Plan: [2026-09-17-cli-demo](../../../plans/2026-09-17-cli-demo.md).
+Status history:
+
+- **Draft → Approved, 2026-09-17.** Approved on this spec and its plan as independently
+  reviewed on 2026-09-17 (review fixes in 30ba550). The transition was made with
+  `specscore feature change-status` in the same commit as the next one, when implementation
+  had already started, rather than as its own earlier commit.
+- **Approved → Implementing, 2026-09-17.** Implementation opened in
+  [ingitdb-cli#157](https://github.com/ingitdb/ingitdb-cli/pull/157). The plan moved
+  Draft → Approved on the same review and is Executing.
+
+Plan: [2026-09-17-cli-demo](../../../plans/2026-09-17-cli-demo.md), Tasks 4 to 6. Source files
+annotated with `// specscore: feature/cli/demo`:
+
+- [`cmd/ingitdb/commands/demo.go`](../../../cmd/ingitdb/commands/demo.go) — the `demo` group, `install`, `--path` and `--format` handling.
+- [`cmd/ingitdb/commands/demo_install.go`](../../../cmd/ingitdb/commands/demo_install.go) — target checks, `git init`, configuration files, records through `dalgo2ingitdb4local`, the install commit with the identity fallback, and cleanup on failure.
+- [`cmd/ingitdb/commands/demo_schema.go`](../../../cmd/ingitdb/commands/demo_schema.go) — the `lists` and `items` definitions and the `.ingitdb/demo.yaml` marker.
+- [`cmd/ingitdb/commands/demo_output.go`](../../../cmd/ingitdb/commands/demo_output.go) — text, YAML and JSON output, next steps and shell quoting.
+
+Records and list paths come from `github.com/ingitdb/ingitdb-go/ingitdb/demos/todo`
+(`ingitdb/v0.7.0`). Docs: [docs/cli/commands/demo.md](../../../docs/cli/commands/demo.md).
+
+Tests: `cmd/ingitdb/commands/demo_test.go` (every acceptance criterion except the
+end-to-end ones, Git isolated with `GIT_CONFIG_GLOBAL`, `GIT_CONFIG_NOSYSTEM=1` and a
+temporary `HOME`; a `datavalidator` check of every root and item record; failure seams),
+`cmd/ingitdb/demo_e2e_test.go` (the real executable: printed commands run through `sh`, or
+`cmd.exe` and PowerShell on Windows, `validate`, plain folder, no OpenVaultDB dependency) and
+`cmd/ingitdb/tui/demo_test.go` (terminal UI on an installed demo). The `demo-cross-platform`
+job in `.github/workflows/golangci.yml` runs the demo, `select` and terminal UI tests on
+Linux, macOS and Windows.
 
 ## Acceptance Criteria
 
