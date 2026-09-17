@@ -14,10 +14,10 @@ status: Draft
 `ingitdb demo install` creates a small ready-made inGitDB database, the TODO demo: two
 lists, **To buy** and **To watch**, with a few items each, stored as readable files in a
 new Git repository. It is the same demo OpenVaultDB's `ovdb demo install` creates; the demo
-data is defined once in the `ingitdb-go` library and both CLIs use it. After installing,
+records are defined once in the `ingitdb-go` library and both CLIs use them. After installing,
 the command tells the person how to browse the lists in the inGitDB terminal UI, how to
-query them with `ingitdb select`, and how to use the same lists in OpenVaultDB's web TODO
-app.
+query them with `ingitdb select`, and points to OpenVaultDB's web TODO app, which keeps its
+own copy of the same lists.
 
 ## Synopsis
 
@@ -63,10 +63,16 @@ rarely empty.
 
 #### REQ: shared-demo-data
 
-The demo's collection definitions, list and item ids, titles, `done` values and the
-`added_at` rule MUST come from the shared Go package
+The demo's records (list and item ids, list and item titles, `done` values and the
+`added_at` rule) and the list paths MUST come from the shared Go package
 `github.com/ingitdb/ingitdb-go/ingitdb/demos/todo`, which OpenVaultDB's built-in TODO demo
-also uses. `ingitdb-cli` MUST NOT restate any of these values.
+also uses. That package imports only the Go standard library. `ingitdb-cli` MUST NOT restate
+any of these values, including the list paths it prints (`lists/to-buy`, `lists/to-watch`).
+The titles are English demo data owned by the package, not user-interface copy, and are not
+localised.
+
+The collection definitions and the demo marker are inGitDB-specific and have one consumer,
+so they live in `ingitdb-cli`, not in the shared package.
 
 The installed database contains:
 
@@ -87,13 +93,16 @@ The installed folder MUST be a complete inGitDB database: `.ingitdb/settings.yam
 `.ingitdb/root-collections.yaml` registering `lists`, a definition for the root collection
 `lists` and for its subcollection `items`, and one record file per record at the paths the
 `dalgo2ingitdb` driver uses (for example `lists/$records/to-buy.yaml` and
-`lists/to-buy/items/$records/milk.yaml`). `ingitdb validate --path=<folder>` MUST pass on a
-freshly installed demo.
+`lists/to-buy/items/$records/milk.yaml`). The `items` definition declares `title` (string,
+required), `done` (bool) and `added_at` (`datetime`, which accepts RFC 3339 strings). Every
+record, root and item, MUST be valid against its definition. `ingitdb validate
+--path=<folder>` MUST pass on a freshly installed demo; because `validate` does not yet check
+subcollection records, item validity is proved by the definition tests, not by `validate`.
 
 #### REQ: demo-marker
 
 The install MUST record what it installed in `.ingitdb/demo.yaml` (`app: todo` and a format
-version), defined by the shared package. The marker is how a later install recognises the
+version). The marker is how a later install recognises the
 folder as the demo; the command MUST NOT recognise a demo by folder name or by record
 content.
 
@@ -140,9 +149,11 @@ of an enclosing repository.
 
 #### REQ: git-identity
 
-When Git has no user identity configured for the demo folder, the install commit MUST use
-the author and committer `inGitDB <ingitdb@localhost>` for that commit only, without writing
-Git configuration. A configured identity MUST be used as is.
+When Git has no `user.name` or no `user.email` configured for the demo folder, the install
+commit MUST fill each missing part separately from `inGitDB <ingitdb@localhost>` (name
+`inGitDB`, email `ingitdb@localhost`) for that commit only, through the Git author and
+committer environment, without writing Git configuration. Configured parts MUST be used as
+they are.
 
 #### REQ: git-unavailable
 
@@ -156,9 +167,10 @@ exit `0`, and say that the demo is not a Git repository and that `git init` adds
 Without `--format`, the command MUST print a short human-readable result to stdout: a
 title (`The TODO demo is ready` or `The TODO demo is already installed in <folder>`), where
 the lists are stored as an absolute path, whether it is a Git repository, and a **What
-next?** list of labelled commands. Like `ingitdb version`, the default output is text, not
-YAML: [output-formats](../../output-formats/README.md) governs read-style commands, and this
-is a write command whose first reader is a person.
+next?** list of labelled commands. The default is text rather than YAML under
+[output-formats `command-specific-formats`](../../output-formats/README.md#req-command-specific-formats),
+as `select` already defaults to CSV in set mode: the first reader of an install result is a
+person.
 
 #### REQ: structured-output
 
@@ -166,7 +178,7 @@ is a write command whose first reader is a person.
 [output-formats](../../output-formats/README.md#req-format-flag-name) and
 [json-supported](../../output-formats/README.md#req-json-supported), with at least: `app`
 (`todo`), `installed` (`true`), `already_installed`, `path` (absolute), `git`
-(`repository` boolean and `commit` id or empty), `lists` (`lists/to-buy`, `lists/to-watch`)
+(`repository` boolean and `commit` id or empty), `lists` (the shared package's list paths)
 and `next` (a list of `label` and `command`). Nothing else MUST be written to stdout. Errors
 MUST go to stderr with a non-zero exit, as in every other command.
 
@@ -174,11 +186,13 @@ MUST go to stderr with a non-zero exit, as in every other command.
 
 The next steps MUST be, in this order, each with a command that works when pasted into the
 person's shell on their operating system (paths quoted when they contain spaces or
-shell-special characters, one command per line, no `&&`):
+shell-special characters, with double quotes on Windows so the command works in both
+`cmd.exe` and PowerShell, one command per line, no `&&`):
 
 1. **Browse the lists in the terminal UI**: `ingitdb --path=<folder>`
 2. **Query the lists**: `ingitdb select --from=lists --path=<folder>`
-3. **Query what to buy**: `ingitdb select --from=lists/to-buy/items --path=<folder>`
+3. **Query what to buy**: `ingitdb select --from=<first list>/items --path=<folder>`, the
+   first list path taken from the shared package (today `lists/to-buy/items`)
 4. **Use the lists in a web TODO app (OpenVaultDB)**: `ovdb demo install --yes`, then
    `ovdb demo open`, with a note that OpenVaultDB keeps its own copy of the same lists and a
    link to `https://github.com/openvaultdb/ovdb` for installing it.
@@ -211,14 +225,14 @@ OpenVaultDB module. The hand-off is the printed next step only.
 
 #### REQ: ovdb-can-connect
 
-A demo folder installed by this command MUST be a database OpenVaultDB can connect as an
-existing inGitDB folder (`ovdb databases connect <id> --engine ingitdb --path <folder>`),
-after which `ovdb` data commands see the same lists and items. OpenVaultDB treats such a
-folder as an ordinary connected database, not as its TODO demo: its TODO app uses the demo
-it installed itself, and `ovdb demo install` refuses a non-empty folder it did not install.
-That behaviour is OpenVaultDB's and is specified in its
+A demo folder installed by this command MUST be a plain inGitDB database with no
+OpenVaultDB-specific files, so that OpenVaultDB can connect it as an existing folder
+(`ovdb databases connect <id> --engine ingitdb --path <absolute folder>`). What OpenVaultDB
+does with such a folder (an ordinary connected database, never adopted as its TODO demo) is
+OpenVaultDB's behaviour, specified and verified by REQ `ingitdb-cli-demo-folders` and AC
+`ingitdb-demo-folder-not-adopted` in its
 [TODO demo](https://github.com/openvaultdb/openvaultdb/blob/main/spec/features/todo-demo/README.md)
-feature.
+feature; this repository does not run `ovdb` in its own verification.
 
 ### Platforms
 
@@ -240,7 +254,8 @@ the install, reinstall, refusal and `select` acceptance criteria below passing o
   and `list collections` handle root collections only (see
   [describe, Out of Scope](../describe/README.md#out-of-scope)). Specified and built first by
   the [implementation plan](../../../plans/2026-09-17-cli-demo.md).
-- `github.com/ingitdb/ingitdb-go/ingitdb/demos/todo` — the shared demo data (new).
+- `github.com/ingitdb/ingitdb-go/ingitdb/demos/todo` — the shared demo records and list
+  paths (new, standard library imports only).
 
 ## Implementation
 
@@ -256,8 +271,10 @@ Not implemented yet. Plan: [2026-09-17-cli-demo](../../../plans/2026-09-17-cli-d
 **When** `ingitdb demo install` runs
 **Then** it exits `0`, `./todo-demo` exists with `.ingitdb/demo.yaml` naming `todo`, stdout
 starts with `The TODO demo is ready` and names the absolute folder,
-`ingitdb validate --path=todo-demo` exits `0`, and reading every record the shared package
-lists through `dalgo2ingitdb` returns exactly the shared package's data
+`ingitdb validate --path=todo-demo` exits `0`, reading every record the shared package
+lists through `dalgo2ingitdb` returns exactly the shared package's data, and a test validates
+every root and item record with `datavalidator` against the `lists` and `items` definitions
+the command writes (proving item validity, which `validate` does not check today)
 
 ### AC: install-at-path
 
@@ -328,11 +345,14 @@ timestamps and commit id, to a run attached to a terminal
 
 **Requirements:** cli/demo#req:own-git-repository, cli/demo#req:git-identity
 
-**Given** a working directory that is itself inside a Git repository with one commit, and a
-Git environment with no user identity configured
-**When** `ingitdb demo install` runs
-**Then** `todo-demo` is its own repository with exactly one commit `Install the TODO demo`
-authored by `inGitDB <ingitdb@localhost>`, `git -C todo-demo status --porcelain` is empty,
+**Given** a working directory that is itself inside a Git repository with one commit, and Git
+isolated from the machine's configuration (`GIT_CONFIG_GLOBAL` pointing at an empty file,
+`GIT_CONFIG_NOSYSTEM=1`, a temporary `HOME`)
+**When** `ingitdb demo install` runs with no identity configured, and separately with only
+`user.name` configured and with only `user.email` configured
+**Then** `todo-demo` is its own repository with exactly one commit `Install the TODO demo`,
+authored by `inGitDB <ingitdb@localhost>` in the first run and by the configured part plus
+the missing default part in the other two; `git -C todo-demo status --porcelain` is empty,
 `todo-demo/.git/config` has no `user` section, and the enclosing repository's `HEAD` and
 index are unchanged
 
@@ -352,8 +372,8 @@ is not a Git repository and mentions `git init`
 **Given** an empty working directory
 **When** `ingitdb demo install --format=json` runs, and then runs again
 **Then** each stdout parses as one JSON object with `app` `todo`, `installed` `true`, an
-absolute `path`, `git.repository` `true`, a 40-character `git.commit`, `lists`
-`["lists/to-buy","lists/to-watch"]` and a non-empty `next`; `already_installed` is `false`
+absolute `path`, `git.repository` `true`, a 40-character `git.commit`, `lists` equal to the
+shared package's list paths and a non-empty `next`; `already_installed` is `false`
 the first time and `true` the second; `--format=yaml` produces the same document as YAML
 
 ### AC: next-steps-in-order
@@ -364,7 +384,7 @@ the first time and `true` the second; `--format=yaml` produces the same document
 **When** the human output is read
 **Then** it lists terminal UI, query the lists, query what to buy, and the OpenVaultDB web
 TODO app, in that order; each `ingitdb` command quotes the path for the current platform's
-shell and, when pasted into that shell, exits `0`
+shell (double quotes on Windows) and, when run through that shell, exits `0`
 
 ### AC: tui-shows-items
 
@@ -386,17 +406,16 @@ run
 **Then** the first returns `to-buy` and `to-watch` with their titles, and the second returns
 Milk, Bananas and Coffee in that order
 
-### AC: ovdb-connects-demo-folder
+### AC: plain-ingitdb-folder
 
-**Requirements:** cli/demo#req:ovdb-can-connect, cli/demo#req:no-ovdb-coupling
+**Requirements:** cli/demo#req:no-ovdb-coupling, cli/demo#req:ovdb-can-connect
 
-**Given** a demo installed by `ingitdb demo install --path=<folder>` and an `ovdb` build with
-guided connect (OpenVaultDB increment 5)
-**When** `ovdb databases connect ingitdb-todo --engine ingitdb --path <folder>` runs, then
-`ovdb list /lists/to-buy/items --db ingitdb-todo --json`
-**Then** connect succeeds without changing any file in the folder, the list returns Milk,
-Bananas and Coffee, and `ovdb demo status` still reports OpenVaultDB's own demo as not
-installed
+**Given** the demo installed with `HOME` and the OpenVaultDB variables (`OVDB_HOME`,
+`OVDB_DATA_HOME`) pointing at empty temporary folders
+**When** the folder, those temporary folders and `go list -deps ./cmd/ingitdb` are inspected
+**Then** the demo folder holds only `.git`, `.ingitdb/` (`settings.yaml`,
+`root-collections.yaml`, `demo.yaml`) and `lists/`, the OpenVaultDB folders are still empty,
+and no `github.com/openvaultdb/` package is in the dependency list
 
 ### AC: works-on-every-os
 
@@ -405,14 +424,12 @@ installed
 **Given** CI runners for Linux, macOS and Windows
 **When** the automated tests for fresh-install, reinstall-keeps-edits,
 non-empty-folder-refused, one-commit-own-repository, json-output and select-lists-and-items
-run
+run, comparing printed absolute paths after resolving symbolic links (macOS temporary
+folders are under `/var`, a link to `/private/var`)
 **Then** they pass on all three
 
 ## Open Questions
 
-- Should `ovdb demo install` adopt a folder created by `ingitdb demo install` (register it
-  without writing and record it in `demos.json`) so both CLIs and the web TODO app share one
-  folder? Today OpenVaultDB keeps its own copy; adoption is OpenVaultDB's decision.
 - Should an `ingitdb demo reset` restore the seed data, as asked for `ovdb demo`?
 
 ---
