@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/strongo/cli-helpers/cliinstall/cobracmd"
+	"github.com/strongo/cli-helpers/selfupdate"
 )
 
 // Install returns the "install" command, built from
@@ -61,15 +62,20 @@ func (installErrors) Failure(err error) error {
 		return errors.New("install: " + err.Error())
 	}
 
-	// selfupdate.KindUnknownTarget's underlying error already names the
-	// unknown target and lists valid catalog ids
-	// (cli-install#req:unknown-target-refused), and
-	// KindNoInstallDir/KindDestinationExists carry their own remedy text.
-	// Both new kinds, and every self-update-shared kind
-	// (KindAmbiguous, KindReleaseLookup, KindDownload, KindChecksum,
-	// KindPermission, KindNonInteractive, KindManagedCommand, ...),
-	// resolve to the same exit 1 as ingitdb's pre-existing self-update
-	// passthrough — no extra wrapping beyond the shared "install:" prefix
-	// is needed for any kind.
-	return errors.New("install: " + err.Error())
+	switch selfupdate.KindOf(err) {
+	case selfupdate.KindUnknownTarget:
+		// The underlying error already names the unknown target and lists
+		// valid catalog ids (cli-install#req:unknown-target-refused).
+		return errors.New("install: " + err.Error())
+	case selfupdate.KindNoInstallDir, selfupdate.KindDestinationExists:
+		// Both carry their own remedy text already.
+		return errors.New("install: " + err.Error())
+	default:
+		// Every self-update-shared kind (KindAmbiguous, KindReleaseLookup,
+		// KindDownload, KindChecksum, KindPermission, KindNonInteractive,
+		// KindManagedCommand, ...) resolves to the same exit 1 as
+		// ingitdb's pre-existing self-update passthrough — no extra
+		// wrapping beyond the shared "install:" prefix is needed.
+		return errors.New("install: " + err.Error())
+	}
 }

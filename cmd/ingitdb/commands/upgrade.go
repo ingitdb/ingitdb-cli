@@ -38,24 +38,33 @@ func Upgrade(ver string) *cobra.Command {
 type upgradeErrors struct{}
 
 // Failure maps every upgrade failure the same way install already maps its
-// own ("upgrade:"-prefixed, general exit 1) for the three cli-install-only
+// own ("upgrade:"-prefixed, general exit 1) — for the three cli-install-only
 // kinds (cli-install#req:host-owned-exit-codes: "MUST map the three new
-// kinds explicitly"), and reuses selfUpdateErrors.Failure UNCHANGED for
-// every kind self-update already handles, so a shared failure — checksum,
-// permission, ambiguous detection, a failed release lookup, a failed
-// managed command — passes through identically whether it came from
-// `ingitdb self-update` or `ingitdb upgrade ingitdb`
-// (cli-install#req:self-update-equals-upgrade-self).
+// kinds explicitly") AND for every kind self-update also handles: the
+// "upgrade:" prefix names the command the user actually ran, never
+// self-update's own bare passthrough (task-22 review M2/M6 fleet ruling).
+// selfUpdateErrors.Failure is intentionally NOT reused here — unlike
+// UpgradesAvailable below, a *selfupdate.Failure/*cliinstall.BatchFailure
+// carries no target identity (selfupdate.Failure has only Kind, Path and
+// Err, never a catalog id), so Failure has no reliable way to tell "this
+// failure was ingitdb's own" from "this failure was some other upgraded
+// target's" — always using "upgrade:" is the one choice that is never
+// wrong about which command produced the message. The exit code is
+// unaffected: main.go's exitCodeForError still falls back to the same
+// generic 1 for every kind here, matching self-update's own passthrough
+// exit code exactly (cli-install#req:self-update-equals-upgrade-self).
 func (upgradeErrors) Failure(err error) error {
 	var usage *cobracmd.UsageError
 	if errors.As(err, &usage) {
 		return errors.New("upgrade: " + err.Error())
 	}
 	switch selfupdate.KindOf(err) {
-	case selfupdate.KindUnknownTarget, selfupdate.KindNoInstallDir, selfupdate.KindDestinationExists:
+	case selfupdate.KindUnknownTarget:
+		return errors.New("upgrade: " + err.Error())
+	case selfupdate.KindNoInstallDir, selfupdate.KindDestinationExists:
 		return errors.New("upgrade: " + err.Error())
 	default:
-		return selfUpdateErrors{}.Failure(err)
+		return errors.New("upgrade: " + err.Error())
 	}
 }
 

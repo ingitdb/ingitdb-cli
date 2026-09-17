@@ -91,11 +91,17 @@ func TestUpgradeErrorsFailure_NewKindsMapExplicitly(t *testing.T) {
 	}
 }
 
-// TestUpgradeErrorsFailure_SharedKindsMatchSelfUpdate proves every kind
-// self-update already handles reuses selfUpdateErrors.Failure UNCHANGED:
-// same error value, same exit code
+// TestUpgradeErrorsFailure_SharedKindsUseUpgradePrefix proves every kind
+// self-update also handles gets the SAME "upgrade:" prefix as the three
+// cli-install-only kinds, never self-update's own bare (unprefixed)
+// passthrough: a *selfupdate.Failure/*cliinstall.BatchFailure carries no
+// target identity, so Failure has no reliable way to tell "this failure
+// was ingitdb's own" from "some other upgraded target's" — the "upgrade:"
+// prefix is the one choice that is never wrong about which command
+// produced the message (task-22 review M2/M6 fleet ruling). The exit code
+// stays the same generic 1 self-update's own passthrough also produces
 // (cli-install#req:self-update-equals-upgrade-self).
-func TestUpgradeErrorsFailure_SharedKindsMatchSelfUpdate(t *testing.T) {
+func TestUpgradeErrorsFailure_SharedKindsUseUpgradePrefix(t *testing.T) {
 	t.Parallel()
 
 	cases := []error{
@@ -108,8 +114,11 @@ func TestUpgradeErrorsFailure_SharedKindsMatchSelfUpdate(t *testing.T) {
 	}
 	for _, err := range cases {
 		got := (upgradeErrors{}).Failure(err)
-		if got != err {
-			t.Errorf("Failure(%v) = %v, want the same error returned unchanged (identical to selfUpdateErrors)", err, got)
+		if !strings.HasPrefix(got.Error(), "upgrade: ") {
+			t.Errorf("Failure(%v) = %q, want an \"upgrade: \" prefix", err, got.Error())
+		}
+		if errors.Is(got, ErrValidationFailed) || errors.Is(got, ErrSelfUpdateAvailable) {
+			t.Errorf("Failure(%v) = %v, must not match a sentinel with its own exit code", err, got)
 		}
 	}
 }
