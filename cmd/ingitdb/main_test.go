@@ -122,6 +122,8 @@ func TestExitCodeForError(t *testing.T) {
 	}{
 		{name: "validation failure", err: validationErr, want: commands.ValidationFailedExitCode},
 		{name: "wrapped validation failure", err: wrappedValidationErr, want: commands.ValidationFailedExitCode},
+		{name: "self-update available", err: commands.ErrSelfUpdateAvailable, want: commands.SelfUpdateAvailableExitCode},
+		{name: "wrapped self-update available", err: fmt.Errorf("outer: %w", commands.ErrSelfUpdateAvailable), want: commands.SelfUpdateAvailableExitCode},
 		{name: "runtime failure", err: errors.New("disk unavailable"), want: 1},
 	}
 

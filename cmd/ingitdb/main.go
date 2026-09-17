@@ -58,6 +58,9 @@ func exitCodeForError(err error) int {
 	if errors.Is(err, commands.ErrValidationFailed) {
 		return commands.ValidationFailedExitCode
 	}
+	if errors.Is(err, commands.ErrSelfUpdateAvailable) {
+		return commands.SelfUpdateAvailableExitCode
+	}
 	return 1
 }
 
@@ -100,7 +103,7 @@ func run(
 
 	rootCmd.AddCommand(
 		// No "update" alias: `ingitdb update` is the SQL UPDATE verb below.
-		commands.SelfUpdate(info.Version, os.Exit),
+		commands.SelfUpdate(info.Version),
 		commands.Validate(homeDir, getWd, readDefinition, datavalidator.NewValidator(),
 			datavalidator.NewIncrementalValidator(gitdiff.NewGitDiffer(), datavalidator.NewChangeSetResolver(), datavalidator.NewValidator()), logf),
 		commands.Materialize(homeDir, getWd, readDefinition, vb, logf),
