@@ -17,7 +17,7 @@ verifiable tasks with clear acceptance criteria and dependency ordering.
 | [dalgo2ingitdb-referential-integrity](dalgo2ingitdb-referential-integrity.md) | dalgo2ingitdb-referential-integrity | Approved |
 | [2026-06-03-computed-columns-via-dalgo](2026-06-03-computed-columns-via-dalgo.md) | computed-columns-via-dalgo | Draft |
 | [2026-06-04-cli-materialize](2026-06-04-cli-materialize.md) | cli/materialize | Approved |
-| [2026-09-17-cli-demo](2026-09-17-cli-demo.md) | cli/demo | Draft |
+| [2026-09-17-cli-demo](2026-09-17-cli-demo.md) | cli/demo | Executing |
 
 ## Open Questions
 

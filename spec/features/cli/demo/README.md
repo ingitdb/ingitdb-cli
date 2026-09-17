@@ -259,6 +259,16 @@ the install, reinstall, refusal and `select` acceptance criteria below passing o
 
 ## Implementation
 
+Status history:
+
+- **Draft → Approved, 2026-09-17.** Approved on this spec and its plan as independently
+  reviewed on 2026-09-17 (review fixes in 30ba550). The transition was made with
+  `specscore feature change-status` in the same commit as the next one, when implementation
+  had already started, rather than as its own earlier commit.
+- **Approved → Implementing, 2026-09-17.** Implementation opened in
+  [ingitdb-cli#157](https://github.com/ingitdb/ingitdb-cli/pull/157). The plan moved
+  Draft → Approved on the same review and is Executing.
+
 Plan: [2026-09-17-cli-demo](../../../plans/2026-09-17-cli-demo.md), Tasks 4 to 6. Source files
 annotated with `// specscore: feature/cli/demo`:
 
