@@ -73,12 +73,38 @@ func writeDemoFile(name string, data []byte) error {
 	return os.WriteFile(name, data, 0o644)
 }
 
-// runDemoGit runs git in dir and returns its trimmed stdout. A failure
+// demoRepositoryEnvVars are the repository-local variables Git lists with
+// `git rev-parse --local-env-vars`. Inherited from a hook, `rebase --exec` or
+// a dotfile manager, they would point the install at another repository, so
+// git runs without them (cli/demo#REQ:own-git-repository).
+var demoRepositoryEnvVars = []string{
+	"GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_CONFIG", "GIT_CONFIG_PARAMETERS", "GIT_CONFIG_COUNT",
+	"GIT_OBJECT_DIRECTORY", "GIT_DIR", "GIT_WORK_TREE", "GIT_IMPLICIT_WORK_TREE", "GIT_GRAFT_FILE",
+	"GIT_INDEX_FILE", "GIT_NO_REPLACE_OBJECTS", "GIT_REPLACE_REF_BASE", "GIT_PREFIX",
+	"GIT_SHALLOW_FILE", "GIT_COMMON_DIR",
+}
+
+// withoutRepositoryEnv returns env without demoRepositoryEnvVars. Names are
+// compared case-insensitively, as Windows does.
+func withoutRepositoryEnv(env []string) []string {
+	out := make([]string, 0, len(env))
+	for _, kv := range env {
+		name, _, _ := strings.Cut(kv, "=")
+		if slices.ContainsFunc(demoRepositoryEnvVars, func(v string) bool { return strings.EqualFold(v, name) }) {
+			continue
+		}
+		out = append(out, kv)
+	}
+	return out
+}
+
+// runDemoGit runs git on the repository in dir, without inherited
+// repository-local variables, and returns its trimmed stdout. A failure
 // carries git's stderr.
 func runDemoGit(ctx context.Context, git, dir string, env []string, args ...string) (string, error) {
-	cmd := exec.CommandContext(ctx, git, args...)
+	cmd := exec.CommandContext(ctx, git, append([]string{"-C", dir}, args...)...)
 	cmd.Dir = dir
-	cmd.Env = env
+	cmd.Env = withoutRepositoryEnv(env)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

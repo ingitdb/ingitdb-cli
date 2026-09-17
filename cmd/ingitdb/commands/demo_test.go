@@ -1067,3 +1067,69 @@ func TestDemoInstall_FileSystemErrors(t *testing.T) {
 		}
 	})
 }
+
+// TestDemoInstall_IgnoresInheritedRepositoryVariables runs the install with
+// GIT_DIR and GIT_INDEX_FILE pointing at an enclosing repository, as they are
+// inside Git hooks, `rebase --exec` or dotfile managers. The install must
+// still create and commit to its own repository and leave the enclosing one
+// untouched (cli/demo#REQ:own-git-repository).
+func TestDemoInstall_IgnoresInheritedRepositoryVariables(t *testing.T) {
+	t.Parallel()
+	requireGit(t)
+	env := isolatedGitEnv(t, "")
+	outer := t.TempDir()
+	gitOut(t, env, outer, "init", "-q")
+	if err := os.WriteFile(filepath.Join(outer, "x"), []byte("outer"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	gitOut(t, env, outer, "add", "x")
+	gitOut(t, env, outer, "-c", "user.name=Outer", "-c", "user.email=outer@example.com", "commit", "-q", "-m", "outer")
+	outerHead := gitOut(t, env, outer, "rev-parse", "HEAD")
+	outerIndex := fileSHA(t, filepath.Join(outer, ".git", "index"))
+
+	i := testDemoInstaller(t)
+	i.env = append(slices.Clone(env),
+		"GIT_DIR="+filepath.Join(outer, ".git"),
+		"GIT_INDEX_FILE="+filepath.Join(outer, ".git", "index"),
+		"GIT_WORK_TREE="+outer,
+	)
+	stdout, err := runDemoInstall(t, i, outer, "--path=inner", "--format=json")
+	if err != nil {
+		t.Fatalf("install: %v", err)
+	}
+	inner := filepath.Join(outer, "inner")
+	if got := gitOut(t, env, outer, "rev-parse", "HEAD"); got != outerHead {
+		t.Errorf("enclosing HEAD changed: %s, was %s", got, outerHead)
+	}
+	if got := fileSHA(t, filepath.Join(outer, ".git", "index")); got != outerIndex {
+		t.Error("enclosing index changed")
+	}
+	if got := gitOut(t, env, outer, "ls-tree", "--name-only", "HEAD"); got != "x" {
+		t.Errorf("enclosing tree = %q, want x", got)
+	}
+	if got := gitOut(t, env, inner, "rev-list", "--count", "HEAD"); got != "1" {
+		t.Errorf("inner commit count = %s, want 1", got)
+	}
+	if top := gitOut(t, env, inner, "rev-parse", "--show-toplevel"); !sameDir(t, top, inner) {
+		t.Errorf("inner top level = %s", top)
+	}
+	if doc := decodeDemoJSON(t, stdout); doc.Git.Commit != gitOut(t, env, inner, "rev-parse", "HEAD") {
+		t.Errorf("reported commit %s is not the inner HEAD", doc.Git.Commit)
+	}
+}
+
+// TestDemoRepositoryEnvVars_CoverGit checks the stripped variables include
+// every repository-local variable the installed git reports.
+func TestDemoRepositoryEnvVars_CoverGit(t *testing.T) {
+	t.Parallel()
+	vars := gitOut(t, isolatedGitEnv(t, ""), t.TempDir(), "rev-parse", "--local-env-vars")
+	for _, name := range strings.Fields(vars) {
+		if !slices.Contains(demoRepositoryEnvVars, name) {
+			t.Errorf("git reports %s, which the install does not strip", name)
+		}
+	}
+	got := withoutRepositoryEnv([]string{"git_dir=/x", "GIT_INDEX_FILE=/i", "GIT_CONFIG_GLOBAL=/g", "PATH=/bin"})
+	if !reflect.DeepEqual(got, []string{"GIT_CONFIG_GLOBAL=/g", "PATH=/bin"}) {
+		t.Errorf("withoutRepositoryEnv = %v", got)
+	}
+}
