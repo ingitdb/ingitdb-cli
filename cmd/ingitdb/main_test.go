@@ -5,10 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"testing"
 
+	"charm.land/fang/v2"
 	"github.com/dal-go/dalgo/dal"
 	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/commands"
 	"github.com/ingitdb/ingitdb-go/ingitdb"
@@ -135,6 +137,85 @@ func TestExitCodeForError(t *testing.T) {
 				t.Fatalf("exitCodeForError() = %d, want %d", got, test.want)
 			}
 		})
+	}
+}
+
+// TestFatalMessage_QuietForSelfUpdateAvailable proves the Part-A follow-up:
+// self-update --check finding an update available must not add an
+// "error: update available" line to stderr — just exit 10, exactly as
+// before the migration to cli-helpers/selfupdate/cobracmd.
+func TestFatalMessage_QuietForSelfUpdateAvailable(t *testing.T) {
+	t.Parallel()
+
+	if got := fatalMessage(commands.ErrSelfUpdateAvailable); got != "" {
+		t.Errorf("fatalMessage(ErrSelfUpdateAvailable) = %q, want empty (quiet exit 10, no stderr line)", got)
+	}
+	wrapped := fmt.Errorf("outer: %w", commands.ErrSelfUpdateAvailable)
+	if got := fatalMessage(wrapped); got != "" {
+		t.Errorf("fatalMessage(wrapped ErrSelfUpdateAvailable) = %q, want empty", got)
+	}
+}
+
+func TestFatalMessage_OtherErrorsUnchanged(t *testing.T) {
+	t.Parallel()
+
+	other := errors.New("boom")
+	want := "error: boom\n"
+	if got := fatalMessage(other); got != want {
+		t.Errorf("fatalMessage(other) = %q, want %q", got, want)
+	}
+	validation := commands.NewValidationFailedError(errors.New("bad record"))
+	if got := fatalMessage(validation); got == "" {
+		t.Error("fatalMessage(validation failure) = empty, want a message (only self-update-available is quiet)")
+	}
+}
+
+// TestQuietErrorHandler_SuppressesSelfUpdateAvailable proves the fang half
+// of the same Part-A follow-up: no styled "ERROR" box for --check finding an
+// update available, matching fatalMessage's own suppression of its stderr
+// line for the same error.
+func TestQuietErrorHandler_SuppressesSelfUpdateAvailable(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	quietErrorHandler(&buf, fang.Styles{}, commands.ErrSelfUpdateAvailable)
+	if buf.Len() != 0 {
+		t.Errorf("quietErrorHandler wrote %q for ErrSelfUpdateAvailable, want nothing (no fang error box)", buf.String())
+	}
+
+	buf.Reset()
+	wrapped := fmt.Errorf("outer: %w", commands.ErrSelfUpdateAvailable)
+	quietErrorHandler(&buf, fang.Styles{}, wrapped)
+	if buf.Len() != 0 {
+		t.Errorf("quietErrorHandler wrote %q for wrapped ErrSelfUpdateAvailable, want nothing", buf.String())
+	}
+}
+
+// TestQuietErrorHandler_PassesThroughOtherErrors proves quietErrorHandler
+// does not silence every error — only ErrSelfUpdateAvailable — by checking
+// fang's own DefaultErrorHandler still runs and writes something for a
+// plain error. Uses a pipe (not a bytes.Buffer) so DefaultErrorHandler's
+// term.File type-assertion succeeds and takes its "not a tty" branch
+// (plain fmt.Fprintln of the error), which is deterministic without a real
+// terminal.
+func TestQuietErrorHandler_PassesThroughOtherErrors(t *testing.T) {
+	t.Parallel()
+
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("os.Pipe: %v", err)
+	}
+	t.Cleanup(func() { _ = r.Close() })
+
+	quietErrorHandler(w, fang.Styles{}, errors.New("boom"))
+	_ = w.Close()
+
+	output, readErr := io.ReadAll(r)
+	if readErr != nil {
+		t.Fatalf("read pipe: %v", readErr)
+	}
+	if !strings.Contains(string(output), "boom") {
+		t.Errorf("quietErrorHandler wrote %q for a plain error, want it to mention %q", output, "boom")
 	}
 }
 
@@ -421,6 +502,7 @@ func TestRun_AllCommands(t *testing.T) {
 		{name: "setup help", args: []string{"ingitdb", "setup", "--help"}},
 		{name: "resolve help", args: []string{"ingitdb", "resolve", "--help"}},
 		{name: "list help", args: []string{"ingitdb", "list", "--help"}},
+		{name: "install help", args: []string{"ingitdb", "install", "--help"}},
 		{name: "select help", args: []string{"ingitdb", "select", "--help"}},
 		{name: "insert help", args: []string{"ingitdb", "insert", "--help"}},
 		{name: "update help", args: []string{"ingitdb", "update", "--help"}},

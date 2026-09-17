@@ -170,9 +170,7 @@ than re-proving.
 
 ## Open Questions
 
-- Should ingitdb also gain the shared `install` command
-  (cli-install#req:fleet-cutover) so it can list and install other fleet
-  CLIs relevant to it, and be listed by them in turn?
+None at this time.
 
 ---
 *This document follows the https://specscore.md/feature-specification*

@@ -33,13 +33,45 @@ func main() {
 
 func executeMain() {
 	fatal := func(err error) {
-		_, _ = fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		if msg := fatalMessage(err); msg != "" {
+			_, _ = fmt.Fprint(os.Stderr, msg)
+		}
 		exit(exitCodeForError(err))
 	}
 	logf := func(args ...any) {
 		_, _ = fmt.Fprintln(os.Stderr, args...)
 	}
 	run(os.Args, os.UserHomeDir, os.Getwd, validator.ReadDefinition, fatal, logf)
+}
+
+// fatalMessage returns the "error: <err>" line fatal writes to stderr, or ""
+// for an error whose exit code alone already communicates the outcome and
+// needs no message — today just ErrSelfUpdateAvailable, preserving the
+// silent, exit-10-only contract `self-update --check` had before this
+// repository's self-update migrated onto cli-helpers/selfupdate/cobracmd
+// (Part-A follow-up: an update being available is a deliberate signal, not
+// a failure, so it gets no "error: update available" line, matching
+// quietErrorHandler's suppression of fang's own error box for the same
+// error below).
+func fatalMessage(err error) string {
+	if errors.Is(err, commands.ErrSelfUpdateAvailable) {
+		return ""
+	}
+	return fmt.Sprintf("error: %v\n", err)
+}
+
+// quietErrorHandler wraps fang.DefaultErrorHandler, skipping its styled
+// error box for ErrSelfUpdateAvailable for the same reason fatalMessage
+// skips its own stderr line: `self-update --check` finding an update
+// available (or an undetermined running version) is a quiet, exit-10-only
+// signal, not a failure needing a box — the contract this repository's
+// self-update had before the cli-helpers migration (Part-A follow-up).
+// Every other error still gets fang's normal box.
+func quietErrorHandler(w io.Writer, styles fang.Styles, err error) {
+	if errors.Is(err, commands.ErrSelfUpdateAvailable) {
+		return
+	}
+	fang.DefaultErrorHandler(w, styles, err)
 }
 
 func guardProcess(runCommand func(), errorWriter io.Writer, exitProcess func(int)) {
@@ -100,10 +132,12 @@ func run(
 
 	info := buildinfo.Get("ingitdb")
 	fangOpts := fangcmd.Wire(rootCmd, info)
+	fangOpts = append(fangOpts, fang.WithErrorHandler(quietErrorHandler))
 
 	rootCmd.AddCommand(
 		// No "update" alias: `ingitdb update` is the SQL UPDATE verb below.
 		commands.SelfUpdate(info.Version),
+		commands.Install(),
 		commands.Validate(homeDir, getWd, readDefinition, datavalidator.NewValidator(),
 			datavalidator.NewIncrementalValidator(gitdiff.NewGitDiffer(), datavalidator.NewChangeSetResolver(), datavalidator.NewValidator()), logf),
 		commands.Materialize(homeDir, getWd, readDefinition, vb, logf),

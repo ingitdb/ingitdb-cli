@@ -23,6 +23,7 @@ CLI surface; keep those skills in sync when a command's flags or behavior change
 | [delete](delete/README.md) | The `delete` verb removes records from a collection. Two modes inherited from shared-cli-flags: single-record (`--id`) and set (`--from` + `--where`/`--all`). `--min-affected=N` opts into non-zero exit when fewer than N records are deleted. Silent on success. Replaces `delete-record` and `delete-records`. |
 | [drop](drop/README.md) | The `drop` verb removes schema objects from the database. Two kinds today: `drop collection <name>` and `drop view <name>`. Removes both the schema entry in `.ingitdb.yaml` and any associated data directory in a single git commit. `--if-exists` makes the operation idempotent; `--cascade` also drops dependents. Replaces `delete-collection` and `delete-view`. |
 | [describe](describe/README.md) | TODO: Add description. |
+| [install](install/README.md) | The `install` verb lists the fleet CLIs relevant to ingitdb (datatug, ovdb, synchestra, specscore) with live status, and installs named targets the same way ingitdb itself was installed. Built entirely on `github.com/strongo/cli-helpers/cliinstall`. |
 
 ## Index
 
@@ -30,6 +31,7 @@ CLI surface; keep those skills in sync when a command's flags or behavior change
 |---------|--------|---------|
 | [version](version/README.md) | Implementing | `ingitdb version` |
 | [self-update](self-update/README.md) | Implementing | `ingitdb self-update` |
+| [install](install/README.md) | Implementing | `ingitdb install` |
 | [validate](validate/README.md) | Implementing | `ingitdb validate` |
 | [select](select/README.md) | Implementing | `ingitdb select` |
 | [insert](insert/README.md) | Implementing | `ingitdb insert` |
