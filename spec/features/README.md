@@ -35,6 +35,7 @@ This directory tracks the SpecScore feature specifications for the **ingitdb-cli
 | [cli/serve](cli/serve/README.md) | Draft | `ingitdb serve` — MCP, HTTP API, and file-watcher servers. |
 | [cli/resolve](cli/resolve/README.md) | Draft | `ingitdb resolve` — interactive merge-conflict TUI. |
 | [cli/setup](cli/setup/README.md) | Draft | `ingitdb setup` — initialise a new database directory. |
+| [cli/demo](cli/demo/README.md) | Draft | `ingitdb demo install` — create the TODO demo database shared with OpenVaultDB. |
 | [cli/find](cli/find/README.md) | Withdrawn — moved to DataTug CLI | `ingitdb find` (not implemented). |
 | [cli/truncate](cli/truncate/README.md) | Withdrawn — use `delete --all` | `ingitdb truncate` (not implemented). |
 | [cli/migrate](cli/migrate/README.md) | Withdrawn (deferred) | `ingitdb migrate` (not implemented). |
@@ -103,6 +104,9 @@ Opens an interactive TUI for resolving merge conflicts in inGitDB record files.
 
 ### cli/setup
 Initialises a new inGitDB database directory with a starter `.ingitdb.yaml` and the expected layout.
+
+### cli/demo
+Creates the TODO demo (To buy and To watch lists, defined once in `ingitdb-go` and shared with OpenVaultDB) as a new Git repository, and prints next steps for the TUI, `select` and OpenVaultDB's web TODO app.
 
 ### id-flag-format
 Defines the `--id=<collection-id>/<record-key>` syntax used by every CRUD command, including the longest-prefix-match rule and the allowed character set for collection IDs.

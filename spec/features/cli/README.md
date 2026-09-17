@@ -23,6 +23,7 @@ CLI surface; keep those skills in sync when a command's flags or behavior change
 | [delete](delete/README.md) | The `delete` verb removes records from a collection. Two modes inherited from shared-cli-flags: single-record (`--id`) and set (`--from` + `--where`/`--all`). `--min-affected=N` opts into non-zero exit when fewer than N records are deleted. Silent on success. Replaces `delete-record` and `delete-records`. |
 | [drop](drop/README.md) | The `drop` verb removes schema objects from the database. Two kinds today: `drop collection <name>` and `drop view <name>`. Removes both the schema entry in `.ingitdb.yaml` and any associated data directory in a single git commit. `--if-exists` makes the operation idempotent; `--cascade` also drops dependents. Replaces `delete-collection` and `delete-view`. |
 | [describe](describe/README.md) | The `describe` verb (alias `desc`) prints the full definition of a single collection or view. |
+| [demo](demo/README.md) | The `demo install` verb creates the TODO demo (To buy and To watch lists, shared with OpenVaultDB's demo) as a new Git-backed database and prints how to browse it in the TUI, query it with `select`, and open it in OpenVaultDB's web TODO app. |
 | [create-record](create-record/README.md) | Historical: `ingitdb create record` (removed). Superseded by `insert`. |
 | [delete-collection](delete-collection/README.md) | Historical: `ingitdb delete collection` (removed). Superseded by `drop collection`. |
 | [delete-record](delete-record/README.md) | Historical: `ingitdb delete record` (removed). Superseded by `delete --id`. |
@@ -69,6 +70,7 @@ CLI surface; keep those skills in sync when a command's flags or behavior change
 | [serve](serve/README.md) | Withdrawn — removed from CLI (ADR 0001) | `ingitdb serve` (removed) |
 | [resolve](resolve/README.md) | Draft | `ingitdb resolve` |
 | [setup](setup/README.md) | Draft | `ingitdb setup` |
+| [demo](demo/README.md) | Draft | `ingitdb demo install` |
 | [find](find/README.md) | Withdrawn — moved to DataTug CLI | `ingitdb find` (not implemented) |
 | [truncate](truncate/README.md) | Withdrawn — use `delete --all` | `ingitdb truncate` (not implemented) |
 | [migrate](migrate/README.md) | Withdrawn (deferred) | `ingitdb migrate` (not implemented) |
