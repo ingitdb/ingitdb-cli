@@ -46,7 +46,8 @@ returned.
 When a `--from` value containing `/` does not match
 [REQ:from-subcollection-path](#req-from-subcollection-path) — the root segment is not a
 declared root collection, a subcollection segment is not declared by its parent's definition,
-the value ends with a record key, or a segment is empty — `select` MUST exit non-zero with the
+the value ends with a record key, or a segment is empty, `.`, `..` or contains a path
+separator (`/` or `\`) — `select` MUST exit non-zero with the
 existing error `collection "<value>" not found in definition`, naming the whole value, and
 MUST write nothing to stdout.
 

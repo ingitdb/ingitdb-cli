@@ -4,6 +4,7 @@ package commands
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -180,11 +181,17 @@ func TestSelect_Subcollection_UndeclaredSegmentNotFound(t *testing.T) {
 		"lists/to-buy/items/milk",
 		"lists/to-buy/items/milk/tags",
 		"/lists/to-buy/items",
+		"lists/../items",
+		"lists/./items",
+		"lists/to-buy/../to-buy/items",
+		`lists/to\buy/items`,
+		`lists/..\to-buy/items`,
+		"lists/to-buy/items/",
 	} {
 		t.Run(from, func(t *testing.T) {
 			t.Parallel()
 			stdout, err := runNestedSelect(t, dir, "--from="+from)
-			testutil.MustErrContain(t, err, `collection "`+from+`" not found in definition`)
+			testutil.MustErrContain(t, err, fmt.Sprintf("collection %q not found in definition", from))
 			if stdout != "" {
 				t.Errorf("stdout should be empty, got:\n%s", stdout)
 			}

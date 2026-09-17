@@ -4,6 +4,7 @@ package commands
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/dal-go/dalgo/dal"
@@ -18,7 +19,8 @@ import (
 // A declared root collection ID resolves exactly as before. Any other value
 // must be a subcollection path `<collection>/<record-key>/<subcollection>`
 // (repeatable to deeper levels) in which every subcollection segment is
-// declared by the definition before it; the returned reference carries the
+// declared by the definition before it and no segment is empty, `.`, `..` or
+// contains a path separator; the returned reference carries the
 // parent record key so the storage driver scopes the read to that parent's
 // records on its own on-disk layout. Every other value fails with the
 // existing "not found in definition" error naming the whole value.
@@ -32,7 +34,7 @@ func resolveFromCollection(def *ingitdb.Definition, from string) (dal.Collection
 		return dal.CollectionRef{}, nil, notFound
 	}
 	for _, s := range segments {
-		if s == "" {
+		if !isPlainPathSegment(s) {
 			return dal.CollectionRef{}, nil, notFound
 		}
 	}
@@ -52,4 +54,15 @@ func resolveFromCollection(def *ingitdb.Definition, from string) (dal.Collection
 		colDef = sub
 	}
 	return dal.NewCollectionRef(collection, "", parent), colDef, nil
+}
+
+// isPlainPathSegment reports whether s can name a collection or a record in a
+// subcollection path: non-empty, not `.` or `..`, and free of path separators
+// (`/`, `\` and the OS separator), so a parent record key can never move the
+// driver's scoped directory outside its parent record.
+func isPlainPathSegment(s string) bool {
+	if s == "" || s == "." || s == ".." {
+		return false
+	}
+	return !strings.ContainsAny(s, `/\`+string(filepath.Separator))
 }
