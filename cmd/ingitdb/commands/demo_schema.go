@@ -22,6 +22,11 @@ const (
 	demoMarkerVersion = 1
 
 	demoCommitMessage = "Install the TODO demo"
+
+	// demoLockFileName is the file an install creates exclusively in the demo
+	// folder to claim it, and removes once the demo is complete. A marker
+	// without this lock means the demo is complete.
+	demoLockFileName = ".ingitdb-demo-install.lock"
 )
 
 // demoMarker is the content of .ingitdb/demo.yaml.
@@ -71,14 +76,19 @@ type demoFile struct {
 	value any
 }
 
-// demoConfigFiles lists the configuration files of the TODO demo in the
-// order they are written.
+// demoConfigFiles lists the configuration files of the TODO demo, except the
+// marker, in the order they are written.
 func demoConfigFiles() []demoFile {
 	return []demoFile{
 		{path: config.IngitDBDirName + "/" + config.SettingsFileName, value: config.Settings{}},
 		{path: config.IngitDBDirName + "/" + config.RootCollectionsFileName, value: map[string]string{demoListsCollection: demoListsCollection}},
 		{path: demoListsCollection + "/.collection/definition.yaml", value: demoListsDef()},
 		{path: demoListsCollection + "/.collection/subcollections/" + demoItemsCollection + "/definition.yaml", value: demoItemsDef()},
-		{path: config.IngitDBDirName + "/" + demoMarkerFileName, value: demoMarker{App: demoApp, Version: demoMarkerVersion}},
 	}
+}
+
+// demoMarkerFile is the .ingitdb/demo.yaml marker, written after every other
+// file of the demo.
+func demoMarkerFile() demoFile {
+	return demoFile{path: config.IngitDBDirName + "/" + demoMarkerFileName, value: demoMarker{App: demoApp, Version: demoMarkerVersion}}
 }

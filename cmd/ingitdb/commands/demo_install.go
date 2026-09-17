@@ -41,6 +41,11 @@ type demoInstaller struct {
 	runGit func(ctx context.Context, git, dir string, env []string, args ...string) (string, error)
 	// writeFile writes one file, creating its parent folders.
 	writeFile func(name string, data []byte) error
+	// mkdir creates one folder.
+	mkdir func(name string, perm os.FileMode) error
+	// createLock claims the demo folder; removeLock releases it.
+	createLock func(name string) error
+	removeLock func(name string) error
 	// setRecord writes one record in the install transaction.
 	setRecord func(ctx context.Context, tx dal.ReadwriteTransaction, r record.Record) error
 }
@@ -59,6 +64,9 @@ func newDemoInstaller(
 		env:            os.Environ(),
 		runGit:         runDemoGit,
 		writeFile:      writeDemoFile,
+		mkdir:          os.Mkdir,
+		createLock:     createDemoLock,
+		removeLock:     os.Remove,
 		setRecord: func(ctx context.Context, tx dal.ReadwriteTransaction, r record.Record) error {
 			return tx.Set(ctx, r)
 		},
@@ -128,7 +136,15 @@ const (
 // demoAnotherFolderHint is the suggestion every refusal ends with.
 const demoAnotherFolderHint = "choose another folder: ingitdb demo install --path=<another folder>"
 
+// demoInProgressError reports a folder another install has claimed.
+func demoInProgressError(dir string) error {
+	return fmt.Errorf("another ingitdb demo install is in progress in %s; wait for it to finish, "+
+		"or, if it was interrupted, delete the folder and install again", dir)
+}
+
 // inspectDemoTarget checks the target folder (cli/demo#REQ:refuses-conflicting-target).
+// A folder holding the install lock is being installed: it is not reported as
+// installed until the lock is gone, even when the marker is already there.
 func inspectDemoTarget(dir string) (demoTargetState, error) {
 	info, err := os.Stat(dir)
 	if errors.Is(err, os.ErrNotExist) {
@@ -147,6 +163,9 @@ func inspectDemoTarget(dir string) (demoTargetState, error) {
 	if len(entries) == 0 {
 		return demoTargetEmpty, nil
 	}
+	if _, lockErr := os.Lstat(filepath.Join(dir, demoLockFileName)); lockErr == nil {
+		return 0, demoInProgressError(dir)
+	}
 	markerPath := filepath.Join(dir, config.IngitDBDirName, demoMarkerFileName)
 	data, readErr := os.ReadFile(markerPath)
 	var marker demoMarker
@@ -161,6 +180,11 @@ func inspectDemoTarget(dir string) (demoTargetState, error) {
 
 // install installs the TODO demo into dir, an absolute path. When dir
 // already holds the TODO demo it writes nothing and reports that.
+//
+// The run claims the folder by creating the install lock exclusively inside
+// it, so concurrent installs into one folder cannot interleave: exactly one
+// installs, the others report it in progress or, once it is complete,
+// installed. A failed run removes only what it created.
 func (i demoInstaller) install(ctx context.Context, dir string) (demoResult, error) {
 	state, err := inspectDemoTarget(dir)
 	if err != nil {
@@ -169,50 +193,107 @@ func (i demoInstaller) install(ctx context.Context, dir string) (demoResult, err
 	if state == demoTargetInstalled {
 		return i.installedResult(ctx, dir), nil
 	}
-	createdRoot := ""
-	if state == demoTargetMissing {
-		createdRoot = topmostMissingDir(dir)
-		if mkErr := os.MkdirAll(dir, 0o755); mkErr != nil {
-			return demoResult{}, i.failed(dir, fmt.Errorf("create the folder: %w", mkErr), createdRoot)
+	created, err := i.createFolders(dir)
+	if err != nil {
+		removeCreatedDirs(created)
+		return demoResult{}, fmt.Errorf("failed to install the TODO demo in %s: create the folder: %w", dir, err)
+	}
+	lock := filepath.Join(dir, demoLockFileName)
+	if lockErr := i.createLock(lock); lockErr != nil {
+		removeCreatedDirs(created)
+		if !errors.Is(lockErr, os.ErrExist) {
+			return demoResult{}, fmt.Errorf("failed to install the TODO demo in %s: claim the folder: %w", dir, lockErr)
 		}
+		// Another run claimed the folder first.
+		state, err = inspectDemoTarget(dir)
+		if err != nil {
+			return demoResult{}, err
+		}
+		if state == demoTargetInstalled {
+			return i.installedResult(ctx, dir), nil
+		}
+		return demoResult{}, demoInProgressError(dir)
 	}
 	result, err := i.write(ctx, dir)
+	if err == nil {
+		err = i.removeLock(lock)
+	}
 	if err != nil {
-		return demoResult{}, i.failed(dir, err, createdRoot)
+		return demoResult{}, i.failed(dir, err, created)
 	}
 	return result, nil
 }
 
-// failed removes what the install wrote (cli/demo#REQ:no-partial-install)
-// and returns the error to report.
-func (i demoInstaller) failed(dir string, cause error, createdRoot string) error {
-	err := fmt.Errorf("failed to install the TODO demo in %s: %w", dir, cause)
-	var cleanupErr error
-	if createdRoot != "" {
-		cleanupErr = os.RemoveAll(createdRoot)
-	} else {
-		cleanupErr = removeDirContents(dir)
+// createDemoLock creates the install lock, failing with os.ErrExist when another
+// run holds it.
+func createDemoLock(name string) error {
+	f, err := os.OpenFile(name, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+	if err != nil {
+		return err
 	}
-	if cleanupErr != nil {
+	return f.Close()
+}
+
+// createFolders creates the missing folders of dir, top down, and returns the
+// ones this run created. A folder another process creates meanwhile is used,
+// not claimed.
+func (i demoInstaller) createFolders(dir string) ([]string, error) {
+	var created []string
+	for _, d := range missingDirs(dir) {
+		err := i.mkdir(d, 0o755)
+		if errors.Is(err, os.ErrExist) {
+			continue
+		}
+		if err != nil {
+			return created, err
+		}
+		created = append(created, d)
+	}
+	return created, nil
+}
+
+// missingDirs returns dir and its ancestors that do not exist, top down.
+func missingDirs(dir string) []string {
+	var missing []string
+	for d := dir; !demoPathExists(d) && !slices.Contains(missing, d); d = filepath.Dir(d) {
+		missing = append([]string{d}, missing...)
+	}
+	return missing
+}
+
+func demoPathExists(name string) bool {
+	_, err := os.Lstat(name)
+	return err == nil
+}
+
+// removeCreatedDirs removes, bottom up, the folders this run created that are
+// empty; a folder holding anything, such as another process's files, stays.
+func removeCreatedDirs(created []string) []error {
+	var errs []error
+	for idx := len(created) - 1; idx >= 0; idx-- {
+		if entries, err := os.ReadDir(created[idx]); err != nil || len(entries) > 0 {
+			continue
+		}
+		errs = append(errs, os.Remove(created[idx]))
+	}
+	return errs
+}
+
+// failed removes what the install wrote (cli/demo#REQ:no-partial-install):
+// the contents of the claimed folder, then the lock, then the folders this
+// run created. It returns the error to report.
+func (i demoInstaller) failed(dir string, cause error, created []string) error {
+	err := fmt.Errorf("failed to install the TODO demo in %s: %w", dir, cause)
+	cleanupErrs := []error{removeDirContents(dir)}
+	cleanupErrs = append(cleanupErrs, removeCreatedDirs(created)...)
+	if cleanupErr := errors.Join(cleanupErrs...); cleanupErr != nil {
 		return errors.Join(err, fmt.Errorf("failed to remove what was written: %w", cleanupErr))
 	}
 	return err
 }
 
-// topmostMissingDir returns the highest ancestor of dir (or dir itself) that
-// does not exist, so a failed install removes every folder it created.
-func topmostMissingDir(dir string) string {
-	top := dir
-	for {
-		parent := filepath.Dir(top)
-		if _, err := os.Lstat(parent); err == nil || parent == top {
-			return top
-		}
-		top = parent
-	}
-}
-
-// removeDirContents empties dir, which was empty before the install.
+// removeDirContents empties the claimed folder dir, removing the install
+// lock last so no other run claims the folder while it is being emptied.
 func removeDirContents(dir string) error {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -220,8 +301,11 @@ func removeDirContents(dir string) error {
 	}
 	var errs []error
 	for _, e := range entries {
-		errs = append(errs, os.RemoveAll(filepath.Join(dir, e.Name())))
+		if e.Name() != demoLockFileName {
+			errs = append(errs, os.RemoveAll(filepath.Join(dir, e.Name())))
+		}
 	}
+	errs = append(errs, os.Remove(filepath.Join(dir, demoLockFileName)))
 	return errors.Join(errs...)
 }
 
@@ -244,6 +328,10 @@ func (i demoInstaller) write(ctx context.Context, dir string) (demoResult, error
 		}
 	}
 	if err := i.writeRecords(ctx, dir); err != nil {
+		return result, err
+	}
+	// The marker is written last, after every record.
+	if err := i.writeYAMLFile(dir, demoMarkerFile()); err != nil {
 		return result, err
 	}
 	if !hasGit {
@@ -311,7 +399,7 @@ func (i demoInstaller) commit(ctx context.Context, git, dir string) (string, err
 	if email, _ := i.runGit(ctx, git, dir, i.env, "config", "user.email"); email == "" {
 		env = append(env, "GIT_AUTHOR_EMAIL="+demoDefaultGitEmail, "GIT_COMMITTER_EMAIL="+demoDefaultGitEmail)
 	}
-	if _, err := i.runGit(ctx, git, dir, env, "add", "-A"); err != nil {
+	if _, err := i.runGit(ctx, git, dir, env, "add", "-A", "--", ".", ":(exclude)"+demoLockFileName); err != nil {
 		return "", err
 	}
 	if _, err := i.runGit(ctx, git, dir, env, "commit", "-q", "-m", demoCommitMessage); err != nil {

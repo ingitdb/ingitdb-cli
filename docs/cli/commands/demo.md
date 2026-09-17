@@ -23,18 +23,22 @@ Go package `github.com/ingitdb/ingitdb-go/ingitdb/demos/todo`.
 1. Checks the folder: it must not exist or be empty. A file, a non-empty folder or a folder
    holding another demo is refused, nothing is written, and the error suggests
    `ingitdb demo install --path=<another folder>`.
-2. Runs `git init` in the folder (when `git` is on `PATH`) before writing anything, so no
-   write lands in an enclosing repository.
-3. Writes `.ingitdb/settings.yaml`, `.ingitdb/root-collections.yaml`, the definitions of the
-   `lists` collection and its `items` subcollection, the `.ingitdb/demo.yaml` marker and one
-   file per record, for example `lists/$records/to-buy.yaml` and
-   `lists/to-buy/items/$records/milk.yaml`.
-4. Makes one commit, `Install the TODO demo`. When Git has no `user.name` or `user.email`,
+2. Claims the folder by creating `.ingitdb-demo-install.lock` in it exclusively, so two installs
+   into one folder never interleave: the second reports an install in progress, or, once the
+   first has finished, the demo as already installed.
+3. Runs `git init` in the folder (when `git` is on `PATH`) before writing the demo, so no
+   write lands in an enclosing repository. Git runs without inherited repository variables
+   such as `GIT_DIR` and `GIT_INDEX_FILE`.
+4. Writes `.ingitdb/settings.yaml`, `.ingitdb/root-collections.yaml`, the definitions of the
+   `lists` collection and its `items` subcollection, one file per record, for example
+   `lists/$records/to-buy.yaml` and `lists/to-buy/items/$records/milk.yaml`, and last the
+   `.ingitdb/demo.yaml` marker.
+5. Makes one commit, `Install the TODO demo`, and removes the lock. When Git has no `user.name` or `user.email`,
    the missing part is taken from `inGitDB <ingitdb@localhost>` for that commit only; Git
    configuration is not changed.
 
-If a step fails, everything written is removed (the folder itself when the command created
-it). Without `git`, the files are still installed and the output says to run `git init`.
+If a step fails, everything that run wrote is removed (the folders it created, when they are
+empty; never another run's files). Without `git`, the files are still installed and the output says to run `git init`.
 
 Running it again on an installed demo writes nothing, keeps your edits and prints
 `The TODO demo is already installed in <folder>` with the same next steps. The command never

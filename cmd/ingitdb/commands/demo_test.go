@@ -970,14 +970,15 @@ func TestWriteDemoFile_ParentIsFile(t *testing.T) {
 	}
 }
 
-func TestTopmostMissingDir(t *testing.T) {
+func TestMissingDirs(t *testing.T) {
 	t.Parallel()
 	base := t.TempDir()
-	if got := topmostMissingDir(filepath.Join(base, "a", "b", "c")); got != filepath.Join(base, "a") {
-		t.Errorf("got %s", got)
+	want := []string{filepath.Join(base, "a"), filepath.Join(base, "a", "b"), filepath.Join(base, "a", "b", "c")}
+	if got := missingDirs(filepath.Join(base, "a", "b", "c")); !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
 	}
-	if got := topmostMissingDir(base); got != base {
-		t.Errorf("existing dir: got %s", got)
+	if got := missingDirs(base); len(got) != 0 {
+		t.Errorf("existing dir: got %v", got)
 	}
 }
 
@@ -1131,5 +1132,269 @@ func TestDemoRepositoryEnvVars_CoverGit(t *testing.T) {
 	got := withoutRepositoryEnv([]string{"git_dir=/x", "GIT_INDEX_FILE=/i", "GIT_CONFIG_GLOBAL=/g", "PATH=/bin"})
 	if !reflect.DeepEqual(got, []string{"GIT_CONFIG_GLOBAL=/g", "PATH=/bin"}) {
 		t.Errorf("withoutRepositoryEnv = %v", got)
+	}
+}
+
+// TestDemoInstall_ConcurrentInstalls runs several installs into one path at
+// once. Exactly one installs; every other one either reports the finished
+// demo as already installed or fails saying an install is in progress, and
+// the folder ends up a complete demo with one commit.
+func TestDemoInstall_ConcurrentInstalls(t *testing.T) {
+	t.Parallel()
+	requireGit(t)
+	const rounds, racers = 4, 4
+	for round := 0; round < rounds; round++ {
+		wd := t.TempDir()
+		installers := make([]demoInstaller, racers)
+		for r := range installers {
+			installers[r] = testDemoInstaller(t)
+		}
+		type outcome struct {
+			stdout string
+			err    error
+		}
+		outcomes := make([]outcome, racers)
+		done := make(chan int)
+		for r := range installers {
+			go func(r int) {
+				stdout, err := runDemoInstall(t, installers[r], wd, "--path=shared/todo-demo", "--format=json")
+				outcomes[r] = outcome{stdout, err}
+				done <- r
+			}(r)
+		}
+		for range installers {
+			<-done
+		}
+		dir := filepath.Join(wd, "shared", "todo-demo")
+		head := gitOut(t, installers[0].env, dir, "rev-parse", "HEAD")
+		fresh := 0
+		for r, o := range outcomes {
+			if o.err != nil {
+				if !strings.Contains(o.err.Error(), "in progress") {
+					t.Errorf("round %d racer %d: unexpected error %v", round, r, o.err)
+				}
+				continue
+			}
+			doc := decodeDemoJSON(t, o.stdout)
+			if !doc.AlreadyInstalled {
+				fresh++
+			}
+			if doc.Git.Commit != head {
+				t.Errorf("round %d racer %d: reported commit %q, final HEAD %s", round, r, doc.Git.Commit, head)
+			}
+		}
+		if fresh != 1 {
+			t.Errorf("round %d: %d fresh installs, want 1", round, fresh)
+		}
+		if got := gitOut(t, installers[0].env, dir, "rev-list", "--count", "HEAD"); got != "1" {
+			t.Errorf("round %d: %s commits", round, got)
+		}
+		if status := gitOut(t, installers[0].env, dir, "status", "--porcelain"); status != "" {
+			t.Errorf("round %d: working tree not clean:\n%s", round, status)
+		}
+		if _, err := os.Stat(demoRecordFile(dir, "lists/to-watch/items/interstellar")); err != nil {
+			t.Errorf("round %d: demo incomplete: %v", round, err)
+		}
+	}
+}
+
+// TestDemoInstall_SecondRunDuringInstall starts a second install into the
+// same folder while the first is writing records: the second must neither
+// report the unfinished demo as installed nor remove anything.
+func TestDemoInstall_SecondRunDuringInstall(t *testing.T) {
+	t.Parallel()
+	requireGit(t)
+	wd := t.TempDir()
+	first := testDemoInstaller(t)
+	second := testDemoInstaller(t)
+	var secondErr error
+	var secondOut string
+	count := 0
+	first.setRecord = func(ctx context.Context, tx dal.ReadwriteTransaction, r record.Record) error {
+		count++
+		if count == 7 {
+			secondOut, secondErr = runDemoInstall(t, second, wd)
+		}
+		return tx.Set(ctx, r)
+	}
+	if _, err := runDemoInstall(t, first, wd); err != nil {
+		t.Fatalf("first install: %v", err)
+	}
+	if secondErr == nil || !strings.Contains(secondErr.Error(), "in progress") {
+		t.Errorf("second install during the first: stdout %q, err %v; want an in-progress error", secondOut, secondErr)
+	}
+	dir := filepath.Join(wd, demoDefaultFolder)
+	if got := gitOut(t, first.env, dir, "rev-list", "--count", "HEAD"); got != "1" {
+		t.Errorf("%s commits", got)
+	}
+	if status := gitOut(t, first.env, dir, "status", "--porcelain"); status != "" {
+		t.Errorf("working tree not clean:\n%s", status)
+	}
+	// Once the first install finished, a second run reports it installed.
+	stdout, err := runDemoInstall(t, second, wd)
+	if err != nil || !strings.Contains(stdout, "already installed") {
+		t.Errorf("after the first install: %q, %v", stdout, err)
+	}
+}
+
+// TestDemoInstall_FailureKeepsOthersFiles makes an install fail after another
+// process added a sibling next to the parent folder it created: the failed
+// run removes only what it created.
+func TestDemoInstall_FailureKeepsOthersFiles(t *testing.T) {
+	t.Parallel()
+	wd := t.TempDir()
+	sibling := filepath.Join(wd, "newparent", "sibling")
+	i := testDemoInstaller(t)
+	i.setRecord = func(context.Context, dal.ReadwriteTransaction, record.Record) error {
+		if err := os.Mkdir(sibling, 0o755); err != nil {
+			return err
+		}
+		return errors.New("disk full")
+	}
+	if _, err := runDemoInstall(t, i, wd, "--path=newparent/todo-demo"); err == nil {
+		t.Fatal("expected failure")
+	}
+	if got := listTree(t, wd); !reflect.DeepEqual(got, []string{"newparent", "newparent/sibling"}) {
+		t.Errorf("after failure wd holds %v, want only newparent/sibling", got)
+	}
+}
+
+// TestDemoInstall_InterruptedInstallRefused leaves a folder the way a killed
+// install does, holding the install lock: a new run refuses it as in
+// progress and removes nothing.
+func TestDemoInstall_InterruptedInstallRefused(t *testing.T) {
+	t.Parallel()
+	wd := t.TempDir()
+	lock := filepath.Join(wd, demoDefaultFolder, demoLockFileName)
+	if err := writeDemoFile(lock, nil); err != nil {
+		t.Fatal(err)
+	}
+	marker := filepath.Join(wd, demoDefaultFolder, ".ingitdb", "demo.yaml")
+	if err := writeDemoFile(marker, []byte("app: todo\nversion: 1\n")); err != nil {
+		t.Fatal(err)
+	}
+	_, err := runDemoInstall(t, testDemoInstaller(t), wd)
+	if err == nil || !strings.Contains(err.Error(), "in progress") || !strings.Contains(err.Error(), filepath.Join(wd, demoDefaultFolder)) {
+		t.Fatalf("err = %v, want in progress naming the folder", err)
+	}
+	if got := listTree(t, filepath.Join(wd, demoDefaultFolder)); len(got) != 3 {
+		t.Errorf("folder changed: %v", got)
+	}
+}
+
+// TestDemoInstall_ClaimRaces drives the branches a lost race takes, through
+// the folder and lock seams.
+func TestDemoInstall_ClaimRaces(t *testing.T) {
+	t.Parallel()
+	folder := func(wd string) string { return filepath.Join(wd, demoDefaultFolder) }
+	exist := &os.PathError{Op: "open", Err: os.ErrExist}
+	t.Run("folder created by another run", func(t *testing.T) {
+		t.Parallel()
+		wd := t.TempDir()
+		i := testDemoInstaller(t)
+		i.mkdir = func(name string, perm os.FileMode) error {
+			if err := os.Mkdir(name, perm); err != nil {
+				return err
+			}
+			return &os.PathError{Op: "mkdir", Path: name, Err: os.ErrExist}
+		}
+		if _, err := runDemoInstall(t, i, wd); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := runDemoInstall(t, i, wd); err != nil {
+			t.Fatal(err)
+		}
+	})
+	t.Run("lock taken, demo completed meanwhile", func(t *testing.T) {
+		t.Parallel()
+		wd := t.TempDir()
+		i := testDemoInstaller(t)
+		i.lookPath = func(string) (string, error) { return "", exec.ErrNotFound }
+		i.createLock = func(name string) error {
+			if err := writeDemoFile(filepath.Join(folder(wd), ".ingitdb", "demo.yaml"), []byte("app: todo\n")); err != nil {
+				return err
+			}
+			return exist
+		}
+		stdout, err := runDemoInstall(t, i, wd)
+		if err != nil || !strings.Contains(stdout, "already installed") {
+			t.Errorf("stdout %q, err %v", stdout, err)
+		}
+	})
+	t.Run("lock taken by a running install", func(t *testing.T) {
+		t.Parallel()
+		wd := t.TempDir()
+		i := testDemoInstaller(t)
+		i.createLock = func(name string) error {
+			if err := createDemoLock(name); err != nil {
+				return err
+			}
+			return exist
+		}
+		if _, err := runDemoInstall(t, i, wd); err == nil || !strings.Contains(err.Error(), "in progress") {
+			t.Errorf("err = %v", err)
+		}
+	})
+	t.Run("lock taken and released without a demo", func(t *testing.T) {
+		t.Parallel()
+		wd := t.TempDir()
+		i := testDemoInstaller(t)
+		i.createLock = func(string) error { return exist }
+		if _, err := runDemoInstall(t, i, wd); err == nil || !strings.Contains(err.Error(), "in progress") {
+			t.Errorf("err = %v", err)
+		}
+		if got := listTree(t, wd); len(got) != 0 {
+			t.Errorf("created folder left behind: %v", got)
+		}
+	})
+	t.Run("lock cannot be created", func(t *testing.T) {
+		t.Parallel()
+		wd := t.TempDir()
+		i := testDemoInstaller(t)
+		i.createLock = func(string) error { return errors.New("read-only file system") }
+		if _, err := runDemoInstall(t, i, wd); err == nil || !strings.Contains(err.Error(), "claim the folder") {
+			t.Errorf("err = %v", err)
+		}
+	})
+	t.Run("lock cannot be released", func(t *testing.T) {
+		t.Parallel()
+		wd := t.TempDir()
+		i := testDemoInstaller(t)
+		i.removeLock = func(string) error { return errors.New("busy") }
+		if _, err := runDemoInstall(t, i, wd); err == nil || !strings.Contains(err.Error(), "busy") {
+			t.Errorf("err = %v", err)
+		}
+		if got := listTree(t, wd); len(got) != 0 {
+			t.Errorf("leftovers: %v", got)
+		}
+	})
+}
+
+func TestCreateDemoLock_Exclusive(t *testing.T) {
+	t.Parallel()
+	lock := filepath.Join(t.TempDir(), demoLockFileName)
+	if err := createDemoLock(lock); err != nil {
+		t.Fatal(err)
+	}
+	if err := createDemoLock(lock); !errors.Is(err, os.ErrExist) {
+		t.Errorf("second claim err = %v, want ErrExist", err)
+	}
+}
+
+func TestDemoInstall_MarkerWriteFails(t *testing.T) {
+	t.Parallel()
+	wd := t.TempDir()
+	i := testDemoInstaller(t)
+	i.writeFile = func(name string, data []byte) error {
+		if filepath.Base(name) == demoMarkerFileName {
+			return errors.New("boom marker")
+		}
+		return writeDemoFile(name, data)
+	}
+	if _, err := runDemoInstall(t, i, wd); err == nil || !strings.Contains(err.Error(), "boom marker") {
+		t.Errorf("err = %v", err)
+	}
+	if got := listTree(t, wd); len(got) != 0 {
+		t.Errorf("leftovers: %v", got)
 	}
 }
