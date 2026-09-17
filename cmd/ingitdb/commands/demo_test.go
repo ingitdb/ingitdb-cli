@@ -515,7 +515,10 @@ func TestDemoInstall_FailureLeavesNothing(t *testing.T) {
 
 // TestDemoInstall_NoTerminalDetection checks cli/demo#REQ:no-confirmation-prompt
 // structurally: the command reads no input and never asks whether it runs on
-// a terminal, so its output cannot differ between a terminal and a pipe.
+// a terminal. The behavioural check is TestDemoInstall_SameOutputOnTerminalAndPipe
+// in cmd/ingitdb, which compares the executable's stdout on a pipe and on a
+// pseudo-terminal; it opens the pseudo-terminal on Linux only (see openPTY),
+// so on macOS and Windows this structural check and its pipe run remain.
 func TestDemoInstall_NoTerminalDetection(t *testing.T) {
 	t.Parallel()
 	for _, name := range []string{"demo.go", "demo_install.go", "demo_output.go", "demo_schema.go"} {

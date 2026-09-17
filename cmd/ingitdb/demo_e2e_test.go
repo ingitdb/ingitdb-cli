@@ -10,10 +10,12 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"runtime"
 	"sort"
 	"strings"
 	"testing"
+	"time"
 )
 
 // demoExecEnv makes the test binary run the CLI instead of the tests, so the
@@ -273,4 +275,95 @@ func sameResolvedDir(t *testing.T, a, b string) bool {
 		t.Fatalf("resolve %q, %q: %v, %v", a, b, errA, errB)
 	}
 	return ra == rb
+}
+
+// TestDemoInstall_SameOutputOnTerminalAndPipe checks
+// cli/demo#AC:no-prompt-without-terminal with the real executable: installed
+// once with stdin and stdout as pipes (stdin left open, so a prompt would
+// hang until the timeout) and once with both on a pseudo-terminal, the two
+// stdouts are identical apart from the folder and the commit id.
+func TestDemoInstall_SameOutputOnTerminalAndPipe(t *testing.T) {
+	t.Parallel()
+	c := newDemoCLI(t)
+	base := t.TempDir()
+
+	// Pipe run.
+	stdinReader, stdinWriter, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = stdinWriter.Close() }()
+	pipeCmd := exec.Command(c.bin, "demo", "install", "--path="+filepath.Join(base, "pipe"))
+	pipeCmd.Stdin = stdinReader
+	pipeOut := runWithTimeout(t, c, pipeCmd)
+	_ = stdinReader.Close()
+	if !strings.HasPrefix(pipeOut, "The TODO demo is ready\n") {
+		t.Errorf("pipe stdout:\n%s", pipeOut)
+	}
+
+	controller, terminal, err := openPTY()
+	if err != nil {
+		t.Skipf("pipe run passed; no pseudo-terminal for the comparison: %v", err)
+	}
+
+	// Terminal run.
+	ptyCmd := exec.Command(c.bin, "demo", "install", "--path="+filepath.Join(base, "tty"))
+	ptyCmd.Stdin, ptyCmd.Stdout = terminal, terminal
+	ptyCmd.Env = c.env
+	var stderr bytes.Buffer
+	ptyCmd.Stderr = &stderr
+	read := make(chan []byte)
+	go func() {
+		out, _ := io.ReadAll(controller) // ends with EIO once the terminal side is closed
+		read <- out
+	}()
+	if err = ptyCmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	waitErr := waitWithTimeout(ptyCmd)
+	_ = terminal.Close()
+	ptyOut := string(<-read)
+	_ = controller.Close()
+	if waitErr != nil {
+		t.Fatalf("terminal run: %v\n%s\n%s", waitErr, ptyOut, stderr.String())
+	}
+
+	normalize := func(out, folder string) string {
+		out = strings.ReplaceAll(out, "\r\n", "\n")
+		out = strings.ReplaceAll(out, filepath.Join(base, folder), "<folder>")
+		return demoCommitPattern.ReplaceAllString(out, "commit <id>")
+	}
+	if got, want := normalize(ptyOut, "tty"), normalize(pipeOut, "pipe"); got != want {
+		t.Errorf("terminal stdout differs from pipe stdout:\n--- terminal\n%s\n--- pipe\n%s", got, want)
+	}
+}
+
+var demoCommitPattern = regexp.MustCompile(`commit [0-9a-f]{7}`)
+
+// runWithTimeout runs cmd with the CLI environment, failing if it does not
+// finish within a minute (a prompt waiting for input), and returns stdout.
+func runWithTimeout(t *testing.T, c demoCLI, cmd *exec.Cmd) string {
+	t.Helper()
+	cmd.Env = c.env
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout, cmd.Stderr = &stdout, &stderr
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	if err := waitWithTimeout(cmd); err != nil {
+		t.Fatalf("%v: %v\n%s\n%s", cmd.Args, err, stdout.String(), stderr.String())
+	}
+	return stdout.String()
+}
+
+func waitWithTimeout(cmd *exec.Cmd) error {
+	done := make(chan error, 1)
+	go func() { done <- cmd.Wait() }()
+	select {
+	case err := <-done:
+		return err
+	case <-time.After(time.Minute):
+		_ = cmd.Process.Kill()
+		return errors.New("timed out, probably waiting for input")
+	}
 }
