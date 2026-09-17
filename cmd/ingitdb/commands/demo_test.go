@@ -1518,3 +1518,42 @@ func TestDemoNextSteps_WindowsShellSpecialCharacters(t *testing.T) {
 		t.Errorf("plain Windows path steps = %#v", plain)
 	}
 }
+
+// TestDemoInstall_RefusalsStartWithAWord: the CLI's error box capitalises the
+// first word of a message, which mangles a path at the start ("/Tmp/…"), so
+// every refusal starts with a word (lowercase, as Go error strings do).
+func TestDemoInstall_RefusalsStartWithAWord(t *testing.T) {
+	t.Parallel()
+	wd := t.TempDir()
+	setups := map[string]func(dir string) error{
+		"file":        func(dir string) error { return os.WriteFile(dir, nil, 0o644) },
+		"non-empty":   func(dir string) error { return writeDemoFile(filepath.Join(dir, "notes.txt"), nil) },
+		"other demo":  func(dir string) error { return writeDemoFile(filepath.Join(dir, ".ingitdb", "demo.yaml"), []byte("app: notes\n")) },
+		"in progress": func(dir string) error { return writeDemoFile(filepath.Join(dir, demoLockFileName), nil) },
+		"dangling link": func(dir string) error {
+			if err := os.Symlink(filepath.Join(wd, "nowhere"), dir); err != nil {
+				return errSkip
+			}
+			return nil
+		},
+	}
+	for name, setup := range setups {
+		dir := filepath.Join(wd, strings.ReplaceAll(name, " ", "-"))
+		if err := setup(dir); errors.Is(err, errSkip) {
+			continue
+		} else if err != nil {
+			t.Fatal(err)
+		}
+		_, err := runDemoInstall(t, testDemoInstaller(t), wd, "--path="+dir)
+		if err == nil {
+			t.Errorf("%s: expected a refusal", name)
+			continue
+		}
+		first := err.Error()[0]
+		if strings.HasPrefix(err.Error(), dir) || first < 'a' || first > 'z' {
+			t.Errorf("%s: refusal should start with a word: %v", name, err)
+		}
+	}
+}
+
+var errSkip = errors.New("skip")

@@ -146,7 +146,7 @@ const demoAnotherFolderHint = "choose another folder: ingitdb demo install --pat
 
 // demoInProgressError reports a folder another install has claimed.
 func demoInProgressError(dir string) error {
-	return fmt.Errorf("another ingitdb demo install is in progress in %s; wait for it to finish, "+
+	return fmt.Errorf("another ingitdb demo install is in progress in folder %s; wait for it to finish, "+
 		"or, if it was interrupted, delete the folder and install again", dir)
 }
 
@@ -157,7 +157,7 @@ func inspectDemoTarget(dir string) (demoTargetState, error) {
 	info, err := os.Stat(dir)
 	if errors.Is(err, os.ErrNotExist) {
 		if _, lstatErr := os.Lstat(dir); lstatErr == nil {
-			return 0, fmt.Errorf("%s is a symbolic link to a folder that does not exist; %s", dir, demoAnotherFolderHint)
+			return 0, fmt.Errorf("the path %s is a symbolic link to a folder that does not exist; %s", dir, demoAnotherFolderHint)
 		}
 		return demoTargetMissing, nil
 	}
@@ -165,7 +165,7 @@ func inspectDemoTarget(dir string) (demoTargetState, error) {
 		return 0, fmt.Errorf("cannot use %s: %w", dir, err)
 	}
 	if !info.IsDir() {
-		return 0, fmt.Errorf("%s is a file, not a folder; %s", dir, demoAnotherFolderHint)
+		return 0, fmt.Errorf("the path %s is a file, not a folder; %s", dir, demoAnotherFolderHint)
 	}
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -181,10 +181,10 @@ func inspectDemoTarget(dir string) (demoTargetState, error) {
 	data, readErr := os.ReadFile(markerPath)
 	var marker demoMarker
 	if readErr != nil || yaml.Unmarshal(data, &marker) != nil || marker.App == "" {
-		return 0, fmt.Errorf("%s is not empty and does not hold the TODO demo; %s", dir, demoAnotherFolderHint)
+		return 0, fmt.Errorf("folder %s is not empty and does not hold the TODO demo; %s", dir, demoAnotherFolderHint)
 	}
 	if marker.App != demoApp {
-		return 0, fmt.Errorf("%s holds the %q demo, not the TODO demo; %s", dir, marker.App, demoAnotherFolderHint)
+		return 0, fmt.Errorf("folder %s holds the %q demo, not the TODO demo; %s", dir, marker.App, demoAnotherFolderHint)
 	}
 	return demoTargetInstalled, nil
 }
