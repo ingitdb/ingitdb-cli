@@ -1398,3 +1398,25 @@ func TestDemoInstall_MarkerWriteFails(t *testing.T) {
 		t.Errorf("leftovers: %v", got)
 	}
 }
+
+// TestDemoInstall_DanglingSymlinkRefused points --path at a symbolic link to
+// a missing folder: it is refused before anything is written and the link is
+// kept.
+func TestDemoInstall_DanglingSymlinkRefused(t *testing.T) {
+	t.Parallel()
+	wd := t.TempDir()
+	link := filepath.Join(wd, "dang")
+	if err := os.Symlink(filepath.Join(wd, "nowhere"), link); err != nil {
+		t.Skipf("cannot create symbolic links here: %v", err)
+	}
+	_, err := runDemoInstall(t, testDemoInstaller(t), wd, "--path=dang")
+	if err == nil || !strings.Contains(err.Error(), link) || !strings.Contains(err.Error(), "--path=<another folder>") {
+		t.Fatalf("err = %v, want a refusal naming %s", err, link)
+	}
+	if _, lstatErr := os.Lstat(link); lstatErr != nil {
+		t.Errorf("the link was removed: %v", lstatErr)
+	}
+	if got := listTree(t, wd); !reflect.DeepEqual(got, []string{"dang"}) {
+		t.Errorf("wd holds %v", got)
+	}
+}

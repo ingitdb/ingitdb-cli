@@ -148,6 +148,9 @@ func demoInProgressError(dir string) error {
 func inspectDemoTarget(dir string) (demoTargetState, error) {
 	info, err := os.Stat(dir)
 	if errors.Is(err, os.ErrNotExist) {
+		if _, lstatErr := os.Lstat(dir); lstatErr == nil {
+			return 0, fmt.Errorf("%s is a symbolic link to a folder that does not exist; %s", dir, demoAnotherFolderHint)
+		}
 		return demoTargetMissing, nil
 	}
 	if err != nil {

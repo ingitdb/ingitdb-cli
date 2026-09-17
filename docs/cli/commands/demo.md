@@ -20,7 +20,7 @@ Go package `github.com/ingitdb/ingitdb-go/ingitdb/demos/todo`.
 
 **What it does**
 
-1. Checks the folder: it must not exist or be empty. A file, a non-empty folder or a folder
+1. Checks the folder: it must not exist or be empty. A file, a symbolic link to a missing folder, a non-empty folder or a folder
    holding another demo is refused, nothing is written, and the error suggests
    `ingitdb demo install --path=<another folder>`.
 2. Claims the folder by creating `.ingitdb-demo-install.lock` in it exclusively, so two installs
