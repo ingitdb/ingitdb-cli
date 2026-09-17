@@ -168,6 +168,23 @@ func TestSelect_Subcollection_UnknownParentIsEmpty(t *testing.T) {
 	if strings.TrimSpace(stdout) != "[]" {
 		t.Errorf("want [], got:\n%s", stdout)
 	}
+
+	// csv (explicit and default): same empty-result output as an empty root
+	// collection result. The missing empty-csv header is a pre-existing gap
+	// (https://github.com/ingitdb/ingitdb-cli/issues/155); this asserts parity only.
+	rootEmpty, err := runNestedSelect(t, dir, "--from=lists", "--where=title==zzz")
+	if err != nil {
+		t.Fatalf("root empty: %v", err)
+	}
+	for _, args := range [][]string{{"--from=lists/nothing/items"}, {"--from=lists/nothing/items", "--format=csv"}} {
+		got, runErr := runNestedSelect(t, dir, args...)
+		if runErr != nil {
+			t.Fatalf("%v: %v", args, runErr)
+		}
+		if got != rootEmpty {
+			t.Errorf("%v: output %q, want the root empty-result output %q", args, got, rootEmpty)
+		}
+	}
 }
 
 func TestSelect_Subcollection_UndeclaredSegmentNotFound(t *testing.T) {
