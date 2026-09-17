@@ -206,7 +206,7 @@ func TestLoadRecordsCmd_Success(t *testing.T) {
 		t.Fatalf("NewLocalDBWithDef: %v", err)
 	}
 
-	cmd := loadRecordsCmd(db, colDef)
+	cmd := loadRecordsCmd(db, colDef, nil, "")
 	if cmd == nil {
 		t.Fatal("loadRecordsCmd returned nil")
 	}
@@ -264,7 +264,7 @@ func TestLoadRecordsCmd_ComputedColumnNotEvaluatedAtLoad(t *testing.T) {
 		t.Fatalf("NewLocalDBWithDef: %v", err)
 	}
 
-	msg := loadRecordsCmd(db, colDef)()
+	msg := loadRecordsCmd(db, colDef, nil, "")()
 	loaded, ok := msg.(recordsLoadedMsg)
 	if !ok {
 		t.Fatalf("cmd() returned %T, want recordsLoadedMsg", msg)
@@ -292,7 +292,7 @@ func TestLoadRecordsCmd_StoredReadError(t *testing.T) {
 	t.Parallel()
 
 	colDef := simpleColDef("people", "boom")
-	msg := loadRecordsCmd(dal.NewDB(boomDB{}), colDef)()
+	msg := loadRecordsCmd(dal.NewDB(boomDB{}), colDef, nil, "")()
 	loaded, ok := msg.(recordsLoadedMsg)
 	if !ok {
 		t.Fatalf("cmd() returned %T, want recordsLoadedMsg", msg)
@@ -333,7 +333,7 @@ func TestLoadRecordsCmd_Error(t *testing.T) {
 		t.Fatalf("NewLocalDBWithDef: %v", err)
 	}
 
-	cmd := loadRecordsCmd(db, colDef)
+	cmd := loadRecordsCmd(db, colDef, nil, "")
 	if cmd == nil {
 		t.Fatal("loadRecordsCmd returned nil")
 	}
@@ -355,7 +355,7 @@ func TestLoadRecordsCmd_FactoryClosure(t *testing.T) {
 	t.Parallel()
 
 	colDef := simpleColDef("things", "name")
-	cmd := loadRecordsCmd(dal.NewDB(mockDB{}), colDef)
+	cmd := loadRecordsCmd(dal.NewDB(mockDB{}), colDef, nil, "")
 	if cmd == nil {
 		t.Fatal("loadRecordsCmd returned nil")
 	}

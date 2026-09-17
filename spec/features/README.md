@@ -51,6 +51,7 @@ This directory tracks the SpecScore feature specifications for the **ingitdb-cli
 | [Computed Columns (Inline Starlark Formulas)](computed-columns/README.md) | Stable | Lets a schema author add an inline Starlark formula to a collection column so its value is computed from the record's other fields at read time, rather than stored. It serves schema authors who want derived values (full names, labels, simple arithmetic) that stay in sync with their source fields and never drift in git. |
 | [Computed Columns via dalgo (lazy delegation)](computed-columns-via-dalgo/README.md) | Stable | Moves computed-column (FORMULA) value computation out of ingitdb's eager read pipeline and onto dalgo's `recordset.Evaluator` contract (dalgo v0.46.0). ingitdb keeps owning the Starlark language and schema validation, but delegates the *computation wiring* to dalgo so computed values are resolved **lazily, per accessed column**, through `recordset.Row`. It serves ingitdb users by avoiding needless formula evaluation — a computed column is only computed when a consumer actually reads it. |
 | [TUI lazy computed-cell evaluation](tui-lazy-computed-cells/README.md) | Stable | Makes the TUI collection screen evaluate a computed (FORMULA) column only for the cells it actually paints — the visible row × column window — so hidden and off-viewport computed columns are never evaluated. It serves ingitdb users browsing collections with expensive computed columns by keeping the screen responsive regardless of row count. |
+| [Subcollection Addressing](subcollection-addressing/README.md) | Implementing | `ingitdb select --from` and the terminal UI reach the records of a subcollection, not only of a root collection. `--from=lists/to-buy/items` returns the `items` of the list record `to-buy`, with every set-mode flag working as it does for a root collection, and the terminal UI lets a person open a record's declared subcollection and go back with Esc. |
 
 ## Feature Summaries
 
@@ -120,6 +121,10 @@ Defines the `--path` flag, its default of the current working directory, and its
 ### remote-repo-access
 
 Defines the `--remote=<URL>` flag for direct access to remote Git hosting services (GitHub, GitLab, Bitbucket, and self-hosted instances), with built-in provider inference, `--provider` override for unknown hosts, host-derived token environment variables, and the one-commit-per-write rule.
+
+### subcollection-addressing
+
+Lets `select --from` take a subcollection path (`lists/to-buy/items`) with every set-mode flag, and lets the terminal UI open a record's declared subcollection and return with Esc. Record paths stay the storage driver's.
 
 ### dalgo2ingitdb-referential-integrity
 

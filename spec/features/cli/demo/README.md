@@ -249,11 +249,11 @@ the install, reinstall, refusal and `select` acceptance criteria below passing o
 - [select](../select/README.md) — querying the demo.
 - [validate](../validate/README.md) — the demo passes validation.
 - [setup](../setup/README.md) — `.ingitdb/settings.yaml` shape.
-- Subcollection addressing — `select --from=<collection>/<record>/<subcollection>` and
-  terminal UI navigation into subcollections. Not yet specified: today `select`, `describe`
-  and `list collections` handle root collections only (see
-  [describe, Out of Scope](../describe/README.md#out-of-scope)). Specified and built first by
-  the [implementation plan](../../../plans/2026-09-17-cli-demo.md).
+- [subcollection-addressing](../../subcollection-addressing/README.md) —
+  `select --from=<collection>/<record>/<subcollection>` and terminal UI navigation into
+  subcollections. `describe` and `list collections` still handle root collections only (see
+  [describe, Out of Scope](../describe/README.md#out-of-scope)). Built first by the
+  [implementation plan](../../../plans/2026-09-17-cli-demo.md).
 - `github.com/ingitdb/ingitdb-go/ingitdb/demos/todo` — the shared demo records and list
   paths (new, standard library imports only).
 

@@ -1,6 +1,7 @@
 package commands
 
 // specscore: feature/cli/select
+// specscore: feature/subcollection-addressing
 
 import (
 	"context"
@@ -170,7 +171,7 @@ func runSelectFromSet(
 		if dbErr != nil {
 			return fmt.Errorf("failed to open remote database: %w", dbErr)
 		}
-		return runSelectFromSetWithDB(ctx, cmd, from, fields, format, db, def.Collections[from])
+		return runSelectFromSetWithDB(ctx, cmd, from, dal.NewRootCollectionRef(from, ""), fields, format, db, def.Collections[from])
 	}
 
 	dirPath, err := resolveDBPath(cmd, homeDir, getWd)
@@ -181,14 +182,18 @@ func runSelectFromSet(
 	if err != nil {
 		return fmt.Errorf("failed to read database definition: %w", err)
 	}
-	if _, ok := def.Collections[from]; !ok {
-		return fmt.Errorf("collection %q not found in definition", from)
+	// A root collection ID resolves as before; a subcollection path
+	// (<collection>/<record-key>/<subcollection>) resolves to a reference the
+	// driver scopes to the parent record.
+	ref, colDef, err := resolveFromCollection(def, from)
+	if err != nil {
+		return err
 	}
 	db, err := newDB(dirPath, def)
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
-	return runSelectFromSetWithDB(ctx, cmd, from, fields, format, db, def.Collections[from])
+	return runSelectFromSetWithDB(ctx, cmd, from, ref, fields, format, db, colDef)
 }
 
 // runSelectFromSetWithDB executes the set-mode query against a pre-opened DB.
@@ -197,6 +202,7 @@ func runSelectFromSetWithDB(
 	ctx context.Context,
 	cmd *cobra.Command,
 	from string,
+	ref dal.CollectionRef,
 	fields []string,
 	format string,
 	db dal.DB,
@@ -212,7 +218,7 @@ func runSelectFromSetWithDB(
 		conds = append(conds, c)
 	}
 
-	q := newQueryForCollection(from)
+	q := newQueryForCollectionRef(ref)
 
 	var rows []map[string]any
 	err := db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
