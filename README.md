@@ -125,7 +125,14 @@ Pre-built binaries for all platforms are available on the [GitHub Releases](http
 `ovdb`, `synchestra`, `specscore` — with their live installed status, and
 `ingitdb install <name>...` installs them the same way `ingitdb` itself was
 installed (Homebrew cask, or a checksum-verified direct download next to the
-`ingitdb` binary). See [spec/features/cli/install](spec/features/cli/install/README.md).
+`ingitdb` binary). `ingitdb upgrade` is the fleet-wide counterpart:
+`ingitdb upgrade` reports current/latest/verdict for every *installed*
+catalog CLI plus ingitdb itself, and `ingitdb upgrade --all`/`ingitdb
+upgrade <name>...` applies it after one confirmation. `ingitdb self-update`
+is exactly `ingitdb upgrade ingitdb`, built from the same catalog
+configuration, so the two never disagree — neither has an `update` alias
+(`ingitdb update` is the SQL UPDATE verb). See
+[spec/features/cli/install](spec/features/cli/install/README.md).
 
 ## 🚀 Quick start
 
@@ -261,6 +268,7 @@ languages:
 | [`setup`](docs/cli/commands/setup.md)             | 🟡 planned | Initialise a new database directory                      |
 | [`rebase`](docs/cli/commands/rebase.md)           | ✅ done    | Rebase on top of a base ref and resolve README conflicts |
 | [`install`](spec/features/cli/install/README.md)  | ✅ done    | List and install fleet CLIs relevant to ingitdb           |
+| [`upgrade`](spec/features/cli/install/README.md)  | ✅ done    | Upgrade installed fleet CLIs, including ingitdb itself     |
 
 ### --id format
 

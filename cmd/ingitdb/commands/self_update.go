@@ -52,17 +52,16 @@ func (selfUpdateErrors) UpdateAvailable(_ selfupdate.CheckResult) error {
 // Tests that replace it must not run in parallel.
 var catalogByID = cliinstall.ByID
 
-// SelfUpdate returns the "self-update" command, built from
-// github.com/strongo/cli-helpers/selfupdate/cobracmd against ingitdb's own
+// ingitdbSelfUpdateConfig builds ingitdb's release identity from its own
 // compiled-in catalog entry (cli-install#req:host-identity-from-catalog):
 // the same identity — repository, flat checksums.txt naming, and the
 // Homebrew/Snap/Scoop/WinGet managers, all redirect-only — that any other
 // fleet CLI's `install ingitdb` resolves against. ver is the running
 // build's own version (goreleaser-pinned at link time, "dev" otherwise).
-//
-// Note: there is deliberately no "update" alias — `ingitdb update` is the
-// SQL UPDATE verb command.
-func SelfUpdate(ver string) *cobra.Command {
+// Both SelfUpdate and Upgrade (upgrade.go) call this one function, so
+// `ingitdb self-update` and `ingitdb upgrade ingitdb` reach the exact same
+// library call by construction (cli-install#req:self-update-equals-upgrade-self).
+func ingitdbSelfUpdateConfig(ver string) selfupdate.Config {
 	entry, ok := catalogByID("ingitdb")
 	if !ok {
 		// A host id absent from the catalog is a programming error caught by
@@ -70,8 +69,17 @@ func SelfUpdate(ver string) *cobra.Command {
 		// (cli-install#req:host-identity-from-catalog).
 		panic(fmt.Sprintf("cliinstall: no catalog entry for %q", "ingitdb"))
 	}
+	return entry.Config(ver)
+}
 
-	return cobracmd.New(entry.Config(ver), cobracmd.CommandOptions{
+// SelfUpdate returns the "self-update" command, built from
+// github.com/strongo/cli-helpers/selfupdate/cobracmd against
+// ingitdbSelfUpdateConfig's identity.
+//
+// Note: there is deliberately no "update" alias — `ingitdb update` is the
+// SQL UPDATE verb command.
+func SelfUpdate(ver string) *cobra.Command {
+	return cobracmd.New(ingitdbSelfUpdateConfig(ver), cobracmd.CommandOptions{
 		Short:      "Update the installed ingitdb binary in place",
 		JSONFormat: true,
 		Errors:     selfUpdateErrors{},

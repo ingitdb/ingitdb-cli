@@ -28,22 +28,6 @@ func TestInstall_Registration(t *testing.T) {
 	}
 }
 
-// installErrorsFailure_NilReturnsNil proves the defensive nil guard:
-// cliinstall/cobracmd v0.19.0's runInstall calls mapFailure(opts,
-// plan.Failure()) and mapFailure(opts, result.Failure()) unconditionally,
-// and both return nil for a fully successful batch (including a successful
-// --dry-run), so installErrors.Failure(nil) is a real, reachable call on the
-// ordinary success path, not just a defensive guard against a hypothetical
-// caller (known cli-helpers v0.19.0 bug, to be fixed in its next release —
-// see install.go's doc comment).
-func TestInstallErrorsFailure_NilReturnsNil(t *testing.T) {
-	t.Parallel()
-
-	if got := (installErrors{}).Failure(nil); got != nil {
-		t.Errorf("Failure(nil) = %v, want nil", got)
-	}
-}
-
 func TestInstallErrorsFailure_UsageError(t *testing.T) {
 	t.Parallel()
 

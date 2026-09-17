@@ -47,21 +47,11 @@ type installErrors struct{}
 // to exit 1 for any error without a recognized sentinel, which every branch
 // below returns.
 //
-// A nil err IS a real, reachable call on the ordinary success and dry-run
-// path, not just a defensive guard: cliinstall/cobracmd v0.19.0's
-// runInstall calls mapFailure(opts, plan.Failure()) and mapFailure(opts,
-// result.Failure()) unconditionally, and both return nil for a fully
-// successful batch, so opts.Errors.Failure(nil) is called on every
-// successful `ingitdb install` and `ingitdb install <name> --dry-run` run.
-// Feedback for cli-helpers (known bug, to be fixed in the next release):
-// mapFailure itself should short-circuit nil before calling
-// opts.Errors.Failure, matching what ErrorMapper.Failure's own doc comment
-// already promises ("maps a non-nil command error").
+// cliinstall/cobracmd v0.21.0's own mapFailure short-circuits a nil error
+// before ever calling opts.Errors.Failure (see that package's doc comment
+// on mapFailure and its TestMapFailure_NeverCallsMapperWithNil), so the
+// v0.19.0-era nil-guard this method used to carry is gone.
 func (installErrors) Failure(err error) error {
-	if err == nil {
-		return nil
-	}
-
 	var usage *cobracmd.UsageError
 	if errors.As(err, &usage) {
 		// The one class of failure that IS a usage mistake (an invalid

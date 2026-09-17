@@ -138,6 +138,7 @@ func run(
 		// No "update" alias: `ingitdb update` is the SQL UPDATE verb below.
 		commands.SelfUpdate(info.Version),
 		commands.Install(),
+		commands.Upgrade(info.Version),
 		commands.Validate(homeDir, getWd, readDefinition, datavalidator.NewValidator(),
 			datavalidator.NewIncrementalValidator(gitdiff.NewGitDiffer(), datavalidator.NewChangeSetResolver(), datavalidator.NewValidator()), logf),
 		commands.Materialize(homeDir, getWd, readDefinition, vb, logf),

@@ -87,6 +87,43 @@ unknown target.
 | `0` | Success: every named target installed, already installed, redirected, or dry run |
 | `1` | Any failure: an unknown target, no usable install directory, a destination that already exists, or any self-update-shared failure kind, or an invalid `--format`/`--all` usage |
 
+### Upgrading
+
+#### REQ: upgrade-command
+
+The CLI MUST also expose `ingitdb upgrade [name...] [--all] [--check]
+[--yes] [--dry-run] [--format text|json]`, built from
+`cliinstall/cobracmd.NewUpgrade` against the same `HostID: "ingitdb"` and the
+exact same `HostConfig` `self-update` builds
+(`ingitdbSelfUpdateConfig`, [`self_update.go`](../../../../cmd/ingitdb/commands/self_update.go));
+ingitdb's self-update has no after-update hook, so `upgrade` passes none
+either. `ingitdb self-update` MUST therefore be `ingitdb upgrade ingitdb` by
+construction
+([cli-install#req:self-update-equals-upgrade-self](https://github.com/strongo/cli-helpers/blob/main/spec/features/cli-install/README.md#req-self-update-equals-upgrade-self)).
+`upgrade --all` means every *installed* catalog id plus ingitdb itself, not
+the relevance matrix `install` lists. `ingitdb` MUST NOT gain an `update`
+alias on `upgrade` either, for the same reason it has none on `self-update`
+or `install` ([REQ: command-name](#req-command-name);
+[cli-install#req:update-alias-policy](https://github.com/strongo/cli-helpers/blob/main/spec/features/cli-install/README.md#req-update-alias-policy):
+"ingitdb MUST NOT gain one, because its `update` command edits records").
+
+`ingitdb upgrade` MUST use the same exit-code contract `install` and
+`self-update` already keep: the three cli-install-only kinds map through the
+same explicit `"upgrade: "`-prefixed exit `1` `install` already uses for
+them, and every kind `self-update` already handles reuses
+`selfUpdateErrors.Failure` UNCHANGED — same error value, same exit code.
+`--check`/the bare report finding an upgrade available or undetermined MUST
+map through `SelfUpdateAvailableExitCode` (`10`), exactly like `self-update
+--check` — quietly, with no extra "error:" line, via the same
+`ErrSelfUpdateAvailable` sentinel `main.go`'s `exitCodeForError` and quiet
+error handler already special-case.
+
+| Exit code | Meaning |
+|---|---|
+| `0` | Success, or a report/check showing no available upgrade |
+| `1` | Any failure: an unknown target, no usable install directory, a destination that already exists, any self-update-shared failure kind, or an invalid `--format`/`--all` usage |
+| `10` | `--check`/the bare report found an upgrade available or an undetermined running version for at least one looked-up target — quiet, no error line |
+
 ## Implementation
 
 Source files implementing this feature (annotated with
@@ -95,6 +132,9 @@ Source files implementing this feature (annotated with
 - [`cmd/ingitdb/commands/install.go`](../../../../cmd/ingitdb/commands/install.go) —
   the `installErrors` exit-code mapper and the `cobracmd.New` wiring against
   `HostID: "ingitdb"`.
+- [`cmd/ingitdb/commands/upgrade.go`](../../../../cmd/ingitdb/commands/upgrade.go) —
+  the `upgradeErrors` mapper and the `cobracmd.NewUpgrade` wiring against the
+  same `HostConfig` `self-update` builds.
 
 The shared behavior lives upstream, not in this repository:
 `github.com/strongo/cli-helpers` `cliinstall/`, `cliinstall/cliui/`,
@@ -107,7 +147,7 @@ The shared behavior lives upstream, not in this repository:
 | Feature | Interaction |
 |---|---|
 | [self-update](../self-update/README.md) | Both commands build from the same `cliinstall.ByID("ingitdb")` / `selfupdate.Config` catalog entry, so `install`'s view of ingitdb (shown by other CLIs) and `self-update`'s own release identity never disagree. |
-| [update](../update/README.md) | Name collision constraint shared with `self-update`: `ingitdb update` is the SQL UPDATE verb, which is why neither `self-update` nor `install` has an `update` alias ([REQ: command-name](#req-command-name)). |
+| [update](../update/README.md) | Name collision constraint shared with `self-update`: `ingitdb update` is the SQL UPDATE verb, which is why neither `self-update`, `install`, nor `upgrade` has an `update` alias ([REQ: command-name](#req-command-name), [REQ: upgrade-command](#req-upgrade-command)). |
 | [version](../version/README.md) | Targets `install` lists are probed through the fleet-wide `version --json` contract that [version](../version/README.md) implements; ingitdb's own entry in another CLI's `install` listing is probed the same way. |
 
 ## Acceptance Criteria
@@ -132,9 +172,23 @@ alias.
 write, names `nosuchcli` in its error, and exits `1` — never
 `ValidationFailedExitCode` or `SelfUpdateAvailableExitCode`.
 
+### AC: upgrade-exit-code-contract
+
+**Requirements:** cli/install#req:upgrade-command
+
+**Given** an installed `ingitdb` binary
+**When** the user runs `ingitdb upgrade nosuchcli`
+**Then** the command exits `1` before any release lookup, the same way
+`ingitdb install nosuchcli` does; and when the user runs
+`ingitdb self-update --check` and `ingitdb upgrade ingitdb --check` against
+the same release, both exit `10` quietly for an available or undetermined
+upgrade and `0` for up to date, because both reach the exact same
+`selfupdate.Config.Check` call.
+
 The remaining behavior — the relevance matrix, listing and status probing,
 destination policy, Homebrew-cask installs, checksum-verified direct
-installs, the confirmation gate, `--dry-run`, and `--format json` — is
+installs, the confirmation gate, `--dry-run`, `--format json`, and
+upgrade's own target selection, release lookups and per-target policy — is
 specified and tested once in the
 [CLI Install Command Library](https://github.com/strongo/cli-helpers/blob/main/spec/features/cli-install/README.md)'s
 own Acceptance Criteria, which this command inherits by construction rather
