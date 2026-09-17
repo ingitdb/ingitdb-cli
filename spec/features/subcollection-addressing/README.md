@@ -98,8 +98,8 @@ without subcollections MUST do nothing.
 
 `esc` (and `backspace`) on a subcollection screen MUST return to the parent collection
 screen with the record that was opened still selected. On a root collection screen they MUST
-return to the home screen, as before this feature. `esc` MUST still close an open dropdown
-first.
+return to the home screen, as before this feature. `esc` and `backspace` MUST first close an
+open dropdown (the locale list or the subcollection chooser) without leaving the screen.
 
 ## Dependencies
 

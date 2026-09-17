@@ -379,3 +379,23 @@ func TestTruncateLeft(t *testing.T) {
 		}
 	}
 }
+
+func TestModel_Subcollection_BackspaceClosesChooserBeforeLeaving(t *testing.T) {
+	t.Parallel()
+	m := newTestModel("lists")
+	col := twoSubcollectionsModel()
+	m.collection = &col
+	m.currentScreen = screenCollection
+	m = press(t, m, keyEnter) // opens the chooser
+	if !m.collection.subDropdownOpen {
+		t.Fatal("enter should open the chooser")
+	}
+	m = press(t, m, tea.KeyPressMsg{Code: tea.KeyBackspace})
+	if m.currentScreen != screenCollection || m.collection == nil || m.collection.subDropdownOpen {
+		t.Fatalf("backspace should only close the chooser, got screen %d", m.currentScreen)
+	}
+	m = press(t, m, tea.KeyPressMsg{Code: tea.KeyBackspace})
+	if m.currentScreen != screenHome {
+		t.Errorf("backspace with the chooser closed should leave the screen, got %d", m.currentScreen)
+	}
+}

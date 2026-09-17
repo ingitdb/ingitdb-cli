@@ -84,6 +84,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "backspace":
 			if m.currentScreen == screenCollection {
+				// Like esc: an open dropdown closes first.
+				if m.collection != nil && (m.collection.localeDropdownOpen || m.collection.subDropdownOpen) {
+					updated, cmd := m.collection.Update(tea.KeyPressMsg{Code: tea.KeyEsc})
+					m.collection = &updated
+					return m, cmd
+				}
 				m = m.back()
 			}
 			return m, nil

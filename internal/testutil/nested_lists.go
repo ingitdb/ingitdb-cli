@@ -43,6 +43,16 @@ columns:
 columns_order: [title]
 `
 
+const nestedTagsDefinition = `record_file:
+  name: "{key}.yaml"
+  format: yaml
+  type: "map[string]any"
+columns:
+  title:
+    type: string
+columns_order: [title]
+`
+
 const nestedItemsDefinition = `record_file:
   name: "{key}.yaml"
   format: yaml
@@ -109,6 +119,50 @@ func WriteNestedListsDB(t testing.TB) string {
 	})
 	if err != nil {
 		t.Fatalf("write fixture records: %v", err)
+	}
+	return dir
+}
+
+// WriteDeepNestedListsDB writes the WriteNestedListsDB database plus a second
+// subcollection level and an edge-case key: `items` declares subcollection
+// `tags` (records `dairy` and `fresh` under item `milk`), and a list whose key
+// equals the subcollection name, `lists/items`, has one item `self`.
+func WriteDeepNestedListsDB(t testing.TB) string {
+	t.Helper()
+	dir := WriteNestedListsDB(t)
+	p := filepath.Join(dir, "lists", ".collection", "subcollections", "items", "subcollections", "tags", "definition.yaml")
+	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+		t.Fatalf("mkdir tags definition: %v", err)
+	}
+	if err := os.WriteFile(p, []byte(nestedTagsDefinition), 0o644); err != nil {
+		t.Fatalf("write tags definition: %v", err)
+	}
+	def, err := validator.ReadDefinition(dir)
+	if err != nil {
+		t.Fatalf("read deep fixture definition: %v", err)
+	}
+	db, err := dalgo2fsingitdb.NewLocalDBWithDef(dir, def)
+	if err != nil {
+		t.Fatalf("open deep fixture db: %v", err)
+	}
+	err = db.RunReadwriteTransaction(context.Background(), func(ctx context.Context, tx dal.ReadwriteTransaction) error {
+		listKey := record.NewKeyWithID("lists", "items")
+		milkKey := record.NewKeyWithParentAndID(record.NewKeyWithID("lists", "to-buy"), "items", "milk")
+		records := []record.Record{
+			record.NewRecordWithData(listKey, map[string]any{"title": "Items"}),
+			record.NewRecordWithData(record.NewKeyWithParentAndID(listKey, "items", "self"), map[string]any{"title": "Self", "done": false, "added_at": "2026-09-17T10:00:05Z"}),
+			record.NewRecordWithData(record.NewKeyWithParentAndID(milkKey, "tags", "dairy"), map[string]any{"title": "Dairy"}),
+			record.NewRecordWithData(record.NewKeyWithParentAndID(milkKey, "tags", "fresh"), map[string]any{"title": "Fresh"}),
+		}
+		for _, r := range records {
+			if setErr := tx.Set(ctx, r); setErr != nil {
+				return setErr
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("write deep fixture records: %v", err)
 	}
 	return dir
 }

@@ -263,3 +263,31 @@ func TestSelect_Subcollection_RemoteRejected(t *testing.T) {
 		t.Errorf("stdout should be empty, got:\n%s", stdout)
 	}
 }
+
+func TestSelect_Subcollection_DeepAndEdgeKeys(t *testing.T) {
+	t.Parallel()
+	dir := testutil.WriteDeepNestedListsDB(t)
+	cases := []struct {
+		from    string
+		wantIDs string
+	}{
+		{from: "lists/to-buy/items/milk/tags", wantIDs: "dairy,fresh"},
+		{from: "lists/to-buy/items/coffee/tags", wantIDs: ""},
+		{from: "lists/items/items", wantIDs: "self"},
+		{from: "lists/to-buy/items", wantIDs: "bananas,coffee,milk"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.from, func(t *testing.T) {
+			t.Parallel()
+			stdout, err := runNestedSelect(t, dir, "--from="+tc.from, "--order-by=$id", "--format=json")
+			if err != nil {
+				t.Fatalf("run: %v", err)
+			}
+			if got := strings.Join(rowIDs(decodeJSONRows(t, stdout)), ","); got != tc.wantIDs {
+				t.Errorf("ids = %q, want %q", got, tc.wantIDs)
+			}
+		})
+	}
+	_, err := runNestedSelect(t, dir, "--from=lists/to-buy/items/milk/items")
+	testutil.MustErrContain(t, err, `collection "lists/to-buy/items/milk/items" not found in definition`)
+}
