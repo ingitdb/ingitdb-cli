@@ -21,6 +21,9 @@ This umbrella does NOT ship the existing six formats — those already exist in 
 | Child | Description |
 |---|---|
 | [list-of-records](list-of-records/README.md) | Wire the `ListOfRecords` layout for YAML/JSON sequences and add a JSONL format — read, write, validate, auto-merge. |
+| [cli-default-format-flag](cli-default-format-flag/README.md) | `--default-format=FORMAT` flag on `ingitdb setup`, written to `.ingitdb/settings.yaml`. |
+| [csv-support](csv-support/README.md) | CSV as the seventh first-class record format. |
+| [project-default](project-default/README.md) | Project-level `default_record_format` setting and a single format-resolution fallback chain. |
 
 ## Problem
 
