@@ -72,14 +72,16 @@ What next?
 ```
 
 Paths with spaces or shell-special characters are quoted for your shell: single quotes on
-Linux and macOS, double quotes on Windows (works in `cmd.exe` and PowerShell).
+Linux and macOS, double quotes on Windows (works in `cmd.exe` and PowerShell). A Windows path
+holding `%`, `$` or a backtick, which those shells expand even inside double quotes, gets one
+command per shell, labelled `cmd.exe:` and `PowerShell:` (JSON `shell`), each escaped for it.
 
 With `--format=json` (or `yaml`) stdout is a single document with `app`, `installed`,
 `already_installed`, `path`, `git` (`repository`, `commit`), `lists` and `next`. Errors go to
 stderr with a non-zero exit code.
 
 `next` has one entry per command, in order. Each entry has `step` (the number of the step in the
-text output), `label` and `command`; a step with several commands has one entry per command with
+text output), `label`, `command` and, for a shell-specific command, `shell`; a step with several commands has one entry per command with
 the same `step` and `label`, and a `note` belongs to its step. Today step 4 (OpenVaultDB) has two
 entries, `ovdb demo install --yes` and `ovdb demo open`, the second carrying the note.
 

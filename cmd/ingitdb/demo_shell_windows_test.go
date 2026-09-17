@@ -13,8 +13,9 @@ import (
 // demoShells returns the command line run through both Windows shells: cmd.exe
 // (given the raw command line, so Go does not re-escape its double quotes) and
 // PowerShell (given the command encoded, so its own quote stripping does not
-// apply).
-func demoShells(command string) []*exec.Cmd {
+// apply). A command printed for one shell ("cmd.exe" or "PowerShell") runs
+// only through that shell.
+func demoShells(command, shell string) []*exec.Cmd {
 	cmdExe := exec.Command("cmd.exe")
 	cmdExe.SysProcAttr = &syscall.SysProcAttr{CmdLine: `cmd.exe /d /s /c "` + command + `"`}
 	script := utf16.Encode([]rune(command + "; exit $LASTEXITCODE"))
@@ -24,5 +25,11 @@ func demoShells(command string) []*exec.Cmd {
 	}
 	encoded := base64.StdEncoding.EncodeToString(raw)
 	powerShell := exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-EncodedCommand", encoded)
+	switch shell {
+	case "cmd.exe":
+		return []*exec.Cmd{cmdExe}
+	case "PowerShell":
+		return []*exec.Cmd{powerShell}
+	}
 	return []*exec.Cmd{cmdExe, powerShell}
 }

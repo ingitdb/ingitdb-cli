@@ -35,8 +35,11 @@ type demoGitResult struct {
 // number of the step the command belongs to; a step with several commands,
 // such as the OpenVaultDB one, has one entry per command, in order.
 type demoNextStep struct {
-	Step    int    `json:"step" yaml:"step"`
-	Label   string `json:"label" yaml:"label"`
+	Step  int    `json:"step" yaml:"step"`
+	Label string `json:"label" yaml:"label"`
+	// Shell, when set, is the only shell Command is quoted for ("cmd.exe" or
+	// "PowerShell"); the step then has one entry per shell.
+	Shell   string `json:"shell,omitempty" yaml:"shell,omitempty"`
 	Command string `json:"command" yaml:"command"`
 	Note    string `json:"note,omitempty" yaml:"note,omitempty"`
 }
@@ -58,22 +61,49 @@ func newDemoResult(dir string) demoResult {
 // demoNextSteps returns the next steps in the order of cli/demo#REQ:next-steps,
 // with dir quoted for the shell of goos.
 func demoNextSteps(dir, goos string) []demoNextStep {
-	pathArg := "--path=" + demoShellQuote(dir, goos)
 	firstList := todo.Lists[0]
 	collection, _, _ := strings.Cut(firstList, "/")
-	return []demoNextStep{
-		{Step: 1, Label: "Browse the lists in the terminal UI", Command: "ingitdb " + pathArg},
-		{Step: 2, Label: "Query the lists", Command: "ingitdb select --from=" + collection + " " + pathArg},
-		{Step: 3, Label: "Query what to buy", Command: "ingitdb select --from=" + firstList + "/" + demoItemsCollection + " " + pathArg},
-		{Step: 4, Label: demoOVDBLabel, Command: "ovdb demo install --yes"},
-		{Step: 4, Label: demoOVDBLabel, Command: "ovdb demo open", Note: demoOVDBNote},
+	ingitdbSteps := []demoNextStep{
+		{Step: 1, Label: "Browse the lists in the terminal UI", Command: "ingitdb"},
+		{Step: 2, Label: "Query the lists", Command: "ingitdb select --from=" + collection},
+		{Step: 3, Label: "Query what to buy", Command: "ingitdb select --from=" + firstList + "/" + demoItemsCollection},
+	}
+	var steps []demoNextStep
+	for _, step := range ingitdbSteps {
+		for _, q := range demoPathQuotings(dir, goos) {
+			withPath := step
+			withPath.Shell = q.shell
+			withPath.Command = step.Command + " --path=" + q.path
+			steps = append(steps, withPath)
+		}
+	}
+	return append(steps,
+		demoNextStep{Step: 4, Label: demoOVDBLabel, Command: "ovdb demo install --yes"},
+		demoNextStep{Step: 4, Label: demoOVDBLabel, Command: "ovdb demo open", Note: demoOVDBNote},
+	)
+}
+
+type demoQuotedPath struct{ shell, path string }
+
+// demoPathQuotings returns dir quoted for pasting into the shells of goos.
+// On Windows one double-quoted path works in both cmd.exe and PowerShell,
+// unless it holds characters those shells expand even inside double quotes
+// (% for cmd.exe, $ and ` for PowerShell): then each shell gets its own.
+func demoPathQuotings(dir, goos string) []demoQuotedPath {
+	if goos != "windows" || !strings.ContainsAny(dir, "%$`") {
+		return []demoQuotedPath{{path: demoShellQuote(dir, goos)}}
+	}
+	powerShell := strings.NewReplacer("`", "``", "$", "`$").Replace(dir)
+	return []demoQuotedPath{
+		// ^% outside the quotes is a literal % for cmd.exe.
+		{shell: "cmd.exe", path: `"` + strings.ReplaceAll(dir, "%", `"^%"`) + `"`},
+		{shell: "PowerShell", path: `"` + powerShell + `"`},
 	}
 }
 
 // demoShellQuote quotes s for pasting into the shell of goos when it holds
-// anything but plain path characters: double quotes on Windows, so the
-// command works in both cmd.exe and PowerShell, POSIX single quotes
-// elsewhere.
+// anything but plain path characters: double quotes on Windows, POSIX single
+// quotes elsewhere.
 func demoShellQuote(s, goos string) string {
 	safe := func(r rune) bool {
 		switch {
@@ -135,7 +165,12 @@ func demoText(result demoResult) string {
 		if idx == 0 || result.Next[idx-1].Step != step.Step {
 			fmt.Fprintf(&b, "  %d. %s\n", step.Step, step.Label)
 		}
-		fmt.Fprintf(&b, "       %s\n", step.Command)
+		switch step.Shell {
+		case "":
+			fmt.Fprintf(&b, "       %s\n", step.Command)
+		default:
+			fmt.Fprintf(&b, "       %-11s %s\n", step.Shell+":", step.Command)
+		}
 		if step.Note != "" {
 			fmt.Fprintf(&b, "       %s\n", step.Note)
 		}

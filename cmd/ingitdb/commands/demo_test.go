@@ -1485,3 +1485,36 @@ func TestDemoInstall_JSONNextSteps(t *testing.T) {
 		t.Errorf("steps = %v, want [1 2 3 4 4]\n%s", steps, b.String())
 	}
 }
+
+// TestDemoNextSteps_WindowsShellSpecialCharacters: inside double quotes
+// cmd.exe still expands %NAME% and PowerShell $name and backtick escapes, so
+// a Windows path holding them gets one command per shell, each escaped for
+// that shell. The end-to-end test runs them through cmd.exe and PowerShell.
+func TestDemoNextSteps_WindowsShellSpecialCharacters(t *testing.T) {
+	t.Parallel()
+	dir := `C:\Users\ada\my %OS% $HOME ` + "`x"
+	steps := demoNextSteps(dir, "windows")
+	want := []demoNextStep{
+		{Step: 1, Label: "Browse the lists in the terminal UI", Shell: "cmd.exe", Command: `ingitdb --path="C:\Users\ada\my "^%"OS"^%" $HOME ` + "`x\""},
+		{Step: 1, Label: "Browse the lists in the terminal UI", Shell: "PowerShell", Command: `ingitdb --path="C:\Users\ada\my %OS% ` + "`$HOME ``x\""},
+	}
+	if !reflect.DeepEqual(steps[:2], want) {
+		t.Errorf("step 1 =\n%#v\nwant\n%#v", steps[:2], want)
+	}
+	if len(steps) != 8 || steps[5].Shell != "PowerShell" || steps[6].Shell != "" {
+		t.Errorf("steps = %#v", steps)
+	}
+	var b bytes.Buffer
+	result := newDemoResult(dir)
+	if err := writeDemoResult(&b, result, "", "windows"); err != nil {
+		t.Fatal(err)
+	}
+	wantText := "  1. Browse the lists in the terminal UI\n       cmd.exe:    " + want[0].Command + "\n       PowerShell: " + want[1].Command + "\n  2. "
+	if !strings.Contains(b.String(), wantText) {
+		t.Errorf("text lacks\n%s\ngot\n%s", wantText, b.String())
+	}
+	// Without those characters, one double-quoted command works in both.
+	if plain := demoNextSteps(`C:\Users\Ada Lovelace\todo-demo`, "windows"); len(plain) != 5 || plain[0].Shell != "" {
+		t.Errorf("plain Windows path steps = %#v", plain)
+	}
+}

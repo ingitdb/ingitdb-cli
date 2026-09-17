@@ -112,9 +112,13 @@ func (c demoCLI) run(t *testing.T, cmd *exec.Cmd, dir string) string {
 	return stdout.String()
 }
 
+// shellCommand is one printed command and the shell it is printed for, empty
+// for every shell of the platform.
+type shellCommand struct{ shell, command string }
+
 // nextSteps parses the What next? list of the human output into labels and
 // commands.
-func nextSteps(t *testing.T, stdout string) (labels, commands []string) {
+func nextSteps(t *testing.T, stdout string) (labels []string, commands []shellCommand) {
 	t.Helper()
 	_, list, found := strings.Cut(stdout, "\nWhat next?\n")
 	if !found {
@@ -126,8 +130,16 @@ func nextSteps(t *testing.T, stdout string) (labels, commands []string) {
 		case strings.HasPrefix(line, "  ") && !strings.HasPrefix(line, "       "):
 			_, label, _ := strings.Cut(trimmed, ". ")
 			labels = append(labels, label)
-		case strings.HasPrefix(trimmed, "ingitdb "), strings.HasPrefix(trimmed, "ovdb "):
-			commands = append(commands, trimmed)
+		default:
+			shell := ""
+			for _, prefix := range []string{"cmd.exe:", "PowerShell:"} {
+				if rest, ok := strings.CutPrefix(trimmed, prefix); ok {
+					shell, trimmed = strings.TrimSuffix(prefix, ":"), strings.TrimSpace(rest)
+				}
+			}
+			if strings.HasPrefix(trimmed, "ingitdb ") || strings.HasPrefix(trimmed, "ovdb ") {
+				commands = append(commands, shellCommand{shell, trimmed})
+			}
 		}
 	}
 	return labels, commands
@@ -140,7 +152,9 @@ func nextSteps(t *testing.T, stdout string) (labels, commands []string) {
 func TestDemoInstall_EndToEnd(t *testing.T) {
 	t.Parallel()
 	c := newDemoCLI(t)
-	wd := filepath.Join(t.TempDir(), "my demo")
+	// A space, a cmd.exe variable (%OS%), a PowerShell variable ($HOME) and a
+	// backtick: each must reach ingitdb literally through every shell.
+	wd := filepath.Join(t.TempDir(), "my demo %OS% $HOME `x")
 	if err := os.Mkdir(wd, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -163,21 +177,30 @@ func TestDemoInstall_EndToEnd(t *testing.T) {
 	if !reflect.DeepEqual(labels, wantLabels) {
 		t.Errorf("labels = %q", labels)
 	}
-	if len(commands) != 5 || commands[3] != "ovdb demo install --yes" || commands[4] != "ovdb demo open" {
+	ovdb := commands[len(commands)-2:]
+	if ovdb[0].command != "ovdb demo install --yes" || ovdb[1].command != "ovdb demo open" {
 		t.Fatalf("commands = %q", commands)
+	}
+	ingitdbCommands := commands[:len(commands)-2]
+	wantPerStep := 1
+	if runtime.GOOS == "windows" {
+		wantPerStep = 2 // one for cmd.exe, one for PowerShell
+	}
+	if len(ingitdbCommands) != 3*wantPerStep {
+		t.Fatalf("ingitdb commands = %q", ingitdbCommands)
 	}
 	quote := `'`
 	if runtime.GOOS == "windows" {
 		quote = `"`
 	}
-	for _, command := range commands[:3] {
-		if !strings.Contains(command, "--path="+quote) {
-			t.Errorf("path not quoted for %s: %s", runtime.GOOS, command)
+	for _, sc := range ingitdbCommands {
+		if !strings.Contains(sc.command, "--path="+quote) {
+			t.Errorf("path not quoted for %s: %s", runtime.GOOS, sc.command)
 		}
-		for _, shell := range demoShells(command) {
+		for _, shell := range demoShells(sc.command, sc.shell) {
 			out := c.run(t, shell, t.TempDir())
-			if strings.Contains(command, "/items") && !strings.Contains(out, "Milk") {
-				t.Errorf("%s via %s: no Milk in\n%s", command, shell.Path, out)
+			if strings.Contains(sc.command, "/items") && !strings.Contains(out, "Milk") {
+				t.Errorf("%s via %s: no Milk in\n%s", sc.command, shell.Path, out)
 			}
 		}
 	}
