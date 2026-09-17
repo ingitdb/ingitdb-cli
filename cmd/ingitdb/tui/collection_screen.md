@@ -61,9 +61,21 @@ The schema panel is scrollable when content exceeds available height.
 | `↑` / `k` | Navigate to previous record (or navigate locale list when dropdown is open) |
 | `↓` / `j` | Navigate to next record (or navigate locale list when dropdown is open) |
 | `l` / `L` | Open locale selector dropdown (if L10N columns exist) |
-| `enter` | Confirm locale selection (when dropdown is open) |
-| `esc` | Close locale dropdown (when open) / return to home screen (when closed) |
+| `enter` | Confirm locale selection (when dropdown is open) / open the selected record's subcollection (see below) |
+| `esc` / `backspace` | Close an open dropdown / return to the parent collection screen (on a subcollection) or the home screen (on a root collection) |
 | `q` / `ctrl+c` | Quit |
+
+## Subcollections
+
+When the collection's definition declares subcollections, `enter` on a record opens a
+collection screen with that record's records in the subcollection (for example the `items`
+of list `to-buy`). With one declared subcollection it opens directly; with several, a
+chooser lists the subcollection IDs in sorted order (`↑`/`↓` choose, `enter` opens, `esc`
+closes). The header shows the full path (`inGitDB › lists › to-buy › items`), and a
+subcollection screen can open its own declared subcollections the same way. `esc` returns
+to the screen the subcollection was opened from, with the same record selected. Records are
+read through the storage driver's parent-chain scoping. Specified by
+[subcollection-addressing](../../../spec/features/subcollection-addressing/README.md).
 
 ## Locale Support
 

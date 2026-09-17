@@ -1,3 +1,8 @@
+---
+format: https://specscore.md/plan-specification
+status: Approved
+---
+
 # Plan: Record-Merge Engine for Data-Row Auto-Resolution
 
 **Status:** Approved

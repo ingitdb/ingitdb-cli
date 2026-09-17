@@ -145,6 +145,7 @@ func run(
 		commands.CI(homeDir, getWd, readDefinition, vb, logf),
 		commands.Pull(homeDir, getWd, readDefinition, vb, logf, defaultIsTerminal, launchConflictsTUI),
 		commands.Setup(),
+		commands.Demo(homeDir, getWd, readDefinition, newDB),
 		commands.Resolve(homeDir, getWd, readDefinition, logf, defaultIsTerminal, launchConflictsTUI),
 		commands.Rebase(getWd, readDefinition, logf),
 		// `watch` is parked — its feature is Withdrawn (deferred); the stub

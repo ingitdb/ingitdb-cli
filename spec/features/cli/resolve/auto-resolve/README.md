@@ -27,6 +27,12 @@ two distinct mechanisms:
 Both share one rule: resolve automatically only what is unambiguous; hand
 everything else to [`manual-resolve`](../manual-resolve/README.md).
 
+## Contents
+
+| Child | Description |
+|---|---|
+| [record-merge](record-merge/README.md) | Non-interactive field-level merge of conflicting source-data record files. |
+
 ## Problem
 
 Generated artifacts — collection `README.md`, materialized views, data

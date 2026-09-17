@@ -1,3 +1,8 @@
+---
+format: https://specscore.md/plan-specification
+status: Implemented
+---
+
 # Plan: Computed Columns via dalgo (lazy delegation)
 
 **Status:** Implemented

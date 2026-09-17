@@ -13,7 +13,7 @@ require (
 	github.com/ingitdb/dalgo2ingitdb v0.6.0
 	github.com/ingitdb/dalgo2ingitdb4github v0.2.8
 	github.com/ingitdb/dalgo2ingitdb4local v0.0.6
-	github.com/ingitdb/ingitdb-go/ingitdb v0.6.1
+	github.com/ingitdb/ingitdb-go/ingitdb v0.7.0
 	github.com/ingr-io/ingr-go v0.0.2
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/rivo/uniseg v0.4.7
@@ -21,6 +21,7 @@ require (
 	github.com/strongo/buildinfo v0.3.0
 	github.com/strongo/cli-helpers v0.21.0
 	go.uber.org/mock v0.6.0
+	golang.org/x/sys v0.47.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -52,7 +53,6 @@ require (
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	go.starlark.net v0.0.0-20260708150628-5395d018f003 // indirect
 	golang.org/x/sync v0.22.0 // indirect
-	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/term v0.45.0 // indirect
 	golang.org/x/text v0.40.0 // indirect
 )

@@ -20,6 +20,13 @@ It handles two classes of conflict differently:
 
 With `--file=FILE` it targets a single conflicted file; without it, every conflicted file in the database is processed in turn.
 
+## Contents
+
+| Child | Description |
+|---|---|
+| [auto-resolve](auto-resolve/README.md) | Non-interactive resolution of conflicts that need no human decision. |
+| [manual-resolve](manual-resolve/README.md) | Interactive, record-aware resolution of source-data conflicts. |
+
 ## Relationship to related commands
 
 `resolve` is the shared conflict-resolution engine; the other commands *initiate* a git operation and then delegate to it:

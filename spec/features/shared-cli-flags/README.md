@@ -105,7 +105,9 @@ of scope for this feature.
 
 #### REQ: from-flag
 
-The `--from` flag MUST take a single collection ID. It MUST be accepted
+The `--from` flag MUST take a single collection ID or, for `select` on a local database, a
+subcollection path (`<collection>/<record-key>/<subcollection>`) per
+[subcollection-addressing](../subcollection-addressing/README.md). It MUST be accepted
 by `select`, `update`, and `delete`. It MUST be rejected by `insert`
 (which uses `--into`) and by `drop` (which uses positional subcommands).
 

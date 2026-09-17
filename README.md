@@ -16,6 +16,20 @@ workflow — branching, code review, pull requests — extends naturally to data
 simultaneously a database, a version-control system, an event bus, and a data layer for AI agents,
 all with zero server infrastructure for reads.
 
+## 🚀 Try it in one minute
+
+With `ingitdb` installed (see Installation below):
+
+```shell
+ingitdb demo install                                    # creates ./todo-demo, a Git repository
+ingitdb select --from=lists/to-buy/items --path=todo-demo
+ingitdb --path=todo-demo                                # browse the lists in the terminal UI
+```
+
+The TODO demo holds two lists, To buy and To watch, as plain YAML files with one commit of
+history. It is the same demo [OpenVaultDB](https://github.com/openvaultdb/ovdb) installs with
+`ovdb demo install`. See [`demo install`](docs/cli/commands/demo.md).
+
 <!-- dev-approach:v1 -->
 ## Our approach to development
 

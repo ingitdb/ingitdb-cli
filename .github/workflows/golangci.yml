@@ -1,4 +1,4 @@
-name: CI (build, lint, test, bump)
+name: CI
 
 on:
   workflow_dispatch: # Allows manual run
@@ -53,3 +53,23 @@ jobs:
           cache: true
       - name: go mod tidy -diff
         run: go mod tidy -diff
+
+  # cli/demo#AC:works-on-every-os. The shared strongo workflow tests on Linux
+  # only; this job runs the demo, select and terminal UI tests on all three
+  # operating systems. It is scoped to those tests to keep CI cost down.
+  demo-cross-platform:
+    name: demo, select and TUI tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.1'
+          cache: true
+      - name: Test demo, select and terminal UI
+        shell: bash
+        run: go test -count=1 -run 'Demo|Select|Subcollection' ./cmd/ingitdb/ ./cmd/ingitdb/commands/ ./cmd/ingitdb/tui/
