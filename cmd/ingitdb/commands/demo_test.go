@@ -1422,6 +1422,18 @@ func TestDemoInstall_DanglingSymlinkRefused(t *testing.T) {
 	if got := listTree(t, wd); !reflect.DeepEqual(got, []string{"dang"}) {
 		t.Errorf("wd holds %v", got)
 	}
+	// A symbolic link that cannot be resolved for another reason (a loop) is
+	// refused too, and kept.
+	loop := filepath.Join(wd, "loop")
+	if err = os.Symlink(loop, loop); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = runDemoInstall(t, testDemoInstaller(t), wd, "--path=loop"); err == nil || !strings.Contains(err.Error(), loop) {
+		t.Errorf("loop err = %v", err)
+	}
+	if _, lstatErr := os.Lstat(loop); lstatErr != nil {
+		t.Errorf("the loop link was removed: %v", lstatErr)
+	}
 }
 
 // TestDemoInstall_CommitRefusedHint makes the user's Git configuration refuse

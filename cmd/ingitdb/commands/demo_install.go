@@ -154,12 +154,17 @@ func demoInProgressError(dir string) error {
 // A folder holding the install lock is being installed: it is not reported as
 // installed until the lock is gone, even when the marker is already there.
 func inspectDemoTarget(dir string) (demoTargetState, error) {
-	info, err := os.Stat(dir)
+	// Lstat first: a path that is missing when looked at, then created by a
+	// concurrent install, must not read as a dangling symbolic link.
+	info, err := os.Lstat(dir)
 	if errors.Is(err, os.ErrNotExist) {
-		if _, lstatErr := os.Lstat(dir); lstatErr == nil {
+		return demoTargetMissing, nil
+	}
+	if err == nil && info.Mode()&os.ModeSymlink != 0 {
+		info, err = os.Stat(dir)
+		if errors.Is(err, os.ErrNotExist) {
 			return 0, fmt.Errorf("the path %s is a symbolic link to a folder that does not exist; %s", dir, demoAnotherFolderHint)
 		}
-		return demoTargetMissing, nil
 	}
 	if err != nil {
 		return 0, fmt.Errorf("cannot use %s: %w", dir, err)
