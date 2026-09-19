@@ -7,26 +7,26 @@ require (
 	charm.land/fang/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.6
 	github.com/charmbracelet/x/term v0.2.2
-	github.com/dal-go/dalgo v0.80.4
+	github.com/dal-go/dalgo v0.80.11
 	github.com/dal-go/record v0.1.3
 	github.com/datatug/cliformat v0.0.3
-	github.com/ingitdb/dalgo2ingitdb v0.6.0
+	github.com/ingitdb/dalgo2ingitdb v0.6.1
 	github.com/ingitdb/dalgo2ingitdb4github v0.2.8
 	github.com/ingitdb/dalgo2ingitdb4local v0.0.6
-	github.com/ingitdb/ingitdb-go/ingitdb v0.7.0
+	github.com/ingitdb/ingitdb-go/ingitdb v0.7.3
 	github.com/ingr-io/ingr-go v0.0.2
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/rivo/uniseg v0.4.7
 	github.com/spf13/cobra v1.10.2
 	github.com/strongo/buildinfo v0.3.0
-	github.com/strongo/cli-helpers v0.21.0
+	github.com/strongo/cli-helpers v0.22.0
 	go.uber.org/mock v0.6.0
-	golang.org/x/sys v0.47.0
+	golang.org/x/sys v0.48.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	github.com/RoaringBitmap/roaring/v2 v2.27.0 // indirect
+	github.com/RoaringBitmap/roaring/v2 v2.28.0 // indirect
 	github.com/bits-and-blooms/bitset v1.24.6 // indirect
 	github.com/charmbracelet/colorprofile v0.4.3 // indirect
 	github.com/charmbracelet/ultraviolet v0.0.0-20260811164956-006e29f97886 // indirect
