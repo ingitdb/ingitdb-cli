@@ -95,10 +95,10 @@ func TestRequireRemoteWriteToken_SingleLabelHost(t *testing.T) {
 	cmd.Flags().String("token", "", "")
 
 	oldVal := os.Getenv("LOCALHOST_TOKEN")
-	os.Unsetenv("LOCALHOST_TOKEN")
+	_ = os.Unsetenv("LOCALHOST_TOKEN")
 	defer func() {
 		if oldVal != "" {
-			os.Setenv("LOCALHOST_TOKEN", oldVal)
+			_ = os.Setenv("LOCALHOST_TOKEN", oldVal)
 		}
 	}()
 
@@ -585,10 +585,7 @@ func TestMaterialize_Branches(t *testing.T) {
 	}
 
 	// 4. materializeCollections when docsbuilder fails
-	_, err = materializeCollections(ctx, def, "/nonexistent/invalid/dir", selection{kind: selectionAll})
-	if err == nil {
-		// May or may not error
-	}
+	_, _ = materializeCollections(ctx, def, "/nonexistent/invalid/dir", selection{kind: selectionAll})
 
 	// 5. materializeCommandRunE with collection error
 	homeDir := func() (string, error) { return "/tmp/home", nil }
@@ -1043,7 +1040,7 @@ func (m *mockSimpleViewBuilderWithErr) BuildView(ctx context.Context, dirPath, r
 	if m.buildViewErr != nil {
 		return nil, m.buildViewErr
 	}
-	return m.mockViewBuilder.result, nil
+	return m.result, nil
 }
 
 func TestMaterialize_Errors(t *testing.T) {
