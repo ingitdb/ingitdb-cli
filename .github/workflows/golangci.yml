@@ -73,3 +73,17 @@ jobs:
       - name: Test demo, select and terminal UI
         shell: bash
         run: go test -count=1 -run 'Demo|Select|Subcollection' ./cmd/ingitdb/ ./cmd/ingitdb/commands/ ./cmd/ingitdb/tui/
+
+  coverage-100:
+    name: 100% statement coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.1'
+          cache: true
+      - name: Verify 100% statement coverage
+        run: |
+          go test -count=1 -coverprofile=cover.out ./...
+          awk 'NR>1 && $NF==0 {print; bad=1} END{exit bad}' cover.out

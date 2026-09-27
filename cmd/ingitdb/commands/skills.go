@@ -22,6 +22,8 @@ const (
 var (
 	ingitdbSkillsCLI    = skillsync.Identity{Publisher: "ingitdb", Name: "ingitdb"}
 	ingitdbSkillsPlugin = skillsync.PluginIdentity{Publisher: "ingitdb", Name: "ingitdb"}
+	skillsFS            fs.FS = ai.SkillsFS
+	embeddedBundleFn    = skillsync.EmbeddedBundle
 )
 
 // Skills returns the "skills" command built from skillsync/cobracmd.
@@ -46,7 +48,7 @@ func Skills(currentVersion string) *cobra.Command {
 
 // NewSkillsConfig builds the skillsync.Config for embedded inGitDB skills.
 func NewSkillsConfig(currentVersion string) (skillsync.Config, error) {
-	source, err := fs.Sub(ai.SkillsFS, "skills")
+	source, err := fs.Sub(skillsFS, "skills")
 	if err != nil {
 		return skillsync.Config{}, err
 	}
@@ -63,7 +65,7 @@ func NewSkillsConfig(currentVersion string) (skillsync.Config, error) {
 	if _, err := skillsync.CompareVersions(pluginVersion, pluginVersion); err != nil {
 		pluginVersion = ingitdbSkillsPluginVersion
 	}
-	bundle, err := skillsync.EmbeddedBundle(skillsync.BundleDescriptor{
+	bundle, err := embeddedBundleFn(skillsync.BundleDescriptor{
 		Plugin: ingitdbSkillsPlugin,
 		Source: skillsync.Source{
 			Repository: "ingitdb/ingitdb-cli",

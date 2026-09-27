@@ -193,18 +193,12 @@ func formatSafeValidationError(rootPath string, validationErr ingitdb.Validation
 }
 
 func safeRepositoryPath(rootPath, filePath string) string {
-	cleanRoot, rootErr := filepath.Abs(rootPath)
-	if rootErr != nil {
-		return filepath.Base(filePath)
-	}
+	cleanRoot, _ := filepath.Abs(rootPath)
 	cleanFile := filePath
 	if !filepath.IsAbs(cleanFile) {
 		cleanFile = filepath.Join(cleanRoot, cleanFile)
 	}
-	cleanFile, fileErr := filepath.Abs(cleanFile)
-	if fileErr != nil {
-		return filepath.Base(filePath)
-	}
+	cleanFile, _ = filepath.Abs(cleanFile)
 	relPath, relErr := filepath.Rel(cleanRoot, cleanFile)
 	separator := string(filepath.Separator)
 	parentPrefix := ".." + separator

@@ -17,7 +17,7 @@ import (
 // tree at dirPath, as reported by `git diff --name-only --diff-filter=U`.
 // The list is independent of which git operation (rebase, merge, cherry-pick,
 // stash pop) produced the conflict.
-func gitConflictedFiles(ctx context.Context, dirPath string) ([]string, error) {
+var gitConflictedFiles = func(ctx context.Context, dirPath string) ([]string, error) {
 	gitCmd := exec.CommandContext(ctx, "git", "diff", "--name-only", "--diff-filter=U")
 	gitCmd.Dir = dirPath
 	out, err := gitCmd.Output()
