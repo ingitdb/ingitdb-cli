@@ -93,6 +93,8 @@ func materializeCommandRunE(
 	}
 }
 
+var docsbuilderUpdateDocsFn = docsbuilder.UpdateDocs
+
 // materializeCollections regenerates collection READMEs through docsbuilder.
 // For selectionAll it uses the "**" glob; for selectionList it runs once per
 // pattern and merges the results.
@@ -111,13 +113,17 @@ func materializeCollections(
 	}
 	total := &ingitdb.MaterializeResult{}
 	for _, glob := range globs {
-		result, err := docsbuilder.UpdateDocs(ctx, def, glob, dirPath, reader)
+		result, err := docsbuilderUpdateDocsFn(ctx, def, glob, dirPath, reader)
 		if err != nil {
 			return nil, fmt.Errorf("failed to regenerate collection READMEs for %q: %w", glob, err)
 		}
 		mergeMaterializeResult(total, result)
 	}
 	return total, nil
+}
+
+type singleViewBuilder interface {
+	BuildView(ctx context.Context, dirPath, repoRoot string, col *ingitdb.CollectionDef, def *ingitdb.Definition, view *ingitdb.ViewDef) (*ingitdb.MaterializeResult, error)
 }
 
 // materializeViews regenerates materialized views through the view builder.
@@ -148,7 +154,7 @@ func materializeViews(
 	// selectionList: build only the views whose names match the glob list. We
 	// rely on the per-view BuildView entry point so non-matching views are never
 	// re-rendered, satisfying the views-subset contract.
-	builder, ok := viewBuilder.(materializer.SimpleViewBuilder)
+	builder, ok := viewBuilder.(singleViewBuilder)
 	if !ok {
 		return nil, fmt.Errorf("view-name filtering requires the standard view builder")
 	}

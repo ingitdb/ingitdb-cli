@@ -68,7 +68,7 @@ func Pull(
 				if defErr != nil {
 					return fmt.Errorf("failed to read database definition: %w", defErr)
 				}
-				if rErr := resolveWorkingTreeConflicts(ctx, dirPath, def, conflicted, isTerminal, runConflictsTUI, logf); rErr != nil {
+				if rErr := resolveWorkingTreeConflictsFn(ctx, dirPath, def, conflicted, isTerminal, runConflictsTUI, logf); rErr != nil {
 					return rErr
 				}
 			} else if pullErr != nil {
@@ -124,7 +124,7 @@ func pullArgs(strategy, remote, branch string) []string {
 
 // runGitPull runs `git pull` in dirPath. It returns the command error (if any);
 // the caller decides whether that error is a conflict (recoverable) or fatal.
-func runGitPull(ctx context.Context, dirPath, strategy, remote, branch string, logf func(...any)) error {
+var runGitPull = func(ctx context.Context, dirPath, strategy, remote, branch string, logf func(...any)) error {
 	args := pullArgs(strategy, remote, branch)
 	logf(fmt.Sprintf("git %s", strings.Join(args, " ")))
 	c := exec.CommandContext(ctx, "git", args...)
@@ -137,7 +137,7 @@ func runGitPull(ctx context.Context, dirPath, strategy, remote, branch string, l
 }
 
 // gitHeadRef returns the current HEAD commit SHA in dirPath.
-func gitHeadRef(ctx context.Context, dirPath string) (string, error) {
+var gitHeadRef = func(ctx context.Context, dirPath string) (string, error) {
 	c := exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
 	c.Dir = dirPath
 	out, err := c.Output()
@@ -177,12 +177,22 @@ func rebuildViews(ctx context.Context, dirPath string, def *ingitdb.Definition, 
 // files were added, updated, and deleted by the pull. Counting is at
 // record-file granularity (within-file row changes for map/list layouts are
 // reported as a single updated file).
+var (
+	diffFilesFn = func(ctx context.Context, dirPath, from, to string) ([]ingitdb.ChangedFile, error) {
+		return gitdiff.NewGitDiffer().DiffFiles(ctx, dirPath, from, to)
+	}
+	changeSetResolverResolveFn = func(dirPath string, def *ingitdb.Definition, changed []ingitdb.ChangedFile) ([]datavalidator.AffectedRecord, error) {
+		return datavalidator.NewChangeSetResolver().Resolve(dirPath, def, changed)
+	}
+	resolveWorkingTreeConflictsFn = resolveWorkingTreeConflicts
+)
+
 func summarizeRecordChanges(ctx context.Context, dirPath string, def *ingitdb.Definition, beforeRef string) (string, error) {
-	changed, err := gitdiff.NewGitDiffer().DiffFiles(ctx, dirPath, beforeRef, "HEAD")
+	changed, err := diffFilesFn(ctx, dirPath, beforeRef, "HEAD")
 	if err != nil {
 		return "", err
 	}
-	affected, err := datavalidator.NewChangeSetResolver().Resolve(dirPath, def, changed)
+	affected, err := changeSetResolverResolveFn(dirPath, def, changed)
 	if err != nil {
 		return "", err
 	}

@@ -264,19 +264,9 @@ func renderDiff(w io.Writer, report *diffReport, depth, format string) error {
 	case "json":
 		return json.NewEncoder(w).Encode(diffView(report, depth))
 	case "yaml", "yml":
-		out, err := yaml.Marshal(diffView(report, depth))
-		if err != nil {
-			return err
-		}
-		_, err = w.Write(out)
-		return err
+		return yaml.NewEncoder(w).Encode(diffView(report, depth))
 	case "toml":
-		out, err := toml.Marshal(diffView(report, depth))
-		if err != nil {
-			return err
-		}
-		_, err = w.Write(out)
-		return err
+		return toml.NewEncoder(w).Encode(diffView(report, depth))
 	default: // text
 		return renderDiffText(w, report, depth)
 	}
@@ -374,11 +364,11 @@ func Diff(
 			}
 			collFilter, _ := cmd.Flags().GetString("collection")
 			viewFilter, _ := cmd.Flags().GetString("view")
-			if viewFilter != "" {
-				return fmt.Errorf("--view diffing is not yet implemented")
-			}
 			if collFilter != "" && viewFilter != "" {
 				return fmt.Errorf("--collection and --view are mutually exclusive")
+			}
+			if viewFilter != "" {
+				return fmt.Errorf("--view diffing is not yet implemented")
 			}
 			pathFilter, _ := cmd.Flags().GetString("path-filter")
 

@@ -133,7 +133,7 @@ func gitCommitNoVerify(ctx context.Context, wd, message string) error {
 
 // gitRebaseAbort runs git rebase --abort to return the working tree to its
 // pre-rebase state when conflicts fall outside the --resolve scope.
-func gitRebaseAbort(ctx context.Context, wd string) error {
+var gitRebaseAbort = func(ctx context.Context, wd string) error {
 	abortCmd := exec.CommandContext(ctx, "git", "rebase", "--abort")
 	abortCmd.Dir = wd
 	out, err := abortCmd.CombinedOutput()
