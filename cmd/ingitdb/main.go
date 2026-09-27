@@ -139,6 +139,8 @@ func run(
 		commands.SelfUpdate(info.Version),
 		commands.Install(),
 		commands.Upgrade(info.Version),
+		commands.Uninstall(),
+		commands.Skills(info.Version),
 		commands.Validate(homeDir, getWd, readDefinition, datavalidator.NewValidator(),
 			datavalidator.NewIncrementalValidator(gitdiff.NewGitDiffer(), datavalidator.NewChangeSetResolver(), datavalidator.NewValidator()), logf),
 		commands.Materialize(homeDir, getWd, readDefinition, vb, logf),

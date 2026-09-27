@@ -820,3 +820,38 @@ func TestMakeViewBuilderLogf(t *testing.T) {
 		t.Fatalf("expected 'hello world', got %v", got[0])
 	}
 }
+
+func TestRun_SkillsHelp(t *testing.T) {
+	t.Parallel()
+
+	args := []string{"ingitdb", "skills", "--help"}
+	fatalCalled := false
+	readDefinition := func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error) { return nil, nil }
+	fatal := func(error) { fatalCalled = true }
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return "/tmp/wd", nil }
+	logf := func(...any) {}
+
+	run(args, homeDir, getWd, readDefinition, fatal, logf)
+	if fatalCalled {
+		t.Fatal("fatal should not be called for skills --help")
+	}
+}
+
+func TestRun_UninstallHelp(t *testing.T) {
+	t.Parallel()
+
+	args := []string{"ingitdb", "uninstall", "--help"}
+	fatalCalled := false
+	readDefinition := func(string, ...ingitdb.ReadOption) (*ingitdb.Definition, error) { return nil, nil }
+	fatal := func(error) { fatalCalled = true }
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return "/tmp/wd", nil }
+	logf := func(...any) {}
+
+	run(args, homeDir, getWd, readDefinition, fatal, logf)
+	if fatalCalled {
+		t.Fatal("fatal should not be called for uninstall --help")
+	}
+}
+

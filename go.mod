@@ -19,7 +19,7 @@ require (
 	github.com/rivo/uniseg v0.4.7
 	github.com/spf13/cobra v1.10.2
 	github.com/strongo/buildinfo v0.3.0
-	github.com/strongo/cli-helpers v0.22.0
+	github.com/strongo/cli-helpers v0.24.0
 	go.uber.org/mock v0.6.0
 	golang.org/x/sys v0.48.0
 	gopkg.in/yaml.v3 v3.0.1
