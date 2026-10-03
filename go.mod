@@ -3,30 +3,30 @@ module github.com/ingitdb/ingitdb-cli
 go 1.27.0
 
 require (
-	charm.land/bubbletea/v2 v2.0.9
+	charm.land/bubbletea/v2 v2.0.10
 	charm.land/fang/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.6
 	github.com/charmbracelet/x/term v0.2.2
-	github.com/dal-go/dalgo v0.86.0
-	github.com/dal-go/record v0.1.3
-	github.com/datatug/cliformat v0.0.3
-	github.com/ingitdb/dalgo2ingitdb v0.6.1
+	github.com/dal-go/dalgo v0.89.1
+	github.com/dal-go/record v0.1.4
+	github.com/datatug/cliformat v0.0.5
+	github.com/ingitdb/dalgo2ingitdb v0.6.2
 	github.com/ingitdb/dalgo2ingitdb4github v0.2.8
 	github.com/ingitdb/dalgo2ingitdb4local v0.0.6
-	github.com/ingitdb/ingitdb-go/ingitdb v0.7.4
+	github.com/ingitdb/ingitdb-go/ingitdb v0.7.7
 	github.com/ingr-io/ingr-go v0.0.2
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/rivo/uniseg v0.4.7
 	github.com/spf13/cobra v1.10.2
-	github.com/strongo/buildinfo v0.3.0
-	github.com/strongo/cli-helpers v0.25.0
+	github.com/strongo/buildinfo v0.3.2
+	github.com/strongo/cli-helpers v0.26.0
 	go.uber.org/mock v0.6.0
 	golang.org/x/sys v0.48.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	github.com/RoaringBitmap/roaring/v2 v2.28.0 // indirect
+	github.com/RoaringBitmap/roaring/v2 v2.29.0 // indirect
 	github.com/bits-and-blooms/bitset v1.24.6 // indirect
 	github.com/charmbracelet/colorprofile v0.4.3 // indirect
 	github.com/charmbracelet/ultraviolet v0.0.0-20260811164956-006e29f97886 // indirect
@@ -49,7 +49,7 @@ require (
 	github.com/muesli/mango-pflag v0.2.0 // indirect
 	github.com/muesli/roff v0.1.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
-	github.com/strongo/random v0.0.2 // indirect
+	github.com/strongo/random v0.0.3 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	go.starlark.net v0.0.0-20260708150628-5395d018f003 // indirect
 	golang.org/x/sync v0.22.0 // indirect
