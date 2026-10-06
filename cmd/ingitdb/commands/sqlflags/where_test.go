@@ -38,7 +38,10 @@ func TestParseWhere_AllOperators(t *testing.T) {
 		{name: "adjacent wide integer", input: "id==9007199254740993", wantOp: OpLooseEq, wantFld: "id", wantVal: int64(9007199254740993)},
 		{name: "beyond int64", input: "amount==9223372036854775809", wantOp: OpLooseEq, wantFld: "amount", wantVal: json.Number("9223372036854775809")},
 		{name: "high precision fraction", input: "amount==0.1234567890123456", wantOp: OpLooseEq, wantFld: "amount", wantVal: json.Number("0.1234567890123456")},
+		{name: "scientific literal", input: "amount==9.007199254740993e15", wantOp: OpLooseEq, wantFld: "amount", wantVal: json.Number("9.007199254740993e15")},
 		{name: "decimal remains float", input: "amount==1.25", wantOp: OpLooseEq, wantFld: "amount", wantVal: float64(1.25)},
+		{name: "fraction remains text", input: "amount==1/2", wantOp: OpLooseEq, wantFld: "amount", wantVal: "1/2"},
+		{name: "hex remains text", input: "amount==0x10", wantOp: OpLooseEq, wantFld: "amount", wantVal: "0x10"},
 
 		// Malformed inputs
 		{name: "missing field", input: "==Alice", wantErr: true},

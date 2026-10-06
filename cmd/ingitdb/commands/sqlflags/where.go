@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -54,6 +55,8 @@ var operatorTable = []struct {
 	{"<", OpLt},
 }
 
+var decimalNumberPattern = regexp.MustCompile(`^[+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)([eE][+-]?[0-9]+)?$`)
+
 // ParseWhere parses one --where expression.
 // The bare `=` operator is rejected (spec: req:comparison-operators).
 func ParseWhere(s string) (Condition, error) {
@@ -100,8 +103,10 @@ func parseWhereValue(raw string) any {
 	if n, err := strconv.ParseInt(stripped, 10, 64); err == nil {
 		return n
 	}
-	if _, ok := new(big.Rat).SetString(stripped); ok && needsExactNumber(stripped) {
-		return json.Number(stripped)
+	if decimalNumberPattern.MatchString(stripped) {
+		if _, ok := new(big.Rat).SetString(stripped); ok && needsExactNumber(stripped) {
+			return json.Number(stripped)
+		}
 	}
 	if f, err := strconv.ParseFloat(stripped, 64); err == nil {
 		return f
