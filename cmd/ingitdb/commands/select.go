@@ -5,6 +5,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"sort"
@@ -230,8 +231,11 @@ func runSelectFromSetWithDB(
 		var names []string
 		for {
 			row, rs, nextErr := reader.Next()
-			if nextErr != nil {
+			if errors.Is(nextErr, dal.ErrNoMoreRecords) || errors.Is(nextErr, io.EOF) {
 				break
+			}
+			if nextErr != nil {
+				return fmt.Errorf("read query row: %w", nextErr)
 			}
 			if names == nil {
 				names = selectColumnsToRead(rs, fields, conds)
@@ -241,7 +245,11 @@ func runSelectFromSetWithDB(
 			if derr != nil {
 				return derr
 			}
-			if match, _ := evalAllWhere(data, recKey, conds); !match {
+			match, matchErr := evalAllWhere(data, recKey, conds)
+			if matchErr != nil {
+				return fmt.Errorf("evaluate --where for record %q: %w", recKey, matchErr)
+			}
+			if !match {
 				continue
 			}
 			rows = append(rows, projectRecord(data, recKey, fields))
