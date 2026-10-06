@@ -101,11 +101,6 @@ func looseEqual(a, b any) bool {
 	if cmp, ok := compareExactNumeric(a, b); ok {
 		return cmp == 0
 	}
-	if ai, aok := asExactInt64(a); aok {
-		if bi, bok := asExactInt64(b); bok {
-			return ai == bi
-		}
-	}
 	af, aok := asFloat(a)
 	bf, bok := asFloat(b)
 	if aok && bok {
@@ -155,7 +150,7 @@ func compareExactNumeric(a, b any) (int, bool) {
 	_, exactB := b.(json.Number)
 	_, aString := a.(string)
 	_, bString := b.(string)
-	exact := largeA || largeB || exactA || exactB || aString && bString
+	exact := aInt && bInt || largeA || largeB || exactA || exactB || aString && bString
 	if !exact {
 		return 0, false
 	}
@@ -215,18 +210,6 @@ func compareValues(a, b any) int {
 	if cmp, ok := compareExactNumeric(a, b); ok {
 		return cmp
 	}
-	if ai, aok := asExactInt64(a); aok {
-		if bi, bok := asExactInt64(b); bok {
-			switch {
-			case ai < bi:
-				return -1
-			case ai > bi:
-				return 1
-			default:
-				return 0
-			}
-		}
-	}
 	af, aok := asFloat(a)
 	bf, bok := asFloat(b)
 	if aok && bok {
@@ -270,20 +253,6 @@ func compareOrdered(lhs, rhs any, op sqlflags.Operator) (bool, error) {
 			return cmp >= 0, nil
 		case sqlflags.OpLte:
 			return cmp <= 0, nil
-		}
-	}
-	if li, lok := asExactInt64(lhs); lok {
-		if ri, rok := asExactInt64(rhs); rok {
-			switch op {
-			case sqlflags.OpGt:
-				return li > ri, nil
-			case sqlflags.OpLt:
-				return li < ri, nil
-			case sqlflags.OpGte:
-				return li >= ri, nil
-			case sqlflags.OpLte:
-				return li <= ri, nil
-			}
 		}
 	}
 	lf, lok := asFloat(lhs)
