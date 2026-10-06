@@ -3,7 +3,9 @@ package sqlflags
 // specscore: feature/shared-cli-flags
 
 import (
+	"encoding/json"
 	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
 )
@@ -82,7 +84,9 @@ func ParseWhere(s string) (Condition, error) {
 
 // parseWhereValue converts the right-hand side into a typed Go value:
 //   - quoted strings stay strings (quotes stripped)
-//   - numeric-looking strings (with ASCII commas removed) become float64
+//   - integral numbers (with ASCII commas removed) become int64 when in range
+//   - high-precision numeric text becomes json.Number
+//   - other numeric-looking strings become float64
 //   - everything else stays a plain string
 func parseWhereValue(raw string) any {
 	if len(raw) >= 2 {
@@ -92,8 +96,37 @@ func parseWhereValue(raw string) any {
 		}
 	}
 	stripped := strings.ReplaceAll(raw, ",", "")
+	// Parse integers before floats so no valid int64 literal loses low bits.
+	if n, err := strconv.ParseInt(stripped, 10, 64); err == nil {
+		return n
+	}
+	if _, ok := new(big.Rat).SetString(stripped); ok && needsExactNumber(stripped) {
+		return json.Number(stripped)
+	}
 	if f, err := strconv.ParseFloat(stripped, 64); err == nil {
 		return f
 	}
 	return raw
+}
+
+// needsExactNumber identifies numeric text whose integer magnitude or decimal
+// precision cannot safely be represented by the historical float64 parser.
+func needsExactNumber(s string) bool {
+	if strings.ContainsAny(s, "eE") {
+		return true
+	}
+	dot := strings.IndexByte(s, '.')
+	if dot < 0 {
+		return true // ParseInt failed, but big.Rat accepted an integer.
+	}
+	if len(s)-dot-1 > 15 {
+		return true
+	}
+	digits := 0
+	for _, ch := range s {
+		if ch >= '0' && ch <= '9' {
+			digits++
+		}
+	}
+	return digits > 15
 }

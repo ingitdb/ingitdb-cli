@@ -1,6 +1,7 @@
 package sqlflags
 
 import (
+	"encoding/json"
 	"testing"
 )
 
@@ -16,13 +17,13 @@ func TestParseWhere_AllOperators(t *testing.T) {
 		wantErr bool
 	}{
 		{name: "loose equal", input: "name==Alice", wantOp: OpLooseEq, wantFld: "name", wantVal: "Alice"},
-		{name: "strict equal", input: "count===42", wantOp: OpStrictEq, wantFld: "count", wantVal: float64(42)},
+		{name: "strict equal", input: "count===42", wantOp: OpStrictEq, wantFld: "count", wantVal: int64(42)},
 		{name: "loose not equal", input: "name!=Alice", wantOp: OpLooseNeq, wantFld: "name", wantVal: "Alice"},
-		{name: "strict not equal", input: "count!==42", wantOp: OpStrictNeq, wantFld: "count", wantVal: float64(42)},
-		{name: "greater than", input: "pop>100", wantOp: OpGt, wantFld: "pop", wantVal: float64(100)},
-		{name: "less than", input: "pop<100", wantOp: OpLt, wantFld: "pop", wantVal: float64(100)},
-		{name: "greater or equal", input: "pop>=100", wantOp: OpGte, wantFld: "pop", wantVal: float64(100)},
-		{name: "less or equal", input: "pop<=100", wantOp: OpLte, wantFld: "pop", wantVal: float64(100)},
+		{name: "strict not equal", input: "count!==42", wantOp: OpStrictNeq, wantFld: "count", wantVal: int64(42)},
+		{name: "greater than", input: "pop>100", wantOp: OpGt, wantFld: "pop", wantVal: int64(100)},
+		{name: "less than", input: "pop<100", wantOp: OpLt, wantFld: "pop", wantVal: int64(100)},
+		{name: "greater or equal", input: "pop>=100", wantOp: OpGte, wantFld: "pop", wantVal: int64(100)},
+		{name: "less or equal", input: "pop<=100", wantOp: OpLte, wantFld: "pop", wantVal: int64(100)},
 
 		// Bare = rejected (spec: req:comparison-operators)
 		{name: "bare = rejected", input: "name=Alice", wantErr: true},
@@ -32,7 +33,12 @@ func TestParseWhere_AllOperators(t *testing.T) {
 		{name: "pseudo id loose", input: "$id==ie", wantOp: OpLooseEq, wantFld: "$id", wantVal: "ie"},
 
 		// Comma-stripping for numerics
-		{name: "comma in number", input: "pop>1,000,000", wantOp: OpGt, wantFld: "pop", wantVal: float64(1000000)},
+		{name: "comma in number", input: "pop>1,000,000", wantOp: OpGt, wantFld: "pop", wantVal: int64(1000000)},
+		{name: "max signed integer", input: "id==9223372036854775807", wantOp: OpLooseEq, wantFld: "id", wantVal: int64(9223372036854775807)},
+		{name: "adjacent wide integer", input: "id==9007199254740993", wantOp: OpLooseEq, wantFld: "id", wantVal: int64(9007199254740993)},
+		{name: "beyond int64", input: "amount==9223372036854775809", wantOp: OpLooseEq, wantFld: "amount", wantVal: json.Number("9223372036854775809")},
+		{name: "high precision fraction", input: "amount==0.1234567890123456", wantOp: OpLooseEq, wantFld: "amount", wantVal: json.Number("0.1234567890123456")},
+		{name: "decimal remains float", input: "amount==1.25", wantOp: OpLooseEq, wantFld: "amount", wantVal: float64(1.25)},
 
 		// Malformed inputs
 		{name: "missing field", input: "==Alice", wantErr: true},

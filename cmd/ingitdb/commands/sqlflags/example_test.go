@@ -51,7 +51,7 @@ func TestExampleVerbPipeline(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parse where: %v", err)
 	}
-	if cond.Field != "population" || cond.Op != OpGt || cond.Value != float64(1000000) {
+	if cond.Field != "population" || cond.Op != OpGt || cond.Value != int64(1000000) {
 		t.Errorf("unexpected condition: %+v", cond)
 	}
 

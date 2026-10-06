@@ -3,7 +3,10 @@ package commands
 // specscore: feature/cli/select
 
 import (
+	"encoding/json"
 	"fmt"
+	"math/big"
+	"reflect"
 	"strconv"
 
 	"github.com/ingitdb/ingitdb-cli/cmd/ingitdb/commands/sqlflags"
@@ -78,14 +81,30 @@ func strictEqual(a, b any) bool {
 	if fmt.Sprintf("%T", a) != fmt.Sprintf("%T", b) {
 		return false
 	}
-	return a == b
+	return directEqual(a, b)
 }
 
 // looseEqual returns true when the operands compare equal under
 // type coercion: numeric vs numeric-parsable-string, etc.
 func looseEqual(a, b any) bool {
-	if a == b {
+	if directEqual(a, b) {
 		return true
+	}
+	// A binary value is comparable only to another binary value. Formatting it
+	// as text would make a string containing its Go slice representation match.
+	if _, ok := a.([]byte); ok {
+		return false
+	}
+	if _, ok := b.([]byte); ok {
+		return false
+	}
+	if cmp, ok := compareExactNumeric(a, b); ok {
+		return cmp == 0
+	}
+	if ai, aok := asExactInt64(a); aok {
+		if bi, bok := asExactInt64(b); bok {
+			return ai == bi
+		}
 	}
 	af, aok := asFloat(a)
 	bf, bok := asFloat(b)
@@ -93,6 +112,80 @@ func looseEqual(a, b any) bool {
 		return af == bf
 	}
 	return fmt.Sprintf("%v", a) == fmt.Sprintf("%v", b)
+}
+
+// directEqual preserves Go's direct equality for comparable values while
+// avoiding a panic for imported binary values (which are []byte).
+func directEqual(a, b any) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
+	if reflect.TypeOf(a).Comparable() && reflect.TypeOf(b).Comparable() {
+		return a == b
+	}
+	return reflect.DeepEqual(a, b)
+}
+
+// asExactInt64 retains integer identity before any float coercion. Numeric
+// strings are included for text-encoded provider values such as DECIMAL.
+func asExactInt64(v any) (int64, bool) {
+	switch x := v.(type) {
+	case int:
+		return int64(x), true
+	case int64:
+		return x, true
+	case string:
+		n, err := strconv.ParseInt(x, 10, 64)
+		return n, err == nil
+	default:
+		return 0, false
+	}
+}
+
+// compareExactNumeric avoids float64 rounding when either operand is an
+// integer outside its exact range or a high-precision numeric literal.
+// Ordinary loose decimal comparisons retain their existing coercion behavior.
+func compareExactNumeric(a, b any) (int, bool) {
+	ai, aInt := asExactInt64(a)
+	bi, bInt := asExactInt64(b)
+	const maxSafeInteger = int64(1<<53 - 1)
+	largeA := aInt && (ai > maxSafeInteger || ai < -maxSafeInteger)
+	largeB := bInt && (bi > maxSafeInteger || bi < -maxSafeInteger)
+	_, exactA := a.(json.Number)
+	_, exactB := b.(json.Number)
+	_, aString := a.(string)
+	_, bString := b.(string)
+	exact := largeA || largeB || exactA || exactB || aString && bString
+	if !exact {
+		return 0, false
+	}
+	ar, aOK := asExactNumericRat(a)
+	br, bOK := asExactNumericRat(b)
+	if !aOK || !bOK {
+		return 0, false
+	}
+	return ar.Cmp(br), true
+}
+
+func asExactNumericRat(v any) (*big.Rat, bool) {
+	switch x := v.(type) {
+	case int:
+		return new(big.Rat).SetInt64(int64(x)), true
+	case int64:
+		return new(big.Rat).SetInt64(x), true
+	case float32:
+		r := new(big.Rat).SetFloat64(float64(x))
+		return r, r != nil
+	case float64:
+		r := new(big.Rat).SetFloat64(x)
+		return r, r != nil
+	case string:
+		return new(big.Rat).SetString(x)
+	case json.Number:
+		return new(big.Rat).SetString(string(x))
+	default:
+		return nil, false
+	}
 }
 
 // asFloat tries to coerce v to a float64. Returns the value and a
@@ -119,6 +212,21 @@ func asFloat(v any) (float64, bool) {
 // is preferred when both can coerce; otherwise lexicographic on the
 // fmt-formatted strings.
 func compareValues(a, b any) int {
+	if cmp, ok := compareExactNumeric(a, b); ok {
+		return cmp
+	}
+	if ai, aok := asExactInt64(a); aok {
+		if bi, bok := asExactInt64(b); bok {
+			switch {
+			case ai < bi:
+				return -1
+			case ai > bi:
+				return 1
+			default:
+				return 0
+			}
+		}
+	}
 	af, aok := asFloat(a)
 	bf, bok := asFloat(b)
 	if aok && bok {
@@ -146,6 +254,38 @@ func compareValues(a, b any) int {
 // compareOrdered evaluates >, <, >=, <= using numeric coercion when
 // possible, falling back to lexicographic string comparison.
 func compareOrdered(lhs, rhs any, op sqlflags.Operator) (bool, error) {
+	if _, ok := lhs.([]byte); ok {
+		return false, fmt.Errorf("ordered comparison of binary values is unsupported")
+	}
+	if _, ok := rhs.([]byte); ok {
+		return false, fmt.Errorf("ordered comparison of binary values is unsupported")
+	}
+	if cmp, ok := compareExactNumeric(lhs, rhs); ok {
+		switch op {
+		case sqlflags.OpGt:
+			return cmp > 0, nil
+		case sqlflags.OpLt:
+			return cmp < 0, nil
+		case sqlflags.OpGte:
+			return cmp >= 0, nil
+		case sqlflags.OpLte:
+			return cmp <= 0, nil
+		}
+	}
+	if li, lok := asExactInt64(lhs); lok {
+		if ri, rok := asExactInt64(rhs); rok {
+			switch op {
+			case sqlflags.OpGt:
+				return li > ri, nil
+			case sqlflags.OpLt:
+				return li < ri, nil
+			case sqlflags.OpGte:
+				return li >= ri, nil
+			case sqlflags.OpLte:
+				return li <= ri, nil
+			}
+		}
+	}
 	lf, lok := asFloat(lhs)
 	rf, rok := asFloat(rhs)
 	if lok && rok {
