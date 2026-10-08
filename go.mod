@@ -3,13 +3,13 @@ module github.com/ingitdb/ingitdb-cli
 go 1.27.0
 
 require (
-	charm.land/bubbletea/v2 v2.0.9
+	charm.land/bubbletea/v2 v2.0.10
 	charm.land/fang/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.6
 	github.com/charmbracelet/x/term v0.2.2
 	github.com/dal-go/dalgo v0.93.0
 	github.com/dal-go/record v0.1.4
-	github.com/datatug/cliformat v0.0.3
+	github.com/datatug/cliformat v0.0.5
 	github.com/ingitdb/dalgo2ingitdb v0.7.1
 	github.com/ingitdb/dalgo2ingitdb4github v0.2.8
 	github.com/ingitdb/dalgo2ingitdb4local v0.1.0
@@ -18,8 +18,8 @@ require (
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/rivo/uniseg v0.4.7
 	github.com/spf13/cobra v1.10.2
-	github.com/strongo/buildinfo v0.3.0
-	github.com/strongo/cli-helpers v0.25.0
+	github.com/strongo/buildinfo v0.3.2
+	github.com/strongo/cli-helpers v0.27.0
 	go.uber.org/mock v0.6.0
 	golang.org/x/sys v0.48.0
 	gopkg.in/yaml.v3 v3.0.1
