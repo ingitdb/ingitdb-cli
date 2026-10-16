@@ -16,6 +16,10 @@ workflow — branching, code review, pull requests — extends naturally to data
 simultaneously a database, a version-control system, an event bus, and a data layer for AI agents,
 all with zero server infrastructure for reads.
 
+## DataTug project-content integration
+
+[DataTug](https://datatug.app) is exploring inGitDB for project definitions and version-controlled content; integration work is ongoing. This repository provides the Go CLI. Read [how DataTug’s development tools were built](https://datatug.app/en/under-the-hood/tools-we-built/).
+
 ## 🚀 Try it in one minute
 
 With `ingitdb` installed (see Installation below):
