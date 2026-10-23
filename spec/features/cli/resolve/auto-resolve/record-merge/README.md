@@ -242,13 +242,13 @@ fails schema validation
 
 Source files (annotated with `// specscore: feature/cli/resolve/auto-resolve/record-merge`):
 
-- [`pkg/ingitdb/recordmerge/merge.go`](../../../../../../pkg/ingitdb/recordmerge/merge.go) —
+- [`ingitdb-go/ingitdb/recordmerge/merge.go`](https://github.com/ingitdb/ingitdb-go/blob/main/ingitdb/recordmerge/merge.go) —
   pure three-way merge engine (strict typed equality, record-set diff,
   field-level merge).
-- [`pkg/ingitdb/recordmerge/bridge.go`](../../../../../../pkg/ingitdb/recordmerge/bridge.go) —
+- [`ingitdb-go/ingitdb/recordmerge/bridge.go`](https://github.com/ingitdb/ingitdb-go/blob/main/ingitdb/recordmerge/bridge.go) —
   layout-aware parsing of conflict stages into records (`MapOfRecords`,
   `SingleRecord`).
-- [`pkg/ingitdb/conflict_resolution.go`](../../../../../../pkg/ingitdb/conflict_resolution.go) —
+- [`ingitdb-go/ingitdb/conflict_resolution.go`](https://github.com/ingitdb/ingitdb-go/blob/main/ingitdb/conflict_resolution.go) —
   `conflict_resolution.record_merge` config and the per-collection override
   cascade (`ResolveRecordMerge`).
 - [`cmd/ingitdb/commands/record_merge_resolver.go`](../../../../../../cmd/ingitdb/commands/record_merge_resolver.go) —
