@@ -52,7 +52,8 @@ and `git cherry-pick`, whatever tool started it.
 ### Delivery phases
 
 - **Phase 1:** record files (REQ:never-worse-than-text, REQ:record-field-merge, REQ:conflict-markers),
-  the edge cases, installation, the self-proving wrapper and the fallback. Phase 1 needs no hooks.
+  the edge cases, installation of the attributes and the driver configuration, the self-proving wrapper
+  and the fallback. Phase 1 needs no hooks, and its installer writes none.
 - **Phase 2:** generated files and regeneration before commit (REQ:generated-files,
   REQ:regenerate-before-commit, REQ:check-and-regenerate-modes).
 
@@ -77,13 +78,19 @@ error MUST NOT crash the merge. The driver falls back to the text result (REQ:sa
 
 #### REQ: never-worse-than-text
 
-The driver MUST first run Git's three-way text merge in memory (`git merge-file -p` with the same
-marker size, labels and conflict style). If that merge is clean, the driver writes it byte for byte
-and exits 0, provided the result:
+The driver MUST first run Git's three-way text merge in memory. It uses `git merge-file -p` with the
+same marker size, labels and conflict style, and with `--diff-algorithm=histogram` (Git 2.44 and later).
+merge-ort uses histogram, and `git merge-file` defaults to Myers, so without the option the results can
+differ. If that merge is clean, the driver writes it byte for byte and exits 0, provided the result:
 
-- parses in the file's format;
-- for a record file, validates against ours' collection schema;
-- for a generated file, is a valid file of its kind (REQ:generated-files).
+- parses in the file's format, with no duplicate object key and no duplicate record ID. Go's
+  `encoding/json` silently keeps the last of duplicate keys, so a clean text merge that adds `"x"` in
+  two places would otherwise drop a value without notice.
+- for a record file, validates against ours' collection schema.
+
+For a generated file, the text result supplies only the content. Queuing and the exit rule of
+REQ:generated-files apply whether the text merge was clean or not, because a text-clean generated file
+can still be stale.
 
 Comments, hand formatting and anything Git merges cleanly today therefore stay exactly as Git would
 leave them. The storage-format no-reformatting rule (`storage-format#req:no-rewrite-without-change`)
@@ -145,7 +152,13 @@ and exits 1. It uses `%L` for the marker size, and adds a base section when `mer
 
 Each side's block holds complete lines, as the serialiser would write them if that side won. In JSON
 that includes the comma the position needs. Deleting the markers and one side therefore leaves a valid
-file. In this mode only, the rest of the file is written in the collection's canonical form.
+file.
+
+Whenever the driver merges by meaning, after a text conflict, it writes the whole file in the
+collection's canonical form, whether or not markers remain. Comments and hand formatting in that file
+are then lost. That is the trade-off for resolving a conflict that Git's text merge could not. It
+applies only to files whose text merge conflicted, or that failed the checks of
+REQ:never-worse-than-text.
 
 In the example below every line is indented by two spaces, so that this spec does not trip
 conflict-marker checks. Real output is not indented.
@@ -193,23 +206,31 @@ Each generated kind declares whether a set merge of its entries is exact:
 
 Every generated file the driver writes, exact or derived, is queued for regeneration
 (REQ:regenerate-before-commit). The exit status depends on whether Git will run the pre-merge-commit
-hook:
+hook. The driver trusts one positive signal: `GIT_REFLOG_ACTION` starts with `merge`, or starts with
+`pull` while no rebase is in progress. It looks for `rebase-merge` and `rebase-apply` with
+`git rev-parse --git-path`, so linked worktrees work.
 
-- **In a merge** (no `rebase-merge/`, `rebase-apply/` or `sequencer/` directory in the Git dir), the
-  driver exits 0 and the hook regenerates before the commit.
-- **In a rebase, or in a cherry-pick or revert sequence,** no hook will run. So an exact merge with no
-  contested key exits 0. A derived file exits 1, keeping ours and printing "needs regeneration: run
-  `ingitdb resolve` (or `datatug validate --fix`), then continue".
+- **When the signal holds,** the driver exits 0, and the hook regenerates before the commit.
+- **Otherwise:** a rebase, a single or ranged cherry-pick, a revert, `stash pop`, `checkout -m`, and
+  every operation Git adds later. No hook will run, so only an exact merge with no contested key exits
+  0. A derived file exits 1, keeping ours and printing "needs regeneration: run `ingitdb resolve` (or
+  `datatug validate --fix`), then continue".
 
 #### REQ: regenerate-before-commit
 
 The driver sees only three versions of one file, not the merged tree. So a generated file is not final
 until it has been regenerated from the merged tree.
 
-The driver adds each generated path to `$(git rev-parse --git-path ingitdb/regenerate)`, a list kept
-per worktree. The list is cleared by a successful regeneration. A list left behind by `git merge --abort`
-or `git rebase --abort` only causes one extra regeneration later, which changes nothing. Virtual-base
-calls (REQ:virtual-base) queue nothing.
+Git calls the driver only for paths that both sides changed. A derived view that changed on one side
+only, and that depends on sources the other side changed, is never routed to the driver. So the hooks
+do not rely on the driver's list. They regenerate every generated file affected by the source paths
+the merge changed, against each parent (`git diff --name-only <parent> --cached`).
+
+The driver still adds each generated path it handles to `$(git rev-parse --git-path ingitdb/regenerate)`,
+a list kept per worktree. The list drives the "needs regeneration" message and the post-rewrite
+warning, and is cleared by a successful regeneration. A list left behind by `git merge --abort` or
+`git rebase --abort` only causes one extra regeneration later, which changes nothing. Virtual-base calls
+(REQ:virtual-base) queue nothing.
 
 How regeneration runs:
 
@@ -239,9 +260,13 @@ This Feature adds two modes, and amends `cli/validate` and `cli/resolve` to matc
 - `ingitdb validate --check-generated` regenerates views and indexes in memory, compares them with the
   files, and writes nothing. It exits non-zero and names every stale file. CI uses this mode. The
   materialized-views rule `rebuild-on-validate` still applies to plain `ingitdb validate`.
-- `ingitdb resolve --regenerate-pending` regenerates the paths on the pending list, plus every
-  generated file that their sources affect. It stages them, validates the touched collections, and
-  clears the list.
+- `ingitdb resolve --regenerate-pending` regenerates every generated file affected by the source
+  paths changed against each parent of the merge in progress (or against `HEAD` outside a merge), plus
+  the paths on the pending list. It stages them, validates the touched collections, and clears the
+  list.
+
+A one-line pointer to each mode is added to the `cli/validate` and `cli/resolve` specs in this pull
+request. Their full amendment lands with phase 2.
 
 Here, "indexes" are the foreign-key index files under `$ingitdb/**/$fk/`
 (materialized-views#req:output-under-$ingitdb).
@@ -272,13 +297,20 @@ file itself is a text conflict for a person to resolve.
 
 In a criss-cross merge, Git calls the driver for each internal merge between common ancestors, and the
 result becomes `%O` of the final merge. `merge.ingitdb.recursive` MUST name a second driver entry,
-`ingitdb-base`, which runs `ingitdb merge-driver --virtual-base`. That mode:
+`ingitdb-base`, which runs `ingitdb merge-driver --virtual-base` through the same wrapper as
+REQ:safe-fallback. That mode:
 
+- skips the text-first step and merges by meaning;
 - writes a base that parses: a contested field takes the older base value, and an add contested by
   both sides is omitted;
+- honours `%L`, which Git raises for internal merges;
 - prints nothing and appends nothing to `conflicts.jsonl`;
 - queues nothing;
 - always exits 0.
+
+When the binary is missing, the wrapper's text fallback produces the base. Git then keeps the
+ancestor-side content as the base, and the final merge text-merges with both sides kept. That was
+checked with Git 2.54, and it is safe.
 
 #### REQ: binary-large-and-line-endings
 
@@ -309,11 +341,13 @@ Git does not carry `merge.<name>.driver` configuration in the repository. So eve
 
   `--global` writes the driver configuration to the user's global Git configuration instead, so every
   clone on the machine is covered.
-- **`datatug init`** does the same with the driver name `datatug` and the pattern
+- **`datatug init`** does the same with the driver names `datatug` and `datatug-base`, and the pattern
   `**/.datatug/manifest/*.json text eol=lf merge=datatug`. The `**/` is needed because a pattern that
-  contains a slash is anchored to the `.gitattributes` directory.
-- **Hook blocks** skip with a one-line warning when the binary is not on `PATH` or the pending list is
-  empty. Teammates without the CLI can therefore still commit. `--no-verify` skips them too, and CI
+  contains a slash is anchored to the `.gitattributes` directory. It differs in one way, which
+  project-manifest `REQ:hooks` specifies: its pre-commit block regenerates the manifest on every
+  commit, not only when the pending list is non-empty.
+- **Hook blocks** (phase 2) skip with a one-line warning when the binary is not on `PATH`, and the
+  ingitdb blocks also skip when the merge changed no source of a generated file. Teammates without the CLI can therefore still commit. `--no-verify` skips them too, and CI
   catches anything left stale.
 - **`ingitdb validate`** warns when the `.gitattributes` block no longer matches the collections. It
   also warns when the driver is configured in neither the local nor the global Git configuration, but
@@ -520,6 +554,54 @@ The datatug-cli registers its kinds (the manifest index as derived, and the sect
 **Given** datatug-cli built against `ingitdb-go`'s `mergedriver` package
 **When** its tests run the manifest scenarios above through `datatug merge-driver`
 **Then** they pass, with no merge logic of its own beyond registering kinds and the regeneration command.
+
+### AC: duplicate-key-not-kept (verifies REQ:never-worse-than-text)
+
+**Given** a JSON record where A adds `"x": 1` near the top and B adds `"x": 2` further down, so the text merge is clean; and a YAML list file where both sides add a record with ID `k` at non-adjacent positions
+**When** each merge runs
+**Then** neither clean text result is kept; the first becomes a field conflict on `x`; the second places each side's whole record between markers (DM-12); and the driver exits 1 for both.
+
+### AC: single-cherry-pick-stops-on-derived (verifies REQ:generated-files)
+
+**Given** a commit that changes a DataTug section, and a target whose `index.json` changed too
+**When** `git cherry-pick` of that one commit runs, and separately `git stash pop` with the same shape
+**Then** both stop with the "needs regeneration" message and the driver exits 1 for `index.json`, because `GIT_REFLOG_ACTION` does not start with `merge` or `pull`.
+
+### AC: one-sided-derived-view-regenerated (verifies REQ:regenerate-before-commit)
+
+**Given** a joined root-level view V that branch A's source change updates, while branch B changes another source of V, so Git takes A's V without calling the driver
+**When** `git merge B` runs with the hooks installed
+**Then** the pre-merge-commit hook regenerates V from the merged tree and stops for `git commit`, and `ingitdb validate --check-generated` passes on the merge commit.
+
+### AC: post-rewrite-warning (verifies REQ:regenerate-before-commit)
+
+**Given** a pending list left non-empty after a rebase that stopped on a derived file and was continued without regenerating
+**When** the rebase finishes
+**Then** the post-rewrite hook prints one warning naming the list and the regeneration command.
+
+### AC: hook-manager-respected (verifies REQ:install)
+
+**Given** a repository whose hooks are managed by lefthook
+**When** `ingitdb merge-driver install` runs
+**Then** no hook file is edited, and the installer prints the lefthook lines to add.
+
+### AC: old-git-label-placeholders (verifies REQ:git-driver-contract)
+
+**Given** the driver invoked with the literal arguments `%S`, `%X` and `%Y`, as Git older than 2.44 passes them
+**When** a field conflict is written
+**Then** the markers carry the labels `base`, `ours` and `theirs`.
+
+### AC: record-id-mismatch (verifies REQ:record-field-merge)
+
+**Given** two small records that Git's rename detection pairs as one rename, so the merged file stores ID `b` in file `a.yaml`
+**When** the merge runs
+**Then** the driver reports a conflict naming the ID mismatch and exits 1.
+
+### AC: phase-one-installer (verifies REQ:install)
+
+**Given** a phase 1 build
+**When** `ingitdb merge-driver install` runs
+**Then** it writes the `.gitattributes` block and the driver configuration, and no hook file.
 
 ## Open Questions
 

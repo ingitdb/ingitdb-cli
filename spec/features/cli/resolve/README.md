@@ -57,6 +57,12 @@ The `--file=FILE` flag MUST scope the operation to a single conflicted file. Whe
 `resolve` routes each conflicted file to one of two subfeatures by conflict
 class. See each subfeature for its requirements, current state, and roadmap.
 
+### Planned amendment
+
+The [merge driver](../merge-driver/README.md) Feature (Draft) adds `--regenerate-pending`. It
+regenerates the generated files that a merge in progress affects, stages them, and clears the driver's
+pending list. Its requirements land here with that Feature's phase 2.
+
 ## Subfeatures
 
 - **[auto-resolve](auto-resolve/README.md)** — non-interactive regeneration of

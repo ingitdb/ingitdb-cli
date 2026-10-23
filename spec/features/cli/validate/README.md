@@ -69,6 +69,12 @@ paths, and raw definition/parser errors that could contain repository data.
 
 Record validation MUST parse every candidate record file using the collection's declared `record_file.format` and `record_file.type` before counting it as valid. Unparsable files, including malformed Markdown frontmatter and invalid YAML, JSON, TOML, CSV, JSONL, or INGR content, MUST be reported as validation errors with the offending record path and a useful parse error.
 
+### Planned amendment
+
+The [merge driver](../merge-driver/README.md) Feature (Draft) adds `--check-generated`. It compares the
+regenerated views and indexes with the files, writes nothing, and fails naming each stale file. CI
+uses it. Its requirements land here with that Feature's phase 2.
+
 ## Dependencies
 
 - path-targeting
