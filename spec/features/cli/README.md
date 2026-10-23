@@ -48,6 +48,7 @@ CLI surface; keep those skills in sync when a command's flags or behavior change
 | [validate](validate/README.md) | The `validate` verb checks collection definitions and record files against their schema, fully or for a commit range. |
 | [version](version/README.md) | The `version` verb prints build version, commit hash and build date. |
 | [watch](watch/README.md) | Withdrawn (deferred): stream record change events to stdout. |
+| [merge-driver](merge-driver/README.md) | A git merge driver that merges inGitDB and DataTug files by meaning. |
 
 ## Index
 
