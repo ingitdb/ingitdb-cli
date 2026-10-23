@@ -381,6 +381,10 @@ side.
   - The installer probes once whether the local `git merge-file` accepts `--diff-algorithm`, which
     needs Git 2.44 or later. If not, the installed wrapper and the text-first step omit the option and
     use Git's default diff.
+  - If `git merge-file` exits with 128 or more (for example because Git was later downgraded, or a
+    `--global` configuration was synced to an older Git), the wrapper retries once without
+    `--diff-algorithm`. If that also fails, the wrapper exits with a status above 128, so Git reports a
+    merge failure rather than a conflict with plain ours.
   - A missing binary, an older binary without the subcommand, or a broken one must not leave ours
     without markers, which is what a plain failed command does. Checked with Git 2.54: the file was
     plain ours while Git reported a conflict, which invites the user to stage it and silently drop
