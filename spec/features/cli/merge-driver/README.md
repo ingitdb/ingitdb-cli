@@ -208,7 +208,11 @@ Every generated file the driver writes, exact or derived, is queued for regenera
 (REQ:regenerate-before-commit). The exit status depends on whether Git will run the pre-merge-commit
 hook. The driver trusts one positive signal: `GIT_REFLOG_ACTION` starts with `merge`, or starts with
 `pull` while no rebase is in progress. It looks for `rebase-merge` and `rebase-apply` with
-`git rev-parse --git-path`, so linked worktrees work.
+`git rev-parse --git-path`, so linked worktrees work. Git 2.54 sets this variable as follows:
+`merge` and `merge --squash` set `merge …`, and a merging pull sets `pull …`. Rebases, picks, reverts
+and `stash pop` leave it unset or set `rebase (pick)`. The signal has one known limit: a user or tool
+that exports `GIT_REFLOG_ACTION=merge…` around another operation gets a false positive. The CI check
+catches the stale file that results.
 
 - **When the signal holds,** the driver exits 0, and the hook regenerates before the commit.
 - **Otherwise:** a rebase, a single or ranged cherry-pick, a revert, `stash pop`, `checkout -m`, and
@@ -224,7 +228,10 @@ until it has been regenerated from the merged tree.
 Git calls the driver only for paths that both sides changed. A derived view that changed on one side
 only, and that depends on sources the other side changed, is never routed to the driver. So the hooks
 do not rely on the driver's list. They regenerate every generated file affected by the source paths
-the merge changed, against each parent (`git diff --name-only <parent> --cached`).
+the merge changed. They diff the index against `HEAD` (`git diff --cached --name-only HEAD`). When
+the pre-merge-commit hook runs, `MERGE_HEAD` does not exist yet (checked with Git 2.54), so the other
+parent cannot be named. Diffing against `HEAD` is enough when both parents were consistent when
+committed, which CI checks.
 
 The driver still adds each generated path it handles to `$(git rev-parse --git-path ingitdb/regenerate)`,
 a list kept per worktree. The list drives the "needs regeneration" message and the post-rewrite
@@ -261,8 +268,7 @@ This Feature adds two modes, and amends `cli/validate` and `cli/resolve` to matc
   files, and writes nothing. It exits non-zero and names every stale file. CI uses this mode. The
   materialized-views rule `rebuild-on-validate` still applies to plain `ingitdb validate`.
 - `ingitdb resolve --regenerate-pending` regenerates every generated file affected by the source
-  paths changed against each parent of the merge in progress (or against `HEAD` outside a merge), plus
-  the paths on the pending list. It stages them, validates the touched collections, and clears the
+  paths staged against `HEAD`, plus the paths on the pending list. It stages them, validates the touched collections, and clears the
   list.
 
 A one-line pointer to each mode is added to the `cli/validate` and `cli/resolve` specs in this pull
@@ -308,9 +314,10 @@ REQ:safe-fallback. That mode:
 - queues nothing;
 - always exits 0.
 
-When the binary is missing, the wrapper's text fallback produces the base. Git then keeps the
-ancestor-side content as the base, and the final merge text-merges with both sides kept. That was
-checked with Git 2.54, and it is safe.
+"Always exits 0" is a rule for the driver itself. When the binary is missing, the wrapper's
+`git merge-file` fallback writes a base that may contain markers, and exits 1. Git treats that as a
+conflicted internal merge, and the final merge then text-merges with both sides kept. That was checked
+with Git 2.54, and it is safe.
 
 #### REQ: binary-large-and-line-endings
 
@@ -346,8 +353,10 @@ Git does not carry `merge.<name>.driver` configuration in the repository. So eve
   contains a slash is anchored to the `.gitattributes` directory. It differs in one way, which
   project-manifest `REQ:hooks` specifies: its pre-commit block regenerates the manifest on every
   commit, not only when the pending list is non-empty.
-- **Hook blocks** (phase 2) skip with a one-line warning when the binary is not on `PATH`, and the
-  ingitdb blocks also skip when the merge changed no source of a generated file. Teammates without the CLI can therefore still commit. `--no-verify` skips them too, and CI
+- **Hook blocks** (phase 2) skip with a one-line warning when the binary is not on `PATH`. The
+  ingitdb blocks also skip when the staged change touches no source of a generated file. So the
+  ingitdb pre-commit block regenerates views on an ordinary commit exactly when that commit changes
+  their sources. Teammates without the CLI can therefore still commit. `--no-verify` skips them too, and CI
   catches anything left stale.
 - **`ingitdb validate`** warns when the `.gitattributes` block no longer matches the collections. It
   also warns when the driver is configured in neither the local nor the global Git configuration, but
@@ -366,8 +375,12 @@ side.
   It needs no file on disk that could go missing.
   - It first runs `ingitdb merge-driver --protocol`, and it trusts the driver only if that prints
     exactly `ingitdb-merge-driver/1`.
-  - Otherwise it runs `git merge-file -L <ours> -L <base> -L <theirs> --marker-size=%L %A %O %B` and
-    maps any non-zero result to 1. `git merge-file` exits with the number of conflicts.
+  - Otherwise it runs `git merge-file -L <ours> -L <base> -L <theirs> --marker-size=%L
+    --diff-algorithm=histogram %A %O %B`, and maps any non-zero result to 1. `git merge-file` exits
+    with the number of conflicts.
+  - The installer probes once whether the local `git merge-file` accepts `--diff-algorithm`, which
+    needs Git 2.44 or later. If not, the installed wrapper and the text-first step omit the option and
+    use Git's default diff.
   - A missing binary, an older binary without the subcommand, or a broken one must not leave ours
     without markers, which is what a plain failed command does. Checked with Git 2.54: the file was
     plain ours while Git reported a conflict, which invites the user to stage it and silently drop
