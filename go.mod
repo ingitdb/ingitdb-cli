@@ -10,10 +10,10 @@ require (
 	github.com/dal-go/dalgo v0.95.3
 	github.com/dal-go/record v0.1.5
 	github.com/datatug/cliformat v0.0.7
-	github.com/ingitdb/dalgo2ingitdb v0.7.3
-	github.com/ingitdb/dalgo2ingitdb4github v0.2.9
-	github.com/ingitdb/dalgo2ingitdb4local v0.1.1
-	github.com/ingitdb/ingitdb-go/ingitdb v0.10.1
+	github.com/ingitdb/dalgo2ingitdb v0.7.4
+	github.com/ingitdb/dalgo2ingitdb4github v0.2.10
+	github.com/ingitdb/dalgo2ingitdb4local v0.1.2
+	github.com/ingitdb/ingitdb-go/ingitdb v0.10.2
 	github.com/ingr-io/ingr-go v0.0.2
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/rivo/uniseg v0.4.7
