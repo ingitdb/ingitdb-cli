@@ -164,11 +164,11 @@ ingitdb validate
 # List all collections
 ingitdb list collections
 
-# Create a new record
-ingitdb create record --id=geo.nations/ie --data='{title: "Ireland"}'
+# Insert a new record
+ingitdb insert --into=geo.nations --key=ie --data='{title: "Ireland"}'
 
 # Read a record
-ingitdb read record --id=geo.nations/ie</code></pre>
+ingitdb select --id=geo.nations/ie</code></pre>
                 </div>
                 <div class="cta-section">
                     <a href="/en/docs/" class="btn btn-primary">Read Full Documentation</a>

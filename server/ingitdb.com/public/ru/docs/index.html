@@ -132,17 +132,17 @@ ingitdb list collections --filter-name='*city*'</code></pre>
 
                 <div class="code-example">
                     <h4>CRUD операции</h4>
-                    <pre><code># Создайте запись
-ingitdb create record --id=geo/nations/ie --data='{title: "Ireland"}'
+                    <pre><code># Вставьте запись
+ingitdb insert --into=geo.nations --key=ie --data='{title: "Ireland"}'
 
 # Прочитайте запись
-ingitdb read record --id=geo/nations/ie
+ingitdb select --id=geo.nations/ie
 
 # Обновите запись
-ingitdb update record --id=geo/nations/ie --set='{capital: "Dublin"}'
+ingitdb update --id=geo.nations/ie --set=capital=Dublin
 
 # Удалите запись
-ingitdb delete record --id=geo/nations/ie</code></pre>
+ingitdb delete --id=geo.nations/ie</code></pre>
                 </div>
             </section>
 
@@ -225,24 +225,24 @@ go build -o ingitdb ./cmd/ingitdb</code></pre>
                                 <td>Проверьте каждую запись по схеме её коллекции</td>
                             </tr>
                             <tr>
-                                <td><code>read record</code></td>
+                                <td><code>select</code></td>
                                 <td><span class="badge badge-success">Реализовано</span></td>
-                                <td>Прочитайте одну запись по ID (локально или на GitHub)</td>
+                                <td>Прочитайте запись по ID или запросите коллекцию через <code>--from</code> и <code>--where</code> (локально или на GitHub)</td>
                             </tr>
                             <tr>
-                                <td><code>create record</code></td>
+                                <td><code>insert</code></td>
                                 <td><span class="badge badge-success">Реализовано</span></td>
-                                <td>Создайте новую запись (локально или на GitHub)</td>
+                                <td>Вставьте новую запись (локально или на GitHub)</td>
                             </tr>
                             <tr>
-                                <td><code>update record</code></td>
+                                <td><code>update</code></td>
                                 <td><span class="badge badge-success">Реализовано</span></td>
                                 <td>Обновите поля существующей записи</td>
                             </tr>
                             <tr>
-                                <td><code>delete record</code></td>
+                                <td><code>delete</code></td>
                                 <td><span class="badge badge-success">Реализовано</span></td>
-                                <td>Удалите одну запись по ID</td>
+                                <td>Удалите запись по ID или записи, подходящие под <code>--where</code> (локально или на GitHub)</td>
                             </tr>
                             <tr>
                                 <td><code>list collections</code></td>
@@ -280,8 +280,8 @@ go build -o ingitdb ./cmd/ingitdb</code></pre>
 
                 <div class="info-box">
                     <strong>Формат --id</strong>
-                    <p>Флаг <code>--id</code> использует <code>/</code> в качестве разделителя: <code>&lt;collection-path&gt;/&lt;record-key&gt;</code></p>
-                    <p>Пример: <code>--id=geo/nations/ie</code></p>
+                    <p>Флаг <code>--id</code> использует <code>/</code> в качестве разделителя: <code>&lt;collection-id&gt;/&lt;record-key&gt;</code></p>
+                    <p>Пример: <code>--id=geo.nations/ie</code></p>
                 </div>
             </section>
 
@@ -306,11 +306,11 @@ languages:
                 <div class="code-example">
                     <h4>Публичные репозитории (токен не требуется)</h4>
                     <pre><code># Прочитайте запись
-ingitdb read record --remote=github.com/owner/repo --id=countries/ie
+ingitdb select --remote=github.com/owner/repo --id=countries/ie
 
 # Закрепите на определённой ветке, теге или хэше коммита
-ingitdb read record --remote=github.com/owner/repo@main --id=todo.tags/active
-ingitdb read record --remote=github.com/owner/repo@v1.2.0 --id=todo.tags/active
+ingitdb select --remote=github.com/owner/repo@main --id=todo.tags/active
+ingitdb select --remote=github.com/owner/repo@v1.2.0 --id=todo.tags/active
 
 # Список всех коллекций
 ingitdb list collections --remote=github.com/owner/repo</code></pre>
@@ -322,10 +322,10 @@ ingitdb list collections --remote=github.com/owner/repo</code></pre>
 export GITHUB_TOKEN=ghp_...
 
 # Теперь вы можете читать и писать
-ingitdb read record --remote=github.com/owner/repo --id=countries/ie
-ingitdb create record --remote=github.com/owner/repo --id=countries/ie --data='{name: Ireland}'
-ingitdb update record --remote=github.com/owner/repo --id=countries/ie --set='{capital: Dublin}'
-ingitdb delete record --remote=github.com/owner/repo --id=countries/ie</code></pre>
+ingitdb select --remote=github.com/owner/repo --id=countries/ie
+ingitdb insert --remote=github.com/owner/repo --into=countries --key=ie --data='{name: Ireland}'
+ingitdb update --remote=github.com/owner/repo --id=countries/ie --set=capital=Dublin
+ingitdb delete --remote=github.com/owner/repo --id=countries/ie</code></pre>
                 </div>
 
                 <p>Каждая операция записи создаёт один коммит в удалённом репозитории. Локальный клон не требуется.</p>
