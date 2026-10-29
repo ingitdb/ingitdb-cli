@@ -189,17 +189,17 @@ ingitdb list collections --filter-name='*city*'</code></pre>
 
           <div class="code-example">
             <h4>CRUD Operations</h4>
-            <pre><code># Create a record
-ingitdb create record --id=geo/nations/ie --data='{title: "Ireland"}'
+            <pre><code># Insert a record
+ingitdb insert --into=geo.nations --key=ie --data='{title: "Ireland"}'
 
 # Read a record
-ingitdb read record --id=geo/nations/ie
+ingitdb select --id=geo.nations/ie
 
 # Update a record
-ingitdb update record --id=geo/nations/ie --set='{capital: "Dublin"}'
+ingitdb update --id=geo.nations/ie --set=capital=Dublin
 
 # Delete a record
-ingitdb delete record --id=geo/nations/ie</code></pre>
+ingitdb delete --id=geo.nations/ie</code></pre>
           </div>
         </section>
 
@@ -291,24 +291,24 @@ go build -o ingitdb ./cmd/ingitdb</code></pre>
                   <td>Check every record against its collection schema</td>
                 </tr>
                 <tr>
-                  <td><code>read record</code></td>
+                  <td><code>select</code></td>
                   <td><span class="badge badge-success">Implemented</span></td>
-                  <td>Read a single record by ID (local or GitHub)</td>
+                  <td>Read a record by ID, or query a collection with <code>--from</code> and <code>--where</code> (local or GitHub)</td>
                 </tr>
                 <tr>
-                  <td><code>create record</code></td>
+                  <td><code>insert</code></td>
                   <td><span class="badge badge-success">Implemented</span></td>
-                  <td>Create a new record (local or GitHub)</td>
+                  <td>Insert a new record (local or GitHub)</td>
                 </tr>
                 <tr>
-                  <td><code>update record</code></td>
+                  <td><code>update</code></td>
                   <td><span class="badge badge-success">Implemented</span></td>
                   <td>Update fields of an existing record</td>
                 </tr>
                 <tr>
-                  <td><code>delete record</code></td>
+                  <td><code>delete</code></td>
                   <td><span class="badge badge-success">Implemented</span></td>
-                  <td>Delete a single record by ID</td>
+                  <td>Delete a record by ID, or records matching <code>--where</code> (local or GitHub)</td>
                 </tr>
                 <tr>
                   <td><code>list collections</code></td>
@@ -348,9 +348,9 @@ go build -o ingitdb ./cmd/ingitdb</code></pre>
             <strong>--id format</strong>
             <p>
               The <code>--id</code> flag uses <code>/</code> as separator:
-              <code>&lt;collection-path&gt;/&lt;record-key&gt;</code>
+              <code>&lt;collection-id&gt;/&lt;record-key&gt;</code>
             </p>
-            <p>Example: <code>--id=geo/nations/ie</code></p>
+            <p>Example: <code>--id=geo.nations/ie</code></p>
           </div>
         </section>
 
@@ -392,11 +392,11 @@ languages:
           <div class="code-example">
             <h4>Public repositories (no token required)</h4>
             <pre><code># Read a record
-ingitdb read record --remote=github.com/owner/repo --id=countries/ie
+ingitdb select --remote=github.com/owner/repo --id=countries/ie
 
 # Pin to a specific branch, tag, or commit SHA
-ingitdb read record --remote=github.com/owner/repo@main --id=todo.tags/active
-ingitdb read record --remote=github.com/owner/repo@v1.2.0 --id=todo.tags/active
+ingitdb select --remote=github.com/owner/repo@main --id=todo.tags/active
+ingitdb select --remote=github.com/owner/repo@v1.2.0 --id=todo.tags/active
 
 # List all collections
 ingitdb list collections --remote=github.com/owner/repo</code></pre>
@@ -408,10 +408,10 @@ ingitdb list collections --remote=github.com/owner/repo</code></pre>
 export GITHUB_TOKEN=ghp_...
 
 # Now you can read and write
-ingitdb read record --remote=github.com/owner/repo --id=countries/ie
-ingitdb create record --remote=github.com/owner/repo --id=countries/ie --data='{name: Ireland}'
-ingitdb update record --remote=github.com/owner/repo --id=countries/ie --set='{capital: Dublin}'
-ingitdb delete record --remote=github.com/owner/repo --id=countries/ie</code></pre>
+ingitdb select --remote=github.com/owner/repo --id=countries/ie
+ingitdb insert --remote=github.com/owner/repo --into=countries --key=ie --data='{name: Ireland}'
+ingitdb update --remote=github.com/owner/repo --id=countries/ie --set=capital=Dublin
+ingitdb delete --remote=github.com/owner/repo --id=countries/ie</code></pre>
           </div>
 
           <p>

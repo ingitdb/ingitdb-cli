@@ -164,11 +164,11 @@ ingitdb validate
 # Список всех коллекций
 ingitdb list collections
 
-# Создайте новую запись
-ingitdb create record --id=geo.nations/ie --data='{title: "Ireland"}'
+# Вставьте новую запись
+ingitdb insert --into=geo.nations --key=ie --data='{title: "Ireland"}'
 
 # Прочитайте запись
-ingitdb read record --id=geo.nations/ie</code></pre>
+ingitdb select --id=geo.nations/ie</code></pre>
                 </div>
                 <div class="cta-section">
                     <a href="/ru/docs/" class="btn btn-primary">Читать полную документацию</a>
