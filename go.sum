@@ -33,6 +33,8 @@ github.com/clipperhouse/uax29/v2 v2.7.0/go.mod h1:EFJ2TJMRUaplDxHKj1qAEhCtQPW2tJ
 github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6NIQQ7OS05n1F4g=
 github.com/dal-go/dalgo v0.99.0 h1:k7hBWRlNsiieOulquGuYAVrcQUn4lT2OPYih4JtYbCA=
 github.com/dal-go/dalgo v0.99.0/go.mod h1:UCGV7G50rWbXamWXbmbBGmHiACWtNYUFNIL+qM5AAs8=
+github.com/dal-go/dalgo v0.102.0 h1:c2/IeLs+URsW345hDVsA7mf9Qk87RFk+X25/awFDtjI=
+github.com/dal-go/dalgo v0.102.0/go.mod h1:UCGV7G50rWbXamWXbmbBGmHiACWtNYUFNIL+qM5AAs8=
 github.com/dal-go/record v0.1.5 h1:lkPxiJA7S2oE5tA0WUayezd+lmaiEekrEcGz/HRhzLg=
 github.com/dal-go/record v0.1.5/go.mod h1:PuoOCH74/Vf+pIVWSdrMg7OdUmlSlPgj68yJ+gM42To=
 github.com/datatug/cliformat v0.0.8 h1:Wkn1KmO0oA0wOVQpIVdrvbQDUAT5rJwjNGTCbJ9ex8M=
@@ -50,10 +52,16 @@ github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/ingitdb/dalgo2ingitdb v0.7.9 h1:/H7BBTiWsBhi3nUy7MnjrChr8LA1cm/jfFw1h5tsWBs=
 github.com/ingitdb/dalgo2ingitdb v0.7.9/go.mod h1:UenHh11v825YvNL3ru6sYX+9ihetpEU12SXO8e4F9Jk=
+github.com/ingitdb/dalgo2ingitdb v0.7.11 h1:5QqRRUlOUnb1a/QrukgYgjUywk/RwCwKv7qJuK40Za8=
+github.com/ingitdb/dalgo2ingitdb v0.7.11/go.mod h1:uxXGUouQSZGc3EZLBUCUIytDmGd289M5INRow/FwXlc=
 github.com/ingitdb/dalgo2ingitdb4github v0.2.11 h1:KBhHIyRDQZ+jVsMmnfZ7OuLkavq6igrt2BzK4FsE010=
 github.com/ingitdb/dalgo2ingitdb4github v0.2.11/go.mod h1:Yj4G5g44t7+mgqDLFUl82cp+yZKJxDyCk/oIp+Nh9K8=
+github.com/ingitdb/dalgo2ingitdb4github v0.3.1 h1:Wu9acGLFXhwN2HYpuJE7qN8ha9FhbSYtheElbsGVkn0=
+github.com/ingitdb/dalgo2ingitdb4github v0.3.1/go.mod h1:mO3F3LdwWu90VtGbvBcrfMjlDDdIQnDcWRcGw3VQrfs=
 github.com/ingitdb/dalgo2ingitdb4local v0.1.7 h1:FR6+g5xWnWaaGtdLuUef+1qaYotTX1Xt+PYqGU3yhnw=
 github.com/ingitdb/dalgo2ingitdb4local v0.1.7/go.mod h1:7SySONlqfKro7cxqvUPdoT30fvposcb8AcNKC7NcUwA=
+github.com/ingitdb/dalgo2ingitdb4local v0.2.1 h1:TZaicPPjvp9IDt0BFypsWVmiSq559ACF296B/9KJdw4=
+github.com/ingitdb/dalgo2ingitdb4local v0.2.1/go.mod h1:T9vcU76RMH0zy/YPnHOzkZN0iwp6XkAydt1epzhuGl8=
 github.com/ingitdb/ingitdb-go/ingitdb v0.10.6 h1:v46YpfFL/4H9ajtfFK58nD1bNfwkch4RhbsP+xVw8AI=
 github.com/ingitdb/ingitdb-go/ingitdb v0.10.6/go.mod h1:0Jm9fWk+6g/g1Xf8C9TbFs7X9z6Pal9rfgaSMFP16e4=
 github.com/ingr-io/ingr-go v0.0.2 h1:2AfFllqzCe2dCNtxIUo306oYzaZr//YzrVOHd0C73nI=
@@ -94,6 +102,8 @@ github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWD
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
 github.com/strongo/buildinfo v0.3.2 h1:Ohq8syXOs/DA6tv+JiHHPA1EpbSgccc2hu/94SfE7Ig=
 github.com/strongo/buildinfo v0.3.2/go.mod h1:JpxZ3Jku81LJC1RNIqCNYwguDzLk90eemxUXx4JnSlA=
+github.com/strongo/buildinfo v0.3.3 h1:aa0ghsgnFHn+M3Xry2SInzEl2deVqwMJHFyRWap0lTs=
+github.com/strongo/buildinfo v0.3.3/go.mod h1:JpxZ3Jku81LJC1RNIqCNYwguDzLk90eemxUXx4JnSlA=
 github.com/strongo/cli-helpers v0.27.2 h1:jPXdqfK1N7XfOHOAqk03tSGZmoUShs7sB1YW+Jpb2+w=
 github.com/strongo/cli-helpers v0.27.2/go.mod h1:2eUFIkQELgeWLeYz9g3hKer+Kcf+3vnAzHMOPDE7ItA=
 github.com/strongo/random v0.0.3 h1:R4XNjyBvlqL5Mln0meQO9d/Wy1SSN8CpCJ8sKSkIifw=

@@ -7,18 +7,18 @@ require (
 	charm.land/fang/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.6
 	github.com/charmbracelet/x/term v0.2.2
-	github.com/dal-go/dalgo v0.99.0
+	github.com/dal-go/dalgo v0.102.0
 	github.com/dal-go/record v0.1.5
 	github.com/datatug/cliformat v0.0.8
-	github.com/ingitdb/dalgo2ingitdb v0.7.9
-	github.com/ingitdb/dalgo2ingitdb4github v0.2.11
-	github.com/ingitdb/dalgo2ingitdb4local v0.1.7
+	github.com/ingitdb/dalgo2ingitdb v0.7.11
+	github.com/ingitdb/dalgo2ingitdb4github v0.3.1
+	github.com/ingitdb/dalgo2ingitdb4local v0.2.1
 	github.com/ingitdb/ingitdb-go/ingitdb v0.10.6
 	github.com/ingr-io/ingr-go v0.0.2
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/rivo/uniseg v0.4.7
 	github.com/spf13/cobra v1.10.2
-	github.com/strongo/buildinfo v0.3.2
+	github.com/strongo/buildinfo v0.3.3
 	github.com/strongo/cli-helpers v0.27.2
 	go.uber.org/mock v0.6.0
 	golang.org/x/sys v0.49.0
