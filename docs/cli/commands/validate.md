@@ -17,9 +17,10 @@ ingitdb validate [--path=PATH] [--only=definition|records] [--from-commit=SHA] [
 
 Validates the database definition in `.ingitdb/` and the records it describes. By default, checks both
 the collection definitions and every record against its schema, in root collections and in
-subcollections at any depth (also below a parent record that has no file, as Firestore allows). Use `--only` to validate just
+subcollections at any depth. Use `--only` to validate just
 the definitions or just the records. With `--from-commit` / `--to-commit`, only files changed
-in that commit range are checked (see [Validator docs](components/validator/README.md)).
+in that commit range are checked; in this mode records of subcollections are not yet mapped to
+their collection, so run a full pass to check them (see [Validator docs](components/validator/README.md)).
 
 Exit code is `0` on success and `2` when validation completes with invalid
 repository definitions or records. Command configuration, startup, and other

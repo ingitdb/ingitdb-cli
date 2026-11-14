@@ -45,7 +45,7 @@ The `--from-commit=SHA` and `--to-commit=SHA` flags MUST scope record validation
 
 For each collection, the command MUST print a summary line reporting how many records were validated and how many were valid (e.g. "All 42 records are valid for collection: users" or "38 out of 42 records are valid for collection: users").
 
-The root collections come first, sorted by id. Then every subcollection, at any depth, MUST get a line of the same form, named by its full schema path (e.g. "All 2 records are valid for collection: spaces/ext/days"). Its counts add up the records of every parent instance, including parents with no record file. A subcollection with no records MUST still get a line ("All 0 records ..."), so a subcollection that was not reached cannot pass unnoticed. A last line MUST total the run: "Validated N records in C collections (R root collections, S subcollections)". These lines are printed only when validation passes; they are added after the root lines, which keep their exact text.
+The root collections come first, sorted by id. Then every subcollection, at any depth, MUST get a line of the same form, named by its full schema path (e.g. "All 2 records are valid for collection: spaces/ext/days"). Its counts add up the records of every parent instance. A subcollection with no records MUST still get a line ("All 0 records ..."), so a subcollection that was not reached cannot pass unnoticed. A last line MUST total the run: "Validated N records in C collections (R root collections, S subcollections)". These lines are printed only when validation passes; they are added after the root lines, which keep their exact text.
 
 #### REQ: exit-code
 

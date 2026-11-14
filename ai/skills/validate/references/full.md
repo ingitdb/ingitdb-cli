@@ -35,9 +35,7 @@ ingitdb validate --path=/path/to/your/db
 ## Notes
 
 - Validation rebuilds the `$views/` directory in the same pass.
-- Records are checked in root collections and in subcollections at any depth, also below a parent
-  record that has no file (as Firestore allows `ext/commitius/cmSessions/{id}` without an
-  `ext/commitius` document). Do not add empty placeholder parent files to get them checked.
+- Records are checked in root collections and in subcollections at any depth.
 - On success the output has one line per collection: root collections first, then every
   subcollection by its full schema path, with counts added up over all parents, then a total:
 
@@ -49,6 +47,4 @@ ingitdb validate --path=/path/to/your/db
 
   A line reading `All 0 records` for a collection you expected to hold data means no record files
   were found where that collection's records live; check the path before trusting the pass.
-- A `$ID` column typed `date` (`YYYY-MM-DD`), `datetime` (RFC 3339), `time`, `int`, `float` or
-  `bool` makes every record key parse as that type; other `date` columns accept any string.
 - A non-zero exit means at least one violation was reported on stdout/stderr — surface the message to the user verbatim.
