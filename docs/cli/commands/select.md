@@ -17,7 +17,8 @@ ingitdb select --from=COLLECTION [--where=EXPR ...] [--order-by=FIELDS] [--field
 | Flag                             | Required           | Description                                                                                                |
 | -------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------- |
 | `--id=ID`                        | single-record mode | Record ID as `collection/key` (e.g. `countries/ie`).                                                       |
-| `--from=COLLECTION`              | set mode           | Collection ID to query.                                                                                    |
+| `--from=COLLECTION`              | set mode           | Collection ID to query, or a subcollection instance path (`lists/to-buy/items`).                           |
+| `--group`                        | no                 | With `--from`: read every instance of the subcollection at this schema path, collection ids only (`spaces/ext/days`), like a Firestore collection-group query. `$id` is then each record's full path. Local databases only. |
 | `--where=EXPR`                   | no                 | Filter expression; repeatable for AND. See operators below.                                                |
 | `--order-by=FIELDS`              | no                 | Comma-separated fields; prefix `-` = descending (e.g. `-population`).                                      |
 | `--fields=FIELDS`                | no                 | `*` = all (default), `$id` = record key only, or a comma list (e.g. `$id,name,population`).                |
@@ -31,6 +32,15 @@ ingitdb select --from=COLLECTION [--where=EXPR ...] [--order-by=FIELDS] [--field
 `LIKE` and **no** `IN`.
 
 **Number formatting:** commas are stripped before parsing (e.g. `1,000,000` → `1000000`).
+
+**Collection group:** `--group` reads one subcollection under every parent, including parents
+that have no record file of their own:
+
+```shell
+# Every days record under every ext under every space; $id is the full path
+ingitdb select --from=spaces/ext/days --group --fields='$id,title' --format=json
+# [{"$id": "spaces/k3v9q/ext/calendarius/days/2026-11-24", "title": "..."}, ...]
+```
 
 **Examples — single-record mode:**
 
