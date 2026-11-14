@@ -210,7 +210,11 @@ func parseKeyedRecords(content []byte, colDef *ingitdb.CollectionDef, relPath st
 		if err != nil {
 			return out
 		}
-		out[recordKeyFromPath(relPath)] = data
+		key := recordKeyFromPath(relPath)
+		if decoded, decodeErr := colDef.RecordFile.DecodeKey(key); decodeErr == nil {
+			key = decoded // with a key encoding, the real id; without one, unchanged
+		}
+		out[key] = data
 	case ingitdb.MapOfRecords:
 		m, err := ingitdb.ParseMapOfRecordsContent(content, colDef.RecordFile.Format)
 		if err != nil {

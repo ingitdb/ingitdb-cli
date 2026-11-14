@@ -6,6 +6,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/ingitdb/ingitdb-go/ingitdb"
 )
 
 const tildeDefinitionYAML = `record_file:
@@ -59,5 +61,32 @@ func TestSelect_KeyEncodingTildeV1ShowsDecodedKeys(t *testing.T) {
 	// path is ambiguous to a reader (reported, not changed here).
 	if ids := rowIDs(decodeJSONRows(t, stdout)); strings.Join(ids, " ") != "spaces/a/b/notes/.." {
 		t.Errorf("group ids = %q\n%s", ids, stdout)
+	}
+}
+
+// diff shows decoded keys, and a batch insert rolls back the files it wrote
+// under their encoded names.
+func TestKeyEncodingHelpers_DiffAndBatchRollbackPaths(t *testing.T) {
+	t.Parallel()
+	col := &ingitdb.CollectionDef{ID: "spaces", DirPath: "/db/spaces",
+		RecordFile: &ingitdb.RecordFileDef{Name: "{key}.yaml", Format: ingitdb.RecordFormatYAML, RecordType: ingitdb.SingleRecord, KeyEncoding: ingitdb.KeyEncodingTildeV1},
+		Columns:    map[string]*ingitdb.ColumnDef{"title": {Type: ingitdb.ColumnTypeString}}}
+	got := parseKeyedRecords([]byte("title: x\n"), col, "spaces/$records/a~2Fb.yaml")
+	if _, ok := got["a/b"]; !ok || len(got) != 1 {
+		t.Errorf("diff key: %v", got)
+	}
+	got = parseKeyedRecords([]byte("title: x\n"), col, "spaces/$records/a b.yaml")
+	if _, ok := got["a b"]; !ok {
+		t.Errorf("a name that does not decode is shown as it is: %v", got)
+	}
+	if p := resolveBatchRecordPath(col, "../.."); p != filepath.Join("/db/spaces", "$records", "~2E.~2F.~2E.yaml") {
+		t.Errorf("rollback path: %s", p)
+	}
+	none := *col
+	rf := *col.RecordFile
+	rf.KeyEncoding = ""
+	none.RecordFile = &rf
+	if p := resolveBatchRecordPath(&none, "a b"); p != filepath.Join("/db/spaces", "$records", "a b.yaml") {
+		t.Errorf("no encoding: %s", p)
 	}
 }
