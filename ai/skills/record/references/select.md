@@ -9,7 +9,7 @@ Read one record by ID, or filter records from a collection with a `--where` expr
 ingitdb select --path <dir> --id <collection-id>/<record-key> [--format <yaml|json>]
 
 # By filter
-ingitdb select --from <collection-id> --where '<expr>' [--format <yaml|json>]
+ingitdb select --from <collection-id> --where '<expr>' [--format <csv|json|yaml|md|ingr>]
 
 # Remote (read-only public repos need no token)
 ingitdb select --remote <host/owner/repo[@ref]> --id <collection-id>/<record-key>
@@ -23,7 +23,7 @@ ingitdb select --remote <host/owner/repo[@ref]> --id <collection-id>/<record-key
 | `--from` | One of | Collection to filter. |
 | `--group` | No | With `--from`: read every instance of a subcollection (see below). |
 | `--where` | If `--from` | Filter expression. Operators: `==`, `===`, `!=`, `!==`, `>=`, `<=`, `>`, `<`. |
-| `--format` | No | `yaml` (default) or `json`. |
+| `--format` | No | `yaml` (default with `--id`), `csv` (default with `--from`), `json`, `md` or `ingr`. |
 | `--path` | One of | Local database. |
 | `--remote` | One of | Remote repo. Append `@<ref>` to pin a branch/tag/SHA. |
 | `--token` | If private | `--token` flag or host-derived env var (e.g., `GITHUB_TOKEN`). |
