@@ -732,7 +732,7 @@ func TestDeleteAndUpdate_RemoteSetModeNoViews(t *testing.T) {
 	dir := t.TempDir()
 	colDefYAML := "id: items\ncolumns:\n  title:\n    type: string\n"
 	reader := &fakeFileReader{files: map[string][]byte{
-		".ingitdb/root-collections.yaml":     []byte("items: data/items\n"),
+		".ingitdb/root-collections.yaml":    []byte("items: data/items\n"),
 		"data/items/.schema/items.yaml":     []byte(colDefYAML),
 		"data/items/.collection/items.yaml": []byte(colDefYAML),
 	}}
@@ -968,7 +968,7 @@ func TestDiff_RenamedFile(t *testing.T) {
 type brokenSubFS struct{}
 
 func (brokenSubFS) Open(string) (fs.File, error) { return nil, errors.New("broken fs") }
-func (brokenSubFS) Sub(string) (fs.FS, error)     { return nil, errors.New("sub error") }
+func (brokenSubFS) Sub(string) (fs.FS, error)    { return nil, errors.New("sub error") }
 
 func TestSkills_ConfigErrors(t *testing.T) {
 	// 1. fs.Sub error
@@ -1114,7 +1114,9 @@ func TestPull_BranchCoverage(t *testing.T) {
 	}()
 
 	gitHeadRef = func(ctx context.Context, dirPath string) (string, error) { return "head123", nil }
-	runGitPull = func(ctx context.Context, dirPath, strategy, remote, branch string, logf func(...any)) error { return nil }
+	runGitPull = func(ctx context.Context, dirPath, strategy, remote, branch string, logf func(...any)) error {
+		return nil
+	}
 
 	// 1. gitConflictedFiles error
 	gitConflictedFiles = func(ctx context.Context, dirPath string) ([]string, error) {
