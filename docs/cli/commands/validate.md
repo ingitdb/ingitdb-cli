@@ -15,8 +15,9 @@ ingitdb validate [--path=PATH] [--only=definition|records] [--from-commit=SHA] [
 | `--to-commit=SHA`   | Validate only records up to this commit.                                   |
 | `--safe-diagnostics` | Report repository-relative finding identities and constraint classes without record values. |
 
-Validates the database schema and records in the `.ingitdb.yaml` file. By default, checks both
-the collection definitions and every record against its schema. Use `--only` to validate just
+Validates the database definition in `.ingitdb/` and the records it describes. By default, checks both
+the collection definitions and every record against its schema, in root collections and in
+subcollections at any depth (also below a parent record that has no file, as Firestore allows). Use `--only` to validate just
 the definitions or just the records. With `--from-commit` / `--to-commit`, only files changed
 in that commit range are checked (see [Validator docs](components/validator/README.md)).
 
@@ -25,7 +26,11 @@ repository definitions or records. Command configuration, startup, and other
 runtime failures exit `1`, so automation can distinguish invalid data
 from a validator that could not complete. Validation messages report record
 counts per collection (e.g., "All 42 records are valid for collection: users"
-or "38 out of 42 records are valid for collection: users").
+or "38 out of 42 records are valid for collection: users"): first the root
+collections, then every subcollection by its full schema path, with counts added
+up over all parent records (e.g., "All 2 records are valid for collection:
+spaces/ext/days"), then a total line such as "Validated 104 records in 49
+collections (2 root collections, 47 subcollections)".
 
 The CLI process boundary recovers unexpected panics as generic runtime failures
 with exit code `1`; panic payloads and stack traces are not printed because they

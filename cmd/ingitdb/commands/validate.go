@@ -4,7 +4,9 @@ package commands
 
 import (
 	"fmt"
+	"maps"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -127,15 +129,7 @@ func Validate(
 					findingErr := fmt.Errorf("%s", message)
 					return NewValidationFailedError(findingErr)
 				}
-				// Log completion message for each collection
-				for collectionKey := range def.Collections {
-					passed, total := result.GetRecordCounts(collectionKey)
-					if passed == total {
-						logf(fmt.Sprintf("All %d records are valid for collection: %s", total, collectionKey))
-					} else {
-						logf(fmt.Sprintf("%d out of %d records are valid for collection: %s", passed, total, collectionKey))
-					}
-				}
+				logValidationSummary(def, result, logf)
 			}
 			return nil
 		},
@@ -146,6 +140,45 @@ func Validate(
 	cmd.Flags().String("only", "", `validate only "definition" or "records" (default: both)`)
 	cmd.Flags().Bool("safe-diagnostics", false, "report finding identities and constraint classes without record values")
 	return cmd
+}
+
+// logValidationSummary prints one line per validated collection: the root
+// collections first, then every subcollection by its full schema path
+// (`spaces/ext/days`), whose count adds up the records of every parent
+// instance. A final line totals records and collections, so a subcollection
+// that held no records is visible instead of absent.
+func logValidationSummary(def *ingitdb.Definition, result *ingitdb.ValidationResult, logf func(...any)) {
+	rootIDs := slices.Sorted(maps.Keys(def.Collections))
+	var subIDs []string
+	for _, rootID := range rootIDs {
+		subIDs = appendSubCollectionIDs(subIDs, rootID, def.Collections[rootID])
+	}
+	records := 0
+	for _, collectionID := range slices.Concat(rootIDs, subIDs) {
+		passed, total := result.GetRecordCounts(collectionID)
+		records += total
+		if passed == total {
+			logf(fmt.Sprintf("All %d records are valid for collection: %s", total, collectionID))
+		} else {
+			logf(fmt.Sprintf("%d out of %d records are valid for collection: %s", passed, total, collectionID))
+		}
+	}
+	logf(fmt.Sprintf("Validated %d records in %d collections (%d root collections, %d subcollections)",
+		records, len(rootIDs)+len(subIDs), len(rootIDs), len(subIDs)))
+}
+
+// appendSubCollectionIDs appends the full paths of colDef's subcollections,
+// depth first and sorted, to ids.
+func appendSubCollectionIDs(ids []string, fullID string, colDef *ingitdb.CollectionDef) []string {
+	if colDef == nil {
+		return ids
+	}
+	for _, subID := range slices.Sorted(maps.Keys(colDef.SubCollections)) {
+		subFullID := fullID + "/" + subID
+		ids = append(ids, subFullID)
+		ids = appendSubCollectionIDs(ids, subFullID, colDef.SubCollections[subID])
+	}
+	return ids
 }
 
 func formatSafeValidationFailure(prefix, rootPath string, result *ingitdb.ValidationResult) string {

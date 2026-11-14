@@ -7,7 +7,7 @@ ingitdb drop collection <name> [--if-exists] [--cascade] [--path=PATH]
 ingitdb drop view <name>       [--if-exists] [--cascade] [--path=PATH]
 ```
 
-Removes a schema object — both its entry in `.ingitdb.yaml` and any associated data directory
+Removes a schema object — both its entry in `.ingitdb/root-collections.yaml` and any associated data directory
 or materialized output — in a single git commit. Replaces the legacy `delete collection` and
 `delete view` subcommands.
 

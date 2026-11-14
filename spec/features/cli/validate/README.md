@@ -11,7 +11,7 @@ status: Stable
 
 ## Summary
 
-The `ingitdb validate` command reads `.ingitdb.yaml` and verifies that the collection definitions and every record file conform to the declared schema. It supports partial validation (`--only=definition` or `--only=records`) and a fast CI mode that limits the check to files changed within a git commit range.
+The `ingitdb validate` command reads the database definition (`.ingitdb/root-collections.yaml`, `.ingitdb/settings.yaml` and each collection's `.collection/definition.yaml`) and verifies that the collection definitions and every record file conform to the declared schema. It supports partial validation (`--only=definition` or `--only=records`) and a fast CI mode that limits the check to files changed within a git commit range.
 
 ## Problem
 
@@ -33,17 +33,19 @@ The `--path=PATH` flag MUST set the database directory to validate. When omitted
 
 #### REQ: only-flag
 
-The `--only=VALUE` flag MUST accept the values `definition` and `records`. When set to `definition` only the collection definitions in `.ingitdb.yaml` are validated; when set to `records` only the record files are validated. When the flag is omitted both are validated in a single pass.
+The `--only=VALUE` flag MUST accept the values `definition` and `records`. When set to `definition` only the database definition (root config and collection definitions) is validated; when set to `records` only the record files are validated. When the flag is omitted both are validated in a single pass.
 
 #### REQ: commit-range
 
-The `--from-commit=SHA` and `--to-commit=SHA` flags MUST scope record validation to files changed between the two commits. They MAY be combined with `--only=records`. When neither flag is provided, all record files in the working tree are checked. When `--to-commit` is omitted, the range ends at the working tree (uncommitted changes are included). Because the change set is computed at file granularity, records whose files did not change in the range are not opened. If a definition file (`.ingitdb.yaml`, a collection `definition.yaml`, or `.ingitdb/`) changed within the range, the schema itself may have moved, so the command MUST fall back to a full validation pass.
+The `--from-commit=SHA` and `--to-commit=SHA` flags MUST scope record validation to files changed between the two commits. They MAY be combined with `--only=records`. When neither flag is provided, all record files in the working tree are checked. When `--to-commit` is omitted, the range ends at the working tree (uncommitted changes are included). Because the change set is computed at file granularity, records whose files did not change in the range are not opened. If a definition file (anything under `.ingitdb/`, or a collection `definition.yaml`) changed within the range, the schema itself may have moved, so the command MUST fall back to a full validation pass.
 
 ### Output and exit code
 
 #### REQ: per-collection-summary
 
 For each collection, the command MUST print a summary line reporting how many records were validated and how many were valid (e.g. "All 42 records are valid for collection: users" or "38 out of 42 records are valid for collection: users").
+
+The root collections come first, sorted by id. Then every subcollection, at any depth, MUST get a line of the same form, named by its full schema path (e.g. "All 2 records are valid for collection: spaces/ext/days"). Its counts add up the records of every parent instance, including parents with no record file. A subcollection with no records MUST still get a line ("All 0 records ..."), so a subcollection that was not reached cannot pass unnoticed. A last line MUST total the run: "Validated N records in C collections (R root collections, S subcollections)". These lines are printed only when validation passes; they are added after the root lines, which keep their exact text.
 
 #### REQ: exit-code
 
@@ -85,11 +87,15 @@ Source files implementing this feature (annotated with
 `// specscore: feature/cli/validate`):
 
 - [`cmd/ingitdb/commands/validate.go`](../../../cmd/ingitdb/commands/validate.go)
-- [`pkg/ingitdb/validator/def_validator.go`](../../../pkg/ingitdb/validator/def_validator.go)
-- [`pkg/ingitdb/validator/subscribers_validator.go`](../../../pkg/ingitdb/validator/subscribers_validator.go)
-- [`pkg/ingitdb/datavalidator/incremental_validator.go`](../../../pkg/ingitdb/datavalidator/incremental_validator.go) — incremental (commit-range) validation
-- [`pkg/ingitdb/datavalidator/changeset_resolver.go`](../../../pkg/ingitdb/datavalidator/changeset_resolver.go) — maps changed files to affected collection records
-- [`pkg/ingitdb/gitdiff/gitdiff.go`](../../../pkg/ingitdb/gitdiff/gitdiff.go) — `git diff --name-status` change lister
+
+The validators live in the [`ingitdb-go`](https://github.com/ingitdb/ingitdb-go) module:
+
+- `ingitdb/validator/def_validator.go`
+- `ingitdb/validator/subscribers_validator.go`
+- `ingitdb/datavalidator/validator.go` and `ingitdb/datavalidator/subcollection_validation.go` — record validation, including subcollections
+- `ingitdb/datavalidator/incremental_validator.go` — incremental (commit-range) validation
+- `ingitdb/datavalidator/changeset_resolver.go` — maps changed files to affected collection records
+- `ingitdb/gitdiff/gitdiff.go` — `git diff --name-status` change lister
 
 ## Acceptance Criteria
 
@@ -97,7 +103,7 @@ Source files implementing this feature (annotated with
 
 **Requirements:** cli/validate#req:subcommand-name, cli/validate#req:only-flag, cli/validate#req:per-collection-summary, cli/validate#req:exit-code
 
-Running `ingitdb validate` with no flags from a directory containing a valid `.ingitdb.yaml` validates both definitions and records, prints a summary line per collection, and exits `0`. Introducing a single record that violates its schema causes the command to exit `2`.
+Running `ingitdb validate` with no flags from a directory containing a valid `.ingitdb/` definition validates both definitions and records, prints a summary line per collection, and exits `0`. Introducing a single record that violates its schema causes the command to exit `2`.
 
 ### AC: scoped-validation
 
@@ -131,6 +137,12 @@ Given a record violates an enum constraint with a secret-bearing rejected
 value, when `ingitdb validate --safe-diagnostics` runs, then it exits `2` and
 names the collection, repository-relative file, record key, field, and enum
 constraint without printing the rejected value or absolute repository path.
+
+### AC: subcollection-summary-lines
+
+**Requirements:** cli/validate#req:per-collection-summary
+
+Given root collections `ext` and `spaces`, where `spaces` has subcollection `ext` with subcollections `days` and `happenings`, and `ext` has subcollection `sessions`, when validation passes, the output ends with one line per root collection, then one line per subcollection by full path (`ext/sessions`, `spaces/ext`, `spaces/ext/days`, `spaces/ext/happenings`, the last with "All 0 records"), then "Validated 12 records in 6 collections (2 root collections, 4 subcollections)".
 
 ## Open Questions
 

@@ -763,3 +763,68 @@ func TestValidate_OnlyDefinitionSkipsRecordValidation(t *testing.T) {
 		t.Fatal("expected DataValidator.Validate not to be called with --only=definition")
 	}
 }
+
+// Verifies cli/validate#ac:subcollection-summary-lines.
+func TestValidate_SubcollectionSummaryLines(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return &ingitdb.Definition{
+			Collections: map[string]*ingitdb.CollectionDef{
+				"spaces": {SubCollections: map[string]*ingitdb.CollectionDef{
+					"ext": {SubCollections: map[string]*ingitdb.CollectionDef{
+						"days":       {},
+						"happenings": nil,
+					}},
+				}},
+				"ext": {SubCollections: map[string]*ingitdb.CollectionDef{
+					"sessions": {},
+				}},
+			},
+		}, nil
+	}
+	dataVal := &mockDataValidator{
+		result: func() *ingitdb.ValidationResult {
+			r := &ingitdb.ValidationResult{}
+			r.SetRecordCounts("spaces", 4, 4)
+			r.SetRecordCounts("spaces/ext", 3, 3)
+			r.SetRecordCounts("spaces/ext/days", 2, 2)
+			r.SetRecordCounts("ext/sessions", 2, 3)
+			return r
+		}(),
+	}
+
+	var logMessages []string
+	logf := func(args ...any) {
+		for _, arg := range args {
+			if str, ok := arg.(string); ok {
+				logMessages = append(logMessages, str)
+			}
+		}
+	}
+
+	cmd := Validate(homeDir, getWd, readDef, dataVal, nil, logf)
+	if err := runCobraCommand(cmd, "--path="+dir); err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+
+	want := []string{
+		"All 0 records are valid for collection: ext",
+		"All 4 records are valid for collection: spaces",
+		"2 out of 3 records are valid for collection: ext/sessions",
+		"All 3 records are valid for collection: spaces/ext",
+		"All 2 records are valid for collection: spaces/ext/days",
+		"All 0 records are valid for collection: spaces/ext/happenings",
+		"Validated 12 records in 6 collections (2 root collections, 4 subcollections)",
+	}
+	got := logMessages[len(logMessages)-len(want):]
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("line %d: got %q, want %q", i, got[i], want[i])
+		}
+	}
+}

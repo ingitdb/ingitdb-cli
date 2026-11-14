@@ -24,14 +24,16 @@ golangci-lint run
 ## Architecture
 
 **inGitDB** stores database records as YAML/JSON files in a Git repository. Collections, schemas, views, and
-materialized views are defined declaratively in `.ingitdb.yaml` configuration.
+materialized views are defined declaratively: `.ingitdb/root-collections.yaml` and `.ingitdb/settings.yaml` at
+the database root, and `.collection/definition.yaml` in each collection directory.
 
-The codebase has two main packages:
+The core packages live in other modules:
 
-- **`pkg/ingitdb/`** — Core schema definitions (`Definition`, `CollectionDef`, `ColumnDef`, views) and the `validator/`
-  sub-package that reads and validates a database directory against its schema.
-- **`pkg/dalgo2ingitdb/`** — DALgo (Database Abstraction Layer) integration, implementing `dal.DB`, read-only and
-  read-write transactions for CRUD access.
+- **`github.com/ingitdb/ingitdb-go/ingitdb`** — Core schema definitions (`Definition`, `CollectionDef`,
+  `ColumnDef`, views), the `validator/` sub-package that reads a database definition, and `datavalidator/`
+  that validates records (root collections and subcollections) against it.
+- **`github.com/ingitdb/dalgo2ingitdb`** — DALgo (Database Abstraction Layer) integration, implementing `dal.DB`,
+  read-only and read-write transactions for CRUD access.
 - **`cmd/ingitdb/`** — CLI entry point using `github.com/spf13/cobra` for subcommand and flag parsing. The `run()`
   function is dependency-injected for testability (accepts `homeDir`, `readDefinition`, `fatal`, `logf` as parameters).
 - **`cmd/watcher/`** — Obsolete file watcher, to be folded into `ingitdb watch`.
