@@ -16,7 +16,7 @@ func TestSelect_Group_ReadsEveryInstance(t *testing.T) {
 	t.Parallel()
 	dir := testutil.WriteDeepNestedListsDB(t)
 	// An instance below a parent with no record file is read too.
-	ghost := filepath.Join(dir, "lists", "ghost", "items", "$records")
+	ghost := filepath.Join(dir, "lists", "$records", "ghost", "items", "$records")
 	if err := os.MkdirAll(ghost, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -24,7 +24,7 @@ func TestSelect_Group_ReadsEveryInstance(t *testing.T) {
 		t.Fatal(err)
 	}
 	// A parent key with a dot keeps it in $id, unescaped.
-	dotted := filepath.Join(dir, "lists", "example.com", "items", "$records")
+	dotted := filepath.Join(dir, "lists", "$records", "example.com", "items", "$records")
 	if err := os.MkdirAll(dotted, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +75,7 @@ func TestSelect_Group_DeepAndRootAndSetFlags(t *testing.T) {
 func TestSelect_Group_EmptyAndErrors(t *testing.T) {
 	t.Parallel()
 	dir := testutil.WriteDeepNestedListsDB(t)
-	if err := os.RemoveAll(filepath.Join(dir, "lists", "to-buy", "items", "milk")); err != nil {
+	if err := os.RemoveAll(filepath.Join(dir, "lists", "$records", "to-buy", "items", "$records", "milk")); err != nil {
 		t.Fatal(err)
 	}
 	stdout, err := runNestedSelect(t, dir, "--from=lists/items/tags", "--group", "--format=json")
@@ -119,5 +119,24 @@ func TestSelect_SchemaPathWithoutGroupUnchanged(t *testing.T) {
 	_, err := runNestedSelect(t, dir, "--from=lists/items/tags")
 	if err == nil || !strings.Contains(err.Error(), `collection "lists/items/tags" not found in definition`) {
 		t.Fatalf("expected not found, got %v", err)
+	}
+}
+
+// Data where the definition does not put it fails --group with the
+// details, instead of a partial result.
+func TestSelect_Group_MislaidDataFails(t *testing.T) {
+	t.Parallel()
+	dir := testutil.WriteDeepNestedListsDB(t)
+	mislaid := filepath.Join(dir, "lists", "old", "items", "$records")
+	if err := os.MkdirAll(mislaid, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(mislaid, "o1.yaml"), []byte("title: Old\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	stdout, err := runNestedSelect(t, dir, "--from=lists/items", "--group", "--format=json")
+	want := "holds 1 file(s), but the definition puts them at " + filepath.Join(dir, "lists", "$records", "old", "items")
+	if err == nil || !strings.Contains(err.Error(), want) || stdout != "" {
+		t.Fatalf("expected the mislaid-data error, got %v, %q", err, stdout)
 	}
 }

@@ -31,7 +31,7 @@ ingitdb select --remote <host/owner/repo[@ref]> --id <collection-id>/<record-key
 With `--group`, `--from` is a schema path of collection ids only (`spaces/ext/days`, the full
 path `ingitdb validate` prints) and the command reads every instance of that subcollection, like a
 Firestore collection-group query; `$id` is then each record's full path
-(`spaces/k3v9q/ext/calendarius/days/2026-11-24`). Local databases only.
+(`spaces/k3v9q/ext/calendarius/days/2026-11-24`). Local databases only. It reads the instances `validate` checks, where the definition puts them; data stored elsewhere (for example `spaces/<key>/ext/` while `spaces` keeps its records in `$records`) fails the command with an error naming the found and the expected path, instead of being left out.
 
 ## Examples
 

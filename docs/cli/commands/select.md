@@ -34,7 +34,9 @@ ingitdb select --from=COLLECTION [--where=EXPR ...] [--order-by=FIELDS] [--field
 **Number formatting:** commas are stripped before parsing (e.g. `1,000,000` → `1000000`).
 
 **Collection group:** `--group` reads one subcollection under every parent, including parents
-that have no record file of their own:
+that have no record file of their own. It reads the instances `validate` checks, where the definition puts them; data stored elsewhere (for example `spaces/<key>/ext/` while `spaces` keeps its records in `$records`) fails the command with an error naming the found and the expected path, instead of being left out.
+
+For example:
 
 ```shell
 # Every days record under every ext under every space; $id is the full path

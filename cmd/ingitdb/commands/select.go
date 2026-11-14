@@ -198,7 +198,7 @@ func runSelectFromSet(
 	var sources []selectSource
 	var colDef *ingitdb.CollectionDef
 	if group {
-		sources, colDef, err = resolveCollectionGroup(def, from)
+		sources, colDef, err = resolveCollectionGroup(dirPath, def, from)
 	} else {
 		var ref dal.CollectionRef
 		ref, colDef, err = resolveFromCollection(def, from)

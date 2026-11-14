@@ -17,8 +17,8 @@ func TestWriteNestedListsDB_UsesDriverLayout(t *testing.T) {
 	for _, rel := range []string{
 		"lists/$records/to-buy.yaml",
 		"lists/$records/to-watch.yaml",
-		"lists/to-buy/items/$records/milk.yaml",
-		"lists/to-watch/items/$records/interstellar.yaml",
+		"lists/$records/to-buy/items/$records/milk.yaml",
+		"lists/$records/to-watch/items/$records/interstellar.yaml",
 	} {
 		if _, err := os.Stat(filepath.Join(dir, filepath.FromSlash(rel))); err != nil {
 			t.Errorf("expected record file %s: %v", rel, err)
@@ -31,8 +31,8 @@ func TestWriteDeepNestedListsDB_UsesDriverLayout(t *testing.T) {
 	dir := WriteDeepNestedListsDB(t)
 	for _, rel := range []string{
 		"lists/$records/items.yaml",
-		"lists/items/items/$records/self.yaml",
-		"lists/to-buy/items/milk/tags/$records/dairy.yaml",
+		"lists/$records/items/items/$records/self.yaml",
+		"lists/$records/to-buy/items/$records/milk/tags/$records/dairy.yaml",
 	} {
 		if _, err := os.Stat(filepath.Join(dir, filepath.FromSlash(rel))); err != nil {
 			t.Errorf("expected record file %s: %v", rel, err)

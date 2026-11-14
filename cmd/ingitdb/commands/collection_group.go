@@ -18,13 +18,17 @@ import (
 // prints), to one source per instance of that collection, and the
 // collection's definition. Instances are found by the storage driver
 // (dalgo2fsingitdb.SubCollectionParents), which owns the on-disk layout, so
-// this obeys REQ:driver-owned-layout. A value that names no declared
-// collection fails with the existing "not found in definition" error naming
-// the whole value.
-func resolveCollectionGroup(def *ingitdb.Definition, from string) ([]selectSource, *ingitdb.CollectionDef, error) {
+// this obeys REQ:driver-owned-layout. The driver finds them where the
+// definition puts them, with the parent rule `validate` uses, so a group
+// read returns only records `validate` considers; data in another layout, or
+// a parent symlinked outside the database at dbPath, fails the command with
+// the driver's error instead of an empty or partial result. A value that
+// names no declared collection fails with the existing "not found in
+// definition" error naming the whole value.
+func resolveCollectionGroup(dbPath string, def *ingitdb.Definition, from string) ([]selectSource, *ingitdb.CollectionDef, error) {
 	// The driver rejects an undeclared, empty, `.`/`..` or separator-bearing
 	// segment with `collection "<from>" not found in definition`.
-	parents, err := dalgo2fsingitdb.SubCollectionParents(def, from)
+	parents, err := dalgo2fsingitdb.SubCollectionParents(dbPath, def, from)
 	if err != nil {
 		return nil, nil, err
 	}

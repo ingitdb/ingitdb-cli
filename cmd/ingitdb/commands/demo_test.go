@@ -117,11 +117,22 @@ func sameDir(t *testing.T, a, b string) bool {
 }
 
 // demoRecordFile is the on-disk path of a shared-package record key in the
-// dalgo2ingitdb layout, e.g. lists/to-buy/items/$records/milk.yaml.
+// layout the definition defines, where each record's subcollections sit next
+// to its record file in the collection's $records directory, e.g.
+// lists/$records/to-buy/items/$records/milk.yaml.
 func demoRecordFile(dir, key string) string {
 	segments := strings.Split(key, "/")
-	parts := append([]string{dir}, segments[:len(segments)-1]...)
-	parts = append(parts, "$records", segments[len(segments)-1]+".yaml")
+	parts := []string{dir}
+	for i, segment := range segments {
+		switch {
+		case i%2 == 0: // a collection id
+			parts = append(parts, segment, "$records")
+		case i == len(segments)-1: // the record id
+			parts = append(parts, segment+".yaml")
+		default: // a parent record id
+			parts = append(parts, segment)
+		}
+	}
 	return filepath.Join(parts...)
 }
 
@@ -176,15 +187,17 @@ func TestDemoInstall_FreshInstall(t *testing.T) {
 	wantTree := []string{
 		".git",
 		".ingitdb", ".ingitdb/demo.yaml", ".ingitdb/root-collections.yaml", ".ingitdb/settings.yaml",
-		"lists", "lists/$records", "lists/$records/to-buy.yaml", "lists/$records/to-watch.yaml",
+		"lists", "lists/$records",
+		"lists/$records/to-buy", "lists/$records/to-buy.yaml",
+		"lists/$records/to-buy/items", "lists/$records/to-buy/items/$records",
+		"lists/$records/to-buy/items/$records/bananas.yaml", "lists/$records/to-buy/items/$records/coffee.yaml",
+		"lists/$records/to-buy/items/$records/milk.yaml",
+		"lists/$records/to-watch", "lists/$records/to-watch.yaml",
+		"lists/$records/to-watch/items", "lists/$records/to-watch/items/$records",
+		"lists/$records/to-watch/items/$records/interstellar.yaml", "lists/$records/to-watch/items/$records/the-matrix.yaml",
 		"lists/.collection", "lists/.collection/definition.yaml",
 		"lists/.collection/subcollections", "lists/.collection/subcollections/items",
 		"lists/.collection/subcollections/items/definition.yaml",
-		"lists/to-buy", "lists/to-buy/items", "lists/to-buy/items/$records",
-		"lists/to-buy/items/$records/bananas.yaml", "lists/to-buy/items/$records/coffee.yaml",
-		"lists/to-buy/items/$records/milk.yaml",
-		"lists/to-watch", "lists/to-watch/items", "lists/to-watch/items/$records",
-		"lists/to-watch/items/$records/interstellar.yaml", "lists/to-watch/items/$records/the-matrix.yaml",
 	}
 	if got := listTree(t, dir); !reflect.DeepEqual(got, wantTree) {
 		t.Errorf("demo folder tree =\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(wantTree, "\n"))
