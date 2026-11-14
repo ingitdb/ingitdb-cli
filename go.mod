@@ -11,7 +11,7 @@ require (
 	github.com/dal-go/record v0.1.5
 	github.com/datatug/cliformat v0.0.8
 	github.com/ingitdb/dalgo2ingitdb v0.7.15-0.20261114015332-3c39c7a76587
-	github.com/ingitdb/dalgo2ingitdb4github v0.3.4
+	github.com/ingitdb/dalgo2ingitdb4github v0.3.5-0.20261114021431-fad243fa0776
 	github.com/ingitdb/dalgo2ingitdb4local v0.2.3-0.20261114020215-6190a47763df
 	github.com/ingitdb/ingitdb-go/ingitdb v0.10.7-0.20261114015011-177b9f9b7763
 	github.com/ingr-io/ingr-go v0.0.2

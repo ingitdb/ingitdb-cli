@@ -50,8 +50,8 @@ github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/ingitdb/dalgo2ingitdb v0.7.15-0.20261114015332-3c39c7a76587 h1:efFzedbWH5cVTLH9/o3EFcWbS8sQnRVRCGT24IS9ooU=
 github.com/ingitdb/dalgo2ingitdb v0.7.15-0.20261114015332-3c39c7a76587/go.mod h1:QzBP0ypMIblod5DOiNKQwkPUbKSenv4yZLDdwjZlM5g=
-github.com/ingitdb/dalgo2ingitdb4github v0.3.4 h1:GbX/Gh4p547TBwTfb1J6ZCXCg+f/wHzj519fl4sI5A0=
-github.com/ingitdb/dalgo2ingitdb4github v0.3.4/go.mod h1:fB6OuYlf6Rj6Jiw4IepayGSmbp4tNFnVOCuEPFu0a1I=
+github.com/ingitdb/dalgo2ingitdb4github v0.3.5-0.20261114021431-fad243fa0776 h1:wooOsdTZdMFu7ClAOhbJQn/nc4kq+XaTGbUopOskXQM=
+github.com/ingitdb/dalgo2ingitdb4github v0.3.5-0.20261114021431-fad243fa0776/go.mod h1:fB6OuYlf6Rj6Jiw4IepayGSmbp4tNFnVOCuEPFu0a1I=
 github.com/ingitdb/dalgo2ingitdb4local v0.2.3-0.20261114020215-6190a47763df h1:cknDSJ7U/nBa47JN2pFRC1eEWA43e7HoyZ4c5L5iek0=
 github.com/ingitdb/dalgo2ingitdb4local v0.2.3-0.20261114020215-6190a47763df/go.mod h1:D8UCZQsRRpoxPBBsok1JxB/8csY+E4r7uUUn1zgVs9c=
 github.com/ingitdb/ingitdb-go/ingitdb v0.10.7-0.20261114015011-177b9f9b7763 h1:6qS/iSFQXze6Xo7cQhwDtzPyUxeGbb9WUzo8jARQQ8c=
