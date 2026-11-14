@@ -3,9 +3,11 @@ package commands
 // specscore: feature/subcollection-addressing
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/dal-go/dalgo/dal"
+	"github.com/dal-go/record"
 	dalgo2fsingitdb "github.com/ingitdb/dalgo2ingitdb4local"
 
 	"github.com/ingitdb/ingitdb-go/ingitdb"
@@ -40,8 +42,19 @@ func resolveCollectionGroup(def *ingitdb.Definition, from string) ([]selectSourc
 		}
 		sources = append(sources, selectSource{
 			ref:      dal.NewCollectionRef(leaf, "", parent),
-			idPrefix: parent.String() + "/" + leaf + "/",
+			idPrefix: recordPath(parent) + "/" + leaf + "/",
 		})
 	}
 	return sources, colDef, nil
+}
+
+// recordPath renders a record key as collection/key/.../collection/key with
+// the keys as stored (record.Key.String escapes "." in keys, which would make
+// `$id` differ from the path on disk and from `--where '$id==...'`).
+func recordPath(key *record.Key) string {
+	var parts []string
+	for k := key; k != nil; k = k.Parent() {
+		parts = append([]string{k.Collection(), fmt.Sprintf("%v", k.ID)}, parts...)
+	}
+	return strings.Join(parts, "/")
 }

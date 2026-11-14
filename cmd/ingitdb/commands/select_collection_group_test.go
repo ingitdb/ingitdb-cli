@@ -23,12 +23,20 @@ func TestSelect_Group_ReadsEveryInstance(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(ghost, "g1.yaml"), []byte("title: Ghost item\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	// A parent key with a dot keeps it in $id, unescaped.
+	dotted := filepath.Join(dir, "lists", "example.com", "items", "$records")
+	if err := os.MkdirAll(dotted, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dotted, "d1.yaml"), []byte("title: Dotted\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	stdout, err := runNestedSelect(t, dir, "--from=lists/items", "--group", "--format=json", "--order-by=$id", "--fields=$id,title")
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
 	got := strings.Join(rowIDs(decodeJSONRows(t, stdout)), " ")
-	want := "lists/ghost/items/g1 lists/items/items/self lists/to-buy/items/bananas lists/to-buy/items/coffee lists/to-buy/items/milk lists/to-watch/items/interstellar lists/to-watch/items/the-matrix"
+	want := "lists/example.com/items/d1 lists/ghost/items/g1 lists/items/items/self lists/to-buy/items/bananas lists/to-buy/items/coffee lists/to-buy/items/milk lists/to-watch/items/interstellar lists/to-watch/items/the-matrix"
 	if got != want {
 		t.Fatalf("$id values:\n got %s\nwant %s", got, want)
 	}
@@ -46,6 +54,7 @@ func TestSelect_Group_DeepAndRootAndSetFlags(t *testing.T) {
 		{"root", []string{"--from=lists", "--order-by=$id"}, "lists/items lists/to-buy lists/to-watch"},
 		{"where on field", []string{"--from=lists/items", "--where=title==Milk"}, "lists/to-buy/items/milk"},
 		{"where on full $id", []string{"--from=lists/items", "--where=$id==lists/to-watch/items/interstellar"}, "lists/to-watch/items/interstellar"},
+		{"deep $id has no escaping", []string{"--from=lists/items/tags", "--where=$id==lists/to-buy/items/milk/tags/fresh"}, "lists/to-buy/items/milk/tags/fresh"},
 		{"order and limit", []string{"--from=lists/items", "--order-by=-title", "--limit=2"}, "lists/to-watch/items/the-matrix lists/items/items/self"},
 	}
 	for _, tc := range cases {
