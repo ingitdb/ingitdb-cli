@@ -81,8 +81,8 @@ flowchart LR
     D --> F([Go programs\nDALgo API])
 ```
 
-The `ingitdb validate` command reads `.ingitdb.yaml`, checks every record against its collection
-schema, and rebuilds materialized views in the same pass. Validation can be scoped to a commit
+The `ingitdb validate` command reads the definition in `.ingitdb/`, checks every record (in root
+collections and in subcollections at any depth) against its collection schema, and rebuilds materialized views in the same pass. Validation can be scoped to a commit
 range (`--from-commit` / `--to-commit`) so CI stays fast on large databases.
 
 ## ⬇️ Installation
@@ -265,15 +265,24 @@ including authentication details, rate limit notes, and limitations.
 
 ---
 
-A minimal `.ingitdb.yaml` at the root of your DB git repository:
+A minimal database definition lives in a `.ingitdb/` directory at the root of your DB git
+repository. `.ingitdb/root-collections.yaml` maps collection IDs to directories (a flat map, no
+wrapper key), and `.ingitdb/settings.yaml` holds database settings:
 
 ```yaml
-rootCollections:
-  tasks.backlog: data/tasks/backlog
-  tasks.inprogress: data/tasks/in-progress
+# .ingitdb/root-collections.yaml
+tasks.backlog: data/tasks/backlog
+tasks.inprogress: data/tasks/in-progress
+```
+
+```yaml
+# .ingitdb/settings.yaml
 languages:
   - required: en
 ```
+
+Each collection directory holds its schema in `.collection/definition.yaml`. A single
+`.ingitdb.yaml` file is an older layout that the current reader does not read.
 
 ## 🛠️ [Commands](docs/cli/)
 
