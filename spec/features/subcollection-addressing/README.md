@@ -50,6 +50,13 @@ the collection before it. The result MUST be the records of that subcollection u
 parent record only; records of the same subcollection under other parent records MUST NOT be
 returned.
 
+When the parent collection declares `record_file.key_encoding`, its record key segment MUST be
+written as the parent's file name (the key `a/b` as `a~2Fb`, `CON` as `~43ON`): it is decoded
+with that encoding, which is the only form that can hold every key. A segment the encoding never
+writes (`CON`, `x~zz`) MUST fail with an error naming the segment and the file-name form, not
+return an empty result. A parent without `key_encoding` is unchanged. With `--group`, `$id` joins
+the decoded keys with `/`, so a key that holds `/` makes the path ambiguous (ingitdb-cli#220).
+
 #### REQ: undeclared-segment-not-found
 
 When a `--from` value containing `/` does not match
@@ -76,8 +83,17 @@ feature.
 #### REQ: driver-owned-layout
 
 Subcollection records MUST be located through the storage driver's parent-chain scoping (the
-local driver's `resolveScopedCollection`). The CLI MUST NOT compute or define its own on-disk
+local driver's `resolveScopedCollection`), which puts them where the definition does: in the parent's
+records directory, next to the parent's record file. The CLI MUST NOT compute or define its own on-disk
 path for subcollection records.
+
+#### REQ: collection-group
+
+For a local database, `select --from=<schema-path> --group` MUST read every instance of the collection at `<schema-path>`, the way a Firestore collection-group query does. `<schema-path>` is collection ids only, from a root collection down (`lists/items/tags`, the full path `validate` prints for a subcollection). The instances MUST be found by the storage driver (`dalgo2fsingitdb.SubCollectionParents`), which owns the on-disk layout per [REQ:driver-owned-layout](#req-driver-owned-layout). An instance below a parent record that has no record file of its own MUST be read too, as Firestore allows. The driver MUST find instances where the definition puts them (the parent's records directory, `<parent dir>/<records_dir>/<key>/<sub>/`) with the same parent rule `validate` uses (`ingitdb.ScanParentDirs`), so `--group` never returns a record `validate` did not consider. Data found where the definition does not put it (`<parent dir>/<key>/<sub>/` while the parent's `records_dir` is not `.`), or a parent symlinked to a directory outside the database, MUST fail the command with the driver's error, which names the found path, and write nothing to stdout, instead of returning fewer rows. With `--group`, each row's `$id` MUST be the record's full path (`lists/to-buy/items/milk`), and `--where` on `$id` MUST compare against that path, so rows of different instances stay distinguishable. `--where`, `--order-by`, `--fields`, `--limit`, `--min-affected` and `--format` MUST apply across all instances together, as for one collection. No instance MUST produce the empty-result output and exit `0`.
+
+A `<schema-path>` naming no declared collection (including an instance path such as `lists/to-buy/items`, or a segment that is empty, `.`, `..` or holds a separator) MUST fail with `collection "<value>" not found in definition` and write nothing to stdout. `--group` with `--id` MUST fail with `--group requires --from (set mode)`, and with `--remote` with `--group is supported for local databases only`.
+
+This is additive: without `--group`, `--from` behaves exactly as before, and a schema path such as `lists/items/tags` is still not found.
 
 ### Terminal UI
 
@@ -116,7 +132,8 @@ Plan: [2026-09-17-cli-demo](../../plans/2026-09-17-cli-demo.md), Task 3. Source 
 annotated with `// specscore: feature/subcollection-addressing`:
 
 - [`cmd/ingitdb/commands/subcollection_path.go`](../../../cmd/ingitdb/commands/subcollection_path.go) — resolves a `--from` value to a collection reference carrying the parent record key.
-- [`cmd/ingitdb/commands/select.go`](../../../cmd/ingitdb/commands/select.go) — set mode reads through that reference.
+- [`cmd/ingitdb/commands/select.go`](../../../cmd/ingitdb/commands/select.go) — set mode reads through that reference, or through one reference per instance with `--group`.
+- [`cmd/ingitdb/commands/collection_group.go`](../../../cmd/ingitdb/commands/collection_group.go) — resolves a `--group` schema path to the instances the driver finds.
 - [`cmd/ingitdb/tui/collection_screen.go`](../../../cmd/ingitdb/tui/collection_screen.go) and [`cmd/ingitdb/tui/model.go`](../../../cmd/ingitdb/tui/model.go) — drill-down, chooser and back navigation.
 - [`cmd/ingitdb/tui/collection_data_panel.go`](../../../cmd/ingitdb/tui/collection_data_panel.go) — the subcollection chooser.
 
@@ -175,6 +192,14 @@ to stdout
 **Given** the same database
 **When** `select --from=lists --format=json` runs
 **Then** it returns `to-buy` and `to-watch` with their titles, as before this feature
+
+### AC: select-collection-group
+
+**Requirements:** subcollection-addressing#req:collection-group
+
+**Given** the TODO-shaped database with items under `to-buy`, `to-watch` and `items`, tags under item `milk`, and an item under `lists/ghost`, which has no list record
+**When** `select --from=lists/items --group --format=json --order-by='$id'` runs
+**Then** it returns all seven items with `$id` values `lists/ghost/items/g1`, `lists/items/items/self`, `lists/to-buy/items/bananas`, ...; `--from=lists/items/tags --group` returns `lists/to-buy/items/milk/tags/dairy` and `.../fresh`; `--where`, `--order-by` and `--limit` apply across instances; and a schema path without `--group`, an instance path with `--group`, `--group` with `--id`, and `--group` with `--remote` fail as specified
 
 ### AC: tui-open-and-leave-subcollection
 

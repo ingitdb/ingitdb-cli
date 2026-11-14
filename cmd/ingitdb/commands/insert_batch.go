@@ -156,8 +156,13 @@ func rejectIntraBatchDuplicates(records []dalgo2ingitdb.ParsedRecord) error {
 // <colDef.DirPath>/<RecordsBasePath()>/<record_file.name with {key} substituted>.
 // This is intentionally a local helper — the backend's resolveRecordPath
 // is unexported, and duplicating ~3 lines of join logic is cheaper than
-// changing the public surface of the backend package.
+// changing the public surface of the backend package. A collection that
+// declares a key encoding stores the key under its encoded name; the path is
+// taken only after the backend's Insert succeeded, so the key encodes.
 func resolveBatchRecordPath(colDef *ingitdb.CollectionDef, recordKey string) string {
+	if colDef.RecordFile.EncodesKeys() {
+		recordKey, _ = colDef.RecordFile.EncodeKey(recordKey)
+	}
 	name := strings.ReplaceAll(colDef.RecordFile.Name, "{key}", recordKey)
 	base := colDef.RecordFile.RecordsBasePath()
 	return filepath.Join(colDef.DirPath, base, name)

@@ -763,3 +763,114 @@ func TestValidate_OnlyDefinitionSkipsRecordValidation(t *testing.T) {
 		t.Fatal("expected DataValidator.Validate not to be called with --only=definition")
 	}
 }
+
+// Verifies cli/validate#ac:subcollection-summary-lines.
+func TestValidate_SubcollectionSummaryLines(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	homeDir := func() (string, error) { return "/tmp/home", nil }
+	getWd := func() (string, error) { return dir, nil }
+
+	readDef := func(_ string, _ ...ingitdb.ReadOption) (*ingitdb.Definition, error) {
+		return &ingitdb.Definition{
+			Collections: map[string]*ingitdb.CollectionDef{
+				"spaces": {SubCollections: map[string]*ingitdb.CollectionDef{
+					"ext": {SubCollections: map[string]*ingitdb.CollectionDef{
+						"days":       {},
+						"happenings": nil,
+					}},
+				}},
+				"ext": {SubCollections: map[string]*ingitdb.CollectionDef{
+					"sessions": {},
+				}},
+			},
+		}, nil
+	}
+	dataVal := &mockDataValidator{
+		result: func() *ingitdb.ValidationResult {
+			r := &ingitdb.ValidationResult{}
+			r.SetRecordCounts("spaces", 4, 4)
+			r.SetRecordCounts("spaces/ext", 3, 3)
+			r.SetRecordCounts("spaces/ext/days", 2, 2)
+			r.SetRecordCounts("ext/sessions", 2, 3)
+			return r
+		}(),
+	}
+
+	var logMessages []string
+	logf := func(args ...any) {
+		for _, arg := range args {
+			if str, ok := arg.(string); ok {
+				logMessages = append(logMessages, str)
+			}
+		}
+	}
+
+	cmd := Validate(homeDir, getWd, readDef, dataVal, nil, logf)
+	if err := runCobraCommand(cmd, "--path="+dir); err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+
+	want := []string{
+		"All 0 records are valid for collection: ext",
+		"All 4 records are valid for collection: spaces",
+		"2 out of 3 records are valid for collection: ext/sessions",
+		"All 3 records are valid for collection: spaces/ext",
+		"All 2 records are valid for collection: spaces/ext/days",
+		"All 0 records are valid for collection: spaces/ext/happenings",
+		"Validated 12 records in 6 collections (2 root collections, 4 subcollections)",
+	}
+	got := logMessages[len(logMessages)-len(want):]
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("line %d: got %q, want %q", i, got[i], want[i])
+		}
+	}
+}
+
+type fakeWarningsResult struct{ warnings []ingitdb.ValidationError }
+
+func (f fakeWarningsResult) Warnings() []ingitdb.ValidationError { return f.warnings }
+
+// Warnings come from ingitdb-go's ValidationResult.Warnings when the linked
+// version has it; a result without it gives none.
+func TestValidate_ResultWarnings(t *testing.T) {
+	t.Parallel()
+	if got := resultWarnings(struct{}{}); got != nil { // a result type without warnings
+		t.Fatalf("resultWarnings of a result without Warnings = %v", got)
+	}
+	if got := resultWarnings(&ingitdb.ValidationResult{}); len(got) != 0 {
+		t.Fatalf("a result without warnings must give none, got %v", got)
+	}
+	w := []ingitdb.ValidationError{{CollectionID: "spaces/notes", Message: "spaces/notes: 2 instance(s) ... not validated"}}
+	if got := resultWarnings(fakeWarningsResult{warnings: w}); len(got) != 1 || got[0].CollectionID != "spaces/notes" {
+		t.Fatalf("resultWarnings = %v", got)
+	}
+	var lines []string
+	logWarnings(w, func(args ...any) { lines = append(lines, args[0].(string)) })
+	if len(lines) != 1 || lines[0] != "WARNING: spaces/notes: 2 instance(s) ... not validated" {
+		t.Fatalf("lines = %v", lines)
+	}
+}
+
+// A collection with records that validation could not read is never
+// summarised as "All N records are valid".
+func TestValidate_SummaryLineForWarnedCollection(t *testing.T) {
+	t.Parallel()
+	def := &ingitdb.Definition{Collections: map[string]*ingitdb.CollectionDef{
+		"spaces": {SubCollections: map[string]*ingitdb.CollectionDef{"notes": {}}},
+	}}
+	r := &ingitdb.ValidationResult{}
+	r.SetRecordCounts("spaces", 1, 1)
+	var lines []string
+	logValidationSummary(def, r, []ingitdb.ValidationError{{CollectionID: "spaces/notes"}}, func(args ...any) { lines = append(lines, args[0].(string)) })
+	want := []string{
+		"All 1 records are valid for collection: spaces",
+		"0 out of 0 records read are valid for collection: spaces/notes; it has records that were not read (see WARNING above)",
+		"Validated 1 records in 2 collections (1 root collections, 1 subcollections)",
+	}
+	if strings.Join(lines, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("lines:\n%s\nwant:\n%s", strings.Join(lines, "\n"), strings.Join(want, "\n"))
+	}
+}

@@ -854,4 +854,3 @@ func TestRun_UninstallHelp(t *testing.T) {
 		t.Fatal("fatal should not be called for uninstall --help")
 	}
 }
-

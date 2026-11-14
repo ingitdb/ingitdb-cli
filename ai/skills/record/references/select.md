@@ -9,7 +9,7 @@ Read one record by ID, or filter records from a collection with a `--where` expr
 ingitdb select --path <dir> --id <collection-id>/<record-key> [--format <yaml|json>]
 
 # By filter
-ingitdb select --from <collection-id> --where '<expr>' [--format <yaml|json>]
+ingitdb select --from <collection-id> --where '<expr>' [--format <csv|json|yaml|md|ingr>]
 
 # Remote (read-only public repos need no token)
 ingitdb select --remote <host/owner/repo[@ref]> --id <collection-id>/<record-key>
@@ -21,11 +21,17 @@ ingitdb select --remote <host/owner/repo[@ref]> --id <collection-id>/<record-key
 |---|---|---|
 | `--id` | One of | Single-record fetch. `<collection-id>/<record-key>`. |
 | `--from` | One of | Collection to filter. |
+| `--group` | No | With `--from`: read every instance of a subcollection (see below). |
 | `--where` | If `--from` | Filter expression. Operators: `==`, `===`, `!=`, `!==`, `>=`, `<=`, `>`, `<`. |
-| `--format` | No | `yaml` (default) or `json`. |
+| `--format` | No | `yaml` (default with `--id`), `csv` (default with `--from`), `json`, `md` or `ingr`. |
 | `--path` | One of | Local database. |
 | `--remote` | One of | Remote repo. Append `@<ref>` to pin a branch/tag/SHA. |
 | `--token` | If private | `--token` flag or host-derived env var (e.g., `GITHUB_TOKEN`). |
+
+With `--group`, `--from` is a schema path of collection ids only (`spaces/ext/days`, the full
+path `ingitdb validate` prints) and the command reads every instance of that subcollection, like a
+Firestore collection-group query; `$id` is then each record's full path
+(`spaces/k3v9q/ext/calendarius/days/2026-11-24`). Local databases only. It reads the instances `validate` checks, where the definition puts them; data stored elsewhere (for example `spaces/<key>/ext/` while `spaces` keeps its records in `$records`) fails the command with an error naming the found and the expected path, instead of being left out.
 
 ## Examples
 

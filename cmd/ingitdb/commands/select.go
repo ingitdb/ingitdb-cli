@@ -47,6 +47,9 @@ func Select(
 			if err != nil {
 				return err
 			}
+			if group, _ := cmd.Flags().GetBool("group"); group && mode == sqlflags.ModeID {
+				return fmt.Errorf("--group requires --from (set mode)")
+			}
 
 			fieldsRaw, _ := cmd.Flags().GetString("fields")
 			fields, parseErr := sqlflags.ParseFields(fieldsRaw)
@@ -73,6 +76,7 @@ func Select(
 	sqlflags.RegisterFieldsFlag(cmd)
 	sqlflags.RegisterMinAffectedFlag(cmd)
 	cmd.Flags().Int("limit", 0, "maximum number of records to return (0 = no limit; set mode only)")
+	cmd.Flags().Bool("group", false, "with --from: read every instance of the subcollection at this schema path, given as collection ids only (e.g. spaces/ext/days); $id is then each record's full path (local databases only)")
 	cliformat.AddFlag(cmd, "")
 	return cmd
 }
@@ -153,9 +157,13 @@ func runSelectFromSet(
 ) error {
 	remoteValue, _ := cmd.Flags().GetString("remote")
 	pathValue, _ := cmd.Flags().GetString("path")
+	group, _ := cmd.Flags().GetBool("group")
 
 	if remoteValue != "" && pathValue != "" {
 		return fmt.Errorf("--path and --remote are mutually exclusive")
+	}
+	if group && remoteValue != "" {
+		return fmt.Errorf("--group is supported for local databases only")
 	}
 
 	if remoteValue != "" {
@@ -172,7 +180,7 @@ func runSelectFromSet(
 		if dbErr != nil {
 			return fmt.Errorf("failed to open remote database: %w", dbErr)
 		}
-		return runSelectFromSetWithDB(ctx, cmd, from, dal.NewRootCollectionRef(from, ""), fields, format, db, def.Collections[from])
+		return runSelectFromSetWithDB(ctx, cmd, from, []selectSource{{ref: dal.NewRootCollectionRef(from, "")}}, fields, format, db, def.Collections[from])
 	}
 
 	dirPath, err := resolveDBPath(cmd, homeDir, getWd)
@@ -185,8 +193,17 @@ func runSelectFromSet(
 	}
 	// A root collection ID resolves as before; a subcollection path
 	// (<collection>/<record-key>/<subcollection>) resolves to a reference the
-	// driver scopes to the parent record.
-	ref, colDef, err := resolveFromCollection(def, from)
+	// driver scopes to the parent record. With --group, a schema path
+	// (collection ids only) resolves to one reference per instance.
+	var sources []selectSource
+	var colDef *ingitdb.CollectionDef
+	if group {
+		sources, colDef, err = resolveCollectionGroup(dirPath, def, from)
+	} else {
+		var ref dal.CollectionRef
+		ref, colDef, err = resolveFromCollection(def, from)
+		sources = []selectSource{{ref: ref}}
+	}
 	if err != nil {
 		return err
 	}
@@ -194,7 +211,16 @@ func runSelectFromSet(
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
-	return runSelectFromSetWithDB(ctx, cmd, from, ref, fields, format, db, colDef)
+	return runSelectFromSetWithDB(ctx, cmd, from, sources, fields, format, db, colDef)
+}
+
+// selectSource is one collection instance a set-mode select reads. idPrefix
+// is prepended to each record key to form its `$id`: empty for a single
+// collection (unchanged output), the instance path plus "/" in --group mode,
+// so records of different instances stay distinguishable.
+type selectSource struct {
+	ref      dal.CollectionRef
+	idPrefix string
 }
 
 // runSelectFromSetWithDB executes the set-mode query against a pre-opened DB.
@@ -203,7 +229,7 @@ func runSelectFromSetWithDB(
 	ctx context.Context,
 	cmd *cobra.Command,
 	from string,
-	ref dal.CollectionRef,
+	sources []selectSource,
 	fields []string,
 	format string,
 	db dal.DB,
@@ -219,40 +245,14 @@ func runSelectFromSetWithDB(
 		conds = append(conds, c)
 	}
 
-	q := newQueryForCollectionRef(ref)
-
 	var rows []map[string]any
 	err := db.RunReadonlyTransaction(ctx, func(ctx context.Context, tx dal.ReadTransaction) error {
-		reader, qerr := tx.ExecuteQueryToRecordsetReader(ctx, q)
-		if qerr != nil {
-			return qerr
-		}
-		defer func() { _ = reader.Close() }()
-		var names []string
-		for {
-			row, rs, nextErr := reader.Next()
-			if errors.Is(nextErr, dal.ErrNoMoreRecords) || errors.Is(nextErr, io.EOF) {
-				break
+		for _, source := range sources {
+			sourceRows, readErr := readSelectSource(ctx, tx, source, from, fields, conds, colDef)
+			if readErr != nil {
+				return readErr
 			}
-			if nextErr != nil {
-				return fmt.Errorf("read query row: %w", nextErr)
-			}
-			if names == nil {
-				names = selectColumnsToRead(rs, fields, conds)
-			}
-			recKey := dalgo2ingitdb.RowKey(row, rs)
-			data, derr := dalgo2ingitdb.RowData(row, rs, from, recKey, colDef, names)
-			if derr != nil {
-				return derr
-			}
-			match, matchErr := evalAllWhere(data, recKey, conds)
-			if matchErr != nil {
-				return fmt.Errorf("evaluate --where for record %q: %w", recKey, matchErr)
-			}
-			if !match {
-				continue
-			}
-			rows = append(rows, projectRecord(data, recKey, fields))
+			rows = append(rows, sourceRows...)
 		}
 		return nil
 	})
@@ -362,4 +362,51 @@ func writeSetMode(w io.Writer, rows []map[string]any, format string, columns []s
 	default:
 		return fmt.Errorf("unknown format %q, use csv, json, yaml, md, or ingr", format)
 	}
+}
+
+// readSelectSource reads one collection instance, applying --where and the
+// projection; it returns the matching rows in read order.
+func readSelectSource(
+	ctx context.Context,
+	tx dal.ReadTransaction,
+	source selectSource,
+	from string,
+	fields []string,
+	conds []sqlflags.Condition,
+	colDef *ingitdb.CollectionDef,
+) ([]map[string]any, error) {
+	reader, qerr := tx.ExecuteQueryToRecordsetReader(ctx, newQueryForCollectionRef(source.ref))
+	if qerr != nil {
+		return nil, qerr
+	}
+	defer func() { _ = reader.Close() }()
+	var rows []map[string]any
+	var names []string
+	for {
+		row, rs, nextErr := reader.Next()
+		if errors.Is(nextErr, dal.ErrNoMoreRecords) || errors.Is(nextErr, io.EOF) {
+			break
+		}
+		if nextErr != nil {
+			return nil, fmt.Errorf("read query row: %w", nextErr)
+		}
+		if names == nil {
+			names = selectColumnsToRead(rs, fields, conds)
+		}
+		recKey := dalgo2ingitdb.RowKey(row, rs)
+		id := source.idPrefix + recKey
+		data, derr := dalgo2ingitdb.RowData(row, rs, from, recKey, colDef, names)
+		if derr != nil {
+			return nil, derr
+		}
+		match, matchErr := evalAllWhere(data, id, conds)
+		if matchErr != nil {
+			return nil, fmt.Errorf("evaluate --where for record %q: %w", id, matchErr)
+		}
+		if !match {
+			continue
+		}
+		rows = append(rows, projectRecord(data, id, fields))
+	}
+	return rows, nil
 }
