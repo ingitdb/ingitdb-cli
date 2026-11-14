@@ -1541,9 +1541,11 @@ func TestDemoInstall_RefusalsStartWithAWord(t *testing.T) {
 	t.Parallel()
 	wd := t.TempDir()
 	setups := map[string]func(dir string) error{
-		"file":        func(dir string) error { return os.WriteFile(dir, nil, 0o644) },
-		"non-empty":   func(dir string) error { return writeDemoFile(filepath.Join(dir, "notes.txt"), nil) },
-		"other demo":  func(dir string) error { return writeDemoFile(filepath.Join(dir, ".ingitdb", "demo.yaml"), []byte("app: notes\n")) },
+		"file":      func(dir string) error { return os.WriteFile(dir, nil, 0o644) },
+		"non-empty": func(dir string) error { return writeDemoFile(filepath.Join(dir, "notes.txt"), nil) },
+		"other demo": func(dir string) error {
+			return writeDemoFile(filepath.Join(dir, ".ingitdb", "demo.yaml"), []byte("app: notes\n"))
+		},
 		"in progress": func(dir string) error { return writeDemoFile(filepath.Join(dir, demoLockFileName), nil) },
 		"dangling link": func(dir string) error {
 			if err := os.Symlink(filepath.Join(wd, "nowhere"), dir); err != nil {

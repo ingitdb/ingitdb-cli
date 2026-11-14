@@ -20,10 +20,10 @@ const (
 )
 
 var (
-	ingitdbSkillsCLI    = skillsync.Identity{Publisher: "ingitdb", Name: "ingitdb"}
-	ingitdbSkillsPlugin = skillsync.PluginIdentity{Publisher: "ingitdb", Name: "ingitdb"}
+	ingitdbSkillsCLI          = skillsync.Identity{Publisher: "ingitdb", Name: "ingitdb"}
+	ingitdbSkillsPlugin       = skillsync.PluginIdentity{Publisher: "ingitdb", Name: "ingitdb"}
 	skillsFS            fs.FS = ai.SkillsFS
-	embeddedBundleFn    = skillsync.EmbeddedBundle
+	embeddedBundleFn          = skillsync.EmbeddedBundle
 )
 
 // Skills returns the "skills" command built from skillsync/cobracmd.
