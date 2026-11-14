@@ -828,3 +828,46 @@ func TestValidate_SubcollectionSummaryLines(t *testing.T) {
 		}
 	}
 }
+
+type fakeWarningsResult struct{ warnings []ingitdb.ValidationError }
+
+func (f fakeWarningsResult) Warnings() []ingitdb.ValidationError { return f.warnings }
+
+// Warnings come from ingitdb-go's ValidationResult.Warnings when the linked
+// version has it; a result without it gives none.
+func TestValidate_ResultWarnings(t *testing.T) {
+	t.Parallel()
+	if got := resultWarnings(&ingitdb.ValidationResult{}); len(got) != 0 {
+		t.Fatalf("a result without warnings must give none, got %v", got)
+	}
+	w := []ingitdb.ValidationError{{CollectionID: "spaces/notes", Message: "spaces/notes: 2 instance(s) ... not validated"}}
+	if got := resultWarnings(fakeWarningsResult{warnings: w}); len(got) != 1 || got[0].CollectionID != "spaces/notes" {
+		t.Fatalf("resultWarnings = %v", got)
+	}
+	var lines []string
+	logWarnings(w, func(args ...any) { lines = append(lines, args[0].(string)) })
+	if len(lines) != 1 || lines[0] != "WARNING: spaces/notes: 2 instance(s) ... not validated" {
+		t.Fatalf("lines = %v", lines)
+	}
+}
+
+// A collection with records that validation could not read is never
+// summarised as "All N records are valid".
+func TestValidate_SummaryLineForWarnedCollection(t *testing.T) {
+	t.Parallel()
+	def := &ingitdb.Definition{Collections: map[string]*ingitdb.CollectionDef{
+		"spaces": {SubCollections: map[string]*ingitdb.CollectionDef{"notes": {}}},
+	}}
+	r := &ingitdb.ValidationResult{}
+	r.SetRecordCounts("spaces", 1, 1)
+	var lines []string
+	logValidationSummary(def, r, []ingitdb.ValidationError{{CollectionID: "spaces/notes"}}, func(args ...any) { lines = append(lines, args[0].(string)) })
+	want := []string{
+		"All 1 records are valid for collection: spaces",
+		"0 out of 0 records read are valid for collection: spaces/notes; it has records that were not read (see WARNING above)",
+		"Validated 1 records in 2 collections (1 root collections, 1 subcollections)",
+	}
+	if strings.Join(lines, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("lines:\n%s\nwant:\n%s", strings.Join(lines, "\n"), strings.Join(want, "\n"))
+	}
+}

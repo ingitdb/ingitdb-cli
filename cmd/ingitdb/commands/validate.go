@@ -121,6 +121,8 @@ func Validate(
 					}
 					return fmt.Errorf("data validation failed: %w", valErr)
 				}
+				warnings := resultWarnings(result)
+				logWarnings(warnings, logf)
 				if result.HasErrors() {
 					message := formatValidationFailure("data validation", result)
 					if safeDiagnostics {
@@ -129,7 +131,7 @@ func Validate(
 					findingErr := fmt.Errorf("%s", message)
 					return NewValidationFailedError(findingErr)
 				}
-				logValidationSummary(def, result, logf)
+				logValidationSummary(def, result, warnings, logf)
 			}
 			return nil
 		},
@@ -147,7 +149,11 @@ func Validate(
 // (`spaces/ext/days`), whose count adds up the records of every parent
 // instance. A final line totals records and collections, so a subcollection
 // that held no records is visible instead of absent.
-func logValidationSummary(def *ingitdb.Definition, result *ingitdb.ValidationResult, logf func(...any)) {
+func logValidationSummary(def *ingitdb.Definition, result *ingitdb.ValidationResult, warnings []ingitdb.ValidationError, logf func(...any)) {
+	warned := make(map[string]bool, len(warnings))
+	for _, w := range warnings {
+		warned[w.CollectionID] = true
+	}
 	rootIDs := slices.Sorted(maps.Keys(def.Collections))
 	var subIDs []string
 	for _, rootID := range rootIDs {
@@ -157,7 +163,11 @@ func logValidationSummary(def *ingitdb.Definition, result *ingitdb.ValidationRes
 	for _, collectionID := range slices.Concat(rootIDs, subIDs) {
 		passed, total := result.GetRecordCounts(collectionID)
 		records += total
-		if passed == total {
+		if warned[collectionID] {
+			// Records exist that validation could not read (see the WARNING
+			// lines), so "All N records are valid" would mislead.
+			logf(fmt.Sprintf("%d out of %d records read are valid for collection: %s; it has records that were not read (see WARNING above)", passed, total, collectionID))
+		} else if passed == total {
 			logf(fmt.Sprintf("All %d records are valid for collection: %s", total, collectionID))
 		} else {
 			logf(fmt.Sprintf("%d out of %d records are valid for collection: %s", passed, total, collectionID))
@@ -316,4 +326,26 @@ func expandHome(path string, homeDir func() (string, error)) (string, error) {
 		return filepath.Join(home, path[1:]), nil
 	}
 	return path, nil
+}
+
+// resultWarnings returns the warnings of a validation result when the linked
+// ingitdb-go provides them (ValidationResult.Warnings: records that
+// validation could not read, such as subcollection data in the storage
+// drivers' layout or behind a symbolic link that leads outside the database).
+// Older ingitdb-go versions have no warnings, and none are returned.
+func resultWarnings(result any) []ingitdb.ValidationError {
+	if w, ok := result.(interface {
+		Warnings() []ingitdb.ValidationError
+	}); ok {
+		return w.Warnings()
+	}
+	return nil
+}
+
+// logWarnings prints one "WARNING: " line per warning. Warnings never change
+// the exit code.
+func logWarnings(warnings []ingitdb.ValidationError, logf func(...any)) {
+	for _, w := range warnings {
+		logf("WARNING: " + w.Message)
+	}
 }
