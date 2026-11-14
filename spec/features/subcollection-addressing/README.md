@@ -50,6 +50,13 @@ the collection before it. The result MUST be the records of that subcollection u
 parent record only; records of the same subcollection under other parent records MUST NOT be
 returned.
 
+When the parent collection declares `record_file.key_encoding`, its record key segment MUST be
+written as the parent's file name (the key `a/b` as `a~2Fb`, `CON` as `~43ON`): it is decoded
+with that encoding, which is the only form that can hold every key. A segment the encoding never
+writes (`CON`, `x~zz`) MUST fail with an error naming the segment and the file-name form, not
+return an empty result. A parent without `key_encoding` is unchanged. With `--group`, `$id` joins
+the decoded keys with `/`, so a key that holds `/` makes the path ambiguous (ingitdb-cli#220).
+
 #### REQ: undeclared-segment-not-found
 
 When a `--from` value containing `/` does not match

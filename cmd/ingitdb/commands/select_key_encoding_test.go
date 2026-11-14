@@ -62,6 +62,22 @@ func TestSelect_KeyEncodingTildeV1ShowsDecodedKeys(t *testing.T) {
 	if ids := rowIDs(decodeJSONRows(t, stdout)); strings.Join(ids, " ") != "spaces/a/b/notes/.." {
 		t.Errorf("group ids = %q\n%s", ids, stdout)
 	}
+	// --from names a parent of a key-encoded collection by its file name:
+	// a~2Fb is the parent a/b.
+	stdout, err = runNestedSelect(t, dir, "--from=spaces/a~2Fb/notes", "--format=json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ids := rowIDs(decodeJSONRows(t, stdout)); strings.Join(ids, " ") != ".." {
+		t.Errorf("--from by file name: %q\n%s", ids, stdout)
+	}
+	// A segment the encoding never writes is an error naming the right form,
+	// not an empty result.
+	for seg, hint := range map[string]string{"CON": "~43ON", "x~zz": "not a tilde-v1 name"} {
+		if _, err := runNestedSelect(t, dir, "--from=spaces/"+seg+"/notes", "--format=json"); err == nil || !strings.Contains(err.Error(), hint) || !strings.Contains(err.Error(), "file name") {
+			t.Errorf("--from with %s: %v", seg, err)
+		}
+	}
 }
 
 // diff shows decoded keys, and a batch insert rolls back the files it wrote

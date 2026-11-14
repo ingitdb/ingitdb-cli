@@ -837,6 +837,9 @@ func (f fakeWarningsResult) Warnings() []ingitdb.ValidationError { return f.warn
 // version has it; a result without it gives none.
 func TestValidate_ResultWarnings(t *testing.T) {
 	t.Parallel()
+	if got := resultWarnings(struct{}{}); got != nil { // a result type without warnings
+		t.Fatalf("resultWarnings of a result without Warnings = %v", got)
+	}
 	if got := resultWarnings(&ingitdb.ValidationResult{}); len(got) != 0 {
 		t.Fatalf("a result without warnings must give none, got %v", got)
 	}
