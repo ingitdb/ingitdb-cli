@@ -3,22 +3,22 @@ module github.com/ingitdb/ingitdb-cli
 go 1.27.0
 
 require (
-	charm.land/bubbletea/v2 v2.1.1
+	charm.land/bubbletea/v2 v2.1.2
 	charm.land/fang/v2 v2.0.1
-	charm.land/lipgloss/v2 v2.1.0
+	charm.land/lipgloss/v2 v2.1.1
 	github.com/charmbracelet/x/term v0.2.2
-	github.com/dal-go/dalgo v0.102.4
+	github.com/dal-go/dalgo v0.102.6
 	github.com/dal-go/record v0.1.5
-	github.com/datatug/cliformat v0.0.8
-	github.com/ingitdb/dalgo2ingitdb v0.9.0
-	github.com/ingitdb/dalgo2ingitdb4github v0.4.0
-	github.com/ingitdb/dalgo2ingitdb4local v0.3.0
-	github.com/ingitdb/ingitdb-go/ingitdb v0.11.0
+	github.com/datatug/cliformat v0.0.9
+	github.com/ingitdb/dalgo2ingitdb v0.9.5
+	github.com/ingitdb/dalgo2ingitdb4github v0.4.5
+	github.com/ingitdb/dalgo2ingitdb4local v0.3.5
+	github.com/ingitdb/ingitdb-go/ingitdb v0.11.3
 	github.com/ingr-io/ingr-go v0.0.2
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/rivo/uniseg v0.4.7
 	github.com/spf13/cobra v1.10.2
-	github.com/strongo/buildinfo v0.3.4
+	github.com/strongo/buildinfo v0.3.5
 	github.com/strongo/cli-helpers v0.27.2
 	go.uber.org/mock v0.6.0
 	golang.org/x/sys v0.50.0
@@ -52,7 +52,7 @@ require (
 	github.com/strongo/random v0.0.3 // indirect
 	github.com/xo/terminfo v1.0.0 // indirect
 	go.starlark.net v0.0.0-20261021141710-4f4267fb140d // indirect
-	golang.org/x/sync v0.22.0 // indirect
+	golang.org/x/sync v0.25.0 // indirect
 	golang.org/x/term v0.45.0 // indirect
-	golang.org/x/text v0.40.0 // indirect
+	golang.org/x/text v0.44.0 // indirect
 )
