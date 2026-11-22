@@ -118,6 +118,8 @@ github.com/strongo/buildinfo v0.3.4 h1:DCRcmlBQtITruQO6dzJYg/iViG2935lihWSf8JWoT
 github.com/strongo/buildinfo v0.3.4/go.mod h1:JpxZ3Jku81LJC1RNIqCNYwguDzLk90eemxUXx4JnSlA=
 github.com/strongo/buildinfo v0.3.5 h1:1cKrJrN5rvIQ580sUZxuueaoqA8ILdMfVRkWHvb5AoM=
 github.com/strongo/buildinfo v0.3.5/go.mod h1:JpxZ3Jku81LJC1RNIqCNYwguDzLk90eemxUXx4JnSlA=
+github.com/strongo/buildinfo v0.3.6 h1:hlzRuAouvfJ3NVTcGZ/VFOGDnMuBXSeYdzOBzx+xcmg=
+github.com/strongo/buildinfo v0.3.6/go.mod h1:JpxZ3Jku81LJC1RNIqCNYwguDzLk90eemxUXx4JnSlA=
 github.com/strongo/cli-helpers v0.27.2 h1:jPXdqfK1N7XfOHOAqk03tSGZmoUShs7sB1YW+Jpb2+w=
 github.com/strongo/cli-helpers v0.27.2/go.mod h1:2eUFIkQELgeWLeYz9g3hKer+Kcf+3vnAzHMOPDE7ItA=
 github.com/strongo/random v0.0.3 h1:R4XNjyBvlqL5Mln0meQO9d/Wy1SSN8CpCJ8sKSkIifw=
