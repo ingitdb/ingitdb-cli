@@ -12,7 +12,7 @@ require (
 	github.com/datatug/cliformat v0.0.9
 	github.com/ingitdb/dalgo2ingitdb v0.9.6
 	github.com/ingitdb/dalgo2ingitdb4github v0.4.6
-	github.com/ingitdb/dalgo2ingitdb4local v0.3.8
+	github.com/ingitdb/dalgo2ingitdb4local v0.3.9
 	github.com/ingitdb/ingitdb-go/ingitdb v0.11.3
 	github.com/ingr-io/ingr-go v0.0.2
 	github.com/pelletier/go-toml/v2 v2.4.3
