@@ -3,16 +3,16 @@ module github.com/ingitdb/ingitdb-cli
 go 1.27.0
 
 require (
-	charm.land/bubbletea/v2 v2.1.2
+	charm.land/bubbletea/v2 v2.2.0
 	charm.land/fang/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.1.1
 	github.com/charmbracelet/x/term v0.2.2
-	github.com/dal-go/dalgo v0.102.6
+	github.com/dal-go/dalgo v0.103.1
 	github.com/dal-go/record v0.1.5
 	github.com/datatug/cliformat v0.0.9
 	github.com/ingitdb/dalgo2ingitdb v0.9.6
 	github.com/ingitdb/dalgo2ingitdb4github v0.4.6
-	github.com/ingitdb/dalgo2ingitdb4local v0.3.9
+	github.com/ingitdb/dalgo2ingitdb4local v0.3.10
 	github.com/ingitdb/ingitdb-go/ingitdb v0.11.3
 	github.com/ingr-io/ingr-go v0.0.2
 	github.com/pelletier/go-toml/v2 v2.4.3
@@ -30,7 +30,7 @@ require (
 	github.com/bits-and-blooms/bitset v1.24.6 // indirect
 	github.com/charmbracelet/colorprofile v0.4.3 // indirect
 	github.com/charmbracelet/ultraviolet v0.0.0-20261008173134-6b8d4baf91b4 // indirect
-	github.com/charmbracelet/x/ansi v0.11.9 // indirect
+	github.com/charmbracelet/x/ansi v0.12.0 // indirect
 	github.com/charmbracelet/x/exp/charmtone v0.0.0-20260803091719-3755ebad01b1 // indirect
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
 	github.com/charmbracelet/x/windows v0.2.2 // indirect

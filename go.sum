@@ -1,5 +1,7 @@
 charm.land/bubbletea/v2 v2.1.2 h1:vB3XAcHhLB2gR3HOHpwO3lHB3nbvaowIgL3e5x/DUZo=
 charm.land/bubbletea/v2 v2.1.2/go.mod h1:xWHeyxIX9/wiFU2kgPW04ojOZyTzrWf+8lGjUCaftiU=
+charm.land/bubbletea/v2 v2.2.0 h1:qeO/8WGuwjkiptxsa381BxIDvAiRs+/AIwK65KQhfIA=
+charm.land/bubbletea/v2 v2.2.0/go.mod h1:iQhXpKZdI+MYXzldkoJx/bV/EbGGvw3yrgyaqK5s+No=
 charm.land/fang/v2 v2.0.1 h1:zQCM8JQJ1JnQX/66B5jlCYBUxL2as5JXQZ2KJ6EL0mY=
 charm.land/fang/v2 v2.0.1/go.mod h1:S1GmkpcvK+OB5w9caywUnJcsMew45Ot8FXqoz8ALrII=
 charm.land/lipgloss/v2 v2.1.1 h1:F+vKWis9Kz3MFRsbICSDFtT1ZwVL+8f+36Dtg+OpKwc=
@@ -16,6 +18,8 @@ github.com/charmbracelet/ultraviolet v0.0.0-20261008173134-6b8d4baf91b4 h1:hISLz
 github.com/charmbracelet/ultraviolet v0.0.0-20261008173134-6b8d4baf91b4/go.mod h1:aJDVk+WOVM1K04rdc/71PMPoUGfjxjhvXfP3Pjz1Zio=
 github.com/charmbracelet/x/ansi v0.11.9 h1:kIrqLBxtTVbLyyHO2Evoi93EjQo1mylWmpNEsfPxXAM=
 github.com/charmbracelet/x/ansi v0.11.9/go.mod h1:DG/hpOnaI2QJ/KMMqLL2h0KVhluuJLazf8973P+Vy5w=
+github.com/charmbracelet/x/ansi v0.12.0 h1:jnU2i7TOTBWrXQdkkQ8JUEDUkQDIR+ED2zRlh+XqcC0=
+github.com/charmbracelet/x/ansi v0.12.0/go.mod h1:DG/hpOnaI2QJ/KMMqLL2h0KVhluuJLazf8973P+Vy5w=
 github.com/charmbracelet/x/exp/charmtone v0.0.0-20260803091719-3755ebad01b1 h1:UIQ6TkJs4qmB7/nd3I59qXxFAsBezxQvbV/zGSi9af8=
 github.com/charmbracelet/x/exp/charmtone v0.0.0-20260803091719-3755ebad01b1/go.mod h1:nsExn0DGyX0lh9LwLHTn2Gg+hafdzfSXnC+QmEJTZFY=
 github.com/charmbracelet/x/exp/golden v0.0.0-20250806222409-83e3a29d542f h1:pk6gmGpCE7F3FcjaOEKYriCvpmIN4+6OS/RD0vm4uIA=
@@ -33,6 +37,8 @@ github.com/clipperhouse/uax29/v2 v2.7.0/go.mod h1:EFJ2TJMRUaplDxHKj1qAEhCtQPW2tJ
 github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6NIQQ7OS05n1F4g=
 github.com/dal-go/dalgo v0.102.6 h1:iBogUOXpGe6N9ZvSnyWILLZ1YYPnJrWFvd6wiyjBkuY=
 github.com/dal-go/dalgo v0.102.6/go.mod h1:KmMQvq9i/7sz2bCH859CbQqgx2XalOi7n1oWMhWMYlc=
+github.com/dal-go/dalgo v0.103.1 h1:XFV0n/g1h0ZWsjmodRntcsyHB7vc3EAdnuXrj/xupis=
+github.com/dal-go/dalgo v0.103.1/go.mod h1:KmMQvq9i/7sz2bCH859CbQqgx2XalOi7n1oWMhWMYlc=
 github.com/dal-go/record v0.1.5 h1:lkPxiJA7S2oE5tA0WUayezd+lmaiEekrEcGz/HRhzLg=
 github.com/dal-go/record v0.1.5/go.mod h1:PuoOCH74/Vf+pIVWSdrMg7OdUmlSlPgj68yJ+gM42To=
 github.com/datatug/cliformat v0.0.9 h1:6lIdHXMJexmKjY9/tO0P1cQn8s3m1qSCMOFEm24e9Vk=
@@ -54,6 +60,8 @@ github.com/ingitdb/dalgo2ingitdb4github v0.4.6 h1:QvwPrVDKuEmihmk2JB1hDikS7fnMsz
 github.com/ingitdb/dalgo2ingitdb4github v0.4.6/go.mod h1:x9btX3U45+ngW2nc+IRlb4grIN6QD3Drm/gl1nbehf8=
 github.com/ingitdb/dalgo2ingitdb4local v0.3.9 h1:tT4hq+WIWOCDfEfnwV3ge7T4Yyk9ma1RaE4XtTSNiFU=
 github.com/ingitdb/dalgo2ingitdb4local v0.3.9/go.mod h1:mWTRJyKDUmadsOABRHQfJil2qlMVrcDIm1zmbCPXj/A=
+github.com/ingitdb/dalgo2ingitdb4local v0.3.10 h1:kr+tTmAanHUMVqG+l1wan4tYXN0K8KEcfQRnsJv0t7Q=
+github.com/ingitdb/dalgo2ingitdb4local v0.3.10/go.mod h1:mWTRJyKDUmadsOABRHQfJil2qlMVrcDIm1zmbCPXj/A=
 github.com/ingitdb/ingitdb-go/ingitdb v0.11.3 h1:nR41h2HODF/tiNSRD+3nb4HIyrvs651qDQ2Dbb3ehVA=
 github.com/ingitdb/ingitdb-go/ingitdb v0.11.3/go.mod h1:DmkkXvzUlQs5sS5S2MLltE37CzcZ4vnN7NslApVEyWs=
 github.com/ingr-io/ingr-go v0.0.2 h1:2AfFllqzCe2dCNtxIUo306oYzaZr//YzrVOHd0C73nI=
